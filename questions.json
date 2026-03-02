@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-uml-activity-diagram",
+    "source": "令和6年秋期　問66",
+    "question": "UMLの図のうち、業務要件定義において、業務フローを記述する際に使用する、処理の分岐や並行処理、処理の同期などを表現できる図はどれか。",
+    "choices": [
+      {
+        "text": "アクティビティ図",
+        "overview": "業務フローの分岐や並行処理、同期を表現できる図である。",
+        "detail": "アクティビティ図は、処理の流れを表す振る舞い図であり、分岐（decision）、並行処理（fork）、同期（join）などを記述できる。業務要件定義において業務プロセスを可視化する際に適している。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.5pai1rv0uhez#bookmark=id.of9yms5ye099"
+      },
+      {
+        "text": "クラス図",
+        "overview": "システムの静的構造を表す図であり業務フローは表現しない。",
+        "detail": "クラス図は、クラスや属性、関連などの静的構造を記述する構造図である。処理の順序や分岐、並行処理といった動的な流れは表現できないため、業務フロー記述には適さない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.5pai1rv0uhez#bookmark=id.of9yms5ye099"
+      },
+      {
+        "text": "状態マシン図",
+        "overview": "状態遷移を表す図であり業務全体のフロー記述には適さない。",
+        "detail": "状態マシン図は、オブジェクトやシステムが取り得る状態と、その遷移条件を表す図である。時間経過やイベントによる状態変化の表現には適しているが、業務全体の並行処理や同期を含むフロー表現には通常用いない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.5pai1rv0uhez#bookmark=id.of9yms5ye099"
+      },
+      {
+        "text": "ユースケース図",
+        "overview": "利用者視点の機能要求を表す図であり処理の流れは表現しない。",
+        "detail": "ユースケース図は、アクターとシステムとの関係や提供機能を示す図である。業務の詳細な処理順序や分岐、並行処理を記述するものではないため、業務フロー記述には適さない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.5pai1rv0uhez#bookmark=id.of9yms5ye099"
+      }
+    ],
+    "correct_indices": [
+      0
+    ],
+    "category": "ストラテジ系 / システム戦略"
+  },
+  {
     "id": "ap-tech-ux-design",
     "source": "令和6年秋期　問65",
     "question": "システムの要件を検討する際に用いるUXデザインの説明として、適切なものはどれか。",
