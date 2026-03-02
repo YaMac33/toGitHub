@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-network-vlan-security",
+    "source": "令和6年秋期　問45",
+    "question": "VLAN機能をもった1台のレイヤー3スイッチに40台のPCを接続している。スイッチのポートをグループ化して複数のセグメントに分けたとき、スイッチのポートをセグメントに分けない場合に比べて得られるセキュリティ上の効果の一つはどれか。",
+    "choices": [
+      {
+        "text": "スイッチが、PCから送出されるICMPパケットを同一セグメント内も含め、全て遮断するので、PC間のマルウェア感染のリスクを低減できる。",
+        "overview": "VLANはICMPを全遮断する機能ではない。",
+        "detail": "VLANはブロードキャストドメインを分割する機能であり、特定のプロトコル（ICMPなど）を自動的に遮断するものではない。ICMP通信の制御はACLなど別の機能で行う。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.oc5h1gxka78u"
+      },
+      {
+        "text": "スイッチが、PCからのブロードキャストパケットの到達範囲を制限するので、アドレス情報の不要な流出のリスクを低減できる。",
+        "overview": "VLANによりブロードキャストドメインが分割され到達範囲が限定される。",
+        "detail": "VLANでポートを分割すると、それぞれが独立したブロードキャストドメインとなる。これにより、ARPなどのブロードキャストパケットの到達範囲が限定され、不要な情報拡散や盗聴リスクを低減できる。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.oc5h1gxka78u"
+      },
+      {
+        "text": "スイッチが、PCのMACアドレスから接続可否を判別するので、PCの不正接続のリスクを低減できる。",
+        "overview": "MACアドレスによる接続制御はポートセキュリティ機能でありVLAN分割の効果ではない。",
+        "detail": "MACアドレスに基づく接続可否の判定はポートセキュリティ機能などで実現される。VLANは論理的にセグメントを分割する仕組みであり、MAC認証とは直接関係しない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.oc5h1gxka78u"
+      },
+      {
+        "text": "スイッチが、物理ポートごとに、決まったIPアドレスをもつPCの接続だけを許可するので、PCの不正接続のリスクを低減できる。",
+        "overview": "IPアドレスによる接続制御はVLAN機能そのものではない。",
+        "detail": "物理ポートごとにIPアドレスを制限する機能はアクセス制御や認証機能に関するものであり、ポートベースVLANの基本機能ではない。VLANの主な効果はブロードキャストドメインの分割である。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.oc5h1gxka78u"
+      }
+    ],
+    "correct_indices": [
+      1
+    ],
+    "category": "テクノロジ系 / セキュリティ"
+  },
+  {
     "id": "ap-tech-storage-object-storage",
     "source": "令和6年秋期　問13",
     "question": "データアクセス方式の一つであるオブジェクトストレージに関する記述のうち、最も適切なものはどれか。",
