@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-mgmt-service-rto-rlo",
+    "source": "令和6年秋期　問55",
+    "question": "サービスマネジメントにおいて、中断したサービスを復旧させるときの目標を定めた指標にRTO、RPO及びRLOがある。RTOとRLOとを定めた例として、適切なものはどれか。",
+    "choices": [
+      {
+        "text": "3時間前の状態に復旧し、利用者の50%以上に提供する",
+        "overview": "誤り。RPOとRLOを定めた例である。",
+        "detail": "「3時間前の状態に復旧」は目標復旧時点（RPO）、「利用者の50%以上に提供」は目標復旧レベル（RLO）を示しており、RTOは含まれていない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.2iw1up1zswu6#bookmark=id.tm2rx392y8ps"
+      },
+      {
+        "text": "直前の状態に復旧し、終了時刻を延長する",
+        "overview": "誤り。RPOのみを定めた例である。",
+        "detail": "「直前の状態に復旧」はRPOを示しているが、終了時刻延長はRTOやRLOの定義には該当せず、復旧時間や復旧レベルを示していない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.2iw1up1zswu6#bookmark=id.tm2rx392y8ps"
+      },
+      {
+        "text": "1時間以内に1時間前の状態へ復旧する",
+        "overview": "誤り。RTOとRPOを定めた例である。",
+        "detail": "「1時間以内に」は目標復旧時間（RTO）、「1時間前の状態」は目標復旧時点（RPO）を示しており、RLOは含まれていない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.2iw1up1zswu6#bookmark=id.tm2rx392y8ps"
+      },
+      {
+        "text": "1日以内に重要なサービスに限定して復旧する",
+        "overview": "正しい。RTOとRLOを定めた例である。",
+        "detail": "「1日以内に」は目標復旧時間（RTO）を示し、「重要なサービスに限定して復旧」は目標復旧レベル（RLO）を示している。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.2iw1up1zswu6#bookmark=id.tm2rx392y8ps"
+      }
+    ],
+    "correct_indices": [
+      3
+    ],
+    "category": "マネジメント系 / サービスマネジメント"
+  },
+  {
     "id": "ap-tech-security-password-list-attack",
     "source": "令和6年秋期　問40",
     "question": "パスワードリスト攻撃に該当するものはどれか。",
