@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-vcs-distributed",
+    "source": "令和6年秋期　問19",
+    "question": "分散開発環境において、各開発者のローカル環境に全履歴を含んだ中央リポジトリの完全な複製を保持し、中央リポジトリにアクセスできない場合でも履歴の調査や変更の記録を可能にするバージョン管理ツールはどれか。",
+    "choices": [
+      {
+        "text": "Apache Subversion",
+        "overview": "誤り。集中型のバージョン管理ツールである。",
+        "detail": "Apache Subversionは中央リポジトリを前提とした集中型のバージョン管理システムであり、各開発者が完全な履歴を持つ分散型の仕組みではない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.w7tuf3si2ta5#bookmark=id.g2tu0gjzco3g"
+      },
+      {
+        "text": "CVS",
+        "overview": "誤り。中央サーバを前提とした集中型である。",
+        "detail": "CVSは共有サーバ上のリポジトリを利用する集中型のバージョン管理ツールであり、ローカルに全履歴を保持する分散型の特徴は持たない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.w7tuf3si2ta5#bookmark=id.nx699737ew9"
+      },
+      {
+        "text": "Git",
+        "overview": "正しい。各開発者が完全なリポジトリを保持する分散型である。",
+        "detail": "Gitは分散型バージョン管理システムであり、各開発者が中央リポジトリの完全な複製をローカルに保持する。そのため、中央リポジトリに接続できない状況でも履歴の参照やコミットなどの操作が可能である。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.w7tuf3si2ta5#bookmark=id.hcasb2t4vfor"
+      },
+      {
+        "text": "RCS",
+        "overview": "誤り。ファイル単位で管理する初期の仕組みである。",
+        "detail": "RCSはファイル単位で変更履歴を管理する初期のバージョン管理システムであり、分散開発や中央リポジトリの完全複製といった機能は持たない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.w7tuf3si2ta5#bookmark=id.t19irac9j969"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "category": "テクノロジ系 / ソフトウェア"
+  },
+  {
     "id": "ap-mgmt-ecrs-rearrange",
     "source": "令和6年秋期　問63",
     "question": "業務改善の4原則ECRSのうち、Rearrange（入替え）を適用した例はどれか。",
@@ -1433,41 +1468,6 @@
       0
     ],
     "category": "ストラテジ系 / 企業と法務"
-  },
-  {
-    "id": "ap-tech-vcs-distributed",
-    "source": "令和6年秋期　問19",
-    "question": "分散開発環境において、各開発者のローカル環境に全履歴を含んだ中央リポジトリの完全な複製を保持し、中央リポジトリにアクセスできない場合でも履歴の調査や変更の記録を可能にするバージョン管理ツールはどれか。",
-    "choices": [
-      {
-        "text": "Apache Subversion",
-        "overview": "誤り。集中型のバージョン管理ツールである。",
-        "detail": "Apache Subversionは中央リポジトリを前提とした集中型のバージョン管理システムであり、各開発者が完全な履歴を持つ分散型の仕組みではない。",
-        "link": ""
-      },
-      {
-        "text": "CVS",
-        "overview": "誤り。中央サーバを前提とした集中型である。",
-        "detail": "CVSは共有サーバ上のリポジトリを利用する集中型のバージョン管理ツールであり、ローカルに全履歴を保持する分散型の特徴は持たない。",
-        "link": ""
-      },
-      {
-        "text": "Git",
-        "overview": "正しい。各開発者が完全なリポジトリを保持する分散型である。",
-        "detail": "Gitは分散型バージョン管理システムであり、各開発者が中央リポジトリの完全な複製をローカルに保持する。そのため、中央リポジトリに接続できない状況でも履歴の参照やコミットなどの操作が可能である。",
-        "link": ""
-      },
-      {
-        "text": "RCS",
-        "overview": "誤り。ファイル単位で管理する初期の仕組みである。",
-        "detail": "RCSはファイル単位で変更履歴を管理する初期のバージョン管理システムであり、分散開発や中央リポジトリの完全複製といった機能は持たない。",
-        "link": ""
-      }
-    ],
-    "correct_indices": [
-      2
-    ],
-    "category": "テクノロジ系 / ソフトウェア"
   },
   {
     "id": "ap-tech-db-schema-analysis",
