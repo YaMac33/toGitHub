@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-algorithm-reverse-polish",
+    "source": "令和6年秋期　問3",
+    "question": "式A＋B×Cの逆ポーランド表記法による表現として、適切なものはどれか。",
+    "choices": [
+      {
+        "text": "+×CBA",
+        "overview": "演算子が先頭に来る前置記法であり逆ポーランド表記ではない。",
+        "detail": "逆ポーランド表記（後置記法）は、演算子をオペランドの後ろに置く。+×CBAは前置記法の形式であり、A＋B×Cを正しく後置表現していない。",
+        "link": ""
+      },
+      {
+        "text": "×+ABC",
+        "overview": "前置記法の並びであり後置記法ではない。",
+        "detail": "×+ABCは演算子が先に現れる前置記法である。逆ポーランド表記では、まずA、B、Cを並べ、B×Cを計算する×、その後Aとの加算を示す＋を後ろに置く。",
+        "link": ""
+      },
+      {
+        "text": "ABC×+",
+        "overview": "B×Cを先に計算し、その結果にAを加える後置記法である。",
+        "detail": "逆ポーランド表記では、A＋B×Cは優先順位に従いB×Cを先に評価するため、A B C × ＋と並べる。したがって表現はABC×+となる。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.onapwpfnjp4n#bookmark=id.kazkvyugelhl"
+      },
+      {
+        "text": "CBA+×",
+        "overview": "オペランドの順序が逆で正しい評価順にならない。",
+        "detail": "CBA+×は、B＋Aを計算してからCと乗算する形になり、元の式A＋B×Cとは異なる。逆ポーランド表記では演算の順序とオペランドの並びを保持する必要がある。",
+        "link": ""
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "category": "テクノロジ系 / 基礎理論"
+  },
+  {
     "id": "ap-strategy-law-digital-society",
     "source": "令和6年秋期　問80",
     "question": "デジタル社会形成基本法において掲げられている10項目の基本理念に含まれているものはどれか。",
@@ -313,41 +348,6 @@
       0
     ],
     "category": "テクノロジ系 / セキュリティ"
-  },
-  {
-    "id": "ap-tech-algorithm-reverse-polish",
-    "source": "令和6年秋期　問3",
-    "question": "式A＋B×Cの逆ポーランド表記法による表現として、適切なものはどれか。",
-    "choices": [
-      {
-        "text": "+×CBA",
-        "overview": "演算子が先頭に来る前置記法であり逆ポーランド表記ではない。",
-        "detail": "逆ポーランド表記（後置記法）は、演算子をオペランドの後ろに置く。+×CBAは前置記法の形式であり、A＋B×Cを正しく後置表現していない。",
-        "link": ""
-      },
-      {
-        "text": "×+ABC",
-        "overview": "前置記法の並びであり後置記法ではない。",
-        "detail": "×+ABCは演算子が先に現れる前置記法である。逆ポーランド表記では、まずA、B、Cを並べ、B×Cを計算する×、その後Aとの加算を示す＋を後ろに置く。",
-        "link": ""
-      },
-      {
-        "text": "ABC×+",
-        "overview": "B×Cを先に計算し、その結果にAを加える後置記法である。",
-        "detail": "逆ポーランド表記では、A＋B×Cは優先順位に従いB×Cを先に評価するため、A B C × ＋と並べる。したがって表現はABC×+となる。",
-        "link": ""
-      },
-      {
-        "text": "CBA+×",
-        "overview": "オペランドの順序が逆で正しい評価順にならない。",
-        "detail": "CBA+×は、B＋Aを計算してからCと乗算する形になり、元の式A＋B×Cとは異なる。逆ポーランド表記では演算の順序とオペランドの並びを保持する必要がある。",
-        "link": ""
-      }
-    ],
-    "correct_indices": [
-      2
-    ],
-    "category": "テクノロジ系 / 基礎理論"
   },
   {
     "id": "ap-tech-quality-usability-metric",
