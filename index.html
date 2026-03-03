@@ -4,20 +4,552 @@
   <meta charset="UTF-8" />
   <title>Learning Trajectory Quiz</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="./style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* カラーパレット (白背景ベース) */
+      --c-bg: #ffffff;
+      --c-surface: #ffffff;
+      --c-surface-hover: #f8fafc;
+      --c-border: #e2e8f0;
+      --c-text-main: #0f172a;
+      --c-text-sub: #64748b;
+      
+      --c-primary: #3b82f6;
+      --c-primary-hover: #2563eb;
+      --c-primary-light: #eff6ff;
+      
+      --c-success: #10b981;
+      --c-success-bg: #ecfdf5;
+      --c-danger: #ef4444;
+      --c-danger-bg: #fef2f2;
+      --c-warning: #f59e0b;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+      background-color: var(--c-bg);
+      color: var(--c-text-main);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* --- Header --- */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .topbar h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--c-primary);
+      letter-spacing: -0.025em;
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      color: var(--c-text-sub);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+
+    .btn-back:hover {
+      background: var(--c-surface-hover);
+      color: var(--c-text-main);
+    }
+
+    /* --- Layout --- */
+    #app {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    /* --- Utils --- */
+    [hidden] { display: none !important; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- Filters --- */
+    .filters {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filters-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .filters-row:last-child { margin-bottom: 0; }
+
+    .filters-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1 1 200px;
+    }
+
+    .filters-label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--c-text-sub);
+    }
+
+    .filters-select, .filters-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--c-border);
+      background: var(--c-surface);
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--c-text-main);
+      transition: var(--transition);
+    }
+
+    .filters-select:focus, .filters-input:focus {
+      outline: none;
+      border-color: var(--c-primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .filters-select:disabled {
+      background: var(--c-surface-hover);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .filters-row-compact {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--c-text-sub);
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .chip:hover {
+      background: var(--c-surface-hover);
+    }
+
+    .chip input:checked + span {
+      color: var(--c-primary);
+      font-weight: 700;
+    }
+    .chip:has(input:checked) {
+      border-color: var(--c-primary);
+      background: var(--c-primary-light);
+    }
+
+    .chip input { display: none; }
+
+    /* --- List View --- */
+    .parent-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      margin: 40px 0 16px;
+      color: var(--c-text-main);
+    }
+
+    .category-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 24px 0 12px;
+      color: var(--c-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .category-title::before {
+      content: "";
+      display: block;
+      width: 4px;
+      height: 16px;
+      background: var(--c-primary);
+      border-radius: 2px;
+    }
+
+    .quiz-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .quiz-card {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 20px;
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-md);
+      text-align: left;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .quiz-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--c-primary);
+    }
+
+    .quiz-card-title {
+      font-size: 1.05rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    .quiz-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.85rem;
+      color: var(--c-text-sub);
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-gray { background: #f1f5f9; color: #475569; }
+    .badge-green { background: var(--c-success-bg); color: var(--c-success); }
+    .badge-red { background: var(--c-danger-bg); color: var(--c-danger); }
+
+    /* --- Quiz View --- */
+    .question-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      color: var(--c-text-sub);
+    }
+    
+    .question-meta > div {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .question-box {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-sm);
+      font-size: 1.15rem;
+      font-weight: 500;
+      line-height: 1.7;
+    }
+
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .choice {
+      background: var(--c-surface);
+      border: 2px solid var(--c-border);
+      border-radius: var(--radius-md);
+      transition: var(--transition);
+      overflow: hidden;
+    }
+
+    .choice:hover:not(.disabled) {
+      border-color: var(--c-primary);
+      background: var(--c-surface-hover);
+    }
+
+    .choice-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 20px;
+      cursor: pointer;
+    }
+
+    .choice.disabled .choice-main {
+      cursor: default;
+    }
+
+    /* カスタムチェックボックス/ラジオボタン */
+    .choice-input-wrapper {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--c-border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      margin-top: 2px;
+    }
+    
+    .choice-input { display: none; }
+    
+    .choice-input:checked + .choice-input-wrapper {
+      background: var(--c-primary);
+      border-color: var(--c-primary);
+    }
+    
+    .choice-input:checked + .choice-input-wrapper::after {
+      content: "";
+      width: 10px;
+      height: 10px;
+      background: white;
+      border-radius: 2px;
+    }
+
+    /* 選択された状態のスタイル */
+    .choice:has(.choice-input:checked) {
+      border-color: var(--c-primary);
+      background: var(--c-primary-light);
+    }
+
+    .choice-text {
+      font-size: 1rem;
+      line-height: 1.5;
+      padding-top: 2px;
+    }
+
+    /* 回答後のスタイル */
+    .choice.is-correct {
+      border-color: var(--c-success);
+      background: var(--c-success-bg);
+    }
+    .choice.is-correct .choice-input-wrapper {
+      background: var(--c-success);
+      border-color: var(--c-success);
+    }
+    .choice.is-wrong {
+      border-color: var(--c-danger);
+      background: var(--c-danger-bg);
+    }
+    
+    .choice-info {
+      padding: 0 20px 20px 56px;
+    }
+
+    .choice-overview {
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .choice.is-correct .choice-overview { color: var(--c-success); }
+    .choice.is-wrong .choice-overview { color: var(--c-danger); }
+
+    .choice-toggle-detail {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: none;
+      color: var(--c-text-sub);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+      margin-left: -12px;
+    }
+
+    .choice-toggle-detail:hover:not(:disabled) {
+      background: var(--c-surface-hover);
+      color: var(--c-text-main);
+    }
+    
+    .choice-toggle-detail svg {
+      transition: transform 0.3s ease;
+    }
+    .choice-toggle-detail.is-open svg {
+      transform: rotate(180deg);
+    }
+
+    .choice-detail {
+      margin-top: 12px;
+      padding: 16px;
+      background: rgba(0,0,0,0.03);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      color: var(--c-text-main);
+      border-left: 3px solid var(--c-primary);
+    }
+
+    .choice-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--c-primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .choice-link:hover { text-decoration: underline; }
+
+    /* --- Actions --- */
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid var(--c-border);
+    }
+
+    .btn-primary {
+      background: var(--c-primary);
+      color: #ffffff;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+      transition: var(--transition);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--c-primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.23);
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--c-text-main);
+      border: 1px solid var(--c-border);
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--c-surface-hover);
+      border-color: #cbd5e1;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none !important;
+    }
+
+    /* --- Result Banner --- */
+    .result-banner {
+      margin-top: 24px;
+      padding: 20px;
+      border-radius: var(--radius-md);
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 700;
+      animation: fadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .result-banner.ok {
+      background: var(--c-success-bg);
+      color: var(--c-success);
+      border: 2px solid var(--c-success);
+    }
+    .result-banner.ng {
+      background: var(--c-danger-bg);
+      color: var(--c-danger);
+      border: 2px solid var(--c-danger);
+    }
+    
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: var(--c-text-sub);
+      background: var(--c-surface-hover);
+      border-radius: var(--radius-md);
+      border: 1px dashed var(--c-border);
+    }
+  </style>
 </head>
 <body>
   <header class="topbar">
     <h1>Learning Trajectory Quiz</h1>
-    <button id="backBtn" type="button" class="btn-back" hidden>← 一覧へ戻る</button>
+    <button id="backBtn" type="button" class="btn-back" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      一覧へ戻る
+    </button>
   </header>
 
   <main id="app">
-    <div id="status"></div>
+    <div id="status" style="text-align: center; margin-bottom: 20px; color: #64748b;"></div>
 
     <!-- List View -->
-    <section id="view-list">
-      <h2>問題一覧</h2>
+    <section id="view-list" class="fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
+        <h2 style="font-size: 1.5rem; font-weight: 800;">問題一覧</h2>
+        <p class="hint" style="font-size: 0.85rem; color: var(--c-text-sub);">クリックして問題に挑戦</p>
+      </div>
 
       <!-- Filters -->
       <section class="filters" aria-label="フィルタ">
@@ -37,26 +569,25 @@
           </label>
 
           <label class="filters-item">
-           <span class="filters-label">表示</span>
+           <span class="filters-label">表示グループ</span>
            <select id="groupMode" class="filters-select">
             <option value="cat-parent-sub">カテゴリ（親/子）</option>
-            <option value="cat-parent">カテゴリ（第一分類=親）</option>
+            <option value="cat-parent">カテゴリ（親のみ）</option>
             <option value="session">開催期（出典）</option>
            </select>
           </label>
 
-          <label class="filters-item filters-grow">
-            <span class="filters-label">検索</span>
+          <label class="filters-item" style="flex: 2 1 300px;">
+            <span class="filters-label">キーワード検索</span>
             <input id="searchInput" class="filters-input" type="search" placeholder="問題文 / ID / 出典で検索" />
           </label>
         </div>
 
-        <div class="filters-row filters-row-compact">
+        <div class="filters-row-compact" style="margin-top: 20px;">
           <label class="chip">
             <input id="onlyUnanswered" type="checkbox" />
             <span>未回答のみ</span>
           </label>
-
           <label class="chip">
             <input id="onlyIncorrect" type="checkbox" />
             <span>不正解のみ</span>
@@ -64,20 +595,29 @@
         </div>
       </section>
 
-      <p class="hint">クリックするとその問題へ移動します</p>
       <div id="quizList" class="quiz-list"></div>
     </section>
 
     <!-- Quiz View -->
-    <section id="view-quiz" hidden>
+    <section id="view-quiz" class="fade-in" hidden>
       <div class="question-meta">
-        <div id="qid" class="qid"></div>
-        <div id="qcategory" class="qcategory"></div>
-        <div id="qsource" class="qsource"></div>
-        <div id="qmeta" class="qmeta"></div>
+        <div id="qid" title="問題ID">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/></svg>
+          <span></span>
+        </div>
+        <div id="qcategory" title="カテゴリ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span></span>
+        </div>
+        <div id="qsource" title="出典">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+          <span></span>
+        </div>
       </div>
 
-      <div id="question" class="question"></div>
+      <div id="question" class="question-box"></div>
+      
+      <div id="result" class="result"></div>
 
       <div id="choices" class="choices"></div>
 
@@ -86,37 +626,516 @@
         <div class="choice">
           <label class="choice-main">
             <input type="checkbox" class="choice-input" />
+            <div class="choice-input-wrapper"></div>
             <span class="choice-text"></span>
           </label>
 
-          <div class="choice-info">
+          <div class="choice-info" hidden>
             <div class="choice-overview" hidden></div>
 
             <button type="button" class="choice-toggle-detail" disabled>
-              <span>解説（回答後）</span>
-              <svg class="chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <span>解説を読む</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m6 9 6 6 6-6"/>
               </svg>
             </button>
 
             <div class="choice-detail" hidden>
               <div class="choice-detail-content"></div>
-              <a href="" class="choice-link" target="_blank" rel="noopener noreferrer">参考リンク</a>
+              <a href="" class="choice-link" target="_blank" rel="noopener noreferrer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+                参考リンクを開く
+              </a>
             </div>
           </div>
         </div>
       </template>
 
       <div class="actions">
-        <button id="prevBtn" type="button" class="btn-secondary">前の問題へ</button>
-        <button id="submitBtn" type="button" class="btn-primary">回答する</button>
-        <button id="nextBtn" type="button" class="btn-secondary">次の問題へ</button>
+        <button id="prevBtn" type="button" class="btn-secondary">前の問題</button>
+        <button id="submitBtn" type="button" class="btn-primary">回答を決定する</button>
+        <button id="nextBtn" type="button" class="btn-secondary">次の問題</button>
       </div>
-
-      <div id="result" class="result"></div>
     </section>
   </main>
 
-  <script type="module" src="./app.js"></script>
+  <script>
+    // --- モックデータ (questions.json が読み込めない場合のフォールバック) ---
+    const FALLBACK_QUESTIONS = [
+      {
+        "id": "ap-tech-vcs-distributed",
+        "source": "令和6年秋期　問19",
+        "question": "分散開発環境において、各開発者のローカル環境に全履歴を含んだ中央リポジトリの完全な複製を保持し、中央リポジトリにアクセスできない場合でも履歴の調査や変更の記録を可能にするバージョン管理ツールはどれか。",
+        "choices": [
+          {
+            "text": "Apache Subversion",
+            "overview": "誤り。集中型のバージョン管理ツールである。",
+            "detail": "Apache Subversionは中央リポジトリを前提とした集中型のバージョン管理システムであり、各開発者が完全な履歴を持つ分散型の仕組みではない。",
+            "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit"
+          },
+          {
+            "text": "CVS",
+            "overview": "誤り。中央サーバを前提とした集中型である。",
+            "detail": "CVSは共有サーバ上のリポジトリを利用する集中型のバージョン管理ツールであり、ローカルに全履歴を保持する分散型の特徴は持たない。",
+            "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit"
+          },
+          {
+            "text": "Git",
+            "overview": "正しい。各開発者が完全なリポジトリを保持する分散型である。",
+            "detail": "Gitは分散型バージョン管理システムであり、各開発者が中央リポジトリの完全な複製をローカルに保持する。そのため、中央リポジトリに接続できない状況でも履歴の参照やコミットなどの操作が可能である。",
+            "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit"
+          },
+          {
+            "text": "RCS",
+            "overview": "誤り。ファイル単位で管理する初期の仕組みである。",
+            "detail": "RCSはファイル単位で変更履歴を管理する初期のバージョン管理システムであり、分散開発や中央リポジトリの完全複製といった機能は持たない。",
+            "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit"
+          }
+        ],
+        "correct_indices": [2],
+        "category": "テクノロジ系 / ソフトウェア"
+      }
+    ];
+
+    // --- State & Core ---
+    const $ = (id) => document.getElementById(id);
+
+    let QUESTIONS = [];
+    let CURRENT_ID = null;
+
+    // 現在のセッション中の回答結果 Map<id, { selected:number[], isCorrect:boolean }>
+    const SESSION_RESULTS = new Map();
+    const LOG_KEY = "ltQuizLogs_v2";
+
+    // --- Data Loaders ---
+    async function loadQuestions() {
+      try {
+        const res = await fetch("./questions.json", { cache: "no-cache", headers: { Accept: "application/json" } });
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
+      } catch (e) {
+        console.warn("questions.jsonの読み込みに失敗しました。フォールバックデータを使用します。", e);
+      }
+      return FALLBACK_QUESTIONS;
+    }
+
+    function loadLogs() {
+      try {
+        const s = localStorage.getItem(LOG_KEY);
+        return s ? JSON.parse(s) : [];
+      } catch { return []; }
+    }
+
+    function saveLogs(logs) {
+      localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+    }
+
+    function addLog(entry) {
+      const logs = loadLogs();
+      logs.push(entry);
+      if (logs.length > 5000) logs.splice(0, logs.length - 5000);
+      saveLogs(logs);
+    }
+
+    function latestResultById(logs) {
+      const m = new Map();
+      for (const e of logs) {
+        const prev = m.get(e.id);
+        if (!prev || (typeof e.t === "number" && e.t > prev.t)) m.set(e.id, e);
+      }
+      return m;
+    }
+
+    // --- Routing Helpers ---
+    function setRoute(id) {
+      const url = new URL(window.location.href);
+      if (id) {
+        url.searchParams.set("id", id);
+      } else {
+        url.searchParams.delete("id");
+      }
+      history.pushState({}, "", url.toString());
+      syncViewFromUrl();
+    }
+
+    function getQueryParam(name) {
+      const u = new URL(window.location.href);
+      return u.searchParams.get(name);
+    }
+
+    function syncViewFromUrl() {
+      const id = getQueryParam("id");
+
+      if (!id) {
+        $("view-list").hidden = false;
+        $("view-quiz").hidden = true;
+        $("backBtn").hidden = true;
+        CURRENT_ID = null;
+        renderList();
+        window.scrollTo(0, 0);
+        return;
+      }
+
+      $("view-list").hidden = true;
+      $("view-quiz").hidden = false;
+      $("backBtn").hidden = false;
+      CURRENT_ID = String(id);
+
+      const q = QUESTIONS.find((x) => String(x.id) === String(id));
+      if (!q) {
+        $("question").textContent = `指定されたIDの問題が見つかりません: ${id}`;
+        $("choices").innerHTML = "";
+        return;
+      }
+      renderQuestion(q);
+      window.scrollTo(0, 0);
+    }
+
+    window.addEventListener("popstate", syncViewFromUrl);
+
+    $("backBtn").addEventListener("click", () => setRoute(null));
+
+    // --- Category Helpers ---
+    function splitCategory(category) {
+      const raw = String(category || "").trim();
+      if (!raw) return { parent: "未分類", sub: "未分類" };
+      const parts = raw.split("/").map((s) => s.trim()).filter(Boolean);
+      if (parts.length >= 2) return { parent: parts[0], sub: parts.slice(1).join(" / ") };
+      return { parent: parts[0], sub: "未分類" };
+    }
+
+    function qCategoryParent(q) { return splitCategory(q.category).parent; }
+    function qCategorySub(q) { return splitCategory(q.category).sub; }
+
+    function getParents(questions) {
+      const set = new Set(questions.map(qCategoryParent));
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "ja"));
+    }
+
+    function getSubsForParent(questions, parent) {
+      const set = new Set(questions.filter((q) => qCategoryParent(q) === parent).map(qCategorySub));
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "ja"));
+    }
+
+    function groupByParentSub(questions) {
+      const top = new Map();
+      for (const q of questions) {
+        const { parent, sub } = splitCategory(q.category);
+        if (!top.has(parent)) top.set(parent, new Map());
+        const subMap = top.get(parent);
+        if (!subMap.has(sub)) subMap.set(sub, []);
+        subMap.get(sub).push(q);
+      }
+      return top;
+    }
+
+    function groupByParent(questions) {
+      const map = new Map();
+      for (const q of questions) {
+        const { parent } = splitCategory(q.category);
+        if (!map.has(parent)) map.set(parent, []);
+        map.get(parent).push(q);
+      }
+      return map;
+    }
+
+    function extractSessionLabel(source) {
+      const s = String(source || "").trim();
+      if (!s) return "出典不明";
+      const idx = s.indexOf("問");
+      if (idx > 0) return s.slice(0, idx).trim() || "出典不明";
+      return s;
+    }
+
+    function groupBySession(questions) {
+      const map = new Map();
+      for (const q of questions) {
+        const key = extractSessionLabel(q.source);
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(q);
+      }
+      return map;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (m) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[m]));
+    }
+
+    // --- Filters UI ---
+    function setupFilters() {
+      const parentSel = $("parentFilter");
+      const subSel = $("subFilter");
+      const groupSel = $("groupMode");
+
+      const parents = getParents(QUESTIONS);
+      parentSel.innerHTML = `<option value="">すべて</option>` + parents.map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+
+      const refreshSubs = () => {
+        const p = String(parentSel.value || "");
+        if (!p) {
+          subSel.disabled = true;
+          subSel.innerHTML = `<option value="">すべて</option>`;
+          return;
+        }
+        const subs = getSubsForParent(QUESTIONS, p);
+        subSel.disabled = false;
+        subSel.innerHTML = `<option value="">すべて</option>` + subs.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+      };
+
+      const applyGroupModeUi = () => {
+        const mode = String(groupSel.value);
+        if (mode === "session") {
+          parentSel.value = subSel.value = "";
+          parentSel.disabled = subSel.disabled = true;
+        } else {
+          parentSel.disabled = false;
+          if (mode === "cat-parent") {
+            subSel.value = "";
+            subSel.disabled = true;
+          } else {
+            refreshSubs();
+          }
+        }
+      };
+
+      parentSel.onchange = () => { refreshSubs(); renderList(); };
+      subSel.onchange = renderList;
+      groupSel.addEventListener("change", () => { applyGroupModeUi(); renderList(); });
+      $("searchInput").addEventListener("input", renderList);
+      $("onlyUnanswered").addEventListener("change", renderList);
+      $("onlyIncorrect").addEventListener("change", renderList);
+
+      refreshSubs();
+      applyGroupModeUi();
+    }
+
+    function getFilteredQuestions() {
+      const logs = loadLogs();
+      const latest = latestResultById(logs);
+      const qSearch = String($("searchInput").value || "").trim().toLowerCase();
+      const mode = String($("groupMode").value);
+      const parent = String($("parentFilter").value || "").trim();
+      const sub = String($("subFilter").value || "").trim();
+      const onlyUnanswered = $("onlyUnanswered").checked;
+      const onlyIncorrect = $("onlyIncorrect").checked;
+
+      return QUESTIONS.filter((q) => {
+        if (mode !== "session") {
+          if (parent && qCategoryParent(q) !== parent) return false;
+          if (mode === "cat-parent-sub" && sub && qCategorySub(q) !== sub) return false;
+        }
+        if (qSearch) {
+          const hay = `${q.id} ${q.question} ${q.source || ""}`.toLowerCase();
+          if (!hay.includes(qSearch)) return false;
+        }
+        const r = latest.get(q.id);
+        const isAnswered = !!r;
+        const isCorrect = r ? r.isCorrect : false;
+        if (onlyUnanswered && isAnswered) return false;
+        if (onlyIncorrect && (!isAnswered || isCorrect)) return false;
+        return true;
+      });
+    }
+
+    // --- List Render ---
+    function renderList() {
+      const logs = loadLogs();
+      const latest = latestResultById(logs);
+      const listEl = $("quizList");
+      listEl.innerHTML = "";
+
+      const filtered = getFilteredQuestions();
+      const mode = String($("groupMode").value);
+      let globalIndex = 0;
+
+      const makeCard = (q) => {
+        globalIndex++;
+        const card = document.createElement("div");
+        card.className = "quiz-card fade-in";
+        card.style.animationDelay = `${Math.min(globalIndex * 0.03, 0.5)}s`;
+
+        const title = document.createElement("div");
+        title.className = "quiz-card-title";
+        title.textContent = `${globalIndex}. ${q.question.substring(0, 80)}${q.question.length > 80 ? '...' : ''}`;
+
+        const meta = document.createElement("div");
+        meta.className = "quiz-card-meta";
+
+        const r = latest.get(q.id);
+        let badge = `<span class="badge badge-gray">未回答</span>`;
+        if (r) {
+          badge = r.isCorrect ? `<span class="badge badge-green">正解</span>` : `<span class="badge badge-red">不正解</span>`;
+        }
+        meta.innerHTML = `${badge}<span>ID: ${escapeHtml(q.id)}</span> ${q.source ? `<span>• ${escapeHtml(q.source)}</span>` : ''}`;
+
+        card.appendChild(title);
+        card.appendChild(meta);
+        card.onclick = () => setRoute(q.id);
+        return card;
+      };
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="empty">条件に一致する問題がありません。</div>`;
+        return;
+      }
+
+      if (mode === "cat-parent-sub") {
+        const grouped = groupByParentSub(filtered);
+        for (const [p, subMap] of grouped.entries()) {
+          const pSec = document.createElement("section");
+          pSec.innerHTML = `<h3 class="parent-title">${escapeHtml(p)}</h3>`;
+          for (const [s, arr] of subMap.entries()) {
+            const sSec = document.createElement("section");
+            sSec.innerHTML = `<h4 class="category-title">${escapeHtml(s)} <span style="font-size:0.8rem; color:var(--c-text-sub); font-weight:normal">(${arr.length}問)</span></h4>`;
+            const grid = document.createElement("div");
+            grid.className = "quiz-list";
+            for (const q of arr) grid.appendChild(makeCard(q));
+            sSec.appendChild(grid);
+            pSec.appendChild(sSec);
+          }
+          listEl.appendChild(pSec);
+        }
+      } else if (mode === "cat-parent" || mode === "session") {
+        const grouped = mode === "cat-parent" ? groupByParent(filtered) : groupBySession(filtered);
+        for (const [key, arr] of grouped.entries()) {
+          const sec = document.createElement("section");
+          sec.innerHTML = `<h3 class="parent-title">${escapeHtml(key)} <span style="font-size:1rem; color:var(--c-text-sub); font-weight:normal">(${arr.length}問)</span></h3>`;
+          const grid = document.createElement("div");
+          grid.className = "quiz-list";
+          for (const q of arr) grid.appendChild(makeCard(q));
+          sec.appendChild(grid);
+          listEl.appendChild(sec);
+        }
+      }
+    }
+
+    // --- Quiz Utils ---
+    const uniqSorted = (arr) => Array.from(new Set(arr)).sort((a, b) => a - b);
+    const arraysEqual = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+
+    // --- Quiz Render ---
+    function renderQuestion(q) {
+      const resultEl = $("result");
+      resultEl.innerHTML = "";
+      resultEl.className = "result";
+
+      $("qid").querySelector("span").textContent = q.id;
+      $("qcategory").querySelector("span").textContent = q.category || "未分類";
+      $("qsource").querySelector("span").textContent = q.source || "不明";
+      $("question").textContent = q.question;
+
+      const choicesEl = $("choices");
+      choicesEl.innerHTML = "";
+      const tpl = $("choice-template");
+
+      const sessionRes = SESSION_RESULTS.get(String(q.id));
+      const isAnsweredThisSession = !!sessionRes;
+      const selected = new Set();
+
+      for (let i = 0; i < q.choices.length; i++) {
+        const c = q.choices[i];
+        const node = tpl.content.firstElementChild.cloneNode(true);
+
+        const input = node.querySelector(".choice-input");
+        const text = node.querySelector(".choice-text");
+        const choiceInfo = node.querySelector(".choice-info");
+        const overview = node.querySelector(".choice-overview");
+        const btn = node.querySelector(".choice-toggle-detail");
+        const detail = node.querySelector(".choice-detail");
+        const detailContent = node.querySelector(".choice-detail-content");
+        const link = node.querySelector(".choice-link");
+
+        text.textContent = c.text || "";
+        input.disabled = isAnsweredThisSession;
+
+        if (sessionRes) {
+          input.checked = sessionRes.selected.includes(i);
+          node.classList.add("disabled");
+          choiceInfo.hidden = false;
+          
+          if (q.correct.includes(i)) {
+             node.classList.add("is-correct");
+          } else if (input.checked) {
+             node.classList.add("is-wrong");
+          }
+          
+          if (c.overview) {
+            overview.hidden = false;
+            overview.textContent = c.overview;
+          }
+        }
+
+        detailContent.textContent = c.detail || "";
+        if (c.link) { link.href = c.link; } else { link.hidden = true; }
+
+        btn.disabled = !isAnsweredThisSession;
+        btn.addEventListener("click", () => {
+          const isOpen = !detail.hidden;
+          detail.hidden = isOpen;
+          btn.classList.toggle("is-open", !isOpen);
+          btn.querySelector("span").textContent = isOpen ? "解説を読む" : "解説を閉じる";
+        });
+
+        if (!isAnsweredThisSession) {
+          input.addEventListener("change", () => {
+            if (input.checked) selected.add(i); else selected.delete(i);
+          });
+        }
+
+        choicesEl.appendChild(node);
+      }
+
+      $("submitBtn").disabled = isAnsweredThisSession;
+      $("submitBtn").onclick = () => {
+        if (isAnsweredThisSession || selected.size === 0) return;
+        const sel = uniqSorted(Array.from(selected));
+        const correct = uniqSorted(q.correct || []);
+        const isCorrect = arraysEqual(sel, correct);
+
+        addLog({ t: Date.now(), id: String(q.id), category: String(q.category || ""), selected: sel, correct, isCorrect });
+        SESSION_RESULTS.set(String(q.id), { selected: sel, isCorrect });
+        renderQuestion(q);
+      };
+
+      const ids = QUESTIONS.map((x) => String(x.id));
+      const idx = ids.indexOf(String(q.id));
+
+      $("prevBtn").disabled = idx <= 0;
+      $("nextBtn").disabled = idx < 0 || idx >= ids.length - 1;
+
+      $("prevBtn").onclick = () => { if (idx > 0) setRoute(ids[idx - 1]); };
+      $("nextBtn").onclick = () => { if (idx < ids.length - 1) setRoute(ids[idx + 1]); };
+
+      if (sessionRes) {
+        resultEl.innerHTML = sessionRes.isCorrect 
+          ? `<div class="result-banner ok">🎉 正解！</div>`
+          : `<div class="result-banner ng">❌ 不正解</div>`;
+      }
+    }
+
+    // --- Boot ---
+    async function main() {
+      $("status").textContent = "問題を読み込んでいます...";
+      const rawData = await loadQuestions();
+      
+      QUESTIONS = (Array.isArray(rawData) ? rawData : []).map((q) => ({
+        id: String(q.id || ""),
+        category: String(q.category || ""),
+        source: String(q.source || ""),
+        question: String(q.question || ""),
+        choices: Array.isArray(q.choices) ? q.choices : [],
+        correct: Array.isArray(q.correct_indices) ? q.correct_indices : (Array.isArray(q.correct) ? q.correct : []),
+      }));
+
+      $("status").textContent = "";
+      setupFilters();
+      syncViewFromUrl();
+    }
+
+    main();
+  </script>
 </body>
 </html>
