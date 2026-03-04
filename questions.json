@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-network-icmp",
+    "source": "令和6年秋期　問34",
+    "question": "IPv4ネットワークにおけるICMPの機能として、適切なものはどれか。",
+    "choices": [
+      {
+        "text": "MACアドレスからIPアドレスを解決する",
+        "overview": "誤り。RARPの機能である。",
+        "detail": "MACアドレスからIPアドレスを求める機能はRARPの説明であり、ICMPはIP通信におけるエラー通知や制御メッセージを扱うプロトコルである。",
+        "link": ""
+      },
+      {
+        "text": "グローバルIPとプライベートIPを相互変換する",
+        "overview": "誤り。NATの機能である。",
+        "detail": "グローバルIPアドレスとプライベートIPアドレスの変換はNATの機能であり、ICMPはアドレス変換を行わない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.0#bookmark=id.ao6clqtm7ng"
+      },
+      {
+        "text": "IPパケットの送達エラーなどを送信元に通知する",
+        "overview": "正しい。IP通信のエラー通知や制御メッセージを扱う。",
+        "detail": "ICMPはIPの補助プロトコルであり、宛先到達不能、TTL超過、リダイレクトなどの制御メッセージを送信元ホストに通知する。pingによる疎通確認もICMPを利用している。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.0#bookmark=id.tcas09xo437i"
+      },
+      {
+        "text": "IPアドレスを一元管理し動的に割り当てる",
+        "overview": "誤り。DHCPの機能である。",
+        "detail": "IPアドレスを動的に割り当てる機能はDHCPの役割であり、ICMPはアドレス管理機能を持たない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.0#bookmark=id.2dvnd0n1bnwk"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "category": "テクノロジ系 / ネットワーク"
+  },
+  {
     "id": "ap-tech-storage-fc-interface",
     "source": "令和6年秋期　問11",
     "question": "ストレージのインタフェースとして用いられるFC（ファイバチャネル）の特徴として、適切なものはどれか。",
@@ -803,41 +838,6 @@
       1
     ],
     "category": "ストラテジ系 / 企業と法務"
-  },
-  {
-    "id": "ap-tech-network-icmp",
-    "source": "令和6年秋期　問34",
-    "question": "IPv4ネットワークにおけるICMPの機能として、適切なものはどれか。",
-    "choices": [
-      {
-        "text": "MACアドレスからIPアドレスを解決する",
-        "overview": "誤り。RARPの機能である。",
-        "detail": "MACアドレスからIPアドレスを求める機能はRARPの説明であり、ICMPはIP通信におけるエラー通知や制御メッセージを扱うプロトコルである。",
-        "link": ""
-      },
-      {
-        "text": "グローバルIPとプライベートIPを相互変換する",
-        "overview": "誤り。NATの機能である。",
-        "detail": "グローバルIPアドレスとプライベートIPアドレスの変換はNATの機能であり、ICMPはアドレス変換を行わない。",
-        "link": ""
-      },
-      {
-        "text": "IPパケットの送達エラーなどを送信元に通知する",
-        "overview": "正しい。IP通信のエラー通知や制御メッセージを扱う。",
-        "detail": "ICMPはIPの補助プロトコルであり、宛先到達不能、TTL超過、リダイレクトなどの制御メッセージを送信元ホストに通知する。pingによる疎通確認もICMPを利用している。",
-        "link": ""
-      },
-      {
-        "text": "IPアドレスを一元管理し動的に割り当てる",
-        "overview": "誤り。DHCPの機能である。",
-        "detail": "IPアドレスを動的に割り当てる機能はDHCPの役割であり、ICMPはアドレス管理機能を持たない。",
-        "link": ""
-      }
-    ],
-    "correct_indices": [
-      2
-    ],
-    "category": "テクノロジ系 / ネットワーク"
   },
   {
     "id": "ap-mgmt-audit-walkthrough",
