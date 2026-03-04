@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-network-ftp-port",
+    "source": "令和7年春期　問33",
+    "question": "TCP/IPネットワークで、データ転送用と制御用とに異なるウェルノウンポート番号が割り当てられているプロトコルはどれか。",
+    "choices": [
+      {
+        "text": "FTP",
+        "overview": "FTPはデータ転送用と制御用で異なるポート番号を使用する。",
+        "detail": "FTP（File Transfer Protocol）は、制御用ポートとしてTCP21を使用し、データ転送用としてTCP20を使用する。制御チャネルとデータチャネルを分離することでファイル転送を実現する。",
+        "link": ""
+      },
+      {
+        "text": "POP3",
+        "overview": "POP3は電子メール受信に使用される単一ポートのプロトコルである。",
+        "detail": "POP3（Post Office Protocol version 3）は、メールサーバからメールを受信するためのプロトコルであり、通常TCP110を使用する。データ転送用と制御用でポートを分ける仕組みは持たない。",
+        "link": ""
+      },
+      {
+        "text": "SMTP",
+        "overview": "SMTPは電子メール送信に使用される単一ポートのプロトコルである。",
+        "detail": "SMTP（Simple Mail Transfer Protocol）はメール送信に使用されるプロトコルであり、通常TCP25を使用する。FTPのようにデータ転送と制御でポートを分ける構造ではない。",
+        "link": ""
+      },
+      {
+        "text": "SNMP",
+        "overview": "SNMPはネットワーク管理用のプロトコルでありデータ転送と制御を分けた構造ではない。",
+        "detail": "SNMP（Simple Network Management Protocol）はネットワーク機器の監視や管理を行うプロトコルであり、通常UDP161（要求）とUDP162（トラップ）を使用する。FTPのようにデータ転送用と制御用のポートを分けるプロトコルではない。",
+        "link": ""
+      }
+    ],
+    "correct_indices": [
+      0
+    ],
+    "category": "テクノロジ系 / ネットワーク"
+  },
+  {
     "id": "ap-tech-network-snmp",
     "source": "平成26年春期　問34",
     "question": "TCP/IPの環境で使用されるプロトコルのうち、構成機器や障害時の情報収集を行うために使用されるネットワーク管理プロトコルはどれか。",
