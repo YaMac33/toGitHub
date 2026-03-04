@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-hardware-tamper-resistance",
+    "source": "令和6年秋期　問24",
+    "question": "マイクロプロセッサの耐タンパ性を向上させる手法として、適切なものはどれか。",
+    "choices": [
+      {
+        "text": "ESD（Electrostatic Discharge）に対する耐性を強化する。",
+        "overview": "静電気対策であり物理的解析への耐性向上とは直接関係しない。",
+        "detail": "ESD対策は静電気放電による破壊を防ぐ信頼性向上策である。耐タンパ性は、不正な解析や改ざん、情報抽出への耐性を高めることを目的とするため、目的が異なる。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.hy2wudf0h0qc#bookmark=id.2dmkllqw246w"
+      },
+      {
+        "text": "チップ検査終了後に検査用パッドを残しておく。",
+        "overview": "検査用パッドは内部信号へのアクセス経路となり耐タンパ性を低下させる。",
+        "detail": "検査用パッドが残存すると、攻撃者がプロービングなどで内部回路へアクセスしやすくなる。耐タンパ性を高めるには、不要なデバッグ・検査経路を無効化または除去することが望ましい。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.hy2wudf0h0qc#bookmark=id.2dmkllqw246w"
+      },
+      {
+        "text": "チップ内部を物理的に解析しようとすると、内部回路が破壊されるようにする。",
+        "overview": "物理的解析時に回路を破壊する仕組みは耐タンパ性向上策である。",
+        "detail": "耐タンパ性向上策として、メッシュ配線やセンサーを用い、外部からの物理的侵入や解析を検知した際に内部データや回路を破壊・消去する仕組みがある。これによりリバースエンジニアリングや情報抽出を困難にできる。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.hy2wudf0h0qc#bookmark=id.2dmkllqw246w"
+      },
+      {
+        "text": "内部メモリを物理アドレスに合わせて整然と配置する。",
+        "overview": "整然とした配置は解析を容易にし耐タンパ性を低下させる。",
+        "detail": "内部構造が規則的で分かりやすいほど、攻撃者による解析やリバースエンジニアリングが容易になる。耐タンパ性を高めるには、回路の難読化やランダム化などの工夫が有効である。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.hy2wudf0h0qc#bookmark=id.2dmkllqw246w"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "category": "テクノロジ系 / ハードウェア"
+  },
+  {
     "id": "ap-law-sensitive-personal-info",
     "source": "令和6年春期　問30",
     "question": "個人情報のうち，個人情報保護法における要配慮個人情報に該当するものはどれか。",
@@ -2588,41 +2623,6 @@
       0
     ],
     "category": "テクノロジ系 / システム構成要素"
-  },
-  {
-    "id": "ap-tech-hardware-tamper-resistance",
-    "source": "令和6年秋期　問24",
-    "question": "マイクロプロセッサの耐タンパ性を向上させる手法として、適切なものはどれか。",
-    "choices": [
-      {
-        "text": "ESD（Electrostatic Discharge）に対する耐性を強化する。",
-        "overview": "静電気対策であり物理的解析への耐性向上とは直接関係しない。",
-        "detail": "ESD対策は静電気放電による破壊を防ぐ信頼性向上策である。耐タンパ性は、不正な解析や改ざん、情報抽出への耐性を高めることを目的とするため、目的が異なる。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.hy2wudf0h0qc#bookmark=id.2dmkllqw246w"
-      },
-      {
-        "text": "チップ検査終了後に検査用パッドを残しておく。",
-        "overview": "検査用パッドは内部信号へのアクセス経路となり耐タンパ性を低下させる。",
-        "detail": "検査用パッドが残存すると、攻撃者がプロービングなどで内部回路へアクセスしやすくなる。耐タンパ性を高めるには、不要なデバッグ・検査経路を無効化または除去することが望ましい。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.hy2wudf0h0qc#bookmark=id.2dmkllqw246w"
-      },
-      {
-        "text": "チップ内部を物理的に解析しようとすると、内部回路が破壊されるようにする。",
-        "overview": "物理的解析時に回路を破壊する仕組みは耐タンパ性向上策である。",
-        "detail": "耐タンパ性向上策として、メッシュ配線やセンサーを用い、外部からの物理的侵入や解析を検知した際に内部データや回路を破壊・消去する仕組みがある。これによりリバースエンジニアリングや情報抽出を困難にできる。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.hy2wudf0h0qc#bookmark=id.2dmkllqw246w"
-      },
-      {
-        "text": "内部メモリを物理アドレスに合わせて整然と配置する。",
-        "overview": "整然とした配置は解析を容易にし耐タンパ性を低下させる。",
-        "detail": "内部構造が規則的で分かりやすいほど、攻撃者による解析やリバースエンジニアリングが容易になる。耐タンパ性を高めるには、回路の難読化やランダム化などの工夫が有効である。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.hy2wudf0h0qc#bookmark=id.2dmkllqw246w"
-      }
-    ],
-    "correct_indices": [
-      2
-    ],
-    "category": "テクノロジ系 / ハードウェア"
   },
   {
     "id": "ap-tech-ai-association-analysis",
