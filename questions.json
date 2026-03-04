@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-security-darknet",
+    "source": "令和6年秋期　問38",
+    "question": "インターネット上の使われていないIPアドレス空間に大量に届くパケットはどれか。",
+    "choices": [
+      {
+        "text": "インターネット上で公開されているWebサイトに対してPCから送信するパケット",
+        "overview": "利用中のサーバ宛ての通信であり未使用IP空間には届かない。",
+        "detail": "公開Webサイトは稼働中のIPアドレスを持つため、通常の閲覧で送信されるHTTP/HTTPSパケットは未使用アドレス空間（ダークネット）には到達しない。ダークネット観測で多いのは、宛先を無差別に探索するスキャンなど、実在しない宛先にも送ってしまう通信である。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
+      },
+      {
+        "text": "インターネットにつながっており、実在するIoT機器から実在するサーバに送信されるパケット",
+        "overview": "実在する宛先への正常通信であり未使用IP空間には届かない。",
+        "detail": "IoT機器がクラウド等の実在サーバに送る通信は、DNS解決や設定済みアドレスに基づき有効な宛先へ送信される。未使用IP宛てになる必然性がなく、ダークネットで大量観測される性質の通信ではない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
+      },
+      {
+        "text": "攻撃者やマルウェアがIoT機器やサーバなどの攻撃対象を探すために送信するパケット",
+        "overview": "宛先を無差別に走査するため未使用IPにも多数送られダークネットで観測される。",
+        "detail": "攻撃対象探索（スキャン）は広いIP範囲へパケットを送るため、未割当・未使用のIPアドレスにも一定割合で到達する。ダークネット（未使用IP空間）の観測で多いのは、マルウェアの感染拡大や脆弱性探索を目的としたスキャン、あるいは送信元詐称に起因する応答などである。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
+      },
+      {
+        "text": "有効な電子メールアドレスに対して攻撃者が標的型攻撃メールを送信するSMTPのパケット",
+        "overview": "特定のメールサーバ宛ての通信であり未使用IP空間には届かない。",
+        "detail": "標的型攻撃メールは宛先ドメインのMXなどで特定された実在メールサーバにSMTP通信を行うため、未使用IP宛てに大量送信される形にならない。ダークネットで大量観測されるのは、宛先を特定せずに広範囲へ投げる探索系トラフィックである。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "category": "テクノロジ系 / セキュリティ"
+  },
+  {
     "id": "ap-tech-architecture-microservices",
     "source": "令和6年秋期　問47",
     "question": "マイクロサービスアーキテクチャを利用するとき、システム構築上の利点はどれか。",
@@ -1818,41 +1853,6 @@
       2
     ],
     "category": "ストラテジ系 / 技術戦略マネジメント"
-  },
-  {
-    "id": "ap-tech-security-darknet",
-    "source": "令和6年秋期　問38",
-    "question": "インターネット上の使われていないIPアドレス空間に大量に届くパケットはどれか。",
-    "choices": [
-      {
-        "text": "インターネット上で公開されているWebサイトに対してPCから送信するパケット",
-        "overview": "利用中のサーバ宛ての通信であり未使用IP空間には届かない。",
-        "detail": "公開Webサイトは稼働中のIPアドレスを持つため、通常の閲覧で送信されるHTTP/HTTPSパケットは未使用アドレス空間（ダークネット）には到達しない。ダークネット観測で多いのは、宛先を無差別に探索するスキャンなど、実在しない宛先にも送ってしまう通信である。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
-      },
-      {
-        "text": "インターネットにつながっており、実在するIoT機器から実在するサーバに送信されるパケット",
-        "overview": "実在する宛先への正常通信であり未使用IP空間には届かない。",
-        "detail": "IoT機器がクラウド等の実在サーバに送る通信は、DNS解決や設定済みアドレスに基づき有効な宛先へ送信される。未使用IP宛てになる必然性がなく、ダークネットで大量観測される性質の通信ではない。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
-      },
-      {
-        "text": "攻撃者やマルウェアがIoT機器やサーバなどの攻撃対象を探すために送信するパケット",
-        "overview": "宛先を無差別に走査するため未使用IPにも多数送られダークネットで観測される。",
-        "detail": "攻撃対象探索（スキャン）は広いIP範囲へパケットを送るため、未割当・未使用のIPアドレスにも一定割合で到達する。ダークネット（未使用IP空間）の観測で多いのは、マルウェアの感染拡大や脆弱性探索を目的としたスキャン、あるいは送信元詐称に起因する応答などである。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
-      },
-      {
-        "text": "有効な電子メールアドレスに対して攻撃者が標的型攻撃メールを送信するSMTPのパケット",
-        "overview": "特定のメールサーバ宛ての通信であり未使用IP空間には届かない。",
-        "detail": "標的型攻撃メールは宛先ドメインのMXなどで特定された実在メールサーバにSMTP通信を行うため、未使用IP宛てに大量送信される形にならない。ダークネットで大量観測されるのは、宛先を特定せずに広範囲へ投げる探索系トラフィックである。",
-        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
-      }
-    ],
-    "correct_indices": [
-      2
-    ],
-    "category": "テクノロジ系 / セキュリティ"
   },
   {
     "id": "ap-tech-ai-association-analysis",
