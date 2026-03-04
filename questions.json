@@ -1,5 +1,40 @@
 [
   {
+    "id": "ap-tech-network-snmp",
+    "source": "平成26年春期　問34",
+    "question": "TCP/IPの環境で使用されるプロトコルのうち、構成機器や障害時の情報収集を行うために使用されるネットワーク管理プロトコルはどれか。",
+    "choices": [
+      {
+        "text": "NNTP",
+        "overview": "NNTPはネットニュースの配信に使用されるプロトコルでありネットワーク管理には用いない。",
+        "detail": "NNTP（Network News Transfer Protocol）は、インターネット上のニュースグループに記事を配信・取得するためのプロトコルである。ネットワーク機器の状態監視や管理には利用されない。",
+        "link": ""
+      },
+      {
+        "text": "NTP",
+        "overview": "NTPはネットワーク上の機器の時刻を同期するためのプロトコルである。",
+        "detail": "NTP（Network Time Protocol）は、ネットワークに接続されたコンピュータの時刻を正確に同期させるためのプロトコルである。ログ管理や認証などで重要だが、機器監視や障害情報収集を目的とするプロトコルではない。",
+        "link": ""
+      },
+      {
+        "text": "SMTP",
+        "overview": "SMTPは電子メールを送信するためのプロトコルでありネットワーク管理には用いない。",
+        "detail": "SMTP（Simple Mail Transfer Protocol）は、メールクライアントやメールサーバが電子メールを送信する際に使用するプロトコルである。ネットワーク機器の監視や管理機能は持たない。",
+        "link": ""
+      },
+      {
+        "text": "SNMP",
+        "overview": "SNMPはネットワーク機器の監視や管理のために使用されるプロトコルである。",
+        "detail": "SNMP（Simple Network Management Protocol）は、ルータ、スイッチ、サーバなどのネットワーク機器の状態情報を収集し、監視や制御を行うためのプロトコルである。障害情報の取得や性能監視などネットワーク管理に広く利用される。",
+        "link": ""
+      }
+    ],
+    "correct_indices": [
+      3
+    ],
+    "category": "テクノロジ系 / ネットワーク"
+  },
+  {
     "id": "ap-tech-network-ipv4-multicast",
     "source": "令和5年秋期　問35",
     "question": "IPv4ネットワークにおけるマルチキャストの使用例に関する記述として、適切なものはどれか。",
