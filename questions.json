@@ -88,6 +88,138 @@
     }
   },
   {
+    "id": "ap-tech-security-password-list-attack",
+    "question": "パスワードリスト攻撃に該当するものはどれか。",
+    "choices": [
+      {
+        "text": "一般的な単語のリストでログインを試行する",
+        "overview": "誤り。辞書攻撃に該当する。",
+        "detail": "「辞書攻撃」は、辞書に載っているような単語やよく使われる文字列のリストを用いて、一つのIDに対してログインを試行する攻撃手法です。不特定多数から流出した実在のリストを用いる「パスワードリスト攻撃」とは区別されます。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.dg4r2rupd11"
+      },
+      {
+        "text": "ハッシュ値対照表でパスワードを解析する",
+        "overview": "誤り。レインボーテーブル攻撃である。",
+        "detail": "「レインボーテーブル攻撃」は、ハッシュ値から元のパスワードを高速に逆引きするために、あらかじめ作成された膨大な対照表（レインボーテーブル）を使用する解析手法です。オンラインでのログイン試行ではありません。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.ygbisvbm53"
+      },
+      {
+        "text": "流出したIDとパスワードで他サイトにログインを試行する",
+        "overview": "正しい。パスワードリスト攻撃の説明である。",
+        "detail": "「パスワードリスト攻撃」は、どこかのサイトから流出したIDとパスワードのリストを使い、他の複数のサイトでも同じ組み合わせが使い回されていることを狙ってログインを試行する攻撃です。利用者の「パスワード使い回し」の習慣を悪用するため、正規のログインと区別がつきにくいという特徴があります。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.dg4r2rupd11"
+      },
+      {
+        "text": "認証操作を録画して再利用する",
+        "overview": "誤り。ショルダーハッキングに該当する。",
+        "detail": "パスワード入力などの認証操作を直接、あるいは録画等で盗み見る行為は「ショルダーハッキング（肩越しに見る）」と呼ばれ、ソーシャルエンジニアリングの一種に分類されます。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.dg4r2rupd11"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "taxonomy": {
+      "parent": "テクノロジ系",
+      "child": "情報セキュリティ",
+      "path": [
+        "テクノロジ系",
+        "情報セキュリティ"
+      ]
+    },
+    "source": {
+      "label": "令和6年秋期　問40"
+    }
+  },
+  {
+    "id": "ap-tech-ux-design",
+    "question": "システムの要件を検討する際に用いるUXデザインの説明として、適切なものはどれか。",
+    "choices": [
+      {
+        "text": "システム設計時に、システム稼働後の個人情報保護などのセキュリティ対策を組み込む設計思想のこと",
+        "overview": "プライバシーバイデザインの説明でありUXデザインではない。",
+        "detail": "これは「プライバシーバイデザイン（PbD）」の説明です。設計の初期段階からプライバシー保護を組み込む考え方であり、ユーザーの体験（楽しさや心地よさ）を主眼に置くUXデザインとは異なります。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.5pai1rv0uhez#bookmark=id.oyw1iiwv7drq"
+      },
+      {
+        "text": "システムの個々のアプリケーションを利用者が享受するサービスとして捉え、その組合せでシステムを構築する設計思想のこと",
+        "overview": "SOAの説明でありUXデザインではない。",
+        "detail": "これは「SOA（Service Oriented Architecture：サービス指向アーキテクチャ）」の説明です。ビジネスプロセスをサービス単位で構築するシステム構造の考え方です。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.5pai1rv0uhez#bookmark=id.9sssqkl4hlpz"
+      },
+      {
+        "text": "システムを利用する際にシステムの機能が利用者にもたらす有効性、操作性などに加え、快適さ、安心感、楽しさなどの体験価値を重視する設計思想のこと",
+        "overview": "利用者の体験価値を重視する設計思想でありUXデザインの説明である。",
+        "detail": "UX（User Experience）デザインは、製品やサービスを通じて得られる「ユーザーの体験」そのものを設計の対象とします。単に使いやすい（UI/ユーザビリティ）だけでなく、使って楽しい、満足するといった感情的な価値までを含めた一連の体験を最適化することを目指します。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.5pai1rv0uhez#bookmark=id.pm9pp0bv7dm1"
+      },
+      {
+        "text": "接続仕様や仕組みが公開されている他社のアプリケーションを活用してシステムを構築することによって、システム開発の生産性を高める設計思想のこと",
+        "overview": "API連携開発の説明でありUXデザインではない。",
+        "detail": "これは「API連携」や「オープンAPI」を活用した開発手法の説明です。外部リソースの活用による効率化を目的としており、体験設計であるUXデザインとは異なります。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.5pai1rv0uhez#bookmark=id.jweuvyja8vwa"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "taxonomy": {
+      "parent": "マネジメント系",
+      "child": "システム開発技術",
+      "path": [
+        "マネジメント系",
+        "システム開発技術"
+      ]
+    },
+    "source": {
+      "label": "令和6年秋期　問65"
+    }
+  },
+  {
+    "id": "ap-strategy-innovation-darwin-sea",
+    "question": "企業における研究、開発、事業化、そして産業化へとステージが移行する過程の中で、事業化から産業化に移行するときの、競合製品との競争過程にある障壁を何と呼ぶか。",
+    "choices": [
+      {
+        "text": "キャズム",
+        "overview": "初期市場とメイン市場の間の普及の溝を指し事業化と産業化の壁ではない。",
+        "detail": "キャズムは、ハイテク製品がアーリーアダプターからアーリーマジョリティへと普及する際に直面する「大きな溝（断絶）」を指します。マーケティング理論の用語であり、技術開発プロセスの障壁とは文脈が異なります。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
+      },
+      {
+        "text": "死の谷",
+        "overview": "開発と事業化の間の資金や事業化の壁を指す。",
+        "detail": "「死の谷（Valley of Death）」は、開発段階を終えた技術が、実際に事業として立ち上がる（製品化・量産化）までの間に直面する、資金調達や経営上の困難を指します。開発と事業化の間の壁です。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
+      },
+      {
+        "text": "ダーウィンの海",
+        "overview": "事業化後に市場競争を勝ち抜けず淘汰される産業化の壁を指す。",
+        "detail": "「ダーウィンの海（Darwinian Sea）」は、事業化した製品が市場に出た後、競合他社との熾烈な生存競争（自然淘汰）を勝ち抜き、産業として確立されるまでに立ちはだかる障壁を指します。事業化から産業化へ移行する際の壁であり、設問の記述と一致します。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
+      },
+      {
+        "text": "魔の川",
+        "overview": "研究と開発の間にある実用化の壁を指す。",
+        "detail": "「魔の川（Devil River）」は、基礎研究の成果が製品化に向けた応用開発へと結びつく際に直面する障壁を指します。研究と開発の間の壁です。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.azrt0ks02vo3#bookmark=id.1fghd55r5v5x"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "taxonomy": {
+      "parent": "ストラテジ系",
+      "child": "技術戦略マネジメント",
+      "path": [
+        "ストラテジ系",
+        "技術戦略マネジメント"
+      ]
+    },
+    "source": {
+      "label": "令和6年秋期　問70"
+    }
+  },
+  {
     "id": "ap-tech-db-base-eventual",
     "question": "BASE特性を満たし、ネットワーク上に分散した複数ノードから構成され、あるノードで更新した後に他ノードへ更新を反映するNoSQLデータベースシステムに関する記述として、適切なものはどれか。",
     "choices": [
@@ -129,6 +261,138 @@
     },
     "source": {
       "label": "令和7年秋期　問26"
+    }
+  },
+  {
+    "id": "ap-tech-security-darknet",
+    "question": "インターネット上の使われていないIPアドレス空間に大量に届くパケットはどれか。",
+    "choices": [
+      {
+        "text": "インターネット上で公開されているWebサイトに対してPCから送信するパケット",
+        "overview": "誤り。利用中のサーバ宛ての通信であり未使用IP空間には届かない。",
+        "detail": "公開Webサイトは稼働中の（割り当てられた）IPアドレスを持つため、通常の閲覧で送信されるHTTP/HTTPSパケットは未使用アドレス空間（ダークネット）には到達しません。ダークネット観測の対象は、宛先を無差別に探索するスキャンなど、実在しない宛先にも送られてしまう通信です。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
+      },
+      {
+        "text": "インターネットにつながっており、実在するIoT機器から実在するサーバに送信されるパケット",
+        "overview": "誤り。実在する宛先への正常通信であり未使用IP空間には届かない。",
+        "detail": "IoT機器が特定のクラウドサーバ等に送る通信は、有効な宛先へ送信されます。未使用IP宛てに届く必然性がなく、ダークネットで大量に観測される性質の通信ではありません。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
+      },
+      {
+        "text": "攻撃者やマルウェアがIoT機器やサーバなどの攻撃対象を探すために送信するパケット",
+        "overview": "正しい。宛先を無差別に走査するため未使用IPにも多数送られダークネットで観測される。",
+        "detail": "攻撃対象の探索（スキャン）は、特定の範囲のIPアドレスに対して無差別にパケットを送信します。このため、未割当・未使用のIPアドレス空間（ダークネット）にも一定割合でパケットが到達します。ダークネット観測を行うことで、マルウェアの感染拡大の予兆や、新たな脆弱性を狙った攻撃活動を把握することが可能です。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
+      },
+      {
+        "text": "有効な電子メールアドレスに対して攻撃者が標的型攻撃メールを送信するSMTPのパケット",
+        "overview": "誤り。特定のメールサーバ宛ての通信であり未使用IP空間には届かない。",
+        "detail": "標的型攻撃メールは、特定の組織や個人のメールサーバ（実在するIPアドレス）を狙って送信されます。宛先を特定せずに広範囲へ投げる探索系トラフィックではないため、ダークネットで観測されることはありません。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.vw7jy3tw8uev#bookmark=id.os9slp1tdjvw"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "taxonomy": {
+      "parent": "テクノロジ系",
+      "child": "情報セキュリティ",
+      "path": [
+        "テクノロジ系",
+        "情報セキュリティ"
+      ]
+    },
+    "source": {
+      "label": "令和6年秋期　問38"
+    }
+  },
+  {
+    "id": "ap-tech-architecture-microservices",
+    "question": "マイクロサービスアーキテクチャを利用するとき、システム構築上の利点はどれか。",
+    "choices": [
+      {
+        "text": "使用する技術要素を統一しやすい",
+        "overview": "誤り。各サービスは独立しており技術選択は統一前提ではない。",
+        "detail": "マイクロサービスでは、サービスごとに最適な言語やフレームワークを選択する「ポリグロット（多言語）」な開発が可能です。むしろ技術要素を一つに縛られないことが利点の一つであり、統一しやすさを追求するものではありません。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.1fjuq7apbrtk#bookmark=id.cfb38tlea4yz"
+      },
+      {
+        "text": "データ整合性を確保しやすい",
+        "overview": "誤り。分散データ管理により整合性確保は複雑になる。",
+        "detail": "各サービスが独自のデータベースを持つ「Database per Service」が基本であるため、モノリス（一枚岩）な構成に比べて、サービス間をまたぐデータの整合性（分散トランザクション等）の確保は非常に難易度が高くなります。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.1fjuq7apbrtk#bookmark=id.cfb38tlea4yz"
+      },
+      {
+        "text": "各サービスの変更がしやすい",
+        "overview": "正しい。サービス単位で独立して改修・デプロイできる。",
+        "detail": "個々の機能が疎結合なサービスとして独立しているため、ある特定の機能を改修・テスト・デプロイする際に、システム全体を再ビルドする必要がありません。この「独立したデプロイ可能性」が、開発速度の向上や変更への柔軟性をもたらします。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.1fjuq7apbrtk#bookmark=id.cfb38tlea4yz"
+      },
+      {
+        "text": "サービス呼出し回数が減りオーバーヘッドが削減できる",
+        "overview": "誤り。サービス間通信が増えオーバーヘッドが増加する場合がある。",
+        "detail": "機能を細かく分割するため、ネットワークを介したAPI呼び出しなどの通信回数はむしろ増加します。これにより、ネットワーク遅延（レイテンシ）や通信のオーバーヘッドが発生しやすくなります。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.1fjuq7apbrtk#bookmark=id.5xgd4vwc01po"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "taxonomy": {
+      "parent": "テクノロジ系",
+      "child": "システムアーキテクチャ",
+      "path": [
+        "テクノロジ系",
+        "システムアーキテクチャ"
+      ]
+    },
+    "source": {
+      "label": "令和6年秋期　問47"
+    }
+  },
+  {
+    "id": "ap-mgmt-service-rto-rlo",
+    "question": "サービスマネジメントにおいて、中断したサービスを復旧させるときの目標を定めた指標にRTO、RPO及びRLOがある。RTOとRLOとを定めた例として、適切なものはどれか。",
+    "choices": [
+      {
+        "text": "3時間前の状態に復旧し、利用者の50%以上に提供する",
+        "overview": "誤り。RPOとRLOを定めた例である。",
+        "detail": "「3時間前の状態に復旧」は、どの時点のデータまで戻すかという目標復旧時点（RPO: Recovery Point Objective）です。「利用者の50%以上に提供」は、どの程度の水準まで戻すかという目標復旧レベル（RLO: Recovery Level Objective）です。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.2iw1up1zswu6#bookmark=id.tm2rx392y8ps"
+      },
+      {
+        "text": "直前の状態に復旧し、終了時刻を延長する",
+        "overview": "誤り。RPOのみを定めた例である。",
+        "detail": "「直前の状態に復旧」はRPOに該当しますが、終了時刻の延長はサービスレベルの事後調整であり、復旧の目標指標であるRTOやRLOの定義には当てはまりません。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.2iw1up1zswu6#bookmark=id.tm2rx392y8ps"
+      },
+      {
+        "text": "1時間以内に1時間前の状態へ復旧する",
+        "overview": "誤り。RTOとRPOを定めた例である。",
+        "detail": "「1時間以内に」は、中断から復旧までにかける目標復旧時間（RTO: Recovery Time Objective）です。「1時間前の状態」は、失われるデータの許容範囲を示すRPOです。RLO（復旧水準）については触れられていません。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.2iw1up1zswu6#bookmark=id.tm2rx392y8ps"
+      },
+      {
+        "text": "1日以内に重要なサービスに限定して復旧する",
+        "overview": "正しい。RTOとRLOを定めた例である。",
+        "detail": "「1日以内に」という記述は、サービス再開までの時間的な目標であるRTOを示しています。「重要なサービスに限定して復旧」という記述は、全機能ではなく特定の範囲に絞った復旧水準を目指すRLOを示しています。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.2iw1up1zswu6#bookmark=id.tm2rx392y8ps"
+      }
+    ],
+    "correct_indices": [
+      3
+    ],
+    "taxonomy": {
+      "parent": "マネジメント系",
+      "child": "サービスマネジメント",
+      "path": [
+        "マネジメント系",
+        "サービスマネジメント"
+      ]
+    },
+    "source": {
+      "label": "令和6年秋期　問55"
     }
   },
   {
@@ -878,6 +1142,50 @@
     "source": {
       "label": "令和6年秋期　問9"
     }
+  },
+  {
+    "id": "ap-mgmt-service-saas-pricing-profit",
+    "source": {
+      "label": "令和6年春期　問55"
+    },
+    "taxonomy": {
+      "parent": "未分類",
+      "child": "未分類",
+      "path": [
+        "未分類",
+        "未分類"
+      ]
+    },
+    "question": "SaaS（Software as a Service）による新規サービスを提供するに当たって、顧客への課金方式を検討している。課金方式①～④のうち、想定利用状況に基づいて最も高い利益が得られる課金方式を採用したときの、年間利益は何万円か。ここで、新規サービスの課金は月ごとに行い、各月の想定利用状況は同じとする。また、新規サービスの運用に掛かる費用は1,050万円／年とする。\n\n（課金方式）\n① 月間のサービス利用時間による従量課金 4,000円／時間\n② 月間のトランザクション件数による従量課金 700円／件\n③ 月末時点のディスク割当て量による従量課金 300円／GB\n④ 月末時点の利用者ID数による従量課金 1,600円／ID\n\n〔想定利用状況〕\n・サービス利用時間 250時間／月\n・トランザクション件数 1,500件／月\n・月末時点のディスク割当て量 3,300GB\n・月末時点の利用者ID数 650ID",
+    "choices": [
+      {
+        "text": "150",
+        "overview": "最大売上となる方式②を選んだ場合の年間利益は210万円であり一致しない。",
+        "detail": "各方式の年間売上は①1,200万円、②1,260万円、③1,188万円、④1,248万円である。費用は1,050万円／年なので、最大売上の②の利益は1,260−1,050＝210万円となるため、150万円は誤りである。",
+        "link": ""
+      },
+      {
+        "text": "198",
+        "overview": "年間利益は210万円であり198万円ではない。",
+        "detail": "最大売上となる②（トランザクション課金）は、1,500件×12か月×700円＝1,260万円の売上である。そこから費用1,050万円を差し引くと210万円であり、198万円は計算結果と一致しない。",
+        "link": ""
+      },
+      {
+        "text": "210",
+        "overview": "方式②の年間売上1,260万円から費用1,050万円を引くと210万円となる。",
+        "detail": "方式②：1,500件／月×12か月×700円＝12,600,000円＝1,260万円（年間売上）。費用は1,050万円／年で一定なので、年間利益は1,260−1,050＝210万円。4方式の中で②が最も売上が高く、利益も最大となる。",
+        "link": ""
+      },
+      {
+        "text": "260",
+        "overview": "年間利益の最大は210万円であり260万円にはならない。",
+        "detail": "売上最大は方式②の1,260万円であり、費用1,050万円を差し引くと最大利益は210万円である。260万円の利益を得るには売上が少なくとも1,310万円必要だが、いずれの方式でも条件下では到達しない。",
+        "link": ""
+      }
+    ],
+    "correct_indices": [
+      2
+    ]
   },
   {
     "id": "ap-tech-reliability-fault-avoidance",
