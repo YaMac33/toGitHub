@@ -176,6 +176,50 @@
     }
   },
   {
+    "id": "ap-tech-network-vrrp",
+    "source": {
+      "label": "令和6年春期　問32"
+    },
+    "taxonomy": {
+      "parent": "未分類",
+      "child": "未分類",
+      "path": [
+        "未分類",
+        "未分類"
+      ]
+    },
+    "question": "ルータを冗長化するために用いられるプロトコルはどれか。",
+    "choices": [
+      {
+        "text": "PPP",
+        "overview": "PPPは2点間通信を行うためのプロトコルでありルータ冗長化の仕組みではない。",
+        "detail": "PPP（Point-to-Point Protocol）は、主にダイヤルアップ接続などで利用されるポイントツーポイント通信のためのプロトコルである。回線認証や圧縮などの機能を提供するが、ルータの冗長化や仮想ルータの構成には関係しない。",
+        "link": ""
+      },
+      {
+        "text": "RARP",
+        "overview": "RARPはMACアドレスからIPアドレスを取得するためのプロトコルであり冗長化とは無関係である。",
+        "detail": "RARP（Reverse Address Resolution Protocol）は、機器のMACアドレスから対応するIPアドレスを取得するためのプロトコルである。主にディスクレス端末の起動時などに利用されていたが、現在ではDHCPに置き換えられていることが多い。",
+        "link": ""
+      },
+      {
+        "text": "SNMP",
+        "overview": "SNMPはネットワーク機器を監視・管理するためのプロトコルであり冗長化の仕組みではない。",
+        "detail": "SNMP（Simple Network Management Protocol）は、ネットワーク機器の状態監視や設定管理を行うための管理プロトコルである。ルータやスイッチなどの情報収集を行うが、ルータを冗長化する機能は持たない。",
+        "link": ""
+      },
+      {
+        "text": "VRRP",
+        "overview": "VRRPは複数のルータで仮想ルータを構成して冗長化するプロトコルである。",
+        "detail": "VRRP（Virtual Router Redundancy Protocol）は、複数のルータで仮想ルータを構成し、通常は1台をマスタとして動作させ、障害時にはバックアップルータが自動的に引き継ぐことで通信を継続する仕組みを提供する。デフォルトゲートウェイの冗長化に利用される。",
+        "link": ""
+      }
+    ],
+    "correct_indices": [
+      3
+    ]
+  },
+  {
     "id": "ap-tech-network-poe",
     "source": {
       "label": "令和7年春期　問29"
@@ -1538,6 +1582,94 @@
     },
     "source": {
       "label": "令和○年春期　問○○"
+    }
+  },
+  {
+    "id": "ap-strategy-co-creation",
+    "question": "コ・クリエーション戦略の特徴として、適切なものはどれか。",
+    "choices": [
+      {
+        "text": "自社内の部門連携を強化し、自前主義で強みを発揮する",
+        "overview": "誤り。外部との協働ではなく自前主義の説明である。",
+        "detail": "コ・クリエーション戦略は顧客や外部パートナーとの協働による価値創造を重視する。自社内の部門間連携や自前主義に限定する考え方は、共創戦略の本質ではない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.ojo1en54g6mk#bookmark=id.8e7hgfxk35ke"
+      },
+      {
+        "text": "顧客が仕様を決め、企業がそのまま製造する",
+        "overview": "誤り。オーダーメイドやOEMの説明である。",
+        "detail": "顧客が仕様を決定し企業が製造する形態は受託生産やカスタマイズに近い。コ・クリエーションでは、顧客との対話や協働を通じて価値を共に創り出す点に特徴がある。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.ojo1en54g6mk#bookmark=id.7pw81qgwt7rw"
+      },
+      {
+        "text": "顧客や企業ネットワークと協働し、経験価値まで含めて差別化する",
+        "overview": "正しい。協働により経験価値を含む新たな価値を創造する戦略である。",
+        "detail": "コ・クリエーション戦略は、顧客やパートナーとの対話や協働を通じて、製品・サービスだけでなく顧客体験まで含めた価値を共創することを特徴とする。これによりエンゲージメントを高め、競争優位を確立する。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.ojo1en54g6mk#bookmark=id.yikc9mrnsyua"
+      },
+      {
+        "text": "M&Aによって経営資源を獲得し価値を創造する",
+        "overview": "誤り。これはM&A戦略の特徴である。",
+        "detail": "M&Aは企業買収などを通じて経営資源を獲得する戦略であり、外部と協働して価値を共に創るコ・クリエーション戦略とは目的と手法が異なる。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.ojo1en54g6mk#bookmark=id.urj0173g0hm5"
+      }
+    ],
+    "correct_indices": [
+      2
+    ],
+    "taxonomy": {
+      "parent": "ストラテジ系",
+      "child": "経営戦略マネジメント",
+      "path": [
+        "ストラテジ系",
+        "経営戦略マネジメント"
+      ]
+    },
+    "source": {
+      "label": "令和6年秋期　問69"
+    }
+  },
+  {
+    "id": "ap-tech-os-paging-advantage",
+    "question": "仮想記憶方式において、セグメンテーション方式と比較した場合のページング方式の長所はどれか。",
+    "choices": [
+      {
+        "text": "論理的単位でアクセス保護ができる",
+        "overview": "誤り。これはセグメンテーション方式の長所である。",
+        "detail": "セグメンテーション方式ではプログラムやデータなどの論理的単位で区分するため、論理構造に基づくアクセス保護が可能である。一方、ページング方式では固定長ページ単位で管理するため、論理単位での保護は困難である。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.w7tuf3si2ta5#bookmark=id.ffxmrsn2mtfk"
+      },
+      {
+        "text": "プログラム間で容易に記憶領域を共用できる",
+        "overview": "誤り。これはセグメンテーション方式の特徴である。",
+        "detail": "セグメンテーション方式では論理単位で区画されるため、特定のセグメントを他のプログラムと共用しやすい。ページング方式ではページが分散配置されるため、同様の共用は容易ではない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.w7tuf3si2ta5#bookmark=id.ffxmrsn2mtfk"
+      },
+      {
+        "text": "実行時に記憶領域の大きさを動的に変更できる",
+        "overview": "誤り。可変長区画を持つセグメンテーション方式の特徴である。",
+        "detail": "セグメンテーション方式は可変長の区画を扱うため、実行時に必要に応じてサイズを変更できる。一方、ページング方式は固定長ページで管理されるため、ページサイズ自体を動的に変更することはできない。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.w7tuf3si2ta5#bookmark=id.ffxmrsn2mtfk"
+      },
+      {
+        "text": "主記憶の外部断片化が発生しない",
+        "overview": "正しい。固定長ページにより外部断片化を防げる。",
+        "detail": "ページング方式では固定長のページ単位で主記憶を管理するため、可変長区画を用いるセグメンテーション方式で発生する外部断片化が生じない。これがページング方式の代表的な長所である。",
+        "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.w7tuf3si2ta5#bookmark=id.ffxmrsn2mtfk"
+      }
+    ],
+    "correct_indices": [
+      3
+    ],
+    "taxonomy": {
+      "parent": "テクノロジ系",
+      "child": "ソフトウェア",
+      "path": [
+        "テクノロジ系",
+        "ソフトウェア"
+      ]
+    },
+    "source": {
+      "label": "令和6年秋期　問18"
     }
   },
   {
