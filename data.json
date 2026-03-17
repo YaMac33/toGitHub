@@ -1,0 +1,14 @@
+[
+  {
+    "id": "icmp-01",
+    "question": "ICMP → 役割は？",
+    "answer": ["エラー通知"],
+    "explanation": "IP通信のエラー通知や制御メッセージ"
+  },
+  {
+    "id": "queue-01",
+    "question": "待ち行列 → 基本モデルは？",
+    "answer": ["M/M/1", "mm1"],
+    "explanation": "到着ポアソン・サービス指数分布"
+  }
+]
