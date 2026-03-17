@@ -25,5 +25,13 @@
       "ビット反転+1"
     ],
     "explanation": "各ビットを反転して1を加えることで求める"
+  },
+  {
+    "id": "functional-requirement-01",
+    "question": "ヒアリングで利用者から得る要求事項 → ？",
+    "answer": [
+      "機能要件"
+    ],
+    "explanation": "システムが実現すべき機能に関する要求"
   }
 ]
