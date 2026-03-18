@@ -1,64 +1,13 @@
 [
   {
-    "id": "queue-01",
-    "question": "待ち行列 → 基本モデルは？",
-    "answer": [
-      "M/M/1",
-      "mm1"
-    ],
-    "explanation": "到着ポアソン・サービス指数分布"
-  },
-  {
     "id": "amdahls-law-01",
     "question": "並列化の限界を示す法則 → ？",
     "answer": [
       "アムダール",
       "アムダールの法則"
     ],
-    "explanation": "全体の高速化は並列化できない部分に制約される"
-  },
-  {
-    "id": "twos-complement-01",
-    "question": "2の補数 → 生成方法は？",
-    "answer": [
-      "反転+1",
-      "ビット反転+1"
-    ],
-    "explanation": "各ビットを反転して1を加えることで求める"
-  },
-  {
-    "id": "functional-requirement-01",
-    "question": "ヒアリングで利用者から得る要求事項 → ？",
-    "answer": [
-      "機能要件"
-    ],
-    "explanation": "システムが実現すべき機能に関する要求"
-  },
-  {
-    "id": "nonfunctional-requirements-six-01",
-    "question": "非機能要求グレードの6大項目 → ？",
-    "answer": [
-      "世界を運営セキュリティ環境",
-      "世界を運営、セキュリティ環境"
-    ],
-    "explanation": "可用性・性能拡張性・運用保守性・移行性・セキュリティ・環境の語呂"
-  },
-  {
-    "id": "security-seven-elements-01",
-    "question": "情報セキュリティ7要素 → ？",
-    "answer": [
-      "聞かんか親戚は必死",
-      "聞かんか！親戚は必死"
-    ],
-    "explanation": "機密性・完全性・可用性＋真正性・責任追跡性・否認防止・信頼性の語呂"
-  },
-  {
-    "id": "osi-model-01",
-    "question": "OSI参照モデル → ？",
-    "answer": [
-      "ブデネとセプア"
-    ],
-    "explanation": "物理・データリンク・ネットワーク・トランスポート・セッション・プレゼンテーション・アプリの語呂"
+    "explanation": "全体の高速化は並列化できない部分に制約される",
+    "published": true
   },
   {
     "id": "ansoff-matrix-01",
@@ -67,6 +16,75 @@
       "アンゾフ",
       "アンゾフマトリクス"
     ],
-    "explanation": "市場浸透・市場開拓・製品開発・多角化の4戦略"
+    "explanation": "市場浸透・市場開拓・製品開発・多角化の4戦略",
+    "published": true
+  },
+  {
+    "id": "functional-requirement-01",
+    "question": "ヒアリングで利用者から得る要求事項 → ？",
+    "answer": [
+      "機能要件"
+    ],
+    "explanation": "システムが実現すべき機能に関する要求",
+    "published": true
+  },
+  {
+    "id": "nonfunctional-requirements-six-01",
+    "question": "非機能要求グレードの6大項目 → ？",
+    "answer": [
+      "世界を運営セキュリティ環境",
+      "世界を運営、セキュリティ環境"
+    ],
+    "explanation": "可用性・性能拡張性・運用保守性・移行性・セキュリティ・環境の語呂",
+    "published": true
+  },
+  {
+    "id": "osi-model-01",
+    "question": "OSI参照モデル → ？",
+    "answer": [
+      "ブデネとセプア"
+    ],
+    "explanation": "物理・データリンク・ネットワーク・トランスポート・セッション・プレゼンテーション・アプリの語呂",
+    "published": true
+  },
+  {
+    "id": "queue-01",
+    "question": "待ち行列 → 基本モデルは？",
+    "answer": [
+      "M/M/1",
+      "mm1"
+    ],
+    "explanation": "到着ポアソン・サービス指数分布",
+    "published": true
+  },
+  {
+    "id": "security-seven-elements-01",
+    "question": "情報セキュリティ7要素 → ？",
+    "answer": [
+      "聞かんか親戚は必死",
+      "聞かんか！親戚は必死"
+    ],
+    "explanation": "機密性・完全性・可用性＋真正性・責任追跡性・否認防止・信頼性の語呂",
+    "published": true
+  },
+  {
+    "id": "test-network-icmp",
+    "question": "ICMPの役割は？",
+    "answer": [
+      "エラー通知",
+      "エラー通知を行う"
+    ],
+    "explanation": "IP通信のエラーや制御メッセージを送るプロトコル",
+    "published": true
+  },
+  {
+    "id": "twos-complement-01",
+    "question": "2の補数 → 生成方法は？",
+    "answer": [
+      "反転+1",
+      "ビット反転+1"
+    ],
+    "explanation": "各ビットを反転して1を加えることで求める",
+    "published": true
   }
 ]
