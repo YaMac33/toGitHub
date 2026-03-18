@@ -69,6 +69,15 @@
     "published": true
   },
   {
+    "id": "tcpip-app-osi-01",
+    "question": "TCP/IPのアプリ層 → OSI参照モデルで対応は？",
+    "answer": [
+      "アプリ・プレゼン・セッション"
+    ],
+    "explanation": "TCP/IPのアプリ層はOSIの上位3層（アプリ・プレゼン・セッション）を含む。",
+    "published": true
+  },
+  {
     "id": "test-network-icmp",
     "question": "ICMPの役割は？",
     "answer": [
