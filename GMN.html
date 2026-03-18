@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>スマート一問一答アプリ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* カスタムアニメーション */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+    .shake {
+      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+      40%, 60% { transform: translate3d(4px, 0, 0); }
+    }
+    
+    /* スクロールバーのカスタマイズ(一覧画面用) */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9; 
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1; 
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8; 
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-800 font-sans antialiased min-h-screen">
+
+  <div class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    
+    <!-- ヘッダー＆タブナビゲーション -->
+    <header class="mb-8">
+      <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight mb-6">一問一答アプリ</h1>
+      
+      <nav class="flex space-x-2 sm:space-x-4 border-b border-gray-200 overflow-x-auto">
+        <button id="tabQuiz" class="px-4 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none whitespace-nowrap transition-colors">出題モード</button>
+        <button id="tabList" class="px-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 focus:outline-none whitespace-nowrap transition-colors">問題一覧</button>
+        <button id="tabSettings" class="px-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 focus:outline-none whitespace-nowrap transition-colors">学習設定</button>
+      </nav>
+    </header>
+
+    <!-- ==================== 出題タブ ==================== -->
+    <section id="viewQuiz" class="fade-in">
+      
+      <!-- 統計パネル -->
+      <div class="grid grid-cols-3 gap-3 sm:gap-6 mb-8">
+        <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm text-center flex flex-col justify-center transition-transform hover:-translate-y-1">
+          <div class="text-xs sm:text-sm font-medium text-gray-400 mb-1">未回答</div>
+          <div id="statUnanswered" class="text-2xl sm:text-3xl font-bold text-gray-700">0</div>
+        </div>
+        <div class="bg-red-50 border border-red-100 rounded-2xl p-4 shadow-sm text-center flex flex-col justify-center transition-transform hover:-translate-y-1">
+          <div class="text-xs sm:text-sm font-medium text-red-400 mb-1">不正解 (復習)</div>
+          <div id="statWrong" class="text-2xl sm:text-3xl font-bold text-red-600">0</div>
+        </div>
+        <div class="bg-green-50 border border-green-100 rounded-2xl p-4 shadow-sm text-center flex flex-col justify-center transition-transform hover:-translate-y-1">
+          <div class="text-xs sm:text-sm font-medium text-green-500 mb-1">マスター</div>
+          <div id="statMastered" class="text-2xl sm:text-3xl font-bold text-green-600">0</div>
+        </div>
+      </div>
+
+      <!-- 問題カード -->
+      <div class="bg-white border border-gray-200 rounded-3xl p-6 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+        
+        <!-- メタ情報 -->
+        <div class="flex items-center gap-3 mb-6">
+          <span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">未回答</span>
+          <span id="idPill" class="text-xs font-medium text-gray-400">ID: -</span>
+        </div>
+
+        <h2 id="question" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-8 leading-relaxed">
+          読み込み中...
+        </h2>
+
+        <!-- 入力エリア -->
+        <div class="relative mb-6">
+          <input id="answerInput" type="text" placeholder="答えを入力してください" 
+                 class="w-full px-5 py-4 text-lg bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
+                 autocomplete="off">
+        </div>
+
+        <!-- コントロールボタン (回答前) -->
+        <div id="controlsUnanswered" class="flex gap-3 mt-4">
+          <button id="submitBtn" class="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all active:scale-[0.98] text-lg">
+            回答する
+          </button>
+          <button id="skipBtn" class="bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 font-bold py-3.5 px-6 rounded-xl shadow-sm transition-all active:scale-[0.98]">
+            スキップ
+          </button>
+        </div>
+
+        <!-- 結果＆解説エリア (回答後) -->
+        <div id="resultArea" class="hidden mt-6 space-y-4 fade-in">
+          <div id="resultBox" class="p-5 rounded-xl text-center font-bold text-xl border-2 flex flex-col items-center justify-center">
+            <!-- 結果がここに入る -->
+          </div>
+          
+          <div id="explanationContainer" class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+            <div class="flex items-center gap-2 mb-2 text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+              </svg>
+              <span class="font-bold text-sm">解説</span>
+            </div>
+            <div id="explanation" class="text-gray-700 leading-relaxed text-sm sm:text-base"></div>
+          </div>
+
+          <!-- コントロールボタン (回答後) -->
+          <button id="nextBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl shadow-md transition-all active:scale-[0.98] mt-4 flex justify-center items-center gap-2 text-lg">
+            次の問題へ
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+        
+        <p class="text-gray-400 text-xs mt-8 text-center">
+          判定は完全一致です。不正解は2回連続正解でマスターに戻ります。
+        </p>
+      </div>
+    </section>
+
+    <!-- ==================== 一覧タブ ==================== -->
+    <section id="viewList" class="hidden fade-in">
+      <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        
+        <!-- 検索・フィルター -->
+        <div class="flex flex-col sm:flex-row gap-3 mb-6">
+          <div class="relative flex-1">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <input id="listSearch" type="text" placeholder="キーワードで検索..." class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors">
+          </div>
+          
+          <div class="flex gap-3">
+            <select id="listFilter" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg border bg-white cursor-pointer">
+              <option value="all">すべての状態</option>
+              <option value="unanswered">未回答のみ</option>
+              <option value="wrong">不正解のみ</option>
+              <option value="mastered">マスターのみ</option>
+            </select>
+            <button id="reloadListBtn" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-colors whitespace-nowrap">
+              更新
+            </button>
+          </div>
+        </div>
+
+        <!-- テーブル -->
+        <div class="overflow-x-auto rounded-xl border border-gray-200">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-4 py-3 text-left font-semibold text-gray-500 whitespace-nowrap">状態</th>
+                <th scope="col" class="px-4 py-3 text-left font-semibold text-gray-500 whitespace-nowrap">ID</th>
+                <th scope="col" class="px-4 py-3 text-left font-semibold text-gray-500">問題</th>
+                <th scope="col" class="px-4 py-3 text-left font-semibold text-gray-500 hidden md:table-cell">答え</th>
+                <th scope="col" class="px-4 py-3 text-left font-semibold text-gray-500 hidden lg:table-cell">解説</th>
+                <th scope="col" class="px-4 py-3 text-center font-semibold text-gray-500 whitespace-nowrap">操作</th>
+              </tr>
+            </thead>
+            <tbody id="listBody" class="bg-white divide-y divide-gray-200">
+              <!-- JSで生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 設定タブ ==================== -->
+    <section id="viewSettings" class="hidden fade-in">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- 出題率設定 -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+          <h2 class="text-xl font-bold text-gray-800 mb-2">出題率のバランス設定</h2>
+          <p class="text-sm text-gray-500 mb-6">合計は100でなくてもOKです。入力された数値の「比率」でランダムに出題されます。</p>
+          
+          <div class="space-y-4 mb-8">
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <label class="font-medium text-gray-700">未回答</label>
+              <div class="flex items-center gap-2">
+                <input id="rateUnanswered" type="number" min="0" class="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-right focus:ring-blue-500 focus:border-blue-500">
+                <span class="text-gray-500 text-sm">重み</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-50">
+              <label class="font-medium text-red-700">不正解 (復習)</label>
+              <div class="flex items-center gap-2">
+                <input id="rateWrong" type="number" min="0" class="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-right focus:ring-blue-500 focus:border-blue-500 bg-white">
+                <span class="text-gray-500 text-sm">重み</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-50">
+              <label class="font-medium text-green-700">マスター</label>
+              <div class="flex items-center gap-2">
+                <input id="rateMastered" type="number" min="0" class="w-20 px-3 py-1.5 border border-gray-300 rounded-md text-right focus:ring-blue-500 focus:border-blue-500 bg-white">
+                <span class="text-gray-500 text-sm">重み</span>
+              </div>
+            </div>
+          </div>
+          
+          <button id="saveRatesBtn" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-xl shadow transition-colors">
+            出題率を保存する
+          </button>
+        </div>
+
+        <!-- データ管理 -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">データ管理</h2>
+            <p class="text-sm text-gray-500 mb-6">学習履歴（正答数やマスター状態、間違えた問題の記録）を全て消去して、初期状態に戻します。</p>
+          </div>
+          
+          <div class="p-4 bg-red-50 rounded-xl border border-red-100">
+            <h3 class="text-red-800 font-bold mb-3 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+              危険な操作
+            </h3>
+            <button id="resetProgressBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl shadow transition-colors">
+              学習履歴を完全にリセット
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    const DATA_URL = "data.json";
+    const PROGRESS_KEY = "qa_progress_v2";
+    const RATES_KEY = "qa_rates_v1";
+
+    let questions = [];
+    let currentQuestion = null;
+    let lastQuestionId = null;
+    let isAnswered = false; // Enterキー等の制御用フラグ
+
+    let progress = loadProgress();
+    let rates = loadRates();
+
+    const $ = (id) => document.getElementById(id);
+
+    // --- データ保存系 ---
+    function loadProgress() {
+      try { return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}"); } 
+      catch { return {}; }
+    }
+    function saveProgress() {
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+    }
+    function loadRates() {
+      try {
+        return { unanswered: 40, wrong: 50, mastered: 10, ...JSON.parse(localStorage.getItem(RATES_KEY) || "{}") };
+      } catch {
+        return { unanswered: 40, wrong: 50, mastered: 10 };
+      }
+    }
+    function saveRates() {
+      localStorage.setItem(RATES_KEY, JSON.stringify(rates));
+    }
+
+    // --- 状態判定系 ---
+    function getQuestionState(id) {
+      const p = progress[id];
+      if (!p) return "unanswered";
+      if (p.status === "wrong") return "wrong";
+      if (p.status === "mastered") return "mastered";
+      return "unanswered";
+    }
+
+    function getStatusBadgeHTML(state) {
+      if (state === "wrong") return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">不正解</span>`;
+      if (state === "mastered") return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">マスター</span>`;
+      return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">未回答</span>`;
+    }
+
+    function classifyQuestions() {
+      return {
+        unanswered: questions.filter(q => getQuestionState(q.id) === "unanswered"),
+        wrong: questions.filter(q => getQuestionState(q.id) === "wrong"),
+        mastered: questions.filter(q => getQuestionState(q.id) === "mastered")
+      };
+    }
+
+    // --- UI更新系 ---
+    function updateStats() {
+      const groups = classifyQuestions();
+      $("statUnanswered").textContent = groups.unanswered.length;
+      $("statWrong").textContent = groups.wrong.length;
+      $("statMastered").textContent = groups.mastered.length;
+    }
+
+    // --- 抽選ロジック (元コード完全維持) ---
+    function weightedPickGroup(groups) {
+      const available = [];
+      if (groups.unanswered.length > 0 && rates.unanswered > 0) available.push({ key: "unanswered", weight: Number(rates.unanswered) });
+      if (groups.wrong.length > 0 && rates.wrong > 0) available.push({ key: "wrong", weight: Number(rates.wrong) });
+      if (groups.mastered.length > 0 && rates.mastered > 0) available.push({ key: "mastered", weight: Number(rates.mastered) });
+
+      if (available.length === 0) return questions.length === 0 ? null : "all";
+
+      const total = available.reduce((sum, item) => sum + item.weight, 0);
+      let r = Math.random() * total;
+
+      for (const item of available) {
+        r -= item.weight;
+        if (r <= 0) return item.key;
+      }
+      return available[available.length - 1].key;
+    }
+
+    function pickRandomQuestion() {
+      if (questions.length === 0) return null;
+      const groups = classifyQuestions();
+      const selectedGroup = weightedPickGroup(groups);
+
+      let pool;
+      if (selectedGroup === "unanswered") pool = groups.unanswered;
+      else if (selectedGroup === "wrong") pool = groups.wrong;
+      else if (selectedGroup === "mastered") pool = groups.mastered;
+      else pool = questions;
+
+      if (!pool || pool.length === 0) pool = questions;
+
+      if (pool.length > 1 && lastQuestionId) {
+        const withoutLast = pool.filter(q => q.id !== lastQuestionId);
+        if (withoutLast.length > 0) pool = withoutLast;
+      }
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    // --- 問題の表示 ---
+    function renderQuestion() {
+      isAnswered = false;
+      
+      // UIリセット
+      $("resultArea").classList.add("hidden");
+      $("resultArea").classList.remove("fade-in");
+      $("controlsUnanswered").classList.remove("hidden");
+      $("answerInput").value = "";
+      $("answerInput").classList.remove("border-red-500", "ring-red-500");
+
+      if (!currentQuestion) {
+        $("question").textContent = "問題データがありません。";
+        $("idPill").textContent = "ID: -";
+        $("statusPill").outerHTML = `<span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">-</span>`;
+        return;
+      }
+
+      const state = getQuestionState(currentQuestion.id);
+      $("question").textContent = currentQuestion.question;
+      $("idPill").textContent = "ID: " + currentQuestion.id;
+      $("statusPill").outerHTML = getStatusBadgeHTML(state).replace('px-2.5 py-0.5', 'px-3 py-1 text-sm');
+      $("statusPill").id = "statusPill"; // IDを再付与
+
+      setTimeout(() => $("answerInput").focus(), 50);
+    }
+
+    // --- 回答の処理 ---
+    function submitAnswer() {
+      if (!currentQuestion || isAnswered) return;
+
+      const input = $("answerInput").value.trim();
+      if (!input) {
+        $("answerInput").classList.add("shake", "border-red-500", "focus:ring-red-500");
+        setTimeout(() => $("answerInput").classList.remove("shake"), 400);
+        return;
+      }
+
+      isAnswered = true;
+      const answers = Array.isArray(currentQuestion.answer) ? currentQuestion.answer : [];
+      const isCorrect = answers.includes(input);
+
+      if (!progress[currentQuestion.id]) {
+        progress[currentQuestion.id] = { status: "unanswered", correctStreak: 0 };
+      }
+      const p = progress[currentQuestion.id];
+
+      // UI切り替え
+      $("controlsUnanswered").classList.add("hidden");
+      $("resultArea").classList.remove("hidden");
+      void $("resultArea").offsetWidth; // リフロー強制
+      $("resultArea").classList.add("fade-in");
+
+      // 判定ロジック
+      if (isCorrect) {
+        p.correctStreak = (p.correctStreak || 0) + 1;
+        if (p.correctStreak >= 2) p.status = "mastered";
+        else if (p.status !== "wrong") p.status = "mastered";
+
+        const msg = p.status === "mastered" ? "🎉 マスターしました！" : "⭕ 正解！";
+        $("resultBox").className = "p-5 rounded-xl text-center border-2 bg-green-50 border-green-200 text-green-700 w-full";
+        $("resultBox").innerHTML = `<div class="text-2xl font-bold">${msg}</div>`;
+      } else {
+        p.status = "wrong";
+        p.correctStreak = 0;
+
+        const firstAnswer = answers[0] || "";
+        $("resultBox").className = "p-5 rounded-xl text-center border-2 bg-red-50 border-red-200 text-red-700 w-full";
+        $("resultBox").innerHTML = `
+          <div class="text-2xl font-bold mb-2">❌ 不正解</div>
+          <div class="text-sm bg-white bg-opacity-60 px-4 py-2 rounded-lg inline-block">
+            正解: <span class="font-bold text-lg underline ml-1">${escapeHtml(firstAnswer)}</span>
+          </div>`;
+      }
+
+      // 解説の表示
+      if (currentQuestion.explanation || currentQuestion.link) {
+        let html = `<div>${escapeHtml(currentQuestion.explanation || "")}</div>`;
+        if (currentQuestion.link) {
+          html += `<div class="mt-2"><a href="${escapeAttribute(currentQuestion.link)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline font-medium flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>参考リンク</a></div>`;
+        }
+        $("explanation").innerHTML = html;
+        $("explanationContainer").classList.remove("hidden");
+      } else {
+        $("explanationContainer").classList.add("hidden");
+      }
+
+      // 保存と更新
+      progress[currentQuestion.id] = p;
+      saveProgress();
+      updateStats();
+      renderList();
+
+      setTimeout(() => $("nextBtn").focus(), 50);
+    }
+
+    function nextQuestion() {
+      currentQuestion = pickRandomQuestion();
+      if (!currentQuestion) return;
+      lastQuestionId = currentQuestion.id;
+      renderQuestion();
+      updateStats();
+    }
+
+    // --- 一覧タブ系 ---
+    function renderList() {
+      const body = $("listBody");
+      const search = $("listSearch").value.trim().toLowerCase();
+      const filter = $("listFilter").value;
+
+      body.innerHTML = "";
+
+      const filtered = questions.filter(q => {
+        const state = getQuestionState(q.id);
+        if (filter !== "all" && state !== filter) return false;
+        if (!search) return true;
+
+        const haystack = [q.id, q.question, (Array.isArray(q.answer) ? q.answer.join(" ") : ""), q.explanation || ""].join(" ").toLowerCase();
+        return haystack.includes(search);
+      });
+
+      if (filtered.length === 0) {
+        body.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">該当する問題が見つかりません</td></tr>`;
+        return;
+      }
+
+      for (const q of filtered) {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-gray-50 transition-colors";
+        const state = getQuestionState(q.id);
+        const answers = Array.isArray(q.answer) ? q.answer.join(" / ") : "";
+        const linkHtml = q.link ? `<a href="${escapeAttribute(q.link)}" target="_blank" class="text-blue-500 hover:text-blue-700 ml-1" title="参考リンク">🔗</a>` : "";
+
+        tr.innerHTML = `
+          <td class="px-4 py-3 whitespace-nowrap">${getStatusBadgeHTML(state)}</td>
+          <td class="px-4 py-3 text-gray-500 font-mono text-xs">${escapeHtml(q.id)}</td>
+          <td class="px-4 py-3 font-medium text-gray-800">${escapeHtml(q.question)}</td>
+          <td class="px-4 py-3 text-gray-600 hidden md:table-cell">${escapeHtml(answers)}</td>
+          <td class="px-4 py-3 text-gray-500 text-sm hidden lg:table-cell max-w-xs truncate" title="${escapeHtml(q.explanation)}">${escapeHtml(q.explanation || "")}${linkHtml}</td>
+          <td class="px-4 py-3 text-center whitespace-nowrap">
+            <button class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm" data-id="${escapeAttribute(q.id)}">開く</button>
+          </td>
+        `;
+
+        tr.querySelector("button").addEventListener("click", () => {
+          currentQuestion = q;
+          lastQuestionId = q.id;
+          showTab("quiz");
+          renderQuestion();
+        });
+        body.appendChild(tr);
+      }
+    }
+
+    // --- タブ＆設定系 ---
+    function showTab(tab) {
+      $("viewQuiz").classList.toggle("hidden", tab !== "quiz");
+      $("viewList").classList.toggle("hidden", tab !== "list");
+      $("viewSettings").classList.toggle("hidden", tab !== "settings");
+
+      const tabs = { quiz: $("tabQuiz"), list: $("tabList"), settings: $("tabSettings") };
+      for (const key in tabs) {
+        if (key === tab) {
+          tabs[key].className = "px-4 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none whitespace-nowrap transition-colors";
+        } else {
+          tabs[key].className = "px-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300 focus:outline-none whitespace-nowrap transition-colors";
+        }
+      }
+
+      if (tab === "list") renderList();
+      if (tab === "settings") renderRates();
+    }
+
+    function renderRates() {
+      $("rateUnanswered").value = rates.unanswered;
+      $("rateWrong").value = rates.wrong;
+      $("rateMastered").value = rates.mastered;
+    }
+
+    function saveRateSettings() {
+      rates.unanswered = Math.max(0, Number($("rateUnanswered").value) || 0);
+      rates.wrong = Math.max(0, Number($("rateWrong").value) || 0);
+      rates.mastered = Math.max(0, Number($("rateMastered").value) || 0);
+      saveRates();
+      
+      const btn = $("saveRatesBtn");
+      const originalText = btn.textContent;
+      btn.textContent = "✅ 保存しました";
+      btn.classList.replace("bg-gray-900", "bg-green-600");
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.classList.replace("bg-green-600", "bg-gray-900");
+      }, 2000);
+    }
+
+    function resetProgress() {
+      if (!confirm("学習履歴をリセットします。本当によろしいですか？")) return;
+      progress = {};
+      saveProgress();
+      updateStats();
+      renderList();
+      if (currentQuestion) renderQuestion();
+      alert("リセットが完了しました。");
+    }
+
+    // --- ユーティリティ ---
+    function escapeHtml(str) {
+      return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+    }
+    function escapeAttribute(str) { return escapeHtml(str); }
+
+    function setQuestionsData(json) {
+      questions = json.map(item => ({
+        id: String(item.id || "").trim(),
+        question: String(item.question || "").trim(),
+        answer: Array.isArray(item.answer) ? item.answer.map(v => String(v)) : [],
+        explanation: String(item.explanation || "").trim(),
+        link: item.link ? String(item.link).trim() : ""
+      })).filter(q => q.id && q.question && q.answer.length > 0);
+
+      updateStats();
+      renderList();
+      nextQuestion();
+    }
+
+    // --- 初期化 ---
+    async function loadData() {
+      try {
+        const res = await fetch(DATA_URL, { cache: "no-cache" });
+        if (!res.ok) throw new Error("Network response was not ok");
+        const json = await res.json();
+        setQuestionsData(json);
+      } catch (err) {
+        console.warn("外部データの読み込みに失敗したため、サンプルデータを使用します。", err);
+        // data.jsonがない環境(ローカルHTML直接起動など)のためのフェイルセーフ
+        const sampleData = [
+          { id: "1", question: "日本の首都は？", answer: ["東京", "とうきょう"], explanation: "東京都は日本の事実上の首都です。" },
+          { id: "2", question: "H2Oは何の化学式？", answer: ["水", "みず"], explanation: "水素原子2つと酸素原子1つからなる化合物です。" },
+          { id: "3", question: "円周率の最初の3桁は？", answer: ["3.14", "３.１４"], explanation: "数学定数πの近似値です。" },
+          { id: "4", question: "吾輩は猫である。名前はまだ無い。作者は誰？", answer: ["夏目漱石", "なつめそうせき"], explanation: "明治時代を代表する文豪の一人です。" }
+        ];
+        setQuestionsData(sampleData);
+      }
+    }
+
+    // --- イベントリスナー ---
+    $("submitBtn").addEventListener("click", submitAnswer);
+    $("skipBtn").addEventListener("click", nextQuestion);
+    $("nextBtn").addEventListener("click", nextQuestion);
+
+    // エンターキー全体の制御
+    document.addEventListener("keydown", (e) => {
+      // 出題タブが表示されている時のみ動作
+      if (!$("viewQuiz").classList.contains("hidden") && e.key === "Enter") {
+        e.preventDefault();
+        if (!isAnswered) {
+          submitAnswer();
+        } else {
+          nextQuestion();
+        }
+      }
+    });
+
+    $("tabQuiz").addEventListener("click", () => showTab("quiz"));
+    $("tabList").addEventListener("click", () => showTab("list"));
+    $("tabSettings").addEventListener("click", () => showTab("settings"));
+
+    $("listSearch").addEventListener("input", renderList);
+    $("listFilter").addEventListener("change", renderList);
+    $("reloadListBtn").addEventListener("click", renderList);
+
+    $("saveRatesBtn").addEventListener("click", saveRateSettings);
+    $("resetProgressBtn").addEventListener("click", resetProgress);
+
+    // 起動
+    loadData();
+  </script>
+</body>
+</html>
