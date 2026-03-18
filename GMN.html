@@ -82,12 +82,12 @@
         
         <!-- メタ情報 -->
         <div class="flex items-center gap-3 mb-6">
-          <span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">未回答</span>
+          <span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">読込中</span>
           <span id="idPill" class="text-xs font-medium text-gray-400">ID: -</span>
         </div>
 
         <h2 id="question" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-8 leading-relaxed">
-          読み込み中...
+          data.json を読み込んでいます...
         </h2>
 
         <!-- 入力エリア -->
@@ -107,24 +107,24 @@
           </button>
         </div>
 
-        <!-- 結果＆解説エリア (回答後) -->
+        <!-- 結果＆解説エリア (回答後・またはエラー時) -->
         <div id="resultArea" class="hidden mt-6 space-y-4 fade-in">
-          <div id="resultBox" class="p-5 rounded-xl text-center font-bold text-xl border-2 flex flex-col items-center justify-center">
+          <div id="resultBox" class="p-5 rounded-xl text-center font-bold text-xl border-2 flex flex-col items-center justify-center hidden">
             <!-- 結果がここに入る -->
           </div>
           
-          <div id="explanationContainer" class="bg-gray-50 p-5 rounded-xl border border-gray-100">
+          <div id="explanationContainer" class="bg-gray-50 p-5 rounded-xl border border-gray-100 hidden">
             <div class="flex items-center gap-2 mb-2 text-gray-500">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
               </svg>
-              <span class="font-bold text-sm">解説</span>
+              <span id="explanationTitle" class="font-bold text-sm">解説</span>
             </div>
             <div id="explanation" class="text-gray-700 leading-relaxed text-sm sm:text-base"></div>
           </div>
 
           <!-- コントロールボタン (回答後) -->
-          <button id="nextBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl shadow-md transition-all active:scale-[0.98] mt-4 flex justify-center items-center gap-2 text-lg">
+          <button id="nextBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl shadow-md transition-all active:scale-[0.98] mt-4 flex justify-center items-center gap-2 text-lg hidden">
             次の問題へ
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -315,7 +315,7 @@
       $("statMastered").textContent = groups.mastered.length;
     }
 
-    // --- 抽選ロジック (元コード完全維持) ---
+    // --- 抽選ロジック ---
     function weightedPickGroup(groups) {
       const available = [];
       if (groups.unanswered.length > 0 && rates.unanswered > 0) available.push({ key: "unanswered", weight: Number(rates.unanswered) });
@@ -361,12 +361,17 @@
       // UIリセット
       $("resultArea").classList.add("hidden");
       $("resultArea").classList.remove("fade-in");
+      $("resultBox").classList.add("hidden");
+      $("explanationContainer").classList.add("hidden");
+      $("nextBtn").classList.add("hidden");
+      
       $("controlsUnanswered").classList.remove("hidden");
       $("answerInput").value = "";
       $("answerInput").classList.remove("border-red-500", "ring-red-500");
+      $("answerInput").disabled = false;
 
       if (!currentQuestion) {
-        $("question").textContent = "問題データがありません。";
+        $("question").textContent = "出題できる問題がありません。";
         $("idPill").textContent = "ID: -";
         $("statusPill").outerHTML = `<span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">-</span>`;
         return;
@@ -393,6 +398,7 @@
       }
 
       isAnswered = true;
+      $("answerInput").disabled = true; // 二重送信防止
       const answers = Array.isArray(currentQuestion.answer) ? currentQuestion.answer : [];
       const isCorrect = answers.includes(input);
 
@@ -404,6 +410,9 @@
       // UI切り替え
       $("controlsUnanswered").classList.add("hidden");
       $("resultArea").classList.remove("hidden");
+      $("resultBox").classList.remove("hidden");
+      $("nextBtn").classList.remove("hidden");
+      
       void $("resultArea").offsetWidth; // リフロー強制
       $("resultArea").classList.add("fade-in");
 
@@ -431,6 +440,7 @@
 
       // 解説の表示
       if (currentQuestion.explanation || currentQuestion.link) {
+        $("explanationTitle").textContent = "解説";
         let html = `<div>${escapeHtml(currentQuestion.explanation || "")}</div>`;
         if (currentQuestion.link) {
           html += `<div class="mt-2"><a href="${escapeAttribute(currentQuestion.link)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline font-medium flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>参考リンク</a></div>`;
@@ -579,23 +589,37 @@
       nextQuestion();
     }
 
-    // --- 初期化 ---
+    // --- ★ 初期化 (外部データ読み込み) ★ ---
     async function loadData() {
       try {
+        // 同じ階層の data.json を読み込む
         const res = await fetch(DATA_URL, { cache: "no-cache" });
-        if (!res.ok) throw new Error("Network response was not ok");
+        if (!res.ok) throw new Error(`HTTPステータスエラー: ${res.status} ${res.statusText}`);
+        
         const json = await res.json();
         setQuestionsData(json);
+
       } catch (err) {
-        console.warn("外部データの読み込みに失敗したため、サンプルデータを使用します。", err);
-        // data.jsonがない環境(ローカルHTML直接起動など)のためのフェイルセーフ
-        const sampleData = [
-          { id: "1", question: "日本の首都は？", answer: ["東京", "とうきょう"], explanation: "東京都は日本の事実上の首都です。" },
-          { id: "2", question: "H2Oは何の化学式？", answer: ["水", "みず"], explanation: "水素原子2つと酸素原子1つからなる化合物です。" },
-          { id: "3", question: "円周率の最初の3桁は？", answer: ["3.14", "３.１４"], explanation: "数学定数πの近似値です。" },
-          { id: "4", question: "吾輩は猫である。名前はまだ無い。作者は誰？", answer: ["夏目漱石", "なつめそうせき"], explanation: "明治時代を代表する文豪の一人です。" }
-        ];
-        setQuestionsData(sampleData);
+        // 読み込めなかった場合は、画面上にエラー理由を表示して停止する
+        console.error("データの読み込みエラー:", err);
+        
+        $("question").textContent = "data.json の読み込みに失敗しました";
+        $("answerInput").disabled = true;
+        $("controlsUnanswered").classList.add("hidden");
+        
+        $("explanationTitle").textContent = "エラーが発生しました";
+        $("explanationTitle").classList.replace("text-gray-500", "text-red-600");
+        $("explanation").innerHTML = `
+          <div class="text-red-600 font-bold mb-3">詳細: ${escapeHtml(err.message || err)}</div>
+          <ul class="list-disc pl-5 space-y-2 text-gray-600">
+            <li>同じフォルダ（階層）に <code>data.json</code> が配置されているか確認してください。</li>
+            <li><strong>ローカルで直接HTMLを開いている場合（アドレスバーが <code>file:///...</code> の場合）</strong>、ブラウザのセキュリティ制限により <code>data.json</code> を読み込めません。VS CodeのLive Server拡張機能などを使用して、Webサーバー経由（<code>http://localhost...</code>）で開いてください。</li>
+          </ul>
+        `;
+        $("resultArea").classList.remove("hidden");
+        $("explanationContainer").classList.remove("hidden");
+        $("idPill").textContent = "Error";
+        $("statusPill").outerHTML = `<span id="statusPill" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">読込エラー</span>`;
       }
     }
 
@@ -609,9 +633,9 @@
       // 出題タブが表示されている時のみ動作
       if (!$("viewQuiz").classList.contains("hidden") && e.key === "Enter") {
         e.preventDefault();
-        if (!isAnswered) {
+        if (!isAnswered && !$("answerInput").disabled) {
           submitAnswer();
-        } else {
+        } else if (isAnswered) {
           nextQuestion();
         }
       }
@@ -628,7 +652,7 @@
     $("saveRatesBtn").addEventListener("click", saveRateSettings);
     $("resetProgressBtn").addEventListener("click", resetProgress);
 
-    // 起動
+    // アプリ起動
     loadData();
   </script>
 </body>
