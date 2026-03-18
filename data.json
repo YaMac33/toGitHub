@@ -31,6 +31,15 @@
     "published": true
   },
   {
+    "id": "digital-signature-01",
+    "question": "自分の秘密鍵で署名し公開鍵で検証 → ？",
+    "answer": [
+      "電子署名"
+    ],
+    "explanation": "送信者の真正性と改ざん検知を保証する仕組み",
+    "published": true
+  },
+  {
     "id": "functional-requirement-01",
     "question": "ヒアリングで利用者から得る要求事項 → ？",
     "answer": [
@@ -51,7 +60,7 @@
   },
   {
     "id": "osi-model-01",
-    "question": "OSI参照モデル → ？",
+    "question": "OSI参照モデル → 語呂合わせは？",
     "answer": [
       "ブデネとセプア"
     ],
