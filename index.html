@@ -2,327 +2,740 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>一問一答スマートアプリ</title>
-  <!-- Tailwind CSSの読み込み -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>一問一答アプリ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    /* スムーズなアニメーション用のカスタムCSS */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #dbe3ee;
+      --text: #0f172a;
+      --sub: #64748b;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --red: #dc2626;
+      --gray: #475569;
+      --yellow: #ca8a04;
     }
-    .fade-in {
-      animation: fadeIn 0.4s ease-out forwards;
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
     }
-    .shake {
-      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
     }
-    @keyframes shake {
-      10%, 90% { transform: translate3d(-1px, 0, 0); }
-      20%, 80% { transform: translate3d(2px, 0, 0); }
-      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-      40%, 60% { transform: translate3d(4px, 0, 0); }
+
+    .topbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .tab-btn, .btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .tab-btn.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .hidden { display: none !important; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .question {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .pill.unanswered {
+      background: #f1f5f9;
+      color: var(--gray);
+    }
+
+    .pill.wrong {
+      background: #fef2f2;
+      color: var(--red);
+    }
+
+    .pill.mastered {
+      background: #f0fdf4;
+      color: var(--green);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    input[type="text"], input[type="number"] {
+      flex: 1 1 260px;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 16px;
+      background: #fff;
+    }
+
+    .result {
+      min-height: 28px;
+      font-weight: 700;
+      margin: 10px 0 6px;
+    }
+
+    .result.ok { color: var(--green); }
+    .result.ng { color: var(--red); }
+
+    .explanation {
+      color: var(--text);
+      line-height: 1.7;
+      margin-top: 8px;
+    }
+
+    .explanation a {
+      color: var(--blue);
+      word-break: break-all;
+    }
+
+    .subtext {
+      color: var(--sub);
+      font-size: 13px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f8fafc;
+      font-size: 13px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .filter-row, .rate-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    .badge-link {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    .badge-link:hover {
+      text-decoration: underline;
+    }
+
+    .small-btn {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 720px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .question {
+        font-size: 20px;
+      }
+
+      th:nth-child(3),
+      td:nth-child(3),
+      th:nth-child(5),
+      td:nth-child(5) {
+        display: none;
+      }
     }
   </style>
 </head>
-<body class="bg-white text-gray-800 font-sans min-h-screen flex flex-col items-center justify-center p-4 sm:p-8">
-
-  <!-- メインカードコンテナ -->
-  <div class="w-full max-w-lg bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 overflow-hidden flex flex-col relative">
-    
-    <!-- ヘッダーエリア -->
-    <div class="px-6 py-4 flex justify-between items-end border-b border-gray-50">
-      <div>
-        <h1 class="text-xl font-extrabold text-gray-800 tracking-tight">一問一答</h1>
-        <p id="progressText" class="text-xs font-medium text-gray-400 mt-1">マスター: 0 / 0 (復習中: 0)</p>
-      </div>
-      <!-- リセットボタン -->
-      <button onclick="resetData()" class="text-gray-300 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50" title="学習データをリセット">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-      </button>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <button id="tabQuiz" class="tab-btn active" type="button">出題</button>
+      <button id="tabList" class="tab-btn" type="button">一覧</button>
+      <button id="tabSettings" class="tab-btn" type="button">設定</button>
     </div>
 
-    <!-- プログレスバー -->
-    <div class="h-1.5 w-full bg-gray-100">
-      <div id="progressBar" class="h-full bg-blue-500 transition-all duration-700 ease-out" style="width: 0%;"></div>
-    </div>
-
-    <!-- コンテンツエリア -->
-    <div class="p-6 sm:p-8 flex-grow flex flex-col justify-center min-h-[320px]">
-      
-      <!-- ステータスバッジ（復習モードなど） -->
-      <div class="mb-3 h-6 flex justify-center">
-        <span id="questionStatus" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium opacity-0 transition-opacity duration-300">
-          <!-- バッジ内容 -->
-        </span>
-      </div>
-
-      <!-- 問題文 -->
-      <h2 id="question" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-8 leading-relaxed text-center break-words">
-        データを読み込み中...
-      </h2>
-
-      <!-- 入力・回答フェーズ -->
-      <div id="inputPhase" class="flex flex-col space-y-4 w-full max-w-sm mx-auto">
-        <input type="text" id="answerInput" placeholder="答えを入力してください" 
-               class="w-full px-5 py-4 text-lg bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-center shadow-sm placeholder-gray-400"
-               autocomplete="off">
-        <button id="submitBtn" onclick="checkAnswer()" 
-                class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] flex justify-center items-center">
-          <span>回答する</span>
-        </button>
-      </div>
-
-      <!-- 結果・解説フェーズ (初期は非表示) -->
-      <div id="resultPhase" class="hidden flex-col space-y-5 w-full fade-in">
-        
-        <!-- 正誤結果表示ボックス -->
-        <div id="resultBox" class="p-5 rounded-xl text-center border-2 flex flex-col items-center justify-center">
-          <!-- 結果がここに入ります -->
+    <!-- 出題 -->
+    <section id="viewQuiz">
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">未回答</div>
+          <div id="statUnanswered" class="stat-value">0</div>
         </div>
-        
-        <!-- 解説ボックス -->
-        <div id="explanationBox" class="bg-gray-50 p-5 rounded-xl border border-gray-100">
-          <div class="flex items-center gap-2 mb-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-            </svg>
-            <span class="font-bold text-gray-600 text-sm">解説</span>
-          </div>
-          <p id="explanation" class="text-gray-700 leading-relaxed text-sm sm:text-base"></p>
+        <div class="stat">
+          <div class="stat-label">不正解</div>
+          <div id="statWrong" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">マスター</div>
+          <div id="statMastered" class="stat-value">0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span id="statusPill" class="pill unanswered">未回答</span>
+          <span id="idPill" class="pill">ID: -</span>
         </div>
 
-        <!-- 次へ進むボタン -->
-        <button id="nextBtn" onclick="nextQuestion()" 
-                class="w-full max-w-sm mx-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl shadow-md transition-all active:scale-[0.98] flex justify-center items-center gap-2">
-          次の問題へ
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-          </svg>
-        </button>
-      </div>
+        <div id="question" class="question">読み込み中...</div>
 
-    </div>
+        <div class="input-row">
+          <input id="answerInput" type="text" placeholder="答えを入力">
+        </div>
+
+        <div class="controls">
+          <button id="submitBtn" class="btn" type="button">回答</button>
+          <button id="nextBtn" class="btn" type="button">次の問題</button>
+        </div>
+
+        <div id="result" class="result"></div>
+        <div id="explanation" class="explanation"></div>
+        <div class="subtext" style="margin-top: 10px;">
+          判定は完全一致です。不正解は2回連続正解でマスターに戻ります。
+        </div>
+      </div>
+    </section>
+
+    <!-- 一覧 -->
+    <section id="viewList" class="hidden">
+      <div class="card">
+        <div class="filter-row">
+          <input id="listSearch" type="text" placeholder="ID / 問題文 / 解説 で検索">
+          <select id="listFilter" class="btn" style="padding-right: 34px;">
+            <option value="all">すべて</option>
+            <option value="unanswered">未回答</option>
+            <option value="wrong">不正解</option>
+            <option value="mastered">マスター</option>
+          </select>
+          <button id="reloadListBtn" class="btn" type="button">再読込</button>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>状態</th>
+                <th>ID</th>
+                <th>問題</th>
+                <th>答え</th>
+                <th>解説</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 設定 -->
+    <section id="viewSettings" class="hidden">
+      <div class="card">
+        <h2 style="margin-top:0;">出題率設定</h2>
+        <div class="subtext" style="margin-bottom: 14px;">
+          合計は100でなくてもOKです。比率として扱います。
+        </div>
+
+        <div class="rate-row">
+          <label style="min-width: 110px;">未回答</label>
+          <input id="rateUnanswered" type="number" min="0" step="1" value="40">
+        </div>
+        <div class="rate-row">
+          <label style="min-width: 110px;">不正解</label>
+          <input id="rateWrong" type="number" min="0" step="1" value="50">
+        </div>
+        <div class="rate-row">
+          <label style="min-width: 110px;">マスター</label>
+          <input id="rateMastered" type="number" min="0" step="1" value="10">
+        </div>
+
+        <div class="controls">
+          <button id="saveRatesBtn" class="btn" type="button">出題率を保存</button>
+          <button id="resetProgressBtn" class="btn" type="button">学習履歴をリセット</button>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <p class="text-gray-400 text-xs mt-6 text-center max-w-sm">
-    💡 2回連続正解で「マスター」！<br>間違えた問題は優先的に出題されます。
-  </p>
-
   <script>
-    // --- データと状態管理 ---
-    const defaultData = [
-      { "id": "1", "question": "日本の首都は？", "answer": ["東京", "とうきょう"], "explanation": "東京都は日本の事実上の首都です。" },
-      { "id": "2", "question": "H2Oは何の化学式？", "answer": ["水", "みず"], "explanation": "水素原子2つと酸素原子1つからなる化合物です。" },
-      { "id": "3", "question": "世界で一番高い山は？", "answer": ["エベレスト", "チョモランマ"], "explanation": "標高は8,848mです。ヒマラヤ山脈にあります。" }
-    ];
+    const DATA_URL = "data.json";
+    const PROGRESS_KEY = "qa_progress_v2";
+    const RATES_KEY = "qa_rates_v1";
+    const AUTO_NEXT_DELAY = 800;
 
-    let data = [];
-    let current = null;
+    let questions = [];
+    let currentQuestion = null;
     let lastQuestionId = null;
-    let isAnswering = true; // Enterキーの挙動制御用
 
-    // localStorageからの読み込み (元のロジックをそのまま継承)
-    let wrong = JSON.parse(localStorage.getItem("wrong") || "[]");
-    let correctStreak = JSON.parse(localStorage.getItem("correctStreak") || "{}");
+    let progress = loadProgress();
+    let rates = loadRates();
 
-    // DOM要素
-    const els = {
-      question: document.getElementById("question"),
-      answerInput: document.getElementById("answerInput"),
-      inputPhase: document.getElementById("inputPhase"),
-      resultPhase: document.getElementById("resultPhase"),
-      resultBox: document.getElementById("resultBox"),
-      explanation: document.getElementById("explanation"),
-      explanationBox: document.getElementById("explanationBox"),
-      nextBtn: document.getElementById("nextBtn"),
-      progressText: document.getElementById("progressText"),
-      progressBar: document.getElementById("progressBar"),
-      questionStatus: document.getElementById("questionStatus")
-    };
+    const $ = (id) => document.getElementById(id);
 
-    // 初期化
-    async function init() {
+    function loadProgress() {
       try {
-        const res = await fetch("data.json");
-        if (!res.ok) throw new Error("Fetch failed");
-        data = await res.json();
-      } catch (e) {
-        console.log("data.jsonが見つからないため、デフォルトデータを使用します。");
-        data = defaultData;
-      }
-      updateProgressUI();
-      nextQuestion();
-    }
-
-    // 進捗バーとテキストの更新
-    function updateProgressUI() {
-      if (!data || data.length === 0) return;
-      
-      // マスターした数 (連続正解2回以上)
-      const masteredCount = data.filter(q => (correctStreak[q.id] || 0) >= 2).length;
-      const total = data.length;
-      
-      els.progressText.textContent = `マスター: ${masteredCount} / ${total} (復習中: ${wrong.length})`;
-      
-      const percent = (masteredCount / total) * 100;
-      els.progressBar.style.width = `${percent}%`;
-
-      if (percent === 100) {
-        els.progressBar.classList.replace("bg-blue-500", "bg-green-500");
-      } else {
-        els.progressBar.classList.replace("bg-green-500", "bg-blue-500");
+        return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+      } catch {
+        return {};
       }
     }
 
-    // 次の問題をセットするロジック (元の仕様を完全継承)
-    function nextQuestion() {
-      isAnswering = true;
+    function saveProgress() {
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+    }
+
+    function loadRates() {
+      try {
+        return {
+          unanswered: 40,
+          wrong: 50,
+          mastered: 10,
+          ...JSON.parse(localStorage.getItem(RATES_KEY) || "{}")
+        };
+      } catch {
+        return { unanswered: 40, wrong: 50, mastered: 10 };
+      }
+    }
+
+    function saveRates() {
+      localStorage.setItem(RATES_KEY, JSON.stringify(rates));
+    }
+
+    function getQuestionState(id) {
+      const p = progress[id];
+      if (!p) return "unanswered";
+      if (p.status === "wrong") return "wrong";
+      if (p.status === "mastered") return "mastered";
+      return "unanswered";
+    }
+
+    function getStatusLabel(state) {
+      if (state === "wrong") return "不正解";
+      if (state === "mastered") return "マスター";
+      return "未回答";
+    }
+
+    function getStatusClass(state) {
+      if (state === "wrong") return "wrong";
+      if (state === "mastered") return "mastered";
+      return "unanswered";
+    }
+
+    function classifyQuestions() {
+      return {
+        unanswered: questions.filter(q => getQuestionState(q.id) === "unanswered"),
+        wrong: questions.filter(q => getQuestionState(q.id) === "wrong"),
+        mastered: questions.filter(q => getQuestionState(q.id) === "mastered")
+      };
+    }
+
+    function updateStats() {
+      const groups = classifyQuestions();
+      $("statUnanswered").textContent = groups.unanswered.length;
+      $("statWrong").textContent = groups.wrong.length;
+      $("statMastered").textContent = groups.mastered.length;
+    }
+
+    function weightedPickGroup(groups) {
+      const available = [];
+      if (groups.unanswered.length > 0 && rates.unanswered > 0) {
+        available.push({ key: "unanswered", weight: Number(rates.unanswered) });
+      }
+      if (groups.wrong.length > 0 && rates.wrong > 0) {
+        available.push({ key: "wrong", weight: Number(rates.wrong) });
+      }
+      if (groups.mastered.length > 0 && rates.mastered > 0) {
+        available.push({ key: "mastered", weight: Number(rates.mastered) });
+      }
+
+      if (available.length === 0) {
+        if (questions.length === 0) return null;
+        return "all";
+      }
+
+      const total = available.reduce((sum, item) => sum + item.weight, 0);
+      let r = Math.random() * total;
+
+      for (const item of available) {
+        r -= item.weight;
+        if (r <= 0) return item.key;
+      }
+
+      return available[available.length - 1].key;
+    }
+
+    function pickRandomQuestion() {
+      if (questions.length === 0) return null;
+
+      const groups = classifyQuestions();
+      const selectedGroup = weightedPickGroup(groups);
+
       let pool;
+      if (selectedGroup === "unanswered") pool = groups.unanswered;
+      else if (selectedGroup === "wrong") pool = groups.wrong;
+      else if (selectedGroup === "mastered") pool = groups.mastered;
+      else pool = questions;
 
-      // wrong優先ロジック (70%の確率で間違えた問題から)
-      if (wrong.length > 0 && Math.random() < 0.7) {
-        pool = data.filter(q => wrong.includes(q.id));
-      } else {
-        pool = data;
+      if (!pool || pool.length === 0) pool = questions;
+
+      if (pool.length > 1 && lastQuestionId) {
+        const withoutLast = pool.filter(q => q.id !== lastQuestionId);
+        if (withoutLast.length > 0) pool = withoutLast;
       }
 
-      // 直前問題を除外
-      if (pool.length > 1) {
-        pool = pool.filter(q => q.id !== lastQuestionId);
-      }
-
-      // 万が一poolが空になった場合のフェイルセーフ
-      if (pool.length === 0) pool = data;
-
-      current = pool[Math.floor(Math.random() * pool.length)];
-      lastQuestionId = current.id;
-
-      // UIリセット
-      els.question.textContent = current.question;
-      els.answerInput.value = "";
-      els.answerInput.classList.remove("border-red-500", "ring-red-500");
-      
-      els.inputPhase.classList.remove("hidden");
-      els.resultPhase.classList.add("hidden");
-
-      // バッジ表示制御
-      if (wrong.includes(current.id)) {
-        els.questionStatus.textContent = "復習問題";
-        els.questionStatus.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 opacity-100 transition-opacity duration-300";
-      } else if ((correctStreak[current.id] || 0) >= 2) {
-        els.questionStatus.textContent = "マスター済";
-        els.questionStatus.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 opacity-100 transition-opacity duration-300";
-      } else {
-        els.questionStatus.classList.replace("opacity-100", "opacity-0");
-      }
-
-      setTimeout(() => els.answerInput.focus(), 50);
+      return pool[Math.floor(Math.random() * pool.length)];
     }
 
-    // 回答判定ロジック
-    function checkAnswer() {
-      if (!isAnswering) return;
-
-      const input = els.answerInput.value.trim();
-      
-      // 未入力の場合は揺らして警告
-      if (input === "") {
-        els.answerInput.classList.add("shake", "border-red-500", "focus:ring-red-500");
-        setTimeout(() => els.answerInput.classList.remove("shake"), 400);
+    function renderQuestion() {
+      if (!currentQuestion) {
+        $("question").textContent = "問題がありません。";
+        $("idPill").textContent = "ID: -";
+        $("statusPill").textContent = "-";
+        $("statusPill").className = "pill";
         return;
       }
 
-      isAnswering = false;
-      const correctAnswers = current.answer;
-      const isCorrect = correctAnswers.includes(input);
+      const state = getQuestionState(currentQuestion.id);
 
-      // 元の判定・状態更新ロジック
-      if (isCorrect) {
-        correctStreak[current.id] = (correctStreak[current.id] || 0) + 1;
-        if (correctStreak[current.id] >= 2) {
-          wrong = wrong.filter(id => id !== current.id); // wrongから削除
-        }
-      } else {
-        correctStreak[current.id] = 0;
-        if (!wrong.includes(current.id)) {
-          wrong.push(current.id); // wrongに追加
-        }
-      }
+      $("question").textContent = currentQuestion.question;
+      $("idPill").textContent = "ID: " + currentQuestion.id;
 
-      // データの保存
-      localStorage.setItem("wrong", JSON.stringify(wrong));
-      localStorage.setItem("correctStreak", JSON.stringify(correctStreak));
-      updateProgressUI();
+      const pill = $("statusPill");
+      pill.textContent = getStatusLabel(state);
+      pill.className = "pill " + getStatusClass(state);
 
-      // === ここからUIの更新 ===
-      els.inputPhase.classList.add("hidden");
-      
-      // アニメーションのリセットと再適用
-      els.resultPhase.classList.remove("hidden", "fade-in");
-      void els.resultPhase.offsetWidth; 
-      els.resultPhase.classList.add("fade-in");
+      $("answerInput").value = "";
+      $("result").textContent = "";
+      $("result").className = "result";
+      $("explanation").innerHTML = "";
 
-      if (isCorrect) {
-        const streak = correctStreak[current.id];
-        const msg = streak >= 2 ? "🎉 マスターしました！" : "⭕ 正解！";
-        const subMsg = streak === 1 ? "あと1回連続正解でマスターです" : "完璧です！";
-
-        els.resultBox.className = "p-5 rounded-xl text-center border-2 bg-green-50 border-green-200 text-green-700 w-full";
-        els.resultBox.innerHTML = `
-          <div class="text-2xl font-bold mb-1">${msg}</div>
-          <div class="text-sm font-medium opacity-80">${subMsg}</div>
-        `;
-      } else {
-        els.resultBox.className = "p-5 rounded-xl text-center border-2 bg-red-50 border-red-200 text-red-700 w-full";
-        els.resultBox.innerHTML = `
-          <div class="text-2xl font-bold mb-2">❌ 不正解</div>
-          <div class="text-sm bg-white bg-opacity-50 px-3 py-2 rounded inline-block">
-            正解は <span class="font-bold text-lg underline ml-1">${correctAnswers[0]}</span> です
-          </div>
-        `;
-      }
-
-      // 解説の表示制御
-      if (current.explanation && current.explanation.trim() !== "") {
-        els.explanation.textContent = current.explanation;
-        els.explanationBox.classList.remove("hidden");
-      } else {
-        els.explanationBox.classList.add("hidden");
-      }
-
-      // ボタンにフォーカス（Enterで次へ進めるように）
-      setTimeout(() => els.nextBtn.focus(), 50);
+      $("answerInput").focus();
     }
 
-    // データの初期化 (おまけ機能)
-    function resetData() {
-      if(confirm("学習履歴(連続正解数や間違えた問題の記録)をリセットしますか？")) {
-        wrong = [];
-        correctStreak = {};
-        localStorage.removeItem("wrong");
-        localStorage.removeItem("correctStreak");
-        updateProgressUI();
-        nextQuestion();
+    function showExplanation(q) {
+      let html = `<div>${escapeHtml(q.explanation || "")}</div>`;
+
+      if (q.link) {
+        const safeUrl = escapeAttribute(q.link);
+        html += `<div><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">参考URLを開く</a></div>`;
       }
+
+      $("explanation").innerHTML = html;
     }
 
-    // キーボード操作のサポート
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        if (isAnswering) {
-          checkAnswer();
+    function nextQuestion() {
+      currentQuestion = pickRandomQuestion();
+      if (!currentQuestion) return;
+      lastQuestionId = currentQuestion.id;
+      renderQuestion();
+      updateStats();
+    }
+
+    function submitAnswer() {
+      if (!currentQuestion) return;
+
+      const input = $("answerInput").value.trim();
+      if (!input) return;
+
+      const answers = Array.isArray(currentQuestion.answer) ? currentQuestion.answer : [];
+      const isCorrect = answers.includes(input);
+
+      if (!progress[currentQuestion.id]) {
+        progress[currentQuestion.id] = {
+          status: "unanswered",
+          correctStreak: 0
+        };
+      }
+
+      const p = progress[currentQuestion.id];
+
+      if (isCorrect) {
+        p.correctStreak = (p.correctStreak || 0) + 1;
+
+        if (p.correctStreak >= 2) {
+          p.status = "mastered";
         } else {
-          nextQuestion();
+          if (p.status !== "wrong") {
+            p.status = "mastered";
+          }
         }
+
+        $("result").textContent = "⭕ 正解";
+        $("result").className = "result ok";
+      } else {
+        p.status = "wrong";
+        p.correctStreak = 0;
+
+        const firstAnswer = answers[0] || "";
+        $("result").textContent = firstAnswer
+          ? `❌ 不正解（正解: ${firstAnswer}）`
+          : "❌ 不正解";
+        $("result").className = "result ng";
+      }
+
+      progress[currentQuestion.id] = p;
+      saveProgress();
+      updateStats();
+      showExplanation(currentQuestion);
+      renderList();
+
+      setTimeout(() => {
+        nextQuestion();
+      }, AUTO_NEXT_DELAY);
+    }
+
+    function renderList() {
+      const body = $("listBody");
+      const search = $("listSearch").value.trim().toLowerCase();
+      const filter = $("listFilter").value;
+
+      body.innerHTML = "";
+
+      const filtered = questions.filter(q => {
+        const state = getQuestionState(q.id);
+        const matchFilter = filter === "all" ? true : state === filter;
+        if (!matchFilter) return false;
+
+        if (!search) return true;
+
+        const haystack = [
+          q.id,
+          q.question,
+          (Array.isArray(q.answer) ? q.answer.join(" ") : ""),
+          q.explanation || ""
+        ].join(" ").toLowerCase();
+
+        return haystack.includes(search);
+      });
+
+      if (filtered.length === 0) {
+        body.innerHTML = `<tr><td colspan="6">該当データなし</td></tr>`;
+        return;
+      }
+
+      for (const q of filtered) {
+        const tr = document.createElement("tr");
+        const state = getQuestionState(q.id);
+        const answers = Array.isArray(q.answer) ? q.answer.join(" / ") : "";
+        const linkHtml = q.link
+          ? `<a class="badge-link" href="${escapeAttribute(q.link)}" target="_blank" rel="noopener noreferrer">URL</a>`
+          : "";
+
+        tr.innerHTML = `
+          <td>${escapeHtml(getStatusLabel(state))}</td>
+          <td>${escapeHtml(q.id)}</td>
+          <td>${escapeHtml(q.question)}</td>
+          <td>${escapeHtml(answers)}</td>
+          <td>${escapeHtml(q.explanation || "")}${linkHtml}</td>
+          <td><button class="btn small-btn" type="button" data-id="${escapeAttribute(q.id)}">この問題を開く</button></td>
+        `;
+
+        tr.querySelector("button").addEventListener("click", () => {
+          currentQuestion = q;
+          lastQuestionId = q.id;
+          showTab("quiz");
+          renderQuestion();
+        });
+
+        body.appendChild(tr);
+      }
+    }
+
+    function showTab(tab) {
+      $("viewQuiz").classList.toggle("hidden", tab !== "quiz");
+      $("viewList").classList.toggle("hidden", tab !== "list");
+      $("viewSettings").classList.toggle("hidden", tab !== "settings");
+
+      $("tabQuiz").classList.toggle("active", tab === "quiz");
+      $("tabList").classList.toggle("active", tab === "list");
+      $("tabSettings").classList.toggle("active", tab === "settings");
+
+      if (tab === "list") renderList();
+      if (tab === "settings") renderRates();
+    }
+
+    function renderRates() {
+      $("rateUnanswered").value = rates.unanswered;
+      $("rateWrong").value = rates.wrong;
+      $("rateMastered").value = rates.mastered;
+    }
+
+    function saveRateSettings() {
+      rates.unanswered = Math.max(0, Number($("rateUnanswered").value) || 0);
+      rates.wrong = Math.max(0, Number($("rateWrong").value) || 0);
+      rates.mastered = Math.max(0, Number($("rateMastered").value) || 0);
+      saveRates();
+      alert("出題率を保存しました。");
+    }
+
+    function resetProgress() {
+      if (!confirm("学習履歴をリセットします。よろしいですか？")) return;
+      progress = {};
+      saveProgress();
+      updateStats();
+      renderList();
+      if (currentQuestion) renderQuestion();
+      alert("リセットしました。");
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function escapeAttribute(str) {
+      return escapeHtml(str);
+    }
+
+    async function loadData() {
+      const res = await fetch(DATA_URL, { cache: "no-cache" });
+      if (!res.ok) throw new Error("data.json の読み込みに失敗しました");
+      const json = await res.json();
+
+      questions = json.map(item => ({
+        id: String(item.id || "").trim(),
+        question: String(item.question || "").trim(),
+        answer: Array.isArray(item.answer) ? item.answer.map(v => String(v)) : [],
+        explanation: String(item.explanation || "").trim(),
+        link: item.link ? String(item.link).trim() : ""
+      })).filter(q => q.id && q.question && q.answer.length > 0);
+
+      updateStats();
+      renderList();
+      nextQuestion();
+    }
+
+    $("submitBtn").addEventListener("click", submitAnswer);
+    $("nextBtn").addEventListener("click", nextQuestion);
+
+    $("answerInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        submitAnswer();
       }
     });
 
-    // アプリ起動
-    init();
+    $("tabQuiz").addEventListener("click", () => showTab("quiz"));
+    $("tabList").addEventListener("click", () => showTab("list"));
+    $("tabSettings").addEventListener("click", () => showTab("settings"));
+
+    $("listSearch").addEventListener("input", renderList);
+    $("listFilter").addEventListener("change", renderList);
+    $("reloadListBtn").addEventListener("click", renderList);
+
+    $("saveRatesBtn").addEventListener("click", saveRateSettings);
+    $("resetProgressBtn").addEventListener("click", resetProgress);
+
+    loadData().catch(err => {
+      $("question").textContent = "読み込みに失敗しました";
+      $("explanation").textContent = String(err.message || err);
+    });
   </script>
 </body>
 </html>
