@@ -88,6 +88,16 @@
     "published": true
   },
   {
+    "id": "public-key-main-01",
+    "question": "RSA・ECC → 何の主流？",
+    "answer": [
+      "公開鍵暗号主流",
+      "公開鍵暗号方式の主流"
+    ],
+    "explanation": "現代の公開鍵暗号の代表方式",
+    "published": true
+  },
+  {
     "id": "queue-01",
     "question": "待ち行列 → 基本モデルは？",
     "answer": [
