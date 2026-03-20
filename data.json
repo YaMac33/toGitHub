@@ -148,6 +148,16 @@
     "published": true
   },
   {
+    "id": "rsa-vs-dh-02",
+    "question": "公開鍵を「送る」手法と「作る」手法 → ？",
+    "answer": [
+      "RSA,DH/ECDH",
+      "RSA・DH/ECDH"
+    ],
+    "explanation": "RSAは鍵を送る方式、DH/ECDHは双方で鍵を生成する方式",
+    "published": true
+  },
+  {
     "id": "security-seven-elements-01",
     "question": "情報セキュリティ7要素 → ？",
     "answer": [
