@@ -69,6 +69,16 @@
     "published": true
   },
   {
+    "id": "key-exchange-01",
+    "question": "共通鍵を生成する手法 → ？",
+    "answer": [
+      "DH・ECDH",
+      "ECDH"
+    ],
+    "explanation": "安全に共通鍵を共有するための鍵交換方式",
+    "published": true
+  },
+  {
     "id": "nonfunctional-requirements-six-01",
     "question": "非機能要求グレードの6大項目 → ？",
     "answer": [
