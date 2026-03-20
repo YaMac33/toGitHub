@@ -1,5 +1,14 @@
 [
   {
+    "id": "aes-01",
+    "question": "共通鍵暗号方式の主流 → ？",
+    "answer": [
+      "AES"
+    ],
+    "explanation": "高速で安全性が高い標準的な共通鍵暗号",
+    "published": true
+  },
+  {
     "id": "amdahls-law-01",
     "question": "並列化の限界を示す法則 → ？",
     "answer": [
