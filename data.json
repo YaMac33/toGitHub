@@ -9,6 +9,16 @@
     "published": true
   },
   {
+    "id": "aes-02",
+    "question": "AES → 何の位置づけ？",
+    "answer": [
+      "共通鍵暗号主流",
+      "共通鍵暗号方式の主流"
+    ],
+    "explanation": "現在広く使われる代表的な共通鍵暗号方式",
+    "published": true
+  },
+  {
     "id": "amdahls-law-01",
     "question": "並列化の限界を示す法則 → ？",
     "answer": [
