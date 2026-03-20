@@ -217,6 +217,15 @@
     "link": "https://docs.google.com/document/d/16wC6i6K9DT0sJ_xF2eBahbg1RgYmsxqLJMIbVltgJHY/edit?usp=drivesdk"
   },
   {
+    "id": "tls-01",
+    "question": "TLS → 何の略？",
+    "answer": [
+      "Transport Layer Security"
+    ],
+    "explanation": "通信を暗号化して保護するプロトコルの正式名称",
+    "published": true
+  },
+  {
     "id": "twos-complement-01",
     "question": "2の補数 → 生成方法は？",
     "answer": [
