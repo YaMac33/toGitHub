@@ -245,6 +245,16 @@
     "published": true
   },
   {
+    "id": "tls-integrity-01",
+    "question": "TLSで改ざん検知を行う仕組み → ？",
+    "answer": [
+      "MAC,AEAD",
+      "MAC・AEAD"
+    ],
+    "explanation": "MACやAEADによりデータの完全性を検証する",
+    "published": true
+  },
+  {
     "id": "twos-complement-01",
     "question": "2の補数 → 生成方法は？",
     "answer": [
