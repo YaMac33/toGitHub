@@ -138,6 +138,15 @@
     "published": true
   },
   {
+    "id": "pki-revocation-01",
+    "question": "PKI証明の失効確認方法 → ？",
+    "answer": [
+      "CRL,OCSP"
+    ],
+    "explanation": "証明書失効はCRLやOCSPで確認する",
+    "published": true
+  },
+  {
     "id": "public-key-main-01",
     "question": "RSA・ECC → 何の主流？",
     "answer": [
