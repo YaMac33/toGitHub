@@ -161,7 +161,7 @@
     "id": "rsa-vs-dh-01",
     "question": "RSAとDH/ECDHの違い → ？",
     "answer": [
-      "送るか作るか",
+      "共通鍵を送るか作るか",
       "鍵を送るか作るか"
     ],
     "explanation": "RSAは鍵を暗号化して送信、DH/ECDHは双方で鍵を生成",
@@ -169,7 +169,7 @@
   },
   {
     "id": "rsa-vs-dh-02",
-    "question": "公開鍵を「送る」手法と「作る」手法 → ？",
+    "question": "共通鍵を「送る」手法と「作る」手法 → ？",
     "answer": [
       "RSA,DH/ECDH",
       "RSA・DH/ECDH"
@@ -262,7 +262,8 @@
       "MAC・AEAD"
     ],
     "explanation": "MACやAEADによりデータの完全性を検証する",
-    "published": true
+    "published": true,
+    "link": "https://docs.google.com/document/d/1UjJY-sFpRbaOHlozWKxP3uhoN8JNzc5qoWSmIknA6eI/edit?usp=drivesdk"
   },
   {
     "id": "twos-complement-01",
