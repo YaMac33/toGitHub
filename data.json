@@ -138,6 +138,15 @@
     "published": true
   },
   {
+    "id": "pfs-01",
+    "question": "RSAや固定DH/ECDHに対しDHE/ECDHEの利点 → ？",
+    "answer": [
+      "前方秘匿性"
+    ],
+    "explanation": "過去通信の鍵が漏洩しても復号されない性質",
+    "published": true
+  },
+  {
     "id": "pki-revocation-01",
     "question": "PKI証明の失効確認方法 → ？",
     "answer": [
