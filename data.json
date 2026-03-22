@@ -41,6 +41,15 @@
     "link": "https://docs.google.com/document/d/1-HE5wLpYPLsbp1kWzmfKx225uuF38cjyJm6Pln3ZJTc/edit?tab=t.hcldno4kubcd#bookmark=id.7evuhksfwre"
   },
   {
+    "id": "collision-01",
+    "question": "パケットの衝突 → ？",
+    "answer": [
+      "コリジョン"
+    ],
+    "explanation": "同時送信で信号が干渉する現象。セグメント内で発生",
+    "published": true
+  },
+  {
     "id": "compile-phases-01",
     "question": "コンパイルの処理段階 → ？",
     "answer": [
