@@ -106,6 +106,15 @@
     "published": true
   },
   {
+    "id": "frame-01",
+    "question": "データリンク層のデータ単位 → ？",
+    "answer": [
+      "フレーム"
+    ],
+    "explanation": "第2層で扱うデータの単位",
+    "published": true
+  },
+  {
     "id": "functional-requirement-01",
     "question": "ヒアリングで利用者から得る要求事項 → ？",
     "answer": [
