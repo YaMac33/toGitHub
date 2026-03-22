@@ -128,6 +128,15 @@
     "published": true
   },
   {
+    "id": "l2tp-02",
+    "question": "L2TP → 何の略？",
+    "answer": [
+      "Layer 2 Tunneling Protocol"
+    ],
+    "explanation": "第2層のトンネリングを行うプロトコル名",
+    "published": true
+  },
+  {
     "id": "nonfunctional-requirements-six-01",
     "question": "非機能要求グレードの6大項目 → ？",
     "answer": [
