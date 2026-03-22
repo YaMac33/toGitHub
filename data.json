@@ -156,6 +156,15 @@
     "published": true
   },
   {
+    "id": "poe-01",
+    "question": "LANケーブルで通信と給電を同時に行う仕組み → ？",
+    "answer": [
+      "PoE"
+    ],
+    "explanation": "Ethernetケーブルで電力供給も行う技術",
+    "published": true
+  },
+  {
     "id": "public-key-main-01",
     "question": "RSA・ECC → 何の主流？",
     "answer": [
