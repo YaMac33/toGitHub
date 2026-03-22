@@ -222,6 +222,15 @@
     "published": true
   },
   {
+    "id": "repeater-01",
+    "question": "物理層の中継機能 → ？",
+    "answer": [
+      "リピータ"
+    ],
+    "explanation": "信号を増幅・再生して中継する装置",
+    "published": true
+  },
+  {
     "id": "rsa-vs-dh-01",
     "question": "RSAとDH/ECDHの違い → ？",
     "answer": [
