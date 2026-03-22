@@ -50,6 +50,15 @@
     "published": true
   },
   {
+    "id": "csma-cd-01",
+    "question": "媒体の空きを確認し送信、衝突時は待って再送 → ？",
+    "answer": [
+      "CSMA/CD"
+    ],
+    "explanation": "キャリア検知・衝突検出で再送する方式",
+    "published": true
+  },
+  {
     "id": "digital-signature-01",
     "question": "自分の秘密鍵で署名し公開鍵で検証 → ？",
     "answer": [
