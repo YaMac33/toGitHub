@@ -183,6 +183,15 @@
     "published": true
   },
   {
+    "id": "ppp-01",
+    "question": "PPP → 何の略？",
+    "answer": [
+      "Point-to-Point Protocol"
+    ],
+    "explanation": "ポイント間接続のデータリンク層プロトコル",
+    "published": true
+  },
+  {
     "id": "public-key-main-01",
     "question": "RSA・ECC → 何の主流？",
     "answer": [
