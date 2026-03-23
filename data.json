@@ -74,7 +74,8 @@
       "CSMA/CD"
     ],
     "explanation": "キャリア検知・衝突検出で再送する方式",
-    "published": true
+    "published": true,
+    "link": "https://docs.google.com/document/d/1ihRfItJIE4g2W6SfrJEiyh1MQD4weYPVBt6WhM336z4/edit?usp=drivesdk"
   },
   {
     "id": "data-layer-01",
