@@ -190,7 +190,8 @@
       "世界が運用、セキュリティ環境"
     ],
     "explanation": "可用性・性能拡張性・運用保守性・移行性・セキュリティ・環境の語呂",
-    "published": true
+    "published": true,
+    "link": "https://docs.google.com/document/d/1MBIgrlD9GTOB3PlelUfIzmlydpAMbawTU1rlW0Efnh0/edit?usp=drivesdk"
   },
   {
     "id": "osi-model-01",
