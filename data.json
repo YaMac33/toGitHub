@@ -352,7 +352,8 @@
       "プレゼンテーション層,ファンクション層,データ層"
     ],
     "explanation": "UI・業務ロジック・データ管理の3層で構成",
-    "published": true
+    "published": true,
+    "link": "https://docs.google.com/document/d/1AUfmyzh_k89yKByjEqy9Dd4BFUFLGCTlgEBwUum_6L0/edit?usp=drivesdk"
   },
   {
     "id": "tls-01",
