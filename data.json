@@ -219,6 +219,15 @@
     "published": true
   },
   {
+    "id": "presentation-layer-01",
+    "question": "3層C/Sのプレゼン層 → ？",
+    "answer": [
+      "画面(ブラウザ)"
+    ],
+    "explanation": "ユーザーとやり取りするUI部分",
+    "published": true
+  },
+  {
     "id": "public-key-main-01",
     "question": "RSA・ECC → 何の主流？",
     "answer": [
