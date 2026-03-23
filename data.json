@@ -115,6 +115,15 @@
     "published": true
   },
   {
+    "id": "function-layer-01",
+    "question": "3層C/Sのファンクション層 → ？",
+    "answer": [
+      "処理(アプリサーバ)"
+    ],
+    "explanation": "業務ロジックを実行する層",
+    "published": true
+  },
+  {
     "id": "functional-requirement-01",
     "question": "ヒアリングで利用者から得る要求事項 → ？",
     "answer": [
