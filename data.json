@@ -217,7 +217,8 @@
       "CRL,OCSP"
     ],
     "explanation": "証明書失効はCRLやOCSPで確認する",
-    "published": true
+    "published": true,
+    "link": "https://docs.google.com/document/d/141acrxW1y0FhO5YBsYeWSp_xKKNNl9nj_sFYmtqe-yg/edit?usp=drivesdk"
   },
   {
     "id": "poe-01",
