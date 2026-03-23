@@ -77,6 +77,15 @@
     "published": true
   },
   {
+    "id": "data-layer-01",
+    "question": "3層C/Sのデータ層 → ？",
+    "answer": [
+      "DB"
+    ],
+    "explanation": "データを保存・管理する層",
+    "published": true
+  },
+  {
     "id": "digital-signature-01",
     "question": "自分の秘密鍵で署名し公開鍵で検証 → ？",
     "answer": [
