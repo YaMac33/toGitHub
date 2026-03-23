@@ -336,6 +336,15 @@
     "published": true
   },
   {
+    "id": "software-lifecycle-01",
+    "question": "ソフトウェアライフサイクル → 暗記用の語呂合わせは？",
+    "answer": [
+      "今日の開運を保守"
+    ],
+    "explanation": "企画→要件定義→開発→運用→保守の流れの語呂",
+    "published": true
+  },
+  {
     "id": "ssl-01",
     "question": "SSL → 何の略？",
     "answer": [
