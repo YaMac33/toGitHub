@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>議会通告検索システム</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="page-header">
+    <h1 id="pageTitle">議会通告検索システム</h1>
+    <p id="pageDesc">議員名・内容・通告Noなどで検索できます。</p>
+  </header>
+
+  <section class="controls">
+    <div class="control-row">
+      <input
+        id="keywordInput"
+        type="text"
+        placeholder="議員名・内容・通告Noで検索"
+      />
+      <button id="searchBtn" type="button">検索</button>
+      <button id="clearBtn" type="button">クリア</button>
+    </div>
+
+    <div class="control-row">
+      <div class="view-buttons">
+        <span class="label">表示形式：</span>
+        <button id="viewTableBtn" type="button">一覧表</button>
+        <button id="viewMemberBtn" type="button">人ごと</button>
+        <button id="viewSessionBtn" type="button">回ごと</button>
+      </div>
+
+      <div class="sort-box">
+        <label for="sortSelect">並び順：</label>
+        <select id="sortSelect">
+          <option value="desc">新しい順</option>
+          <option value="asc">古い順</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="summary">
+    <p id="summaryKeyword">検索語：なし</p>
+    <p id="summaryCount">検索結果：0件</p>
+    <p id="summaryView">表示形式：一覧表</p>
+  </section>
+
+  <main id="resultsArea" class="results"></main>
+
+  <script src="./data/questions.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
