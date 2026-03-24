@@ -223,14 +223,25 @@ select:hover {
   gap: 14px;
 }
 
-.card-item {
-  padding: 0 0 12px;
-  border-bottom: 1px dashed #d9dee5;
+.subgroup-block {
+  padding: 8px 0 4px;
+  border-top: 1px solid #eceff3;
 }
 
-.card-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.subgroup-block:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.subgroup-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+
+.notice-block {
+  margin: 10px 0 14px;
+  padding-left: 8px;
 }
 
 .meta-line {
@@ -239,18 +250,42 @@ select:hover {
   color: #444;
 }
 
-.member-name {
-  font-weight: 700;
-  color: #1f2937;
+.tree-block {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
 }
 
-.content-text {
-  margin-top: 4px;
-  margin-bottom: 8px;
+.tree-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.tree-label {
+  font-weight: 700;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.tree-content-wrap {
+  min-width: 0;
+}
+
+.tree-content {
   line-height: 1.7;
-  color: #222;
-  white-space: normal;
   word-break: break-word;
+  margin-bottom: 4px;
+  color: #222;
+}
+
+.depth-1 {
+  padding-left: 18px;
+}
+
+.depth-2 {
+  padding-left: 36px;
 }
 
 .more-btn {
@@ -321,5 +356,23 @@ select:hover {
 
   .card-count {
     align-self: flex-start;
+  }
+
+  .tree-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .tree-label {
+    margin-bottom: 2px;
+  }
+
+  .depth-1,
+  .depth-2 {
+    padding-left: 12px;
+  }
+
+  .notice-block {
+    padding-left: 0;
   }
 }
