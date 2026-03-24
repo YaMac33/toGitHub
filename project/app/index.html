@@ -3,53 +3,107 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>議会通告検索システム</title>
-  <link rel="stylesheet" href="./style.css" />
+  <title>index</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: sans-serif;
+    }
+
+    .topbar {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      background: #f7f7f7;
+      box-sizing: border-box;
+    }
+
+    .mode-btn {
+      padding: 8px 14px;
+      border: 1px solid #bbb;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .mode-btn.active {
+      background: #222;
+      color: white;
+      border-color: #222;
+      font-weight: bold;
+    }
+
+    iframe {
+      width: 100%;
+      height: calc(100vh - 58px);
+      border: none;
+      display: block;
+    }
+  </style>
 </head>
 <body>
-  <header class="page-header">
-    <h1 id="pageTitle">議会通告検索システム</h1>
-    <p id="pageDesc">議員名・内容・通告Noなどで検索できます。</p>
-  </header>
+  <div class="topbar">
+    <button id="btn-cgpt" class="mode-btn">CGPT</button>
+    <button id="btn-gmn" class="mode-btn">GMN</button>
+  </div>
 
-  <section class="controls">
-    <div class="control-row">
-      <input
-        id="keywordInput"
-        type="text"
-        placeholder="議員名・内容・通告Noで検索"
-      />
-      <button id="searchBtn" type="button">検索</button>
-      <button id="clearBtn" type="button">クリア</button>
-    </div>
+  <iframe id="viewer"></iframe>
 
-    <div class="control-row">
-      <div class="view-buttons">
-        <span class="label">表示形式：</span>
-        <button id="viewTableBtn" type="button">一覧表</button>
-        <button id="viewMemberBtn" type="button">人ごと</button>
-        <button id="viewSessionBtn" type="button">回ごと</button>
-      </div>
+  <script>
+    const viewer = document.getElementById("viewer");
+    const btnCgpt = document.getElementById("btn-cgpt");
+    const btnGmn = document.getElementById("btn-gmn");
 
-      <div class="sort-box">
-        <label for="sortSelect">並び順：</label>
-        <select id="sortSelect">
-          <option value="desc">新しい順</option>
-          <option value="asc">古い順</option>
-        </select>
-      </div>
-    </div>
-  </section>
+    const pages = {
+      cgpt: "CGPT.html",
+      gmn: "GMN.html"
+    };
 
-  <section class="summary">
-    <p id="summaryKeyword">検索語：なし</p>
-    <p id="summaryCount">検索結果：0件</p>
-    <p id="summaryView">表示形式：一覧表</p>
-  </section>
+    function setActiveButton(mode) {
+      btnCgpt.classList.toggle("active", mode === "cgpt");
+      btnGmn.classList.toggle("active", mode === "gmn");
+    }
 
-  <main id="resultsArea" class="results"></main>
+    function switchMode(mode, push = true) {
+      if (!pages[mode]) return;
 
-  <script src="./data/questions.js"></script>
-  <script src="./app.js"></script>
+      viewer.src = pages[mode];
+      setActiveButton(mode);
+
+      if (push) {
+        history.pushState({ mode }, "", `#${mode}`);
+      }
+    }
+
+    btnCgpt.addEventListener("click", () => {
+      switchMode("cgpt");
+    });
+
+    btnGmn.addEventListener("click", () => {
+      switchMode("gmn");
+    });
+
+    window.addEventListener("popstate", (event) => {
+      const modeFromState = event.state?.mode;
+      const modeFromHash = location.hash.replace("#", "");
+
+      const mode = pages[modeFromState] ? modeFromState
+                 : pages[modeFromHash] ? modeFromHash
+                 : "cgpt";
+
+      switchMode(mode, false);
+    });
+
+    const initialHash = location.hash.replace("#", "");
+    const initialMode = pages[initialHash] ? initialHash : "cgpt";
+
+    history.replaceState({ mode: initialMode }, "", `#${initialMode}`);
+    switchMode(initialMode, false);
+  </script>
 </body>
 </html>
