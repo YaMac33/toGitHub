@@ -48,25 +48,25 @@
 </head>
 <body>
   <div class="topbar">
-    <button id="btn-cgpt" class="mode-btn">CGPT</button>
-    <button id="btn-gmn" class="mode-btn">GMN</button>
+    <button id="btn-stable" class="mode-btn">安定版</button>
+    <button id="btn-trial" class="mode-btn">試作版</button>
   </div>
 
   <iframe id="viewer"></iframe>
 
   <script>
     const viewer = document.getElementById("viewer");
-    const btnCgpt = document.getElementById("btn-cgpt");
-    const btnGmn = document.getElementById("btn-gmn");
+    const btnStable = document.getElementById("btn-stable");
+    const btnTrial = document.getElementById("btn-trial");
 
     const pages = {
-      cgpt: "CGPT.html",
-      gmn: "GMN.html"
+      stable: "stable.html",
+      trial: "trial.html"
     };
 
     function setActiveButton(mode) {
-      btnCgpt.classList.toggle("active", mode === "cgpt");
-      btnGmn.classList.toggle("active", mode === "gmn");
+      btnStable.classList.toggle("active", mode === "stable");
+      btnTrial.classList.toggle("active", mode === "trial");
     }
 
     function switchMode(mode, push = true) {
@@ -80,12 +80,12 @@
       }
     }
 
-    btnCgpt.addEventListener("click", () => {
-      switchMode("cgpt");
+    btnStable.addEventListener("click", () => {
+      switchMode("stable");
     });
 
-    btnGmn.addEventListener("click", () => {
-      switchMode("gmn");
+    btnTrial.addEventListener("click", () => {
+      switchMode("trial");
     });
 
     window.addEventListener("popstate", (event) => {
@@ -94,13 +94,13 @@
 
       const mode = pages[modeFromState] ? modeFromState
                  : pages[modeFromHash] ? modeFromHash
-                 : "cgpt";
+                 : "stable";
 
       switchMode(mode, false);
     });
 
     const initialHash = location.hash.replace("#", "");
-    const initialMode = pages[initialHash] ? initialHash : "cgpt";
+    const initialMode = pages[initialHash] ? initialHash : "stable";
 
     history.replaceState({ mode: initialMode }, "", `#${initialMode}`);
     switchMode(initialMode, false);
