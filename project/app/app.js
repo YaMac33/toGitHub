@@ -21,8 +21,8 @@
     resultsArea: document.getElementById("resultsArea")
   };
 
-  function escapeHtml(v) {
-    return String(v || "")
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -30,270 +30,618 @@
       .replace(/'/g, "&#39;");
   }
 
-  function normalizeText(v) {
-    return String(v || "").replace(/\s+/g, " ").trim();
+  function normalizeText(value) {
+    if (value == null) return "";
+    return String(value).replace(/\r\n/g, " ").replace(/\n/g, " ").replace(/\r/g, " ").replace(/\s+/g, " ").trim();
   }
 
-  function toNumber(v) {
+  function truncateText(value, limit) {
+    var text = normalizeText(value);
+    if (text.length <= limit) return text;
+    return text.slice(0, limit) + "…";
+  }
+
+  function toNumber(value) {
+    var v = normalizeText(value);
+    if (v === "" || v === "-") return 0;
     var n = parseInt(v, 10);
     return isNaN(n) ? 0 : n;
   }
 
-  function getEraPriority(n) {
-    n = normalizeText(n).toUpperCase();
+  function getEraPriority(numberValue) {
+    var n = normalizeText(numberValue).toUpperCase();
     if (n === "R") return 0;
     if (n === "H") return 1;
     return 9;
   }
 
-  function formatYear(number, year) {
-    number = normalizeText(number).toUpperCase();
-    year = normalizeText(year);
-    if (number === "R") return "令和" + year + "年";
-    if (number === "H") return "平成" + year + "年";
+  function formatYearLabel(numberValue, yearValue) {
+    var era = normalizeText(numberValue).toUpperCase();
+    var year = normalizeText(yearValue);
+    if (!year) return "";
+    if (era === "R") return "令和" + year + "年";
+    if (era === "H") return "平成" + year + "年";
     return year + "年";
   }
 
-  function formatSession(session) {
-    return "第" + toNumber(session) + "回定例会";
+  function formatSessionLabel(sessionValue) {
+    var n = toNumber(sessionValue);
+    if (n <= 0) return normalizeText(sessionValue);
+    return "第" + n + "回定例会";
   }
 
-  function formatYS(r) {
-    return formatYear(r.number, r.year) + " / " + formatSession(r.session);
+  function formatYearSessionLabel(numberValue, yearValue, sessionValue) {
+    return formatYearLabel(numberValue, yearValue) + " / " + formatSessionLabel(sessionValue);
   }
 
-  function buildTreeLabel(r) {
-    var a = normalizeText(r.major_no);
-    var b = normalizeText(r.middle_no);
-    var c = normalizeText(r.minor_no);
-    var arr = [];
-    if (a && a !== "-") arr.push(a);
-    if (b && b !== "-") arr.push(b);
-    if (c && c !== "-") arr.push(c);
-    return arr.join("-");
+  function getMemberDisplayName(memberName, groupName) {
+    var member = normalizeText(memberName);
+    var group = normalizeText(groupName);
+    if (!group) return member;
+    return member + "（" + group + "）";
   }
 
-  function getDepth(r) {
-    if (r.minor_no && r.minor_no !== "-") return 2;
-    if (r.middle_no && r.middle_no !== "-") return 1;
+  function buildTreeLabel(record) {
+    var major = normalizeText(record.major_no);
+    var middle = normalizeText(record.middle_no);
+    var minor = normalizeText(record.minor_no);
+    var parts = [];
+
+    if (major && major !== "-") parts.push(major);
+    if (middle && middle !== "-") parts.push(middle);
+    if (minor && minor !== "-") parts.push(minor);
+
+    return parts.join("-");
+  }
+
+  function getTreeDepth(record) {
+    var middle = normalizeText(record.middle_no);
+    var minor = normalizeText(record.minor_no);
+    if (minor && minor !== "-") return 2;
+    if (middle && middle !== "-") return 1;
     return 0;
   }
 
+  function compareTreeRecords(a, b) {
+    var aMajor = toNumber(a.major_no);
+    var bMajor = toNumber(b.major_no);
+    if (aMajor !== bMajor) return aMajor - bMajor;
+
+    var aMiddle = toNumber(a.middle_no);
+    var bMiddle = toNumber(b.middle_no);
+    if (aMiddle !== bMiddle) return aMiddle - bMiddle;
+
+    var aMinor = toNumber(a.minor_no);
+    var bMinor = toNumber(b.minor_no);
+    if (aMinor !== bMinor) return aMinor - bMinor;
+
+    return 0;
+  }
+
+  // 一覧表用の基本ソート
+  // R→H / year降順 / session降順 / notice_no昇順
   function compareRecords(a, b) {
-    var e = getEraPriority(a.number) - getEraPriority(b.number);
-    if (e !== 0) return e;
+    var eraDiff = getEraPriority(a.number) - getEraPriority(b.number);
+    if (eraDiff !== 0) return eraDiff;
 
-    var y = toNumber(b.year) - toNumber(a.year);
-    if (y !== 0) return y;
+    var yearDiff = toNumber(b.year) - toNumber(a.year);
+    if (yearDiff !== 0) return yearDiff;
 
-    var s = toNumber(b.session) - toNumber(a.session);
-    if (s !== 0) return s;
+    var sessionDiff = toNumber(b.session) - toNumber(a.session);
+    if (sessionDiff !== 0) return sessionDiff;
 
-    var n = toNumber(a.notice_no) - toNumber(b.notice_no);
-    if (n !== 0) return n;
+    var noticeDiff = toNumber(a.notice_no) - toNumber(b.notice_no);
+    if (noticeDiff !== 0) return noticeDiff;
 
-    return 0;
+    var memberA = normalizeText(a.member_name);
+    var memberB = normalizeText(b.member_name);
+    if (memberA < memberB) return -1;
+    if (memberA > memberB) return 1;
+
+    return compareTreeRecords(a, b);
+  }
+
+  function sortRecords(records) {
+    var list = records.slice();
+    list.sort(compareRecords);
+    return list;
+  }
+
+  function matchesKeyword(record, keyword) {
+    var q = normalizeText(keyword).toLowerCase();
+    if (!q) return true;
+
+    var fields = [
+      record.fiscal_year,
+      record.number,
+      record.year,
+      record.session,
+      record.notice_no,
+      record.member_name,
+      record.group,
+      record.content
+    ];
+
+    for (var i = 0; i < fields.length; i++) {
+      if (normalizeText(fields[i]).toLowerCase().indexOf(q) !== -1) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function filterRecords(records, keyword) {
-    var q = normalizeText(keyword).toLowerCase();
-    if (!q) return records.slice();
-
-    return records.filter(function (r) {
-      return (
-        normalizeText(r.member_name).toLowerCase().includes(q) ||
-        normalizeText(r.content).toLowerCase().includes(q)
-      );
-    });
+    var result = [];
+    for (var i = 0; i < records.length; i++) {
+      if (matchesKeyword(records[i], keyword)) result.push(records[i]);
+    }
+    return result;
   }
 
-  function groupMember(records) {
-    var map = {};
-
-    records.forEach(function (r) {
-      var m = r.member_name || "不明";
-      if (!map[m]) {
-        map[m] = { member: m, group: r.group, ys: {} };
-      }
-
-      var ysKey = r.number + "_" + r.year + "_" + r.session;
-      if (!map[m].ys[ysKey]) {
-        map[m].ys[ysKey] = {
-          number: r.number,
-          year: r.year,
-          session: r.session,
-          notices: {}
-        };
-      }
-
-      var n = r.notice_no;
-      if (!map[m].ys[ysKey].notices[n]) {
-        map[m].ys[ysKey].notices[n] = [];
-      }
-
-      map[m].ys[ysKey].notices[n].push(r);
-    });
-
-    return Object.values(map);
+  function getViewLabel(viewMode) {
+    if (viewMode === "member") return "人ごと";
+    if (viewMode === "session") return "回ごと";
+    return "一覧表";
   }
 
-  function groupSession(records) {
-    var map = {};
-
-    records.forEach(function (r) {
-      var key = r.number + "_" + r.year + "_" + r.session;
-      if (!map[key]) {
-        map[key] = {
-          number: r.number,
-          year: r.year,
-          session: r.session,
-          notices: {}
-        };
-      }
-
-      var n = r.notice_no;
-      if (!map[key].notices[n]) {
-        map[key].notices[n] = {};
-      }
-
-      var m = r.member_name;
-      if (!map[key].notices[n][m]) {
-        map[key].notices[n][m] = { group: r.group, records: [] };
-      }
-
-      map[key].notices[n][m].records.push(r);
-    });
-
-    return Object.values(map);
+  function updateActiveButtons() {
+    els.viewTableBtn.className = state.viewMode === "table" ? "active" : "";
+    els.viewMemberBtn.className = state.viewMode === "member" ? "active" : "";
+    els.viewSessionBtn.className = state.viewMode === "session" ? "active" : "";
   }
 
-  function renderTreeRows(list, limit, expandKey) {
-    var expanded = expandedMap[expandKey];
+  function renderSummary(filteredRecords) {
+    els.summaryKeyword.textContent = "検索語：" + (normalizeText(state.keyword) || "なし");
+    els.summaryCount.textContent = "検索結果：" + filteredRecords.length + "件";
+    els.summaryView.textContent = "表示形式：" + getViewLabel(state.viewMode);
+  }
+
+  // -----------------------------
+  // 一覧表
+  // -----------------------------
+  function renderTable(records) {
     var html = "";
-    var count = 0;
 
-    for (var i = 0; i < list.length; i++) {
-      if (!expanded && count >= limit) break;
+    html += '<div class="table-wrap">';
+    html += '<table class="results-table">';
+    html += "<thead><tr>";
+    html += "<th>年度</th>";
+    html += "<th>年</th>";
+    html += "<th>回</th>";
+    html += "<th>通告No</th>";
+    html += "<th>議員名</th>";
+    html += "<th>内容</th>";
+    html += "</tr></thead>";
+    html += "<tbody>";
 
-      var r = list[i];
-      html += '<div class="tree-row depth-' + getDepth(r) + '">';
+    if (!records.length) {
+      html += '<tr><td colspan="6">該当データがありません。</td></tr>';
+    } else {
+      for (var i = 0; i < records.length; i++) {
+        var r = records[i];
+        html += "<tr>";
+        html += "<td>" + escapeHtml(r.fiscal_year) + "</td>";
+        html += "<td>" + escapeHtml(formatYearLabel(r.number, r.year)) + "</td>";
+        html += "<td>" + escapeHtml(formatSessionLabel(r.session)) + "</td>";
+        html += "<td>" + escapeHtml(r.notice_no) + "</td>";
+        html += "<td>" + escapeHtml(truncateText(r.member_name, 12)) + "</td>";
+        html += "<td>" + escapeHtml(truncateText(r.content, 40)) + "</td>";
+        html += "</tr>";
+      }
+    }
+
+    html += "</tbody></table></div>";
+    els.resultsArea.innerHTML = html;
+  }
+
+  // -----------------------------
+  // 人ごとグループ
+  // member_name
+  //   -> year+session
+  //      -> notice_no
+  //         -> records
+  // -----------------------------
+  function buildMemberGroups(records) {
+    var memberMap = {};
+    var memberOrder = [];
+    var i;
+
+    for (i = 0; i < records.length; i++) {
+      var r = records[i];
+      var memberKey = normalizeText(r.member_name) || "不明";
+
+      if (!memberMap[memberKey]) {
+        memberMap[memberKey] = {
+          member_name: memberKey,
+          group: normalizeText(r.group),
+          yearSessions: [],
+          yearSessionMap: {}
+        };
+        memberOrder.push(memberKey);
+      }
+
+      var ysKey = [normalizeText(r.number), normalizeText(r.year), normalizeText(r.session)].join("_");
+      if (!memberMap[memberKey].yearSessionMap[ysKey]) {
+        memberMap[memberKey].yearSessionMap[ysKey] = {
+          number: normalizeText(r.number),
+          year: normalizeText(r.year),
+          session: normalizeText(r.session),
+          notices: [],
+          noticeMap: {}
+        };
+        memberMap[memberKey].yearSessions.push(memberMap[memberKey].yearSessionMap[ysKey]);
+      }
+
+      var ysGroup = memberMap[memberKey].yearSessionMap[ysKey];
+      var noticeKey = normalizeText(r.notice_no) || "0";
+
+      if (!ysGroup.noticeMap[noticeKey]) {
+        ysGroup.noticeMap[noticeKey] = {
+          notice_no: noticeKey,
+          records: []
+        };
+        ysGroup.notices.push(ysGroup.noticeMap[noticeKey]);
+      }
+
+      ysGroup.noticeMap[noticeKey].records.push(r);
+    }
+
+    var members = [];
+    for (i = 0; i < memberOrder.length; i++) {
+      members.push(memberMap[memberOrder[i]]);
+    }
+
+    for (i = 0; i < members.length; i++) {
+      var member = members[i];
+
+      // 回は新しい順
+      member.yearSessions.sort(function (a, b) {
+        var eraDiff = getEraPriority(a.number) - getEraPriority(b.number);
+        if (eraDiff !== 0) return eraDiff;
+
+        var yearDiff = toNumber(b.year) - toNumber(a.year);
+        if (yearDiff !== 0) return yearDiff;
+
+        return toNumber(b.session) - toNumber(a.session);
+      });
+
+      for (var j = 0; j < member.yearSessions.length; j++) {
+        var ys = member.yearSessions[j];
+
+        // 通告Noは昇順
+        ys.notices.sort(function (a, b) {
+          return toNumber(a.notice_no) - toNumber(b.notice_no);
+        });
+
+        for (var k = 0; k < ys.notices.length; k++) {
+          ys.notices[k].records.sort(compareTreeRecords);
+        }
+      }
+    }
+
+    return members;
+  }
+
+  // -----------------------------
+  // 回ごとグループ
+  // year+session
+  //   -> notice_no
+  //      -> member_name
+  //         -> records
+  // -----------------------------
+  function buildSessionGroups(records) {
+    var sessionMap = {};
+    var sessionOrder = [];
+    var i;
+
+    for (i = 0; i < records.length; i++) {
+      var r = records[i];
+      var sessionKey = [normalizeText(r.number), normalizeText(r.year), normalizeText(r.session)].join("_");
+
+      if (!sessionMap[sessionKey]) {
+        sessionMap[sessionKey] = {
+          number: normalizeText(r.number),
+          year: normalizeText(r.year),
+          session: normalizeText(r.session),
+          notices: [],
+          noticeMap: {}
+        };
+        sessionOrder.push(sessionKey);
+      }
+
+      var sGroup = sessionMap[sessionKey];
+      var noticeKey = normalizeText(r.notice_no) || "0";
+
+      if (!sGroup.noticeMap[noticeKey]) {
+        sGroup.noticeMap[noticeKey] = {
+          notice_no: noticeKey,
+          members: [],
+          memberMap: {}
+        };
+        sGroup.notices.push(sGroup.noticeMap[noticeKey]);
+      }
+
+      var nGroup = sGroup.noticeMap[noticeKey];
+      var memberKey = normalizeText(r.member_name) || "不明";
+
+      if (!nGroup.memberMap[memberKey]) {
+        nGroup.memberMap[memberKey] = {
+          member_name: memberKey,
+          group: normalizeText(r.group),
+          records: []
+        };
+        nGroup.members.push(nGroup.memberMap[memberKey]);
+      }
+
+      nGroup.memberMap[memberKey].records.push(r);
+    }
+
+    var sessions = [];
+    for (i = 0; i < sessionOrder.length; i++) {
+      sessions.push(sessionMap[sessionOrder[i]]);
+    }
+
+    // 回は新しい順
+    sessions.sort(function (a, b) {
+      var eraDiff = getEraPriority(a.number) - getEraPriority(b.number);
+      if (eraDiff !== 0) return eraDiff;
+
+      var yearDiff = toNumber(b.year) - toNumber(a.year);
+      if (yearDiff !== 0) return yearDiff;
+
+      return toNumber(b.session) - toNumber(a.session);
+    });
+
+    for (i = 0; i < sessions.length; i++) {
+      var session = sessions[i];
+
+      // 通告Noは昇順
+      session.notices.sort(function (a, b) {
+        return toNumber(a.notice_no) - toNumber(b.notice_no);
+      });
+
+      for (var j = 0; j < session.notices.length; j++) {
+        var notice = session.notices[j];
+
+        // 同じ通告No内では人名順
+        notice.members.sort(function (a, b) {
+          var aName = normalizeText(a.member_name);
+          var bName = normalizeText(b.member_name);
+          if (aName < bName) return -1;
+          if (aName > bName) return 1;
+          return 0;
+        });
+
+        for (var k = 0; k < notice.members.length; k++) {
+          notice.members[k].records.sort(compareTreeRecords);
+        }
+      }
+    }
+
+    return sessions;
+  }
+
+  function renderTreeRows(records, maxRows) {
+    var html = "";
+    for (var i = 0; i < records.length && i < maxRows; i++) {
+      var r = records[i];
+      html += '<div class="tree-row depth-' + getTreeDepth(r) + '">';
       html += '<div class="tree-label">' + escapeHtml(buildTreeLabel(r)) + "</div>";
       html += '<div class="tree-content">' + escapeHtml(r.content) + "</div>";
       html += "</div>";
-
-      count++;
     }
-
-    if (!expanded && list.length > limit) {
-      html += '<button class="more-btn" data-key="' + expandKey + '">もっと見る</button>';
-    }
-
     return html;
   }
 
-  function renderMemberCards(groups) {
+  // -----------------------------
+  // 人ごと
+  // 「もっと見る」は人ごとに1つ
+  // -----------------------------
+  function renderMemberCards(memberGroups) {
     var html = '<div class="cards">';
 
-    groups.forEach(function (g) {
-      html += '<div class="card">';
-      html += '<h3>' + escapeHtml(g.member + "（" + (g.group || "") + "）") + "</h3>";
+    if (!memberGroups.length) {
+      html += '<p class="empty-message">該当データがありません。</p></div>';
+      els.resultsArea.innerHTML = html;
+      return;
+    }
 
-      var ysList = Object.values(g.ys).sort(compareRecords);
+    for (var i = 0; i < memberGroups.length; i++) {
+      var member = memberGroups[i];
+      var memberKey = "member:" + member.member_name;
+      var expanded = !!expandedMap[memberKey];
+      var totalCount = 0;
+      var shownRows = 0;
 
-      ysList.forEach(function (ys) {
-        html += "<div>";
-        html += "<b>■ " + escapeHtml(formatYS(ys)) + "</b>";
+      html += '<section class="card">';
+      html += '<div class="card-header">';
+      html += '<h2 class="card-title">' + escapeHtml(getMemberDisplayName(member.member_name, member.group)) + "</h2>";
 
-        var notices = Object.keys(ys.notices).sort(function (a, b) {
-          return toNumber(a) - toNumber(b);
-        });
+      for (var yc = 0; yc < member.yearSessions.length; yc++) {
+        for (var nc = 0; nc < member.yearSessions[yc].notices.length; nc++) {
+          totalCount += member.yearSessions[yc].notices[nc].records.length;
+        }
+      }
 
-        notices.forEach(function (n) {
-          var list = ys.notices[n].sort(compareRecords);
+      html += '<div class="card-count">' + totalCount + "件</div>";
+      html += "</div>";
+      html += '<div class="card-body">';
 
-          var key = "member:" + g.member;
+      for (var j = 0; j < member.yearSessions.length; j++) {
+        var ys = member.yearSessions[j];
 
-          html += '<div class="notice-block">';
-          html += "<div>通告No:" + escapeHtml(n) + "</div>";
-          html += renderTreeRows(list, 3, key);
+        html += '<section class="subgroup-block">';
+        html += '<div class="subgroup-title">■ ' + escapeHtml(formatYearSessionLabel(ys.number, ys.year, ys.session)) + "</div>";
+
+        for (var k = 0; k < ys.notices.length; k++) {
+          var notice = ys.notices[k];
+          var rows = notice.records;
+
+          if (!expanded && shownRows >= 3) {
+            break;
+          }
+
+          var remaining = expanded ? rows.length : Math.max(0, 3 - shownRows);
+          if (remaining <= 0) {
+            break;
+          }
+
+          html += '<article class="notice-block">';
+          html += '<div class="meta-line">通告No: ' + escapeHtml(notice.notice_no) + "</div>";
+          html += '<div class="tree-block">';
+          html += renderTreeRows(rows, remaining);
           html += "</div>";
-        });
+          html += "</article>";
 
-        html += "</div>";
-      });
+          shownRows += Math.min(rows.length, remaining);
+        }
+
+        html += "</section>";
+
+        if (!expanded && shownRows >= 3) {
+          break;
+        }
+      }
+
+      if (!expanded && totalCount > 3) {
+        html += '<button class="more-btn" type="button" data-expand-key="' + escapeHtml(memberKey) + '">もっと見る</button>';
+      } else if (expanded && totalCount > 3) {
+        html += '<button class="more-btn" type="button" data-expand-key="' + escapeHtml(memberKey) + '">閉じる</button>';
+      }
 
       html += "</div>";
-    });
+      html += "</section>";
+    }
 
     html += "</div>";
     els.resultsArea.innerHTML = html;
   }
 
-  function renderSessionCards(groups) {
+  // -----------------------------
+  // 回ごと
+  // 「もっと見る」は回の中で人ごとに1つ
+  // -----------------------------
+  function renderSessionCards(sessionGroups) {
     var html = '<div class="cards">';
 
-    groups.sort(compareRecords).forEach(function (s) {
-      html += '<div class="card">';
-      html += "<h3>" + escapeHtml(formatYS(s)) + "</h3>";
+    if (!sessionGroups.length) {
+      html += '<p class="empty-message">該当データがありません。</p></div>';
+      els.resultsArea.innerHTML = html;
+      return;
+    }
 
-      var notices = Object.keys(s.notices).sort(function (a, b) {
-        return toNumber(a) - toNumber(b);
-      });
+    for (var i = 0; i < sessionGroups.length; i++) {
+      var session = sessionGroups[i];
+      var totalCount = 0;
 
-      notices.forEach(function (n) {
-        html += "<div><b>通告No:" + n + "</b></div>";
+      for (var nc = 0; nc < session.notices.length; nc++) {
+        for (var mc = 0; mc < session.notices[nc].members.length; mc++) {
+          totalCount += session.notices[nc].members[mc].records.length;
+        }
+      }
 
-        var members = Object.keys(s.notices[n]).sort();
+      html += '<section class="card">';
+      html += '<div class="card-header">';
+      html += '<h2 class="card-title">' + escapeHtml(formatYearSessionLabel(session.number, session.year, session.session)) + "</h2>";
+      html += '<div class="card-count">' + totalCount + "件</div>';
+      html += "</div>";
+      html += '<div class="card-body">';
 
-        members.forEach(function (m) {
-          var obj = s.notices[n][m];
-          var key = "session:" + s.number + "_" + s.year + "_" + s.session + ":" + m;
+      for (var j = 0; j < session.notices.length; j++) {
+        var notice = session.notices[j];
 
-          html += '<div class="notice-block">';
-          html += "<div>" + escapeHtml(m + "（" + (obj.group || "") + "）") + "</div>";
-          html += renderTreeRows(obj.records.sort(compareRecords), 3, key);
+        html += '<section class="subgroup-block">';
+        html += '<div class="subgroup-title">通告No: ' + escapeHtml(notice.notice_no) + "</div>";
+
+        for (var k = 0; k < notice.members.length; k++) {
+          var member = notice.members[k];
+          var sessionMemberKey = "session:" + session.number + "_" + session.year + "_" + session.session + ":" + member.member_name;
+          var expanded = !!expandedMap[sessionMemberKey];
+          var rows = member.records;
+          var limit = expanded ? rows.length : 3;
+
+          html += '<article class="notice-block">';
+          html += '<div class="meta-line">' + escapeHtml(getMemberDisplayName(member.member_name, member.group)) + "</div>";
+          html += '<div class="tree-block">';
+          html += renderTreeRows(rows, limit);
           html += "</div>";
-        });
-      });
+
+          if (rows.length > 3) {
+            html += '<button class="more-btn" type="button" data-expand-key="' + escapeHtml(sessionMemberKey) + '">';
+            html += expanded ? "閉じる" : "もっと見る";
+            html += "</button>";
+          }
+
+          html += "</article>";
+        }
+
+        html += "</section>";
+      }
 
       html += "</div>";
-    });
+      html += "</section>";
+    }
 
     html += "</div>";
     els.resultsArea.innerHTML = html;
   }
 
   function render() {
-    var data = filterRecords(RECORDS, state.keyword).sort(compareRecords);
+    if (typeof RECORDS === "undefined" || !RECORDS || !RECORDS.length) {
+      els.resultsArea.innerHTML = '<p class="empty-message">データが読み込めていません。</p>';
+      els.summaryKeyword.textContent = "検索語：なし";
+      els.summaryCount.textContent = "検索結果：0件";
+      els.summaryView.textContent = "表示形式：" + getViewLabel(state.viewMode);
+      updateActiveButtons();
+      return;
+    }
 
-    els.summaryKeyword.textContent = "検索語：" + (state.keyword || "なし");
-    els.summaryCount.textContent = "検索結果：" + data.length + "件";
-    els.summaryView.textContent = state.viewMode;
+    var filteredRecords = filterRecords(RECORDS, state.keyword);
+    var sortedRecords = sortRecords(filteredRecords);
+
+    renderSummary(sortedRecords);
+    updateActiveButtons();
 
     if (state.viewMode === "member") {
-      renderMemberCards(groupMember(data));
+      renderMemberCards(buildMemberGroups(sortedRecords));
       return;
     }
 
     if (state.viewMode === "session") {
-      renderSessionCards(groupSession(data));
+      renderSessionCards(buildSessionGroups(sortedRecords));
       return;
     }
 
-    els.resultsArea.innerHTML = "<pre>" + escapeHtml(JSON.stringify(data, null, 2)) + "</pre>";
+    renderTable(sortedRecords);
   }
 
-  function bind() {
-    els.searchBtn.onclick = function () {
-      state.keyword = els.keywordInput.value;
-      render();
-    };
+  function handleSearch() {
+    state.keyword = els.keywordInput.value || "";
+    render();
+  }
 
-    els.clearBtn.onclick = function () {
-      state.keyword = "";
-      els.keywordInput.value = "";
-      expandedMap = {};
-      render();
+  function handleClear() {
+    state.keyword = "";
+    els.keywordInput.value = "";
+    expandedMap = {};
+    render();
+  }
+
+  function handleToggleMore(event) {
+    var target = event.target;
+    if (!target || !target.getAttribute("data-expand-key")) return;
+
+    var key = target.getAttribute("data-expand-key");
+    expandedMap[key] = !expandedMap[key];
+    render();
+  }
+
+  function bindEvents() {
+    els.searchBtn.onclick = handleSearch;
+    els.clearBtn.onclick = handleClear;
+
+    els.keywordInput.onkeydown = function (event) {
+      if (event.key === "Enter") handleSearch();
     };
 
     els.viewTableBtn.onclick = function () {
@@ -311,14 +659,9 @@
       render();
     };
 
-    els.resultsArea.onclick = function (e) {
-      var key = e.target.getAttribute("data-key");
-      if (!key) return;
-      expandedMap[key] = !expandedMap[key];
-      render();
-    };
+    els.resultsArea.onclick = handleToggleMore;
   }
 
-  bind();
+  bindEvents();
   render();
 })();
