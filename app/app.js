@@ -62,11 +62,85 @@ window.APP = (function () {
     }) || null;
   }
 
+  function getCommitteeById(committeeId) {
+    return getArray("committees").find(function (committee) {
+      return committee.committee_id === committeeId;
+    }) || null;
+  }
+
+  function getCouncilById(councilId) {
+    return getArray("councils").find(function (council) {
+      return council.council_id === councilId;
+    }) || null;
+  }
+
   function getCurrentPartyNameByMemberId(memberId, baseDate) {
     const record = getCurrentPartyRecordByMemberId(memberId, baseDate);
     if (!record) return "";
     const party = getPartyById(record.party_id);
     return party ? party.party_name : "";
+  }
+
+  function getCurrentCommitteeRecordsByMemberId(memberId, baseDate) {
+    return getArray("member_committees")
+      .filter(function (row) {
+        return row.member_id === memberId &&
+          isCurrentRange(row.start_date, row.end_date, baseDate);
+      })
+      .sort(function (a, b) {
+        const committeeA = getCommitteeById(a.committee_id);
+        const committeeB = getCommitteeById(b.committee_id);
+        const orderA = Number(committeeA && committeeA.sort_order ? committeeA.sort_order : 9999);
+        const orderB = Number(committeeB && committeeB.sort_order ? committeeB.sort_order : 9999);
+        return orderA - orderB;
+      });
+  }
+
+  function getCurrentCouncilRecordsByMemberId(memberId, baseDate) {
+    return getArray("member_councils")
+      .filter(function (row) {
+        return row.member_id === memberId &&
+          isCurrentRange(row.start_date, row.end_date, baseDate);
+      })
+      .sort(function (a, b) {
+        const councilA = getCouncilById(a.council_id);
+        const councilB = getCouncilById(b.council_id);
+        const orderA = Number(councilA && councilA.sort_order ? councilA.sort_order : 9999);
+        const orderB = Number(councilB && councilB.sort_order ? councilB.sort_order : 9999);
+        return orderA - orderB;
+      });
+  }
+
+  function formatCommitteeLabel(record) {
+    const committee = getCommitteeById(record.committee_id);
+    if (!committee) return "";
+    const name = committee.committee_name || "";
+    const role = record.role_name || "";
+    return role ? name + "（" + role + "）" : name;
+  }
+
+  function formatCouncilLabel(record) {
+    const council = getCouncilById(record.council_id);
+    if (!council) return "";
+    const name = council.council_name || "";
+    const role = record.role_name || "";
+    return role ? name + "（" + role + "）" : name;
+  }
+
+  function getCurrentCommitteeLabelsByMemberId(memberId, baseDate) {
+    return getCurrentCommitteeRecordsByMemberId(memberId, baseDate)
+      .map(formatCommitteeLabel)
+      .filter(function (label) {
+        return label !== "";
+      });
+  }
+
+  function getCurrentCouncilLabelsByMemberId(memberId, baseDate) {
+    return getCurrentCouncilRecordsByMemberId(memberId, baseDate)
+      .map(formatCouncilLabel)
+      .filter(function (label) {
+        return label !== "";
+      });
   }
 
   function buildMemberList(baseDate) {
@@ -85,7 +159,9 @@ window.APP = (function () {
           member_name_short: member.member_name_short || "",
           age: member.age || "",
           current_status: getCurrentStatusByMemberId(member.member_id, baseDate),
-          current_party_name: getCurrentPartyNameByMemberId(member.member_id, baseDate)
+          current_party_name: getCurrentPartyNameByMemberId(member.member_id, baseDate),
+          current_committees: getCurrentCommitteeLabelsByMemberId(member.member_id, baseDate),
+          current_councils: getCurrentCouncilLabelsByMemberId(member.member_id, baseDate)
         };
       });
   }
@@ -139,7 +215,9 @@ window.APP = (function () {
       members: getArray("members").length,
       office_terms: getArray("office_terms").length,
       parties: getArray("parties").length,
-      member_parties: getArray("member_parties").length
+      member_parties: getArray("member_parties").length,
+      member_committees: getArray("member_committees").length,
+      member_councils: getArray("member_councils").length
     };
   }
 
