@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>議員管理システム（内部向けREADME）</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.7;
+      color: #222;
+      background: #fff;
+      margin: 0;
+      padding: 32px 20px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    h1, h2 {
+      line-height: 1.4;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-top: 0;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      margin-top: 36px;
+      margin-bottom: 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    ul {
+      margin: 0 0 16px 1.2em;
+      padding: 0;
+    }
+
+    li {
+      margin: 0 0 6px;
+    }
+
+    pre {
+      background: #f6f8fa;
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 12px 0 18px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95em;
+    }
+
+    .small-gap {
+      margin-bottom: 8px;
+    }
+
+    .section-block {
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>議員管理システム（内部向けREADME）</h1>
+
+    <h2>1. 概要</h2>
+    <p>本システムは、<strong>市議会議員の情報をExcelで管理し、Webアプリとして参照する仕組み</strong>です。</p>
+
+    <pre><code>Excel（正本データ）
+↓
+VBAでJS生成
+↓
+HTML + JavaScriptで表示（LG環境対応）</code></pre>
+
+    <p class="small-gap"><strong>特徴</strong></p>
+    <ul>
+      <li>サーバ不要（LGWAN環境対応）</li>
+      <li>Excelが正本（非エンジニアでも運用可能）</li>
+      <li>履歴ベース設計（在任・会派・委員会など）</li>
+      <li>IDでデータを紐づけ（DB的構造）</li>
+    </ul>
+
+    <h2>2. システム構成</h2>
+    <p class="small-gap"><strong>ディレクトリ構成</strong></p>
+
+    <pre><code>project/
+├─ source.xlsm                ← 正本データ（Excel）
+└─ app/
+   ├─ stable.html            ← 本番画面
+   ├─ app.js                 ← データ処理
+   ├─ view_stable.js         ← UI制御
+   └─ data/                  ← VBAで生成されるJS
+      ├─ members.js
+      ├─ office_terms.js
+      ├─ parties.js
+      ├─ member_parties.js
+      ├─ committees.js
+      ├─ member_committees.js
+      ├─ councils.js
+      ├─ member_councils.js
+      ├─ contacts.js
+      ├─ change_logs.js
+      └─ codes.js</code></pre>
+
+    <h2>3. データ設計</h2>
+    <p class="small-gap"><strong>基本ルール</strong></p>
+    <ul>
+      <li>1シート = 1JSファイル</li>
+      <li>1行 = 1レコード（オブジェクト）</li>
+      <li>1行目 = フィールド名（キー）</li>
+      <li>IDでデータを紐づける</li>
+      <li>履歴は「開始日～終了日」で管理</li>
+    </ul>
+
+    <p class="small-gap"><strong>主なテーブル</strong></p>
+
+    <div class="section-block">
+      <p><strong>議員マスタ</strong><br>members.js</p>
+      <ul>
+        <li>基本情報（氏名、生年月日など）</li>
+      </ul>
+    </div>
+
+    <div class="section-block">
+      <p><strong>在任履歴</strong><br>office_terms.js</p>
+      <ul>
+        <li>任期単位で管理</li>
+        <li>現職/過去判定に使用</li>
+      </ul>
+    </div>
+
+    <div class="section-block">
+      <p><strong>会派</strong><br>parties.js / member_parties.js</p>
+      <ul>
+        <li>会派マスタ + 所属履歴</li>
+      </ul>
+    </div>
+
+    <div class="section-block">
+      <p><strong>委員会</strong><br>committees.js / member_committees.js</p>
+    </div>
+
+    <div class="section-block">
+      <p><strong>審議会</strong><br>councils.js / member_councils.js</p>
+    </div>
+
+    <div class="section-block">
+      <p><strong>連絡先</strong><br>contacts.js</p>
+      <ul>
+        <li>住所・電話・メール（履歴管理あり）</li>
+      </ul>
+    </div>
+
+    <h2>4. データの紐づけ（重要）</h2>
+    <p>すべて<strong>IDで紐づける</strong></p>
+    <ul>
+      <li>member_id → 全履歴</li>
+      <li>party_id → 会派</li>
+      <li>committee_id → 委員会</li>
+      <li>council_id → 審議会</li>
+    </ul>
+
+    <p>例：</p>
+    <pre><code>members
+  ↓ member_id
+member_parties
+  ↓ party_id
+parties</code></pre>
+
+    <h2>5. 「現在」の考え方</h2>
+    <p>以下を満たすものを「現在」とする</p>
+
+    <pre><code>start_date &lt;= 今日
+AND
+(end_date が空 or end_date &gt;= 今日)</code></pre>
+
+    <h2>6. VBA（データ出力）</h2>
+    <p class="small-gap"><strong>実行方法</strong></p>
+
+    <pre><code>Alt + F8
+↓
+ExportAllData</code></pre>
+
+    <p class="small-gap"><strong>出力内容</strong></p>
+
+    <pre><code>Excel → app/data/*.js</code></pre>
+
+    <p>例：</p>
+    <pre><code>window.APP_DATA.members = [
+  { member_id: "M001", member_name: "山田太郎" }
+];</code></pre>
+
+    <p class="small-gap"><strong>運用方法</strong></p>
+
+    <p><strong>初回</strong></p>
+    <pre><code>ExportAllData（全出力）</code></pre>
+
+    <p><strong>通常運用</strong></p>
+    <pre><code>修正したシートを開く
+↓
+ExportActiveSheetData</code></pre>
+
+    <h2>7. 画面仕様（stable）</h2>
+    <p class="small-gap"><strong>一覧</strong></p>
+    <ul>
+      <li>議員一覧表示</li>
+      <li>現在状態を自動計算</li>
+    </ul>
+
+    <p>表示内容：</p>
+    <ul>
+      <li>現在会派</li>
+      <li>現在委員会（複数）</li>
+      <li>現在審議会（複数）</li>
+    </ul>
+
+    <p class="small-gap"><strong>検索</strong></p>
+    <ul>
+      <li>氏名</li>
+      <li>会派</li>
+      <li>在任状態</li>
+    </ul>
+
+    <p class="small-gap"><strong>詳細</strong></p>
+    <p>一覧クリックで表示：</p>
+    <ul>
+      <li>基本情報</li>
+      <li>現在所属</li>
+      <li>在任履歴</li>
+      <li>会派履歴</li>
+      <li>委員会履歴</li>
+      <li>審議会履歴</li>
+      <li>連絡先履歴</li>
+    </ul>
+
+    <h2>8. データ入力ルール（重要）</h2>
+    <p class="small-gap"><strong>必須ルール</strong></p>
+    <ul>
+      <li>IDは一意</li>
+      <li>IDは絶対に変更しない</li>
+      <li>名前で紐づけない</li>
+    </ul>
+
+    <p class="small-gap"><strong>よくあるミス</strong></p>
+    <ul>
+      <li>M001 と M1 の混在</li>
+      <li>全角スペース混入</li>
+      <li>シート名ズレ</li>
+      <li>ヘッダ空欄</li>
+    </ul>
+
+    <h2>9. トラブル対応</h2>
+    <p><strong>JSが表示されない</strong><br>→ dataフォルダ未生成 or VBA未実行</p>
+    <p><strong>特定データだけおかしい</strong><br>→ ID不整合</p>
+    <p><strong>現在判定がおかしい</strong><br>→ 日付のズレ</p>
+
+    <h2>10. 拡張性</h2>
+    <p>今後追加可能：</p>
+    <ul>
+      <li>議案</li>
+      <li>表決履歴</li>
+      <li>定例会</li>
+      <li>特別委員会</li>
+    </ul>
+    <p>同じ設計で拡張可能</p>
+
+    <h2>11. 設計思想（重要）</h2>
+    <pre><code>Excel = DB（正本）
+JS = 配布データ
+HTML = ビュー</code></pre>
+
+    <p>一言で：</p>
+    <pre><code>「ExcelをDBとして、ブラウザでJOINして表示するシステム」</code></pre>
+
+    <h2>12. 開発方針</h2>
+    <ul>
+      <li>まず動かす</li>
+      <li>次に分離（app.js / view）</li>
+      <li>最後にUI強化</li>
+    </ul>
+
+    <h2>まとめ</h2>
+    <ul>
+      <li>サーバ不要の議員管理システム</li>
+      <li>Excelベースで誰でも更新可能</li>
+      <li>履歴管理 + ID結合で柔軟性あり</li>
+    </ul>
+  </div>
+</body>
+</html>
