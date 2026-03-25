@@ -76,6 +76,7 @@
       <div class="toolbar-title">議員管理システム</div>
       <button id="btnStable" type="button">stable</button>
       <button id="btnTrial" type="button">trial</button>
+      <button id="btnReadme" type="button">README</button>
     </div>
 
     <div class="viewer-wrap">
@@ -88,6 +89,7 @@
       const viewer = document.getElementById("viewer");
       const btnStable = document.getElementById("btnStable");
       const btnTrial = document.getElementById("btnTrial");
+      const btnReadme = document.getElementById("btnReadme");
 
       const PAGES = {
         stable: "stable.html",
@@ -105,7 +107,7 @@
         setActiveButton(mode);
 
         if (pushHistory) {
-          history.pushState({ mode }, "", "#"+mode);
+          history.pushState({ mode }, "", "#" + mode);
         }
       }
 
@@ -123,13 +125,17 @@
         loadMode("trial", true);
       });
 
+      btnReadme.addEventListener("click", function () {
+        window.open("readme.html", "_blank", "noopener");
+      });
+
       window.addEventListener("popstate", function (event) {
         const mode = event.state && event.state.mode ? event.state.mode : getInitialMode();
         loadMode(mode, false);
       });
 
       const initialMode = getInitialMode();
-      history.replaceState({ mode: initialMode }, "", "#"+initialMode);
+      history.replaceState({ mode: initialMode }, "", "#" + initialMode);
       loadMode(initialMode, false);
     })();
   </script>
