@@ -237,7 +237,6 @@ window.APP = (function () {
           member_id: member.member_id || "",
           member_no: member.member_no || "",
           member_name: member.member_name || "",
-          member_name_short: member.member_name_short || "",
           age: member.age || "",
           current_status: getCurrentStatusByMemberId(member.member_id, baseDate),
           current_party_name: getCurrentPartyNameByMemberId(member.member_id, baseDate),
@@ -274,8 +273,7 @@ window.APP = (function () {
     return rows.filter(function (row) {
       const hitName =
         !name ||
-        String(row.member_name || "").toLowerCase().includes(name) ||
-        String(row.member_name_short || "").toLowerCase().includes(name);
+        String(row.member_name || "").toLowerCase().includes(name);
 
       const currentPartyRecord = getCurrentPartyRecordByMemberId(row.member_id);
       const currentPartyId = currentPartyRecord ? currentPartyRecord.party_id : "";
@@ -387,7 +385,6 @@ window.APP = (function () {
   }
 
   return {
-    getArray: getArray,
     buildMemberList: buildMemberList,
     buildMemberDetail: buildMemberDetail,
     getPartyOptions: getPartyOptions,
