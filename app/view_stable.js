@@ -14,84 +14,22 @@ window.APP_STABLE = (function () {
   }
 
   function formatPeriod(startDate, endDate) {
-    const start = startDate || "";
-    const end = endDate || "";
-    return start + " ～ " + (end || "継続中");
+    return (startDate || "") + " ～ " + (endDate || "継続中");
   }
 
   function renderPartyOptions(selectEl) {
     const options = window.APP.getPartyOptions();
-
     const html = ['<option value="">すべて</option>']
       .concat(
         options.map(function (party) {
-          return (
-            '<option value="' + escapeHtml(party.party_id) + '">' +
+          return '<option value="' + escapeHtml(party.party_id) + '">' +
             escapeHtml(party.party_name) +
-            "</option>"
-          );
+            '</option>';
         })
       )
       .join("");
 
     selectEl.innerHTML = html;
-  }
-
-  function renderMultiLineList(items) {
-    if (!Array.isArray(items) || items.length === 0) {
-      return "";
-    }
-
-    return items
-      .map(function (item) {
-        return '<div>' + escapeHtml(item) + "</div>";
-      })
-      .join("");
-  }
-
-  function renderTable(containerEl, rows) {
-    if (!rows.length) {
-      containerEl.innerHTML =
-        '<div class="empty">該当データがありません。</div>';
-      return;
-    }
-
-    const bodyHtml = rows
-      .map(function (row) {
-        const selectedClass = row.member_id === selectedMemberId ? " selected-row" : "";
-        return [
-          '<tr class="clickable-row' + selectedClass + '" data-member-id="' + escapeHtml(row.member_id) + '">',
-          "<td>" + escapeHtml(row.member_no) + "</td>",
-          "<td>" + escapeHtml(row.member_name) + "</td>",
-          "<td>" + escapeHtml(row.member_name_short) + "</td>",
-          "<td>" + escapeHtml(row.age) + "</td>",
-          "<td>" + escapeHtml(row.current_status) + "</td>",
-          "<td>" + escapeHtml(row.current_party_name) + "</td>",
-          "<td>" + renderMultiLineList(row.current_committees) + "</td>",
-          "<td>" + renderMultiLineList(row.current_councils) + "</td>",
-          "</tr>"
-        ].join("");
-      })
-      .join("");
-
-    containerEl.innerHTML =
-      '<div class="result-table-wrap">' +
-        "<table>" +
-          "<thead>" +
-            "<tr>" +
-              "<th>番号</th>" +
-              "<th>氏名</th>" +
-              "<th>略称</th>" +
-              "<th>年齢</th>" +
-              "<th>在任状態</th>" +
-              "<th>現在会派</th>" +
-              "<th>現在委員会</th>" +
-              "<th>現在審議会</th>" +
-            "</tr>" +
-          "</thead>" +
-          "<tbody>" + bodyHtml + "</tbody>" +
-        "</table>" +
-      "</div>";
   }
 
   function renderStatus(statusEl) {
@@ -107,6 +45,40 @@ window.APP_STABLE = (function () {
     ].join("\n");
   }
 
+  function renderTable(containerEl, rows) {
+    if (!rows.length) {
+      containerEl.innerHTML = '<div class="empty">該当データがありません。</div>';
+      return;
+    }
+
+    const bodyHtml = rows.map(function (row) {
+      const selectedClass = row.member_id === selectedMemberId ? " selected-row" : "";
+      return [
+        '<tr class="clickable-row' + selectedClass + '" data-member-id="' + escapeHtml(row.member_id) + '">',
+        "<td>" + escapeHtml(row.member_no) + "</td>",
+        "<td>" + escapeHtml(row.member_name) + "</td>",
+        "<td>" + escapeHtml(row.current_party_name) + "</td>",
+        "<td>" + escapeHtml(row.current_status) + "</td>",
+        "</tr>"
+      ].join("");
+    }).join("");
+
+    containerEl.innerHTML =
+      '<div class="result-table-wrap">' +
+        "<table>" +
+          "<thead>" +
+            "<tr>" +
+              "<th>番号</th>" +
+              "<th>氏名</th>" +
+              "<th>現在会派</th>" +
+              "<th>在任状態</th>" +
+            "</tr>" +
+          "</thead>" +
+          "<tbody>" + bodyHtml + "</tbody>" +
+        "</table>" +
+      "</div>";
+  }
+
   function renderSimpleBlockRows(rows) {
     if (!rows || rows.length === 0) {
       return '<div class="empty-small">データなし</div>';
@@ -119,7 +91,7 @@ window.APP_STABLE = (function () {
 
   function renderDetail(detailAreaEl, memberId) {
     if (!memberId) {
-      detailAreaEl.innerHTML = '<div class="empty">一覧の行をクリックすると詳細を表示します。</div>';
+      detailAreaEl.innerHTML = '<div class="empty">一覧から議員を選択すると詳細を表示します。</div>';
       return;
     }
 
@@ -143,57 +115,47 @@ window.APP_STABLE = (function () {
 
     const officeTermsHtml = renderSimpleBlockRows(
       (detail.office_terms || []).map(function (row) {
-        return (
-          escapeHtml(formatPeriod(row.term_start_date, row.term_end_date)) +
+        return escapeHtml(formatPeriod(row.term_start_date, row.term_end_date)) +
           " / " +
           escapeHtml(row.election_label || "") +
-          (row.end_reason_code ? " / " + escapeHtml(row.end_reason_code) : "")
-        );
+          (row.end_reason_code ? " / " + escapeHtml(row.end_reason_code) : "");
       })
     );
 
     const partyHistoryHtml = renderSimpleBlockRows(
       (detail.party_history || []).map(function (row) {
-        return (
-          escapeHtml(formatPeriod(row.start_date, row.end_date)) +
+        return escapeHtml(formatPeriod(row.start_date, row.end_date)) +
           " / " +
           escapeHtml(row.party_name || "") +
-          (row.role_name ? " / " + escapeHtml(row.role_name) : "")
-        );
+          (row.role_name ? " / " + escapeHtml(row.role_name) : "");
       })
     );
 
     const committeeHistoryHtml = renderSimpleBlockRows(
       (detail.committee_history || []).map(function (row) {
-        return (
-          escapeHtml(formatPeriod(row.start_date, row.end_date)) +
+        return escapeHtml(formatPeriod(row.start_date, row.end_date)) +
           " / " +
           escapeHtml(row.committee_name || "") +
-          (row.role_name ? " / " + escapeHtml(row.role_name) : "")
-        );
+          (row.role_name ? " / " + escapeHtml(row.role_name) : "");
       })
     );
 
     const councilHistoryHtml = renderSimpleBlockRows(
       (detail.council_history || []).map(function (row) {
-        return (
-          escapeHtml(formatPeriod(row.start_date, row.end_date)) +
+        return escapeHtml(formatPeriod(row.start_date, row.end_date)) +
           " / " +
           escapeHtml(row.council_name || "") +
-          (row.role_name ? " / " + escapeHtml(row.role_name) : "")
-        );
+          (row.role_name ? " / " + escapeHtml(row.role_name) : "");
       })
     );
 
     const contactHistoryHtml = renderSimpleBlockRows(
       (detail.contact_history || []).map(function (row) {
-        return (
-          escapeHtml(formatPeriod(row.start_date, row.end_date)) +
+        return escapeHtml(formatPeriod(row.start_date, row.end_date)) +
           " / " +
           escapeHtml(row.address || "") +
           (row.phone_mobile ? " / " + escapeHtml(row.phone_mobile) : "") +
-          (row.email ? " / " + escapeHtml(row.email) : "")
-        );
+          (row.email ? " / " + escapeHtml(row.email) : "");
       })
     );
 
@@ -210,7 +172,7 @@ window.APP_STABLE = (function () {
     detailAreaEl.innerHTML =
       '<div class="detail-header">' +
         '<div class="detail-title">' + escapeHtml(detail.member_name) + "（" + escapeHtml(detail.member_name_short) + "）</div>" +
-        '<div class="detail-subtitle">議員ID: ' + escapeHtml(detail.member_id) + "</div>" +
+        '<div class="detail-subtitle">議員ID: ' + escapeHtml(detail.member_id) + " / " + escapeHtml(detail.current_status) + "</div>" +
       "</div>" +
 
       '<div class="detail-grid">' +
@@ -221,8 +183,14 @@ window.APP_STABLE = (function () {
           '<div class="history-row">生年月日: ' + escapeHtml(detail.birth_date) + "</div>" +
           '<div class="history-row">年齢: ' + escapeHtml(detail.age) + "</div>" +
           '<div class="history-row">性別: ' + escapeHtml(detail.gender) + "</div>" +
-          '<div class="history-row">在任状態: ' + escapeHtml(detail.current_status) + "</div>" +
-          '<div class="history-row">現在会派: ' + escapeHtml(detail.current_party_name) + "</div>" +
+          '<div class="history-row">備考: ' + escapeHtml(detail.note) + "</div>" +
+        "</div>" +
+
+        '<div class="detail-card">' +
+          "<h3>現在会派</h3>" +
+          (detail.current_party_name
+            ? '<div class="history-row">' + escapeHtml(detail.current_party_name) + "</div>"
+            : '<div class="empty-small">データなし</div>') +
         "</div>" +
 
         '<div class="detail-card">' +
@@ -235,7 +203,7 @@ window.APP_STABLE = (function () {
           currentCouncilsHtml +
         "</div>" +
 
-        '<div class="detail-card">' +
+        '<div class="detail-card detail-card-wide">' +
           "<h3>現在連絡先</h3>" +
           currentContactHtml +
         "</div>" +
@@ -267,6 +235,17 @@ window.APP_STABLE = (function () {
       "</div>";
   }
 
+  function bindRowEvents(resultArea, detailArea) {
+    resultArea.querySelectorAll(".clickable-row").forEach(function (rowEl) {
+      rowEl.addEventListener("click", function () {
+        selectedMemberId = rowEl.dataset.memberId || "";
+        renderTable(resultArea, currentRows);
+        renderDetail(detailArea, selectedMemberId);
+        bindRowEvents(resultArea, detailArea);
+      });
+    });
+  }
+
   function init() {
     const statusBox = document.getElementById("statusBox");
     const resultMeta = document.getElementById("resultMeta");
@@ -293,18 +272,7 @@ window.APP_STABLE = (function () {
       resultMeta.textContent = currentRows.length + "件";
       renderTable(resultArea, currentRows);
       renderDetail(detailArea, selectedMemberId);
-      bindRowEvents();
-    }
-
-    function bindRowEvents() {
-      resultArea.querySelectorAll(".clickable-row").forEach(function (rowEl) {
-        rowEl.addEventListener("click", function () {
-          selectedMemberId = rowEl.dataset.memberId || "";
-          renderTable(resultArea, currentRows);
-          renderDetail(detailArea, selectedMemberId);
-          bindRowEvents();
-        });
-      });
+      bindRowEvents(resultArea, detailArea);
     }
 
     renderPartyOptions(searchParty);
