@@ -121,12 +121,7 @@
       background: #fafbfc;
     }
 
-    @media (max-width: 800px) {
-      .search-row {
-        grid-template-columns: 1fr;
-      }
-
-        .clickable-row {
+    .clickable-row {
       cursor: pointer;
     }
 
@@ -195,11 +190,14 @@
     }
 
     @media (max-width: 800px) {
+      .search-row {
+        grid-template-columns: 1fr;
+      }
+
       .detail-grid {
         grid-template-columns: 1fr;
       }
     }
-      
   </style>
 </head>
 <body>
@@ -242,12 +240,13 @@
       <h2>一覧</h2>
       <div id="resultMeta" class="result-meta">0件</div>
       <div id="resultArea"></div>
-          <section class="card">
+    </section>
+
+    <section class="card">
       <h2>詳細</h2>
       <div id="detailArea" class="detail-area">
         <div class="empty">一覧の行をクリックすると詳細を表示します。</div>
       </div>
-    </section>
     </section>
   </div>
 
