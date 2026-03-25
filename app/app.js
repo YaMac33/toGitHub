@@ -30,10 +30,46 @@ window.APP = (function () {
     return isCurrentRange(term.term_start_date, term.term_end_date, baseDate);
   }
 
+  function getMemberById(memberId) {
+    return getArray("members").find(function (member) {
+      return member.member_id === memberId;
+    }) || null;
+  }
+
+  function getPartyById(partyId) {
+    return getArray("parties").find(function (party) {
+      return party.party_id === partyId;
+    }) || null;
+  }
+
+  function getCommitteeById(committeeId) {
+    return getArray("committees").find(function (committee) {
+      return committee.committee_id === committeeId;
+    }) || null;
+  }
+
+  function getCouncilById(councilId) {
+    return getArray("councils").find(function (council) {
+      return council.council_id === councilId;
+    }) || null;
+  }
+
   function getCurrentOfficeTermsByMemberId(memberId, baseDate) {
     return getArray("office_terms").filter(function (term) {
       return term.member_id === memberId && isCurrentOfficeTerm(term, baseDate);
     });
+  }
+
+  function getOfficeTermsByMemberId(memberId) {
+    return getArray("office_terms")
+      .filter(function (term) {
+        return term.member_id === memberId;
+      })
+      .sort(function (a, b) {
+        const aStart = a.term_start_date || "";
+        const bStart = b.term_start_date || "";
+        return aStart < bStart ? 1 : aStart > bStart ? -1 : 0;
+      });
   }
 
   function getCurrentStatusByMemberId(memberId, baseDate) {
@@ -56,22 +92,16 @@ window.APP = (function () {
     return records[0] || null;
   }
 
-  function getPartyById(partyId) {
-    return getArray("parties").find(function (party) {
-      return party.party_id === partyId;
-    }) || null;
-  }
-
-  function getCommitteeById(committeeId) {
-    return getArray("committees").find(function (committee) {
-      return committee.committee_id === committeeId;
-    }) || null;
-  }
-
-  function getCouncilById(councilId) {
-    return getArray("councils").find(function (council) {
-      return council.council_id === councilId;
-    }) || null;
+  function getPartyHistoryByMemberId(memberId) {
+    return getArray("member_parties")
+      .filter(function (row) {
+        return row.member_id === memberId;
+      })
+      .sort(function (a, b) {
+        const aStart = a.start_date || "";
+        const bStart = b.start_date || "";
+        return aStart < bStart ? 1 : aStart > bStart ? -1 : 0;
+      });
   }
 
   function getCurrentPartyNameByMemberId(memberId, baseDate) {
@@ -96,6 +126,18 @@ window.APP = (function () {
       });
   }
 
+  function getCommitteeHistoryByMemberId(memberId) {
+    return getArray("member_committees")
+      .filter(function (row) {
+        return row.member_id === memberId;
+      })
+      .sort(function (a, b) {
+        const aStart = a.start_date || "";
+        const bStart = b.start_date || "";
+        return aStart < bStart ? 1 : aStart > bStart ? -1 : 0;
+      });
+  }
+
   function getCurrentCouncilRecordsByMemberId(memberId, baseDate) {
     return getArray("member_councils")
       .filter(function (row) {
@@ -108,6 +150,45 @@ window.APP = (function () {
         const orderA = Number(councilA && councilA.sort_order ? councilA.sort_order : 9999);
         const orderB = Number(councilB && councilB.sort_order ? councilB.sort_order : 9999);
         return orderA - orderB;
+      });
+  }
+
+  function getCouncilHistoryByMemberId(memberId) {
+    return getArray("member_councils")
+      .filter(function (row) {
+        return row.member_id === memberId;
+      })
+      .sort(function (a, b) {
+        const aStart = a.start_date || "";
+        const bStart = b.start_date || "";
+        return aStart < bStart ? 1 : aStart > bStart ? -1 : 0;
+      });
+  }
+
+  function getCurrentContactRecordByMemberId(memberId, baseDate) {
+    const records = getArray("contacts")
+      .filter(function (row) {
+        return row.member_id === memberId &&
+          isCurrentRange(row.start_date, row.end_date, baseDate);
+      })
+      .sort(function (a, b) {
+        const aStart = a.start_date || "";
+        const bStart = b.start_date || "";
+        return aStart < bStart ? 1 : aStart > bStart ? -1 : 0;
+      });
+
+    return records[0] || null;
+  }
+
+  function getContactHistoryByMemberId(memberId) {
+    return getArray("contacts")
+      .filter(function (row) {
+        return row.member_id === memberId;
+      })
+      .sort(function (a, b) {
+        const aStart = a.start_date || "";
+        const bStart = b.start_date || "";
+        return aStart < bStart ? 1 : aStart > bStart ? -1 : 0;
       });
   }
 
@@ -210,6 +291,90 @@ window.APP = (function () {
     });
   }
 
+  function buildMemberDetail(memberId, baseDate) {
+    const member = getMemberById(memberId);
+    if (!member) return null;
+
+    const currentContact = getCurrentContactRecordByMemberId(memberId, baseDate);
+    const officeTerms = getOfficeTermsByMemberId(memberId);
+    const partyHistory = getPartyHistoryByMemberId(memberId).map(function (row) {
+      const party = getPartyById(row.party_id);
+      return {
+        start_date: row.start_date || "",
+        end_date: row.end_date || "",
+        party_name: party ? party.party_name : "",
+        role_name: row.role_name || "",
+        note: row.note || ""
+      };
+    });
+
+    const committeeHistory = getCommitteeHistoryByMemberId(memberId).map(function (row) {
+      const committee = getCommitteeById(row.committee_id);
+      return {
+        start_date: row.start_date || "",
+        end_date: row.end_date || "",
+        committee_name: committee ? committee.committee_name : "",
+        role_name: row.role_name || "",
+        note: row.note || ""
+      };
+    });
+
+    const councilHistory = getCouncilHistoryByMemberId(memberId).map(function (row) {
+      const council = getCouncilById(row.council_id);
+      return {
+        start_date: row.start_date || "",
+        end_date: row.end_date || "",
+        council_name: council ? council.council_name : "",
+        role_name: row.role_name || "",
+        note: row.note || ""
+      };
+    });
+
+    const contactHistory = getContactHistoryByMemberId(memberId).map(function (row) {
+      return {
+        start_date: row.start_date || "",
+        end_date: row.end_date || "",
+        postal_code: row.postal_code || "",
+        address: row.address || "",
+        phone_home: row.phone_home || "",
+        phone_mobile: row.phone_mobile || "",
+        email: row.email || "",
+        is_public: row.is_public,
+        contact_note: row.contact_note || ""
+      };
+    });
+
+    return {
+      member_id: member.member_id || "",
+      member_no: member.member_no || "",
+      member_name: member.member_name || "",
+      member_name_short: member.member_name_short || "",
+      member_kana: member.member_kana || "",
+      birth_date: member.birth_date || "",
+      age: member.age || "",
+      gender: member.gender || "",
+      note: member.note || "",
+      current_status: getCurrentStatusByMemberId(memberId, baseDate),
+      current_party_name: getCurrentPartyNameByMemberId(memberId, baseDate),
+      current_committees: getCurrentCommitteeLabelsByMemberId(memberId, baseDate),
+      current_councils: getCurrentCouncilLabelsByMemberId(memberId, baseDate),
+      current_contact: currentContact ? {
+        postal_code: currentContact.postal_code || "",
+        address: currentContact.address || "",
+        phone_home: currentContact.phone_home || "",
+        phone_mobile: currentContact.phone_mobile || "",
+        email: currentContact.email || "",
+        is_public: currentContact.is_public,
+        contact_note: currentContact.contact_note || ""
+      } : null,
+      office_terms: officeTerms,
+      party_history: partyHistory,
+      committee_history: committeeHistory,
+      council_history: councilHistory,
+      contact_history: contactHistory
+    };
+  }
+
   function getSummaryCounts() {
     return {
       members: getArray("members").length,
@@ -224,6 +389,7 @@ window.APP = (function () {
   return {
     getArray: getArray,
     buildMemberList: buildMemberList,
+    buildMemberDetail: buildMemberDetail,
     getPartyOptions: getPartyOptions,
     filterMemberList: filterMemberList,
     getSummaryCounts: getSummaryCounts
