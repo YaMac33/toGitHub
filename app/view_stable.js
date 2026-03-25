@@ -28,6 +28,18 @@ window.APP_STABLE = (function () {
     selectEl.innerHTML = html;
   }
 
+  function renderMultiLineList(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+      return "";
+    }
+
+    return items
+      .map(function (item) {
+        return '<div>' + escapeHtml(item) + "</div>";
+      })
+      .join("");
+  }
+
   function renderTable(containerEl, rows) {
     if (!rows.length) {
       containerEl.innerHTML =
@@ -45,6 +57,8 @@ window.APP_STABLE = (function () {
           "<td>" + escapeHtml(row.age) + "</td>",
           "<td>" + escapeHtml(row.current_status) + "</td>",
           "<td>" + escapeHtml(row.current_party_name) + "</td>",
+          "<td>" + renderMultiLineList(row.current_committees) + "</td>",
+          "<td>" + renderMultiLineList(row.current_councils) + "</td>",
           "</tr>"
         ].join("");
       })
@@ -61,6 +75,8 @@ window.APP_STABLE = (function () {
               "<th>年齢</th>" +
               "<th>在任状態</th>" +
               "<th>現在会派</th>" +
+              "<th>現在委員会</th>" +
+              "<th>現在審議会</th>" +
             "</tr>" +
           "</thead>" +
           "<tbody>" + bodyHtml + "</tbody>" +
@@ -75,7 +91,9 @@ window.APP_STABLE = (function () {
       "members: " + counts.members + "件",
       "office_terms: " + counts.office_terms + "件",
       "parties: " + counts.parties + "件",
-      "member_parties: " + counts.member_parties + "件"
+      "member_parties: " + counts.member_parties + "件",
+      "member_committees: " + counts.member_committees + "件",
+      "member_councils: " + counts.member_councils + "件"
     ].join("\n");
   }
 
