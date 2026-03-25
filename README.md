@@ -32,13 +32,13 @@ project/
 # 1. 概要
 
 本システムは、市議会議員の情報をExcelで管理し、Webアプリとして参照する仕組みです。
-
+```
 Excel（正本データ）
 ↓
 VBAでJS生成
 ↓
 HTML + JavaScriptで表示（LG環境対応）
-
+```
 ■ 特徴
 - サーバ不要（LGWAN環境対応）
 - Excelが正本（非エンジニアでも運用可能）
@@ -50,7 +50,7 @@ HTML + JavaScriptで表示（LG環境対応）
 # 2. システム構成
 
 ■ ディレクトリ構成
-
+```
 project/
 ├─ source.xlsm                ← 正本データ（Excel）
 └─ app/
@@ -69,7 +69,7 @@ project/
       ├─ contacts.js
       ├─ change_logs.js
       └─ codes.js
-
+```
 ---
 
 # 3. データ設計
@@ -121,13 +121,13 @@ contacts.js
 - council_id → 審議会
 
 例：
-
+```
 members
   ↓ member_id
 member_parties
   ↓ party_id
 parties
-
+```
 ---
 
 # 5. 「現在」の考え方
@@ -143,21 +143,21 @@ AND
 # 6. VBA（データ出力）
 
 ■ 実行方法
-
+```
 Alt + F8
 ↓
 ExportAllData
-
+```
 ■ 出力内容
 
 Excel → app/data/*.js
 
 例：
-
+```
 window.APP_DATA.members = [
   { member_id: "M001", member_name: "山田太郎" }
 ];
-
+```
 ■ 運用方法
 
 【初回】
