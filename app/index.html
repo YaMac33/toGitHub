@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>議員管理システム</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: sans-serif;
+      background: #f5f6f8;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #d8dde6;
+      background: #ffffff;
+      box-sizing: border-box;
+    }
+
+    .toolbar-title {
+      margin-right: 12px;
+      font-weight: bold;
+      color: #222;
+    }
+
+    .toolbar button {
+      padding: 8px 12px;
+      border: 1px solid #b9c2cf;
+      border-radius: 8px;
+      background: #ffffff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .toolbar button:hover {
+      background: #f0f4f8;
+    }
+
+    .toolbar button.active {
+      background: #dbeafe;
+      border-color: #60a5fa;
+      font-weight: bold;
+    }
+
+    .viewer-wrap {
+      flex: 1;
+      min-height: 0;
+    }
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="toolbar">
+      <div class="toolbar-title">議員管理システム</div>
+      <button id="btnStable" type="button">stable</button>
+      <button id="btnTrial" type="button">trial</button>
+    </div>
+
+    <div class="viewer-wrap">
+      <iframe id="viewer" title="viewer"></iframe>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const viewer = document.getElementById("viewer");
+      const btnStable = document.getElementById("btnStable");
+      const btnTrial = document.getElementById("btnTrial");
+
+      const PAGES = {
+        stable: "stable.html",
+        trial: "trial.html"
+      };
+
+      function setActiveButton(mode) {
+        btnStable.classList.toggle("active", mode === "stable");
+        btnTrial.classList.toggle("active", mode === "trial");
+      }
+
+      function loadMode(mode, pushHistory = true) {
+        const page = PAGES[mode] || PAGES.stable;
+        viewer.src = page;
+        setActiveButton(mode);
+
+        if (pushHistory) {
+          history.pushState({ mode }, "", "#"+mode);
+        }
+      }
+
+      function getInitialMode() {
+        const hash = location.hash.replace("#", "");
+        if (hash === "trial") return "trial";
+        return "stable";
+      }
+
+      btnStable.addEventListener("click", function () {
+        loadMode("stable", true);
+      });
+
+      btnTrial.addEventListener("click", function () {
+        loadMode("trial", true);
+      });
+
+      window.addEventListener("popstate", function (event) {
+        const mode = event.state && event.state.mode ? event.state.mode : getInitialMode();
+        loadMode(mode, false);
+      });
+
+      const initialMode = getInitialMode();
+      history.replaceState({ mode: initialMode }, "", "#"+initialMode);
+      loadMode(initialMode, false);
+    })();
+  </script>
+</body>
+</html>
