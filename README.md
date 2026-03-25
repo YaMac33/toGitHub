@@ -5,6 +5,8 @@ app/
 ├─ stable.html       ← 本番用（安定版）
 ├─ trial.html        ← 検証用（実験版）
 ├─ app.js            ← 共通ロジック
+├─ view_stable.js    ← stable専用UI
+├─ view_trial.js     ← trial専用UI
 ├─ style.css         ← 共通スタイル
 └─ data/
    ├─ members.js
