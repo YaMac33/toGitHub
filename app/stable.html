@@ -125,7 +125,81 @@
       .search-row {
         grid-template-columns: 1fr;
       }
+
+        .clickable-row {
+      cursor: pointer;
     }
+
+    .clickable-row:hover {
+      background: #f8fbff;
+    }
+
+    .selected-row {
+      background: #eef6ff;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .detail-card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-radius: 10px;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+    .detail-card-wide {
+      grid-column: 1 / -1;
+    }
+
+    .detail-card h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .detail-header {
+      margin-bottom: 12px;
+    }
+
+    .detail-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .detail-subtitle {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .history-row {
+      padding: 8px 0;
+      border-bottom: 1px solid #edf1f5;
+      font-size: 14px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .history-row:last-child {
+      border-bottom: 0;
+    }
+
+    .empty-small {
+      color: #666;
+      font-size: 14px;
+      padding: 4px 0;
+    }
+
+    @media (max-width: 800px) {
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+      
   </style>
 </head>
 <body>
@@ -168,6 +242,12 @@
       <h2>一覧</h2>
       <div id="resultMeta" class="result-meta">0件</div>
       <div id="resultArea"></div>
+          <section class="card">
+      <h2>詳細</h2>
+      <div id="detailArea" class="detail-area">
+        <div class="empty">一覧の行をクリックすると詳細を表示します。</div>
+      </div>
+    </section>
     </section>
   </div>
 
