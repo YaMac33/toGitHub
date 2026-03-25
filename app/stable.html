@@ -132,7 +132,7 @@
   <div class="page">
     <header class="page-header">
       <h1 class="page-title">議員管理システム stable</h1>
-      <p class="page-desc">まずは安定版の土台だけ表示します。データがまだ無くても壊れない構成です。</p>
+      <p class="page-desc">stable画面。data/ のデータを app.js / view_stable.js 経由で表示します。</p>
     </header>
 
     <section class="card">
@@ -141,7 +141,7 @@
     </section>
 
     <section class="card">
-      <h2>検索条件（仮）</h2>
+      <h2>検索条件</h2>
       <div class="search-row">
         <div class="field">
           <label for="searchName">議員名</label>
@@ -150,9 +150,7 @@
 
         <div class="field">
           <label for="searchParty">会派</label>
-          <select id="searchParty">
-            <option value="">すべて</option>
-          </select>
+          <select id="searchParty"></select>
         </div>
 
         <div class="field">
@@ -167,13 +165,12 @@
     </section>
 
     <section class="card">
-      <h2>一覧（仮）</h2>
+      <h2>一覧</h2>
       <div id="resultMeta" class="result-meta">0件</div>
       <div id="resultArea"></div>
     </section>
   </div>
 
-  <!-- data -->
   <script src="data/members.js"></script>
   <script src="data/office_terms.js"></script>
   <script src="data/parties.js"></script>
@@ -186,125 +183,7 @@
   <script src="data/change_logs.js"></script>
   <script src="data/codes.js"></script>
 
-  <!-- logic -->
   <script src="app.js"></script>
   <script src="view_stable.js"></script>
-
-  <script>
-    (function () {
-      window.APP_DATA = window.APP_DATA || {};
-
-      const statusBox = document.getElementById("statusBox");
-      const resultMeta = document.getElementById("resultMeta");
-      const resultArea = document.getElementById("resultArea");
-      const searchParty = document.getElementById("searchParty");
-
-      const members = Array.isArray(window.APP_DATA.members) ? window.APP_DATA.members : [];
-      const parties = Array.isArray(window.APP_DATA.parties) ? window.APP_DATA.parties : [];
-      const officeTerms = Array.isArray(window.APP_DATA.office_terms) ? window.APP_DATA.office_terms : [];
-
-      function isCurrentTerm(term) {
-        if (!term || !term.term_start_date) return false;
-
-        const today = new Date();
-        const start = new Date(term.term_start_date);
-        const end = term.term_end_date ? new Date(term.term_end_date) : null;
-
-        if (isNaN(start.getTime())) return false;
-        if (start > today) return false;
-        if (end && end < today) return false;
-
-        return true;
-      }
-
-      function getCurrentStatusByMemberId(memberId) {
-        const hit = officeTerms.some(function (term) {
-          return term.member_id === memberId && isCurrentTerm(term);
-        });
-        return hit ? "現職" : "過去在任";
-      }
-
-      function renderPartyOptions() {
-        const sorted = parties.slice().sort(function (a, b) {
-          return (a.sort_order || 0) - (b.sort_order || 0);
-        });
-
-        const options = sorted.map(function (party) {
-          return '<option value="' + escapeHtml(party.party_id) + '">' +
-                 escapeHtml(party.party_name) +
-                 '</option>';
-        });
-
-        searchParty.insertAdjacentHTML("beforeend", options.join(""));
-      }
-
-      function renderMembersTable() {
-        if (members.length === 0) {
-          resultMeta.textContent = "0件";
-          resultArea.innerHTML = '<div class="empty">まだ data/*.js が未生成か、読み込みに失敗しています。</div>';
-          return;
-        }
-
-        resultMeta.textContent = members.length + "件";
-
-        const rows = members
-          .slice()
-          .sort(function (a, b) {
-            return (a.sort_order || 0) - (b.sort_order || 0);
-          })
-          .map(function (member) {
-            return [
-              "<tr>",
-              "<td>" + escapeHtml(member.member_no || "") + "</td>",
-              "<td>" + escapeHtml(member.member_name || "") + "</td>",
-              "<td>" + escapeHtml(member.member_name_short || "") + "</td>",
-              "<td>" + escapeHtml(String(member.age || "")) + "</td>",
-              "<td>" + escapeHtml(getCurrentStatusByMemberId(member.member_id)) + "</td>",
-              "</tr>"
-            ].join("");
-          })
-          .join("");
-
-        resultArea.innerHTML =
-          '<div class="result-table-wrap">' +
-            '<table>' +
-              '<thead>' +
-                '<tr>' +
-                  '<th>番号</th>' +
-                  '<th>氏名</th>' +
-                  '<th>略称</th>' +
-                  '<th>年齢</th>' +
-                  '<th>在任状態</th>' +
-                '</tr>' +
-              '</thead>' +
-              '<tbody>' + rows + '</tbody>' +
-            '</table>' +
-          '</div>';
-      }
-
-      function escapeHtml(value) {
-        return String(value)
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#39;");
-      }
-
-      function showStatus() {
-        const lines = [
-          "stable.html 読み込み成功",
-          "members: " + members.length + "件",
-          "office_terms: " + officeTerms.length + "件",
-          "parties: " + parties.length + "件"
-        ];
-        statusBox.textContent = lines.join("\n");
-      }
-
-      renderPartyOptions();
-      renderMembersTable();
-      showStatus();
-    })();
-  </script>
 </body>
 </html>
