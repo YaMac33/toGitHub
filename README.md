@@ -133,11 +133,11 @@ parties
 # 5. 「現在」の考え方
 
 以下を満たすものを「現在」とする
-
+```
 start_date <= 今日
 AND
 (end_date が空 or end_date >= 今日)
-
+```
 ---
 
 # 6. VBA（データ出力）
@@ -161,13 +161,16 @@ window.APP_DATA.members = [
 ■ 運用方法
 
 【初回】
+```
 ExportAllData（全出力）
+```
 
 【通常運用】
+```
 修正したシートを開く
 ↓
 ExportActiveSheetData
-
+```
 ---
 
 # 7. 画面仕様（stable）
@@ -243,15 +246,15 @@ ExportActiveSheetData
 ---
 
 # 11. 設計思想（重要）
-
+```
 Excel = DB（正本）
 JS = 配布データ
 HTML = ビュー
-
+```
 一言で：
-
+```
 「ExcelをDBとして、ブラウザでJOINして表示するシステム」
-
+```
 ---
 
 # 12. 開発方針
