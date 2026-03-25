@@ -1,3 +1,5 @@
+
+```
 app/
 ├─ index.html        ← 入口（切り替え制御）
 ├─ stable.html       ← 本番用（安定版）
@@ -16,3 +18,5 @@ app/
    ├─ contacts.js
    ├─ change_logs.js
    └─ codes.js
+```
+
