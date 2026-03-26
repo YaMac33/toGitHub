@@ -296,6 +296,343 @@ HTML = ビュー</code></pre>
       <li>最後にUI強化</li>
     </ul>
 
+    <h2>13. 各シートの列内容と入力例</h2>
+<p>ここでは、<strong>各シートの各列に何を入れるか</strong>を整理します。<br>
+Excel入力時の確認用として使ってください。</p>
+
+<h3>13-1. 議員マスタ</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>member_id</td><td>議員を一意に識別するID</td><td>M001</td></tr>
+    <tr><td>member_no</td><td>管理番号・名簿番号</td><td>1</td></tr>
+    <tr><td>member_name</td><td>正式氏名</td><td>山田太郎</td></tr>
+    <tr><td>member_kana</td><td>氏名カナ</td><td>ヤマダタロウ</td></tr>
+    <tr><td>member_name_short</td><td>略称</td><td>山田</td></tr>
+    <tr><td>birth_date</td><td>生年月日</td><td>1975-04-12</td></tr>
+    <tr><td>age</td><td>年齢（Excel計算）</td><td>50</td></tr>
+    <tr><td>gender</td><td>性別</td><td>男</td></tr>
+    <tr><td>sort_order</td><td>一覧表示順</td><td>1</td></tr>
+    <tr><td>note</td><td>備考</td><td>初当選は2019年</td></tr>
+    <tr><td>active_flag</td><td>有効フラグ</td><td>1</td></tr>
+    <tr><td>created_at</td><td>作成日</td><td>2026-03-25</td></tr>
+    <tr><td>updated_at</td><td>更新日</td><td>2026-03-25</td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| member_id | member_no | member_name | member_kana | member_name_short | birth_date | age | gender | sort_order | note | active_flag | created_at | updated_at |
+|---|---:|---|---|---|---|---:|---|---:|---|---:|---|---|
+| M001 | 1 | 山田太郎 | ヤマダタロウ | 山田 | 1975-04-12 | 50 | 男 | 1 | 初当選は2019年 | 1 | 2026-03-25 | 2026-03-25 |</code></pre>
+
+<h3>13-2. 議員在任履歴</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>office_term_id</td><td>在任履歴ID</td><td>OT001</td></tr>
+    <tr><td>member_id</td><td>対象議員ID</td><td>M001</td></tr>
+    <tr><td>term_start_date</td><td>在任開始日</td><td>2023-05-01</td></tr>
+    <tr><td>term_end_date</td><td>在任終了日</td><td></td></tr>
+    <tr><td>election_label</td><td>選挙や期のラベル</td><td>2023年市議会議員一般選挙</td></tr>
+    <tr><td>elected_count</td><td>当選回数</td><td>2</td></tr>
+    <tr><td>end_reason_code</td><td>終了理由コード</td><td></td></tr>
+    <tr><td>note</td><td>備考</td><td>現職</td></tr>
+    <tr><td>created_at</td><td>作成日</td><td>2026-03-25</td></tr>
+    <tr><td>updated_at</td><td>更新日</td><td>2026-03-25</td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| office_term_id | member_id | term_start_date | term_end_date | election_label | elected_count | end_reason_code | note | created_at | updated_at |
+|---|---|---|---|---|---:|---|---|---|---|
+| OT001 | M001 | 2023-05-01 |  | 2023年市議会議員一般選挙 | 2 |  | 現職 | 2026-03-25 | 2026-03-25 |
+| OT002 | M001 | 2019-05-01 | 2023-04-30 | 2019年市議会議員一般選挙 | 1 | TERM_END | 任期満了 | 2026-03-25 | 2026-03-25 |</code></pre>
+
+<h3>13-3. 会派マスタ</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>party_id</td><td>会派ID</td><td>P001</td></tr>
+    <tr><td>party_name</td><td>会派正式名</td><td>市民クラブ</td></tr>
+    <tr><td>party_name_short</td><td>略称</td><td>市民</td></tr>
+    <tr><td>sort_order</td><td>表示順</td><td>1</td></tr>
+    <tr><td>active_flag</td><td>有効フラグ</td><td>1</td></tr>
+    <tr><td>note</td><td>備考</td><td></td></tr>
+    <tr><td>created_at</td><td>作成日</td><td>2026-03-25</td></tr>
+    <tr><td>updated_at</td><td>更新日</td><td>2026-03-25</td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| party_id | party_name | party_name_short | sort_order | active_flag | note | created_at | updated_at |
+|---|---|---|---:|---:|---|---|---|
+| P001 | 市民クラブ | 市民 | 1 | 1 |  | 2026-03-25 | 2026-03-25 |
+| P002 | 未来ネット | 未来 | 2 | 1 |  | 2026-03-25 | 2026-03-25 |</code></pre>
+
+<h3>13-4. 議員_会派履歴</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>member_party_id</td><td>会派履歴ID</td><td>MP001</td></tr>
+    <tr><td>member_id</td><td>議員ID</td><td>M001</td></tr>
+    <tr><td>party_id</td><td>会派ID</td><td>P001</td></tr>
+    <tr><td>role_name</td><td>会派内役職</td><td>幹事長</td></tr>
+    <tr><td>start_date</td><td>開始日</td><td>2023-05-01</td></tr>
+    <tr><td>end_date</td><td>終了日</td><td></td></tr>
+    <tr><td>note</td><td>備考</td><td>現所属</td></tr>
+    <tr><td>created_at</td><td>作成日</td><td>2026-03-25</td></tr>
+    <tr><td>updated_at</td><td>更新日</td><td>2026-03-25</td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| member_party_id | member_id | party_id | role_name | start_date | end_date | note | created_at | updated_at |
+|---|---|---|---|---|---|---|---|---|
+| MP001 | M001 | P001 | 幹事長 | 2023-05-01 |  | 現所属 | 2026-03-25 | 2026-03-25 |
+| MP002 | M001 | P003 |  | 2019-05-01 | 2023-04-30 | 旧所属 | 2026-03-25 | 2026-03-25 |</code></pre>
+
+<h3>13-5. 委員会マスタ</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>committee_id</td><td>委員会ID</td><td>C001</td></tr>
+    <tr><td>committee_name</td><td>委員会名</td><td>総務常任委員会</td></tr>
+    <tr><td>committee_name_short</td><td>略称</td><td>総務</td></tr>
+    <tr><td>committee_type_code</td><td>委員会種別コード</td><td>STANDING</td></tr>
+    <tr><td>parent_event_id</td><td>将来拡張用親ID</td><td></td></tr>
+    <tr><td>sort_order</td><td>表示順</td><td>1</td></tr>
+    <tr><td>active_flag</td><td>有効フラグ</td><td>1</td></tr>
+    <tr><td>note</td><td>備考</td><td></td></tr>
+    <tr><td>created_at</td><td>作成日</td><td>2026-03-25</td></tr>
+    <tr><td>updated_at</td><td>更新日</td><td>2026-03-25</td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| committee_id | committee_name | committee_name_short | committee_type_code | parent_event_id | sort_order | active_flag | note | created_at | updated_at |
+|---|---|---|---|---|---:|---:|---|---|---|
+| C001 | 総務常任委員会 | 総務 | STANDING |  | 1 | 1 |  | 2026-03-25 | 2026-03-25 |
+| C003 | 議会運営委員会 | 議運 | OPERATIONS |  | 2 | 1 |  | 2026-03-25 | 2026-03-25 |</code></pre>
+
+<h3>13-6. 議員_委員会所属履歴</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>member_committee_id</td><td>委員会所属履歴ID</td><td>MC001</td></tr>
+    <tr><td>member_id</td><td>議員ID</td><td>M001</td></tr>
+    <tr><td>committee_id</td><td>委員会ID</td><td>C001</td></tr>
+    <tr><td>role_name</td><td>役割</td><td>委員長</td></tr>
+    <tr><td>start_date</td><td>開始日</td><td>2025-05-15</td></tr>
+    <tr><td>end_date</td><td>終了日</td><td></td></tr>
+    <tr><td>note</td><td>備考</td><td>兼務</td></tr>
+    <tr><td>created_at</td><td>作成日</td><td>2026-03-25</td></tr>
+    <tr><td>updated_at</td><td>更新日</td><td>2026-03-25</td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| member_committee_id | member_id | committee_id | role_name | start_date | end_date | note | created_at | updated_at |
+|---|---|---|---|---|---|---|---|---|
+| MC001 | M001 | C001 | 委員長 | 2025-05-15 |  |  | 2026-03-25 | 2026-03-25 |
+| MC002 | M001 | C003 | 委員 | 2025-05-15 |  | 兼務 | 2026-03-25 | 2026-03-25 |</code></pre>
+
+<h3>13-7. 審議会マスタ</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>council_id</td><td>審議会ID</td><td>S001</td></tr>
+    <tr><td>council_name</td><td>審議会名</td><td>都市計画審議会</td></tr>
+    <tr><td>council_name_short</td><td>略称</td><td>都市計画</td></tr>
+    <tr><td>council_category_code</td><td>分類コード</td><td>ADVISORY</td></tr>
+    <tr><td>sort_order</td><td>表示順</td><td>1</td></tr>
+    <tr><td>active_flag</td><td>有効フラグ</td><td>1</td></tr>
+    <tr><td>note</td><td>備考</td><td></td></tr>
+    <tr><td>created_at</td><td>作成日</td><td>2026-03-25</td></tr>
+    <tr><td>updated_at</td><td>更新日</td><td>2026-03-25</td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| council_id | council_name | council_name_short | council_category_code | sort_order | active_flag | note | created_at | updated_at |
+|---|---|---|---|---:|---:|---|---|---|
+| S001 | 都市計画審議会 | 都市計画 | ADVISORY | 1 | 1 |  | 2026-03-25 | 2026-03-25 |
+| S002 | 環境審議会 | 環境 | ADVISORY | 2 | 1 |  | 2026-03-25 | 2026-03-25 |</code></pre>
+
+<h3>13-8. 議員_審議会所属履歴</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>member_council_id</td><td>審議会所属履歴ID</td><td>MS001</td></tr>
+    <tr><td>member_id</td><td>議員ID</td><td>M001</td></tr>
+    <tr><td>council_id</td><td>審議会ID</td><td>S001</td></tr>
+    <tr><td>role_name</td><td>役割</td><td>委員</td></tr>
+    <tr><td>start_date</td><td>開始日</td><td>2024-06-01</td></tr>
+    <tr><td>end_date</td><td>終了日</td><td></td></tr>
+    <tr><td>note</td><td>備考</td><td></td></tr>
+    <tr><td>created_at</td><td>作成日</td><td>2026-03-25</td></tr>
+    <tr><td>updated_at</td><td>更新日</td><td>2026-03-25</td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| member_council_id | member_id | council_id | role_name | start_date | end_date | note | created_at | updated_at |
+|---|---|---|---|---|---|---|---|---|
+| MS001 | M001 | S001 | 委員 | 2024-06-01 |  |  | 2026-03-25 | 2026-03-25 |
+| MS002 | M002 | S002 | 会長 | 2024-06-01 |  |  | 2026-03-25 | 2026-03-25 |</code></pre>
+
+<h3>13-9. 議員連絡先履歴</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>contact_record_id</td><td>連絡先履歴ID</td><td>CT001</td></tr>
+    <tr><td>member_id</td><td>議員ID</td><td>M001</td></tr>
+    <tr><td>start_date</td><td>適用開始日</td><td>2023-05-01</td></tr>
+    <tr><td>end_date</td><td>適用終了日</td><td></td></tr>
+    <tr><td>postal_code</td><td>郵便番号</td><td>770-0001</td></tr>
+    <tr><td>address</td><td>住所</td><td>徳島県○○市中央町1-1</td></tr>
+    <tr><td>phone_home</td><td>自宅電話</td><td>088-111-1111</td></tr>
+    <tr><td>phone_mobile</td><td>携帯電話</td><td>090-1111-1111</td></tr>
+    <tr><td>email</td><td>メールアドレス</td><td>yamada@example.jp</td></tr>
+    <tr><td>is_public</td><td>公開可否</td><td>1</td></tr>
+    <tr><td>contact_note</td><td>連絡先備考</td><td>議会用連絡先</td></tr>
+    <tr><td>created_at</td><td>作成日</td><td>2026-03-25</td></tr>
+    <tr><td>updated_at</td><td>更新日</td><td>2026-03-25</td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| contact_record_id | member_id | start_date | end_date | postal_code | address | phone_home | phone_mobile | email | is_public | contact_note | created_at | updated_at |
+|---|---|---|---|---|---|---|---|---|---:|---|---|---|
+| CT001 | M001 | 2023-05-01 |  | 770-0001 | 徳島県○○市中央町1-1 | 088-111-1111 | 090-1111-1111 | yamada@example.jp | 1 | 議会用連絡先 | 2026-03-25 | 2026-03-25 |
+| CT002 | M001 | 2019-05-01 | 2023-04-30 | 770-0005 | 徳島県○○市旧住所5-5 | 088-555-5555 | 090-5555-5555 | old_yamada@example.jp | 0 | 前期連絡先 | 2026-03-25 | 2026-03-25 |</code></pre>
+
+<h3>13-10. 変更履歴</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>change_log_id</td><td>変更履歴ID</td><td>CH001</td></tr>
+    <tr><td>target_sheet_name</td><td>対象シート内部名</td><td>members</td></tr>
+    <tr><td>target_record_id</td><td>対象レコードID</td><td>M001</td></tr>
+    <tr><td>changed_at</td><td>変更日時</td><td>2026-03-25 09:00:00</td></tr>
+    <tr><td>changed_field_name</td><td>変更項目名</td><td>member_name_short</td></tr>
+    <tr><td>before_value</td><td>変更前</td><td>山田太</td></tr>
+    <tr><td>after_value</td><td>変更後</td><td>山田</td></tr>
+    <tr><td>change_reason</td><td>変更理由</td><td>表記統一</td></tr>
+    <tr><td>changed_by</td><td>変更者</td><td>admin</td></tr>
+    <tr><td>note</td><td>備考</td><td></td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| change_log_id | target_sheet_name | target_record_id | changed_at | changed_field_name | before_value | after_value | change_reason | changed_by | note |
+|---|---|---|---|---|---|---|---|---|---|
+| CH001 | members | M001 | 2026-03-25 09:00:00 | member_name_short | 山田太 | 山田 | 表記統一 | admin |  |
+| CH002 | contacts | CT001 | 2026-03-25 10:00:00 | phone_mobile | 090-0000-0000 | 090-1111-1111 | 連絡先更新 | admin |  |</code></pre>
+
+<h3>13-11. 設定・コード値マスタ</h3>
+<table>
+  <thead>
+    <tr>
+      <th>列名</th>
+      <th>入れる内容</th>
+      <th>入力例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>code_type</td><td>コード種別</td><td>end_reason_code</td></tr>
+    <tr><td>code_value</td><td>コード値</td><td>TERM_END</td></tr>
+    <tr><td>code_label</td><td>表示名</td><td>任期満了</td></tr>
+    <tr><td>sort_order</td><td>表示順</td><td>1</td></tr>
+    <tr><td>active_flag</td><td>有効フラグ</td><td>1</td></tr>
+    <tr><td>note</td><td>備考</td><td></td></tr>
+  </tbody>
+</table>
+
+<p><strong>入力イメージ</strong></p>
+<pre><code>| code_type | code_value | code_label | sort_order | active_flag | note |
+|---|---|---|---:|---:|---|
+| end_reason_code | TERM_END | 任期満了 | 1 | 1 |  |
+| end_reason_code | LOSE_ELECTION | 落選 | 2 | 1 |  |
+| committee_type_code | STANDING | 常任委員会 | 1 | 1 |  |
+| committee_type_code | OPERATIONS | 議会運営委員会 | 2 | 1 |  |</code></pre>
+
+<h3>13-12. 入力時の超重要ルール</h3>
+<table>
+  <thead>
+    <tr>
+      <th>ルール</th>
+      <th>内容</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>IDは固定</td><td><code>member_id</code> などは途中で変えない</td></tr>
+    <tr><td>名前で紐づけない</td><td>必ずIDで紐づける</td></tr>
+    <tr><td>履歴は追加</td><td>過去を上書きせず、新しい行を足す</td></tr>
+    <tr><td>終了日空欄</td><td>継続中として扱う</td></tr>
+    <tr><td>ageは計算列</td><td>手入力しない</td></tr>
+  </tbody>
+</table>
+
     <h2>まとめ</h2>
     <ul>
       <li>サーバ不要の議員管理システム</li>
