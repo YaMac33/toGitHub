@@ -67,12 +67,25 @@ HTML + JavaScriptで表示（LG環境対応）
 ■ ディレクトリ構成
 ```
 project/
-├─ source.xlsm                ← 正本データ（Excel）
+├─ source.xlsm                 ← 正本データ（Excel）
+│
 └─ app/
-   ├─ stable.html            ← 本番画面
-   ├─ app.js                 ← データ処理
-   ├─ view_stable.js         ← UI制御
-   └─ data/                  ← VBAで生成されるJS
+   ├─ index.html               ← stable / trial 切替の入口
+   ├─ stable.html              ← ホーム（本番）
+   ├─ trial.html               ← ホーム（試作）
+   ├─ readme.html              ← 説明書
+   │
+   ├─ members.html             ← 議員管理ページ
+   ├─ meetings.html            ← 定例会ページ
+   ├─ questions.html           ← 一般質問ページ
+   │
+   ├─ app.js                   ← 共通データ処理
+   ├─ view_home.js             ← ホーム用UI
+   ├─ view_members.js          ← 議員管理用UI
+   ├─ view_meetings.js         ← 定例会用UI
+   ├─ view_questions.js        ← 一般質問用UI
+   │
+   └─ data/                    ← VBAで生成されるJS
       ├─ members.js
       ├─ office_terms.js
       ├─ parties.js
@@ -83,7 +96,14 @@ project/
       ├─ member_councils.js
       ├─ contacts.js
       ├─ change_logs.js
-      └─ codes.js
+      ├─ codes.js
+      ├─ meeting_rounds.js
+      ├─ event_types.js
+      ├─ assembly_events.js
+      ├─ special_committees.js
+      ├─ special_committee_setups.js
+      ├─ special_committee_meetings.js
+      └─ special_committee_rosters.js
 ```
 ---
 
