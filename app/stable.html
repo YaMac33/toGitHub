@@ -62,7 +62,7 @@
 
     .search-row {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) 220px 220px;
+      grid-template-columns: minmax(200px, 1fr) 220px 220px minmax(240px, 1fr);
       gap: 12px;
     }
 
@@ -206,21 +206,6 @@
       color: #666;
     }
 
-    .detail-search-wrap {
-      margin-bottom: 12px;
-    }
-
-    .detail-search-wrap input {
-      width: 100%;
-      height: 38px;
-      padding: 0 10px;
-      border: 1px solid #c8d0db;
-      border-radius: 8px;
-      font-size: 14px;
-      box-sizing: border-box;
-      background: #fff;
-    }
-
     .detail-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -260,6 +245,12 @@
       background: #fff1a8;
       padding: 0 2px;
       border-radius: 2px;
+    }
+
+    @media (max-width: 1100px) {
+      .search-row {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
     @media (max-width: 1000px) {
@@ -319,6 +310,11 @@
         <div class="field">
           <label for="searchCommittee">現在委員会</label>
           <select id="searchCommittee"></select>
+        </div>
+
+        <div class="field">
+          <label for="searchKeyword">全体キーワード検索</label>
+          <input id="searchKeyword" type="text" placeholder="例: 環境 / 議長 / 代表" />
         </div>
       </div>
     </section>
