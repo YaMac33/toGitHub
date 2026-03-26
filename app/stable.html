@@ -62,7 +62,7 @@
 
     .search-row {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) 220px 160px;
+      grid-template-columns: minmax(220px, 1fr) 220px 220px;
       gap: 12px;
     }
 
@@ -206,6 +206,21 @@
       color: #666;
     }
 
+    .detail-search-wrap {
+      margin-bottom: 12px;
+    }
+
+    .detail-search-wrap input {
+      width: 100%;
+      height: 38px;
+      padding: 0 10px;
+      border: 1px solid #c8d0db;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background: #fff;
+    }
+
     .detail-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -239,6 +254,12 @@
 
     .history-row:last-child {
       border-bottom: 0;
+    }
+
+    .hit-mark {
+      background: #fff1a8;
+      padding: 0 2px;
+      border-radius: 2px;
     }
 
     @media (max-width: 1000px) {
@@ -296,12 +317,8 @@
         </div>
 
         <div class="field">
-          <label for="searchStatus">在任状態</label>
-          <select id="searchStatus">
-            <option value="">すべて</option>
-            <option value="current">現職</option>
-            <option value="past">過去在任</option>
-          </select>
+          <label for="searchCommittee">現在委員会</label>
+          <select id="searchCommittee"></select>
         </div>
       </div>
     </section>
