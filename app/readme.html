@@ -149,14 +149,28 @@ HTML + JavaScriptで表示（LG環境対応）</code></pre>
     <p class="small-gap"><strong>ディレクトリ構成</strong></p>
 
     <pre><code>project/
-├─ source.xlsm                ← 正本データ（Excel）
+project/
+├─ source.xlsm                 ← 正本データ（Excel）
+│
 └─ app/
-   ├─ index.html             ← 入口画面
-   ├─ stable.html            ← 本番画面
-   ├─ readme.html            ← この説明書
-   ├─ app.js                 ← データ処理
-   ├─ view_stable.js         ← UI制御
-   └─ data/                  ← VBAで生成されるJS
+   ├─ index.html               ← stable / trial 切替の入口
+   ├─ stable.html              ← ホーム（本番）
+   ├─ trial.html               ← ホーム（試作）
+   ├─ readme.html              ← 説明書
+   │
+   ├─ members.html             ← 議員管理ページ
+   ├─ meetings.html            ← 定例会ページ
+   ├─ rosters.html             ← 委員名簿ページ
+   ├─ questions.html           ← 一般質問ページ
+   │
+   ├─ app.js                   ← 共通データ処理
+   ├─ view_home.js             ← ホーム用UI
+   ├─ view_members.js          ← 議員管理用UI
+   ├─ view_meetings.js         ← 定例会用UI
+   ├─ view_rosters.js          ← 委員名簿用UI
+   ├─ view_questions.js        ← 一般質問用UI
+   │
+   └─ data/                    ← VBAで生成されるJS
       ├─ members.js
       ├─ office_terms.js
       ├─ parties.js
@@ -167,7 +181,15 @@ HTML + JavaScriptで表示（LG環境対応）</code></pre>
       ├─ member_councils.js
       ├─ contacts.js
       ├─ change_logs.js
-      └─ codes.js</code></pre>
+      ├─ codes.js
+      ├─ meeting_rounds.js
+      ├─ event_types.js
+      ├─ assembly_events.js
+      ├─ special_committees.js
+      ├─ special_committee_setups.js
+      ├─ special_committee_meetings.js
+      └─ special_committee_rosters.js
+    </code></pre>
 
     <h2>3. データ設計</h2>
     <p class="small-gap"><strong>基本ルール</strong></p>
