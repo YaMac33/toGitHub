@@ -364,10 +364,13 @@ window.APP = (function () {
         end_date: row.end_date || "",
         postal_code: row.postal_code || "",
         address: row.address || "",
+        address_visibility: row.address_visibility || "",
         phone_home: row.phone_home || "",
+        phone_home_visibility: row.phone_home_visibility || "",
         phone_mobile: row.phone_mobile || "",
+        phone_mobile_visibility: row.phone_mobile_visibility || "",
         email: row.email || "",
-        is_public: row.is_public,
+        email_visibility: row.email_visibility || "",
         contact_note: row.contact_note || ""
       };
     });
@@ -389,10 +392,13 @@ window.APP = (function () {
       current_contact: currentContact ? {
         postal_code: currentContact.postal_code || "",
         address: currentContact.address || "",
+        address_visibility: currentContact.address_visibility || "",
         phone_home: currentContact.phone_home || "",
+        phone_home_visibility: currentContact.phone_home_visibility || "",
         phone_mobile: currentContact.phone_mobile || "",
+        phone_mobile_visibility: currentContact.phone_mobile_visibility || "",
         email: currentContact.email || "",
-        is_public: currentContact.is_public,
+        email_visibility: currentContact.email_visibility || "",
         contact_note: currentContact.contact_note || ""
       } : null,
       office_terms: officeTerms,
