@@ -79,44 +79,36 @@ window.APP_STABLE = (function () {
 
   function renderPartyOptions(selectEl) {
     const options = window.APP.getPartyOptions();
-    const html = ['<option value="">すべて</option>']
-      .concat(
-        options.map(function (party) {
-          return '<option value="' + escapeHtml(party.party_id) + '">' +
-            escapeHtml(party.party_name) +
-            '</option>';
-        })
-      )
+    selectEl.innerHTML = ['<option value="">すべて</option>']
+      .concat(options.map(function (party) {
+        return '<option value="' + escapeHtml(party.party_id) + '">' + escapeHtml(party.party_name) + "</option>";
+      }))
       .join("");
-
-    selectEl.innerHTML = html;
   }
 
   function renderCommitteeOptions(selectEl) {
     const options = window.APP.getCommitteeOptions();
-    const html = ['<option value="">すべて</option>']
-      .concat(
-        options.map(function (committee) {
-          return '<option value="' + escapeHtml(committee.committee_id) + '">' +
-            escapeHtml(committee.committee_name) +
-            '</option>';
-        })
-      )
+    selectEl.innerHTML = ['<option value="">すべて</option>']
+      .concat(options.map(function (row) {
+        return '<option value="' + escapeHtml(row.value) + '">' + escapeHtml(row.label) + "</option>";
+      }))
       .join("");
-
-    selectEl.innerHTML = html;
   }
 
   function renderStatus(statusEl) {
     const counts = window.APP.getSummaryCounts();
     statusEl.textContent = [
-      "stable.html 読み込み成功",
+      "members.html 読み込み成功",
       "members: " + counts.members + "件",
       "office_terms: " + counts.office_terms + "件",
       "parties: " + counts.parties + "件",
       "member_parties: " + counts.member_parties + "件",
       "member_committees: " + counts.member_committees + "件",
-      "member_councils: " + counts.member_councils + "件"
+      "member_councils: " + counts.member_councils + "件",
+      "meetings: " + counts.meetings + "件",
+      "special_committees: " + counts.special_committees + "件",
+      "special_committee_instances: " + counts.special_committee_instances + "件",
+      "special_committee_members: " + counts.special_committee_members + "件"
     ].join("\n");
   }
 
@@ -154,15 +146,14 @@ window.APP_STABLE = (function () {
       "</div>";
   }
 
-  function filterRowsByKeyword(rows, mapper) {
-    if (!rows || rows.length === 0) return [];
+  function filterTextRows(rows) {
     if (!currentKeyword) return rows;
-    return rows.filter(function (row) {
-      return mapper(row).toLowerCase().includes(currentKeyword.toLowerCase());
+    return rows.filter(function (text) {
+      return String(text).toLowerCase().includes(currentKeyword.toLowerCase());
     });
   }
 
-  function renderSimpleBlockRows(rows) {
+  function renderSimpleRows(rows) {
     if (!rows || rows.length === 0) {
       return '<div class="empty-small">データなし</div>';
     }
@@ -172,24 +163,74 @@ window.APP_STABLE = (function () {
     }).join("");
   }
 
-  function renderCurrentBlockRows(items) {
-    if (!items || items.length === 0) {
+  function renderCurrentCommitteeRows(regularRows, specialRows) {
+    const regularTexts = filterTextRows((regularRows || []).map(function (row) { return row.label; }))
+      .map(function (text) { return highlightText(text, currentKeyword); });
+
+    const specialTexts = filterTextRows((specialRows || []).map(function (row) { return row.label; }))
+      .map(function (text) { return highlightText(text, currentKeyword); });
+
+    const parts = [];
+
+    if (regularTexts.length > 0) {
+      parts.push('<div class="subsection-title">常設委員会</div>');
+      parts.push(renderSimpleRows(regularTexts));
+    }
+
+    if (specialTexts.length > 0) {
+      parts.push('<div class="subsection-title">特別委員会</div>');
+      parts.push(renderSimpleRows(specialTexts));
+    }
+
+    if (parts.length === 0) {
       return '<div class="empty-small">データなし</div>';
     }
 
-    const filtered = !currentKeyword
-      ? items
-      : items.filter(function (item) {
-          return String(item).toLowerCase().includes(currentKeyword.toLowerCase());
-        });
+    return parts.join("");
+  }
 
-    if (filtered.length === 0) {
-      return '<div class="empty-small">該当なし</div>';
+  function renderCommitteeHistoryRows(regularRows, specialRows) {
+    const regularTexts = filterTextRows((regularRows || []).map(function (row) {
+      let text = formatPeriod(row.start_date, row.end_date) + " / " + (row.committee_name || "");
+      if (row.role_name) text += " / " + row.role_name;
+      if (row.note) text += " / " + row.note;
+      return text;
+    })).map(function (text) {
+      return highlightText(text, currentKeyword);
+    });
+
+    const specialTexts = filterTextRows((specialRows || []).map(function (row) {
+      let text =
+        (row.meeting_name || "") + " / " +
+        (row.special_committee_name || "");
+
+      if (row.role_name) text += " / " + row.role_name;
+
+      text += " / " + formatPeriod(row.start_date, row.end_date);
+
+      if (row.note) text += " / " + row.note;
+      return text;
+    })).map(function (text) {
+      return highlightText(text, currentKeyword);
+    });
+
+    const parts = [];
+
+    if (regularTexts.length > 0) {
+      parts.push('<div class="subsection-title">常設委員会</div>');
+      parts.push(renderSimpleRows(regularTexts));
     }
 
-    return filtered.map(function (item) {
-      return '<div class="history-row">' + highlightText(item, currentKeyword) + "</div>";
-    }).join("");
+    if (specialTexts.length > 0) {
+      parts.push('<div class="subsection-title">特別委員会</div>');
+      parts.push(renderSimpleRows(specialTexts));
+    }
+
+    if (parts.length === 0) {
+      return '<div class="empty-small">データなし</div>';
+    }
+
+    return parts.join("");
   }
 
   function renderDetail(detailAreaEl, memberId) {
@@ -204,181 +245,65 @@ window.APP_STABLE = (function () {
       return;
     }
 
-    const currentCommitteesHtml = renderCurrentBlockRows(detail.current_committees || []);
-    const currentCouncilsHtml = renderCurrentBlockRows(detail.current_councils || []);
-    const currentPartyHtml = (!currentKeyword || String(detail.current_party_name || "").toLowerCase().includes(currentKeyword.toLowerCase()))
-      ? (detail.current_party_name
-          ? '<div class="history-row">' + highlightText(detail.current_party_name, currentKeyword) + "</div>"
-          : '<div class="empty-small">データなし</div>')
-      : '<div class="empty-small">該当なし</div>';
+    const currentCouncilsHtml = renderSimpleRows(
+      filterTextRows(detail.current_councils || []).map(function (text) {
+        return highlightText(text, currentKeyword);
+      })
+    );
 
-    const officeTermsRows = filterRowsByKeyword(
-      detail.office_terms || [],
-      function (row) {
-        return [
-          formatPeriod(row.term_start_date, row.term_end_date),
-          row.election_label || "",
-          row.end_reason_code || "",
-          row.note || ""
-        ].join(" ");
-      }
-    ).map(function (row) {
-      let text =
-        formatPeriod(row.term_start_date, row.term_end_date) +
-        " / " +
-        (row.election_label || "");
+    const officeTermsHtml = renderSimpleRows(
+      filterTextRows((detail.office_terms || []).map(function (row) {
+        let text = formatPeriod(row.term_start_date, row.term_end_date) + " / " + (row.election_label || "");
+        if (row.end_reason_code) text += " / " + row.end_reason_code;
+        if (row.note) text += " / " + row.note;
+        return text;
+      })).map(function (text) {
+        return highlightText(text, currentKeyword);
+      })
+    );
 
-      if (row.end_reason_code) {
-        text += " / " + row.end_reason_code;
-      }
+    const partyHistoryHtml = renderSimpleRows(
+      filterTextRows((detail.party_history || []).map(function (row) {
+        let text = formatPeriod(row.start_date, row.end_date) + " / " + (row.party_name || "");
+        if (row.role_name) text += " / " + row.role_name;
+        if (row.note) text += " / " + row.note;
+        return text;
+      })).map(function (text) {
+        return highlightText(text, currentKeyword);
+      })
+    );
 
-      if (row.note) {
-        text += " / " + row.note;
-      }
+    const councilHistoryHtml = renderSimpleRows(
+      filterTextRows((detail.council_history || []).map(function (row) {
+        let text = formatPeriod(row.start_date, row.end_date) + " / " + (row.council_name || "");
+        if (row.role_name) text += " / " + row.role_name;
+        if (row.note) text += " / " + row.note;
+        return text;
+      })).map(function (text) {
+        return highlightText(text, currentKeyword);
+      })
+    );
 
-      return highlightText(text, currentKeyword);
-    });
+    const contactHistoryHtml = renderSimpleRows(
+      filterTextRows((detail.contact_history || []).map(function (row) {
+        let text = formatPeriod(row.start_date, row.end_date) + " / 住所: " + (row.address || "");
+        if (row.address_visibility) text += " / 住所公開範囲: " + visibilityLabel(row.address_visibility);
+        if (row.phone_home) text += " / 自宅電話: " + row.phone_home;
+        if (row.phone_home_visibility) text += " / 自宅電話公開範囲: " + visibilityLabel(row.phone_home_visibility);
+        if (row.phone_mobile) text += " / 携帯電話: " + row.phone_mobile;
+        if (row.phone_mobile_visibility) text += " / 携帯電話公開範囲: " + visibilityLabel(row.phone_mobile_visibility);
+        if (row.email) text += " / メール: " + row.email;
+        if (row.email_visibility) text += " / メール公開範囲: " + visibilityLabel(row.email_visibility);
+        if (row.contact_note) text += " / " + row.contact_note;
+        return text;
+      })).map(function (text) {
+        return highlightText(text, currentKeyword);
+      })
+    );
 
-    const partyHistoryRows = filterRowsByKeyword(
-      detail.party_history || [],
-      function (row) {
-        return [
-          formatPeriod(row.start_date, row.end_date),
-          row.party_name || "",
-          row.role_name || "",
-          row.note || ""
-        ].join(" ");
-      }
-    ).map(function (row) {
-      let text =
-        formatPeriod(row.start_date, row.end_date) +
-        " / " +
-        (row.party_name || "");
-
-      if (row.role_name) {
-        text += " / " + row.role_name;
-      }
-
-      if (row.note) {
-        text += " / " + row.note;
-      }
-
-      return highlightText(text, currentKeyword);
-    });
-
-    const committeeHistoryRows = filterRowsByKeyword(
-      detail.committee_history || [],
-      function (row) {
-        return [
-          formatPeriod(row.start_date, row.end_date),
-          row.committee_name || "",
-          row.role_name || "",
-          row.note || ""
-        ].join(" ");
-      }
-    ).map(function (row) {
-      let text =
-        formatPeriod(row.start_date, row.end_date) +
-        " / " +
-        (row.committee_name || "");
-
-      if (row.role_name) {
-        text += " / " + row.role_name;
-      }
-
-      if (row.note) {
-        text += " / " + row.note;
-      }
-
-      return highlightText(text, currentKeyword);
-    });
-
-    const councilHistoryRows = filterRowsByKeyword(
-      detail.council_history || [],
-      function (row) {
-        return [
-          formatPeriod(row.start_date, row.end_date),
-          row.council_name || "",
-          row.role_name || "",
-          row.note || ""
-        ].join(" ");
-      }
-    ).map(function (row) {
-      let text =
-        formatPeriod(row.start_date, row.end_date) +
-        " / " +
-        (row.council_name || "");
-
-      if (row.role_name) {
-        text += " / " + row.role_name;
-      }
-
-      if (row.note) {
-        text += " / " + row.note;
-      }
-
-      return highlightText(text, currentKeyword);
-    });
-
-    const contactHistoryRows = filterRowsByKeyword(
-      detail.contact_history || [],
-      function (row) {
-        return [
-          formatPeriod(row.start_date, row.end_date),
-          row.address || "",
-          row.address_visibility || "",
-          row.phone_home || "",
-          row.phone_home_visibility || "",
-          row.phone_mobile || "",
-          row.phone_mobile_visibility || "",
-          row.email || "",
-          row.email_visibility || "",
-          row.contact_note || ""
-        ].join(" ");
-      }
-    ).map(function (row) {
-      let text =
-        formatPeriod(row.start_date, row.end_date) +
-        " / 住所: " + (row.address || "");
-
-      if (row.address_visibility) {
-        text += " / 住所公開範囲: " + visibilityLabel(row.address_visibility);
-      }
-
-      if (row.phone_home) {
-        text += " / 自宅電話: " + row.phone_home;
-      }
-
-      if (row.phone_home_visibility) {
-        text += " / 自宅電話公開範囲: " + visibilityLabel(row.phone_home_visibility);
-      }
-
-      if (row.phone_mobile) {
-        text += " / 携帯電話: " + row.phone_mobile;
-      }
-
-      if (row.phone_mobile_visibility) {
-        text += " / 携帯電話公開範囲: " + visibilityLabel(row.phone_mobile_visibility);
-      }
-
-      if (row.email) {
-        text += " / メール: " + row.email;
-      }
-
-      if (row.email_visibility) {
-        text += " / メール公開範囲: " + visibilityLabel(row.email_visibility);
-      }
-
-      if (row.contact_note) {
-        text += " / " + row.contact_note;
-      }
-
-      return highlightText(text, currentKeyword);
-    });
-
-    const currentContactBlocks = [];
+    const currentContactLines = [];
     if (detail.current_contact) {
-      const candidates = [
+      [
         "郵便番号: " + (detail.current_contact.postal_code || ""),
         "住所: " + (detail.current_contact.address || ""),
         "住所公開範囲: " + visibilityLabel(detail.current_contact.address_visibility),
@@ -389,17 +314,15 @@ window.APP_STABLE = (function () {
         "メール: " + (detail.current_contact.email || ""),
         "メール公開範囲: " + visibilityLabel(detail.current_contact.email_visibility),
         "備考: " + (detail.current_contact.contact_note || "")
-      ];
-
-      candidates.forEach(function (line) {
+      ].forEach(function (line) {
         if (!currentKeyword || line.toLowerCase().includes(currentKeyword.toLowerCase())) {
-          currentContactBlocks.push('<div class="history-row">' + highlightText(line, currentKeyword) + "</div>");
+          currentContactLines.push('<div class="history-row">' + highlightText(line, currentKeyword) + "</div>");
         }
       });
     }
 
-    const currentContactHtml = currentContactBlocks.length > 0
-      ? currentContactBlocks.join("")
+    const currentContactHtml = currentContactLines.length > 0
+      ? currentContactLines.join("")
       : '<div class="empty-small">' + (detail.current_contact ? "該当なし" : "データなし") + "</div>";
 
     detailAreaEl.innerHTML =
@@ -421,12 +344,14 @@ window.APP_STABLE = (function () {
 
         '<div class="detail-card">' +
           "<h3>現在会派</h3>" +
-          currentPartyHtml +
+          (detail.current_party_name
+            ? '<div class="history-row">' + highlightText(detail.current_party_name, currentKeyword) + "</div>"
+            : '<div class="empty-small">データなし</div>') +
         "</div>" +
 
         '<div class="detail-card">' +
           "<h3>現在委員会</h3>" +
-          currentCommitteesHtml +
+          renderCurrentCommitteeRows(detail.current_committees_regular, detail.current_committees_special) +
         "</div>" +
 
         '<div class="detail-card">' +
@@ -441,27 +366,27 @@ window.APP_STABLE = (function () {
 
         '<div class="detail-card detail-card-wide">' +
           "<h3>在任履歴</h3>" +
-          renderSimpleBlockRows(officeTermsRows) +
+          officeTermsHtml +
         "</div>" +
 
         '<div class="detail-card detail-card-wide">' +
           "<h3>会派履歴</h3>" +
-          renderSimpleBlockRows(partyHistoryRows) +
+          partyHistoryHtml +
         "</div>" +
 
         '<div class="detail-card detail-card-wide">' +
           "<h3>委員会履歴</h3>" +
-          renderSimpleBlockRows(committeeHistoryRows) +
+          renderCommitteeHistoryRows(detail.committee_history_regular, detail.committee_history_special) +
         "</div>" +
 
         '<div class="detail-card detail-card-wide">' +
           "<h3>審議会履歴</h3>" +
-          renderSimpleBlockRows(councilHistoryRows) +
+          councilHistoryHtml +
         "</div>" +
 
         '<div class="detail-card detail-card-wide">' +
           "<h3>連絡先履歴</h3>" +
-          renderSimpleBlockRows(contactHistoryRows) +
+          contactHistoryHtml +
         "</div>" +
       "</div>";
   }
@@ -492,11 +417,10 @@ window.APP_STABLE = (function () {
       currentKeyword = (searchKeyword.value || "").trim();
 
       const allRows = window.APP.buildMemberList();
-
       currentRows = window.APP.filterMemberList(allRows, {
         name: searchName.value,
         party_id: searchParty.value,
-        committee_id: searchCommittee.value,
+        committee_selector: searchCommittee.value,
         keyword: searchKeyword.value
       });
 
