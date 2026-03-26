@@ -297,10 +297,92 @@ window.APP = (function () {
     });
   }
 
+  function buildSearchTextForMember(memberId, baseDate) {
+    const member = getMemberById(memberId);
+    const officeTerms = getOfficeTermsByMemberId(memberId);
+    const partyHistory = getPartyHistoryByMemberId(memberId);
+    const committeeHistory = getCommitteeHistoryByMemberId(memberId);
+    const councilHistory = getCouncilHistoryByMemberId(memberId);
+    const contactHistory = getContactHistoryByMemberId(memberId);
+    const currentParty = getCurrentPartyNameByMemberId(memberId, baseDate);
+    const currentCommittees = getCurrentCommitteeLabelsByMemberId(memberId, baseDate);
+    const currentCouncils = getCurrentCouncilLabelsByMemberId(memberId, baseDate);
+    const currentContact = getCurrentContactRecordByMemberId(memberId, baseDate);
+
+    const chunks = [];
+
+    if (member) {
+      chunks.push(member.member_name || "");
+      chunks.push(member.member_name_short || "");
+      chunks.push(member.member_kana || "");
+      chunks.push(member.note || "");
+    }
+
+    chunks.push(currentParty || "");
+    chunks.push((currentCommittees || []).join(" "));
+    chunks.push((currentCouncils || []).join(" "));
+
+    officeTerms.forEach(function (row) {
+      chunks.push(row.election_label || "");
+      chunks.push(row.end_reason_code || "");
+      chunks.push(row.note || "");
+    });
+
+    partyHistory.forEach(function (row) {
+      const party = getPartyById(row.party_id);
+      chunks.push(party ? party.party_name : "");
+      chunks.push(row.role_name || "");
+      chunks.push(row.note || "");
+    });
+
+    committeeHistory.forEach(function (row) {
+      const committee = getCommitteeById(row.committee_id);
+      chunks.push(committee ? committee.committee_name : "");
+      chunks.push(row.role_name || "");
+      chunks.push(row.note || "");
+    });
+
+    councilHistory.forEach(function (row) {
+      const council = getCouncilById(row.council_id);
+      chunks.push(council ? council.council_name : "");
+      chunks.push(row.role_name || "");
+      chunks.push(row.note || "");
+    });
+
+    contactHistory.forEach(function (row) {
+      chunks.push(row.postal_code || "");
+      chunks.push(row.address || "");
+      chunks.push(row.phone_home || "");
+      chunks.push(row.phone_home_visibility || "");
+      chunks.push(row.phone_mobile || "");
+      chunks.push(row.phone_mobile_visibility || "");
+      chunks.push(row.email || "");
+      chunks.push(row.email_visibility || "");
+      chunks.push(row.contact_note || "");
+      chunks.push(row.address_visibility || "");
+    });
+
+    if (currentContact) {
+      chunks.push(currentContact.postal_code || "");
+      chunks.push(currentContact.address || "");
+      chunks.push(currentContact.address_visibility || "");
+      chunks.push(currentContact.phone_home || "");
+      chunks.push(currentContact.phone_home_visibility || "");
+      chunks.push(currentContact.phone_mobile || "");
+      chunks.push(currentContact.phone_mobile_visibility || "");
+      chunks.push(currentContact.email || "");
+      chunks.push(currentContact.email_visibility || "");
+      chunks.push(currentContact.contact_note || "");
+    }
+
+    return chunks.join(" ").toLowerCase();
+  }
+
   function filterMemberList(rows, conditions, baseDate) {
     const name = (conditions.name || "").trim().toLowerCase();
     const partyId = (conditions.party_id || "").trim();
     const committeeId = (conditions.committee_id || "").trim();
+    const keyword = (conditions.keyword || "").trim().toLowerCase();
 
     return rows.filter(function (row) {
       const hitName =
@@ -315,7 +397,11 @@ window.APP = (function () {
         !committeeId ||
         hasCurrentCommittee(row.member_id, committeeId, baseDate);
 
-      return hitName && hitParty && hitCommittee;
+      const hitKeyword =
+        !keyword ||
+        buildSearchTextForMember(row.member_id, baseDate).includes(keyword);
+
+      return hitName && hitParty && hitCommittee && hitKeyword;
     });
   }
 
