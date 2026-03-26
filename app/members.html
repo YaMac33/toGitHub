@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>stable</title>
+  <title>members</title>
   <style>
     html, body {
       margin: 0;
@@ -229,6 +229,13 @@
       font-size: 16px;
     }
 
+    .subsection-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #444;
+      margin: 8px 0 6px;
+    }
+
     .history-row {
       padding: 8px 0;
       border-bottom: 1px solid #edf1f5;
@@ -272,10 +279,7 @@
     }
 
     @media (max-width: 800px) {
-      .search-row {
-        grid-template-columns: 1fr;
-      }
-
+      .search-row,
       .detail-grid {
         grid-template-columns: 1fr;
       }
@@ -285,8 +289,8 @@
 <body>
   <div class="page">
     <header class="page-header">
-      <h1 class="page-title">議員管理システム</h1>
-      <p class="page-desc">左で選択、右で詳細確認を行う画面です。</p>
+      <h1 class="page-title">議員管理システム members</h1>
+      <p class="page-desc">左で議員を選択、右で詳細確認を行う画面です。</p>
     </header>
 
     <section class="card">
@@ -314,7 +318,7 @@
 
         <div class="field">
           <label for="searchKeyword">全体キーワード検索</label>
-          <input id="searchKeyword" type="text" placeholder="例: 環境 / 議長 / 代表" />
+          <input id="searchKeyword" type="text" placeholder="例: 環境 / 議長 / 代表 / 予算" />
         </div>
       </div>
     </section>
@@ -352,6 +356,11 @@
   <script src="data/contacts.js"></script>
   <script src="data/change_logs.js"></script>
   <script src="data/codes.js"></script>
+
+  <script src="data/meetings.js"></script>
+  <script src="data/special_committees.js"></script>
+  <script src="data/special_committee_instances.js"></script>
+  <script src="data/special_committee_members.js"></script>
 
   <script src="app.js"></script>
   <script src="view_members.js"></script>
