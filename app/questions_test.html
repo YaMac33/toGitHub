@@ -190,56 +190,6 @@
       font-weight: 700;
     }
 
-    .table-wrap {
-      overflow-x: auto;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      background: #ffffff;
-    }
-
-    .results-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 900px;
-    }
-
-    .results-table th,
-    .results-table td {
-      padding: 12px 14px;
-      border-bottom: 1px solid #f1f5f9;
-      text-align: left;
-      vertical-align: top;
-      font-size: 14px;
-    }
-
-    .results-table th {
-      background: #f9fafb;
-      color: #6b7280;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .results-table tr:hover td {
-      background: #fcfcfd;
-    }
-
-    .muted {
-      color: #6b7280;
-    }
-
-    .mono-chip {
-      display: inline-block;
-      padding: 2px 8px;
-      background: #f3f4f6;
-      border-radius: 999px;
-      border: 1px solid #d1d5db;
-      font-size: 12px;
-      font-weight: 700;
-      color: #475569;
-      font-family: monospace;
-      white-space: nowrap;
-    }
-
     .cards {
       display: grid;
       gap: 20px;
@@ -254,10 +204,7 @@
     }
 
     .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
+      display: block;
       border-bottom: 1px solid #f1f5f9;
       padding-bottom: 12px;
       margin-bottom: 16px;
@@ -268,17 +215,7 @@
       font-size: 22px;
       font-weight: 700;
       color: #111827;
-    }
-
-    .card-count {
-      font-size: 13px;
-      font-weight: 700;
-      color: #475569;
-      background: #eff6ff;
-      border: 1px solid #dbeafe;
-      border-radius: 999px;
-      padding: 4px 10px;
-      white-space: nowrap;
+      line-height: 1.4;
     }
 
     .section-block {
@@ -326,15 +263,16 @@
       color: #374151;
     }
 
+    .muted {
+      color: #6b7280;
+    }
+
     .collapsible {
       overflow: hidden;
       transition: max-height 0.2s ease;
     }
 
-    .collapsible.member-collapsed {
-      max-height: 220px;
-    }
-
+    .collapsible.member-collapsed,
     .collapsible.session-member-collapsed {
       max-height: 220px;
     }
@@ -511,8 +449,7 @@
         <div class="mode-group">
           <span class="mode-label">表示形式</span>
           <div class="mode-switch">
-            <button id="viewTableBtn" type="button" class="mode-btn">一覧表</button>
-            <button id="viewMemberBtn" type="button" class="mode-btn">人ごと</button>
+            <button id="viewListBtn" type="button" class="mode-btn">一覧</button>
             <button id="viewSessionBtn" type="button" class="mode-btn">回ごと</button>
           </div>
         </div>
@@ -530,7 +467,7 @@
       </div>
       <div class="summary-item">
         <span class="summary-label">現在の表示:</span>
-        <span id="summaryView">一覧表</span>
+        <span id="summaryView">一覧</span>
       </div>
     </section>
 
@@ -544,7 +481,7 @@
 
       const state = {
         keyword: "",
-        viewMode: "table"
+        viewMode: "list"
       };
 
       const expandedMap = {};
@@ -553,8 +490,7 @@
         keywordInput: document.getElementById("keywordInput"),
         searchBtn: document.getElementById("searchBtn"),
         clearBtn: document.getElementById("clearBtn"),
-        viewTableBtn: document.getElementById("viewTableBtn"),
-        viewMemberBtn: document.getElementById("viewMemberBtn"),
+        viewListBtn: document.getElementById("viewListBtn"),
         viewSessionBtn: document.getElementById("viewSessionBtn"),
         summaryKeyword: document.getElementById("summaryKeyword"),
         summaryCount: document.getElementById("summaryCount"),
@@ -620,6 +556,7 @@
         return 0;
       }
 
+      // 回ごと用: 定例会を最新から降順
       function compareRecords(a, b) {
         const e = getEraPriority(a.number) - getEraPriority(b.number);
         if (e !== 0) return e;
@@ -662,7 +599,8 @@
         });
       }
 
-      function groupMember(records) {
+      // 一覧 = 人ごと
+      function groupList(records) {
         const map = {};
 
         records.forEach(r => {
@@ -696,6 +634,7 @@
         return Object.values(map);
       }
 
+      // 回ごと
       function groupSession(records) {
         const map = {};
 
@@ -758,52 +697,7 @@
         `;
       }
 
-      function renderTable(records) {
-        if (records.length === 0) {
-          els.resultsArea.innerHTML = `<div class="empty-box">検索結果がありません</div>`;
-          return;
-        }
-
-        let html = `
-          <div class="table-wrap">
-            <table class="results-table">
-              <thead>
-                <tr>
-                  <th>定例会</th>
-                  <th>通告No</th>
-                  <th>議員名（会派）</th>
-                  <th>項目</th>
-                  <th>内容</th>
-                </tr>
-              </thead>
-              <tbody>
-        `;
-
-        records.forEach(r => {
-          html += `
-            <tr>
-              <td class="muted">${escapeHtml(formatYS(r))}</td>
-              <td><span class="mono-chip">No.${escapeHtml(r.notice_no)}</span></td>
-              <td>
-                <div><strong>${escapeHtml(r.member_name)}</strong></div>
-                <div class="muted">${escapeHtml(r.group)}</div>
-              </td>
-              <td><span class="mono-chip">${escapeHtml(buildTreeLabel(r))}</span></td>
-              <td>${escapeHtml(r.content)}</td>
-            </tr>
-          `;
-        });
-
-        html += `
-              </tbody>
-            </table>
-          </div>
-        `;
-
-        els.resultsArea.innerHTML = html;
-      }
-
-      function renderMemberCards(groups) {
+      function renderListCards(groups) {
         if (groups.length === 0) {
           els.resultsArea.innerHTML = `<div class="empty-box">検索結果がありません</div>`;
           return;
@@ -815,16 +709,15 @@
           html += `
             <section class="card">
               <div class="card-header">
-                <h3 class="card-title">${escapeHtml(g.member)}</h3>
-                <div class="card-count">${escapeHtml(g.group || "所属なし")}</div>
+                <h3 class="card-title">${escapeHtml(g.member)}${g.group ? `（${escapeHtml(g.group)}）` : ""}</h3>
               </div>
           `;
 
           const ysList = Object.values(g.ys).sort(compareRecords);
-          let memberInnerHtml = "";
+          let innerHtml = "";
 
           ysList.forEach(ys => {
-            memberInnerHtml += `
+            innerHtml += `
               <div class="section-block">
                 <div class="section-title">${escapeHtml(formatYS(ys))}</div>
             `;
@@ -834,7 +727,7 @@
             notices.forEach(n => {
               const list = ys.notices[n].slice().sort(compareTreeRecords);
 
-              memberInnerHtml += `
+              innerHtml += `
                 <div class="notice-block">
                   <div class="notice-title">通告No: ${escapeHtml(n)}</div>
                   <div class="tree-block">
@@ -844,11 +737,11 @@
               `;
             });
 
-            memberInnerHtml += `</div>`;
+            innerHtml += `</div>`;
           });
 
-          const expandKey = `member:${g.member}`;
-          html += renderCollapsible(memberInnerHtml, expandKey, "member-collapsed");
+          const expandKey = `list:${g.member}`;
+          html += renderCollapsible(innerHtml, expandKey, "member-collapsed");
           html += `</section>`;
         });
 
@@ -869,7 +762,6 @@
             <section class="card">
               <div class="card-header">
                 <h3 class="card-title">${escapeHtml(formatYS(s))}</h3>
-                <div class="card-count">回ごと</div>
               </div>
           `;
 
@@ -912,12 +804,11 @@
       }
 
       function updateViewButtons() {
-        [els.viewTableBtn, els.viewMemberBtn, els.viewSessionBtn].forEach(btn => {
+        [els.viewListBtn, els.viewSessionBtn].forEach(btn => {
           btn.classList.remove("active");
         });
 
-        if (state.viewMode === "table") els.viewTableBtn.classList.add("active");
-        if (state.viewMode === "member") els.viewMemberBtn.classList.add("active");
+        if (state.viewMode === "list") els.viewListBtn.classList.add("active");
         if (state.viewMode === "session") els.viewSessionBtn.classList.add("active");
       }
 
@@ -928,18 +819,15 @@
         els.summaryCount.textContent = data.length + "件";
 
         const viewLabels = {
-          table: "一覧表",
-          member: "人ごと",
+          list: "一覧",
           session: "回ごと"
         };
         els.summaryView.textContent = viewLabels[state.viewMode];
 
         updateViewButtons();
 
-        if (state.viewMode === "table") {
-          renderTable(data);
-        } else if (state.viewMode === "member") {
-          renderMemberCards(groupMember(data));
+        if (state.viewMode === "list") {
+          renderListCards(groupList(data));
         } else {
           renderSessionCards(groupSession(data));
         }
@@ -966,13 +854,8 @@
           render();
         });
 
-        els.viewTableBtn.addEventListener("click", () => {
-          state.viewMode = "table";
-          render();
-        });
-
-        els.viewMemberBtn.addEventListener("click", () => {
-          state.viewMode = "member";
+        els.viewListBtn.addEventListener("click", () => {
+          state.viewMode = "list";
           render();
         });
 
