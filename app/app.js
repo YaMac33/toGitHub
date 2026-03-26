@@ -77,6 +77,13 @@ window.APP = (function () {
     return terms.length > 0 ? "現職" : "過去在任";
   }
 
+  function formatPartyLabel(party, roleName) {
+    if (!party) return "";
+    const name = party.party_name || "";
+    const role = roleName || "";
+    return role ? name + "（" + role + "）" : name;
+  }
+
   function getCurrentPartyRecordByMemberId(memberId, baseDate) {
     const records = getArray("member_parties")
       .filter(function (row) {
@@ -108,7 +115,7 @@ window.APP = (function () {
     const record = getCurrentPartyRecordByMemberId(memberId, baseDate);
     if (!record) return "";
     const party = getPartyById(record.party_id);
-    return party ? party.party_name : "";
+    return formatPartyLabel(party, record.role_name || "");
   }
 
   function getCurrentCommitteeRecordsByMemberId(memberId, baseDate) {
@@ -265,27 +272,50 @@ window.APP = (function () {
       });
   }
 
-  function filterMemberList(rows, conditions) {
+  function getCommitteeOptions() {
+    return getArray("committees")
+      .filter(function (committee) {
+        return String(committee.active_flag || "0") === "1";
+      })
+      .slice()
+      .sort(function (a, b) {
+        const aOrder = Number(a.sort_order || 0);
+        const bOrder = Number(b.sort_order || 0);
+        return aOrder - bOrder;
+      })
+      .map(function (committee) {
+        return {
+          committee_id: committee.committee_id || "",
+          committee_name: committee.committee_name || ""
+        };
+      });
+  }
+
+  function hasCurrentCommittee(memberId, committeeId, baseDate) {
+    return getCurrentCommitteeRecordsByMemberId(memberId, baseDate).some(function (row) {
+      return row.committee_id === committeeId;
+    });
+  }
+
+  function filterMemberList(rows, conditions, baseDate) {
     const name = (conditions.name || "").trim().toLowerCase();
     const partyId = (conditions.party_id || "").trim();
-    const status = (conditions.status || "").trim();
+    const committeeId = (conditions.committee_id || "").trim();
 
     return rows.filter(function (row) {
       const hitName =
         !name ||
         String(row.member_name || "").toLowerCase().includes(name);
 
-      const currentPartyRecord = getCurrentPartyRecordByMemberId(row.member_id);
+      const currentPartyRecord = getCurrentPartyRecordByMemberId(row.member_id, baseDate);
       const currentPartyId = currentPartyRecord ? currentPartyRecord.party_id : "";
-
       const hitParty = !partyId || currentPartyId === partyId;
 
-      const hitStatus =
-        !status ||
-        (status === "current" && row.current_status === "現職") ||
-        (status === "past" && row.current_status === "過去在任");
+      const hitCommittee =
+        !committeeId ||
+        hasCurrentCommittee(row.member_id, committeeId, baseDate);
 
-      return hitName && hitParty && hitStatus;
+      return hitName && hitParty && hitCommittee;
     });
   }
 
@@ -388,6 +418,7 @@ window.APP = (function () {
     buildMemberList: buildMemberList,
     buildMemberDetail: buildMemberDetail,
     getPartyOptions: getPartyOptions,
+    getCommitteeOptions: getCommitteeOptions,
     filterMemberList: filterMemberList,
     getSummaryCounts: getSummaryCounts
   };
