@@ -13,8 +13,52 @@ window.APP_STABLE = (function () {
       .replaceAll("'", "&#39;");
   }
 
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function highlightText(text, keyword) {
+    const safeText = escapeHtml(text);
+    if (!keyword) return safeText;
+    const regex = new RegExp("(" + escapeRegExp(keyword) + ")", "gi");
+    return safeText.replace(regex, '<span class="hit-mark">$1</span>');
+  }
+
+  function toWareki(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr + "T00:00:00");
+    if (Number.isNaN(d.getTime())) return dateStr;
+
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const day = d.getDate();
+
+    const reiwaStart = new Date("2019-05-01T00:00:00");
+    const heiseiStart = new Date("1989-01-08T00:00:00");
+    const showaStart = new Date("1926-12-25T00:00:00");
+
+    let eraName = "";
+    let eraYear = 0;
+
+    if (d >= reiwaStart) {
+      eraName = "令和";
+      eraYear = y - 2018;
+    } else if (d >= heiseiStart) {
+      eraName = "平成";
+      eraYear = y - 1988;
+    } else if (d >= showaStart) {
+      eraName = "昭和";
+      eraYear = y - 1925;
+    } else {
+      return y + "年" + m + "月" + day + "日";
+    }
+
+    const eraYearLabel = eraYear === 1 ? "元" : String(eraYear);
+    return eraName + eraYearLabel + "年" + m + "月" + day + "日";
+  }
+
   function formatPeriod(startDate, endDate) {
-    return (startDate || "") + " ～ " + (endDate || "継続中");
+    return toWareki(startDate || "") + " ～ " + (endDate ? toWareki(endDate) : "継続中");
   }
 
   function renderPartyOptions(selectEl) {
@@ -24,6 +68,21 @@ window.APP_STABLE = (function () {
         options.map(function (party) {
           return '<option value="' + escapeHtml(party.party_id) + '">' +
             escapeHtml(party.party_name) +
+            '</option>';
+        })
+      )
+      .join("");
+
+    selectEl.innerHTML = html;
+  }
+
+  function renderCommitteeOptions(selectEl) {
+    const options = window.APP.getCommitteeOptions();
+    const html = ['<option value="">すべて</option>']
+      .concat(
+        options.map(function (committee) {
+          return '<option value="' + escapeHtml(committee.committee_id) + '">' +
+            escapeHtml(committee.committee_name) +
             '</option>';
         })
       )
@@ -79,6 +138,14 @@ window.APP_STABLE = (function () {
       "</div>";
   }
 
+  function filterDetailRows(rows, keyword, mapper) {
+    if (!rows || rows.length === 0) return [];
+    if (!keyword) return rows;
+    return rows.filter(function (row) {
+      return mapper(row).includes(keyword);
+    });
+  }
+
   function renderSimpleBlockRows(rows) {
     if (!rows || rows.length === 0) {
       return '<div class="empty-small">データなし</div>';
@@ -86,6 +153,26 @@ window.APP_STABLE = (function () {
 
     return rows.map(function (row) {
       return '<div class="history-row">' + row + "</div>";
+    }).join("");
+  }
+
+  function renderCurrentBlockRows(items, keyword) {
+    if (!items || items.length === 0) {
+      return '<div class="empty-small">データなし</div>';
+    }
+
+    const filtered = !keyword
+      ? items
+      : items.filter(function (item) {
+          return String(item).includes(keyword);
+        });
+
+    if (filtered.length === 0) {
+      return '<div class="empty-small">該当なし</div>';
+    }
+
+    return filtered.map(function (item) {
+      return '<div class="history-row">' + highlightText(item, keyword) + "</div>";
     }).join("");
   }
 
@@ -101,75 +188,199 @@ window.APP_STABLE = (function () {
       return;
     }
 
-    const currentCommitteesHtml = renderSimpleBlockRows(
-      (detail.current_committees || []).map(function (item) {
-        return escapeHtml(item);
-      })
-    );
+    const keywordInputValue = detailAreaEl.querySelector("#detailSearchInput")
+      ? detailAreaEl.querySelector("#detailSearchInput").value.trim()
+      : "";
 
-    const currentCouncilsHtml = renderSimpleBlockRows(
-      (detail.current_councils || []).map(function (item) {
-        return escapeHtml(item);
-      })
-    );
+    const currentCommitteesHtml = renderCurrentBlockRows(detail.current_committees || [], keywordInputValue);
+    const currentCouncilsHtml = renderCurrentBlockRows(detail.current_councils || [], keywordInputValue);
+    const currentPartyHtml = (!keywordInputValue || String(detail.current_party_name || "").includes(keywordInputValue))
+      ? (detail.current_party_name
+          ? '<div class="history-row">' + highlightText(detail.current_party_name, keywordInputValue) + "</div>"
+          : '<div class="empty-small">データなし</div>')
+      : '<div class="empty-small">該当なし</div>';
 
-    const officeTermsHtml = renderSimpleBlockRows(
-      (detail.office_terms || []).map(function (row) {
-        return escapeHtml(formatPeriod(row.term_start_date, row.term_end_date)) +
-          " / " +
-          escapeHtml(row.election_label || "") +
-          (row.end_reason_code ? " / " + escapeHtml(row.end_reason_code) : "");
-      })
-    );
+    const officeTermsRows = filterDetailRows(
+      detail.office_terms || [],
+      keywordInputValue,
+      function (row) {
+        return [
+          formatPeriod(row.term_start_date, row.term_end_date),
+          row.election_label || "",
+          row.end_reason_code || "",
+          row.note || ""
+        ].join(" ");
+      }
+    ).map(function (row) {
+      let text =
+        formatPeriod(row.term_start_date, row.term_end_date) +
+        " / " +
+        (row.election_label || "");
 
-    const partyHistoryHtml = renderSimpleBlockRows(
-      (detail.party_history || []).map(function (row) {
-        return escapeHtml(formatPeriod(row.start_date, row.end_date)) +
-          " / " +
-          escapeHtml(row.party_name || "") +
-          (row.role_name ? " / " + escapeHtml(row.role_name) : "");
-      })
-    );
+      if (row.end_reason_code) {
+        text += " / " + row.end_reason_code;
+      }
 
-    const committeeHistoryHtml = renderSimpleBlockRows(
-      (detail.committee_history || []).map(function (row) {
-        return escapeHtml(formatPeriod(row.start_date, row.end_date)) +
-          " / " +
-          escapeHtml(row.committee_name || "") +
-          (row.role_name ? " / " + escapeHtml(row.role_name) : "");
-      })
-    );
+      if (row.note) {
+        text += " / " + row.note;
+      }
 
-    const councilHistoryHtml = renderSimpleBlockRows(
-      (detail.council_history || []).map(function (row) {
-        return escapeHtml(formatPeriod(row.start_date, row.end_date)) +
-          " / " +
-          escapeHtml(row.council_name || "") +
-          (row.role_name ? " / " + escapeHtml(row.role_name) : "");
-      })
-    );
+      return highlightText(text, keywordInputValue);
+    });
 
-    const contactHistoryHtml = renderSimpleBlockRows(
-      (detail.contact_history || []).map(function (row) {
-        return escapeHtml(formatPeriod(row.start_date, row.end_date)) +
-          " / " +
-          escapeHtml(row.address || "") +
-          (row.phone_mobile ? " / " + escapeHtml(row.phone_mobile) : "") +
-          (row.email ? " / " + escapeHtml(row.email) : "");
-      })
-    );
+    const partyHistoryRows = filterDetailRows(
+      detail.party_history || [],
+      keywordInputValue,
+      function (row) {
+        return [
+          formatPeriod(row.start_date, row.end_date),
+          row.party_name || "",
+          row.role_name || "",
+          row.note || ""
+        ].join(" ");
+      }
+    ).map(function (row) {
+      let text =
+        formatPeriod(row.start_date, row.end_date) +
+        " / " +
+        (row.party_name || "");
 
-    const currentContactHtml = detail.current_contact
-      ? [
-          '<div class="history-row">郵便番号: ' + escapeHtml(detail.current_contact.postal_code || "") + "</div>",
-          '<div class="history-row">住所: ' + escapeHtml(detail.current_contact.address || "") + "</div>",
-          '<div class="history-row">自宅電話: ' + escapeHtml(detail.current_contact.phone_home || "") + "</div>",
-          '<div class="history-row">携帯電話: ' + escapeHtml(detail.current_contact.phone_mobile || "") + "</div>",
-          '<div class="history-row">メール: ' + escapeHtml(detail.current_contact.email || "") + "</div>"
-        ].join("")
-      : '<div class="empty-small">データなし</div>';
+      if (row.role_name) {
+        text += " / " + row.role_name;
+      }
+
+      if (row.note) {
+        text += " / " + row.note;
+      }
+
+      return highlightText(text, keywordInputValue);
+    });
+
+    const committeeHistoryRows = filterDetailRows(
+      detail.committee_history || [],
+      keywordInputValue,
+      function (row) {
+        return [
+          formatPeriod(row.start_date, row.end_date),
+          row.committee_name || "",
+          row.role_name || "",
+          row.note || ""
+        ].join(" ");
+      }
+    ).map(function (row) {
+      let text =
+        formatPeriod(row.start_date, row.end_date) +
+        " / " +
+        (row.committee_name || "");
+
+      if (row.role_name) {
+        text += " / " + row.role_name;
+      }
+
+      if (row.note) {
+        text += " / " + row.note;
+      }
+
+      return highlightText(text, keywordInputValue);
+    });
+
+    const councilHistoryRows = filterDetailRows(
+      detail.council_history || [],
+      keywordInputValue,
+      function (row) {
+        return [
+          formatPeriod(row.start_date, row.end_date),
+          row.council_name || "",
+          row.role_name || "",
+          row.note || ""
+        ].join(" ");
+      }
+    ).map(function (row) {
+      let text =
+        formatPeriod(row.start_date, row.end_date) +
+        " / " +
+        (row.council_name || "");
+
+      if (row.role_name) {
+        text += " / " + row.role_name;
+      }
+
+      if (row.note) {
+        text += " / " + row.note;
+      }
+
+      return highlightText(text, keywordInputValue);
+    });
+
+    const contactHistoryRows = filterDetailRows(
+      detail.contact_history || [],
+      keywordInputValue,
+      function (row) {
+        return [
+          formatPeriod(row.start_date, row.end_date),
+          row.address || "",
+          row.phone_home || "",
+          row.phone_mobile || "",
+          row.email || "",
+          row.contact_note || ""
+        ].join(" ");
+      }
+    ).map(function (row) {
+      let text =
+        formatPeriod(row.start_date, row.end_date) +
+        " / " +
+        (row.address || "");
+
+      if (row.phone_home) {
+        text += " / " + row.phone_home;
+      }
+
+      if (row.phone_mobile) {
+        text += " / " + row.phone_mobile;
+      }
+
+      if (row.email) {
+        text += " / " + row.email;
+      }
+
+      if (row.contact_note) {
+        text += " / " + row.contact_note;
+      }
+
+      return highlightText(text, keywordInputValue);
+    });
+
+    const currentContactBlocks = [];
+    if (detail.current_contact) {
+      const candidates = [
+        "郵便番号: " + (detail.current_contact.postal_code || ""),
+        "住所: " + (detail.current_contact.address || ""),
+        "住所公開範囲: " + (detail.current_contact.address_visibility || ""),
+        "自宅電話: " + (detail.current_contact.phone_home || ""),
+        "自宅電話公開範囲: " + (detail.current_contact.phone_home_visibility || ""),
+        "携帯電話: " + (detail.current_contact.phone_mobile || ""),
+        "携帯電話公開範囲: " + (detail.current_contact.phone_mobile_visibility || ""),
+        "メール: " + (detail.current_contact.email || ""),
+        "メール公開範囲: " + (detail.current_contact.email_visibility || ""),
+        "備考: " + (detail.current_contact.contact_note || "")
+      ];
+
+      candidates.forEach(function (line) {
+        if (!keywordInputValue || line.includes(keywordInputValue)) {
+          currentContactBlocks.push('<div class="history-row">' + highlightText(line, keywordInputValue) + "</div>");
+        }
+      });
+    }
+
+    const currentContactHtml = currentContactBlocks.length > 0
+      ? currentContactBlocks.join("")
+      : '<div class="empty-small">' + (detail.current_contact ? "該当なし" : "データなし") + "</div>";
 
     detailAreaEl.innerHTML =
+      '<div class="detail-search-wrap">' +
+        '<input id="detailSearchInput" type="text" placeholder="詳細内検索（現在所属 + 履歴）" value="' + escapeHtml(keywordInputValue) + '">' +
+      "</div>" +
+
       '<div class="detail-header">' +
         '<div class="detail-title">' + escapeHtml(detail.member_name) + "（" + escapeHtml(detail.member_name_short) + "）</div>" +
         '<div class="detail-subtitle">議員ID: ' + escapeHtml(detail.member_id) + " / " + escapeHtml(detail.current_status) + "</div>" +
@@ -180,7 +391,7 @@ window.APP_STABLE = (function () {
           "<h3>基本情報</h3>" +
           '<div class="history-row">番号: ' + escapeHtml(detail.member_no) + "</div>" +
           '<div class="history-row">氏名かな: ' + escapeHtml(detail.member_kana) + "</div>" +
-          '<div class="history-row">生年月日: ' + escapeHtml(detail.birth_date) + "</div>" +
+          '<div class="history-row">生年月日: ' + escapeHtml(toWareki(detail.birth_date)) + "</div>" +
           '<div class="history-row">年齢: ' + escapeHtml(detail.age) + "</div>" +
           '<div class="history-row">性別: ' + escapeHtml(detail.gender) + "</div>" +
           '<div class="history-row">備考: ' + escapeHtml(detail.note) + "</div>" +
@@ -188,9 +399,7 @@ window.APP_STABLE = (function () {
 
         '<div class="detail-card">' +
           "<h3>現在会派</h3>" +
-          (detail.current_party_name
-            ? '<div class="history-row">' + escapeHtml(detail.current_party_name) + "</div>"
-            : '<div class="empty-small">データなし</div>') +
+          currentPartyHtml +
         "</div>" +
 
         '<div class="detail-card">' +
@@ -210,29 +419,36 @@ window.APP_STABLE = (function () {
 
         '<div class="detail-card detail-card-wide">' +
           "<h3>在任履歴</h3>" +
-          officeTermsHtml +
+          renderSimpleBlockRows(officeTermsRows) +
         "</div>" +
 
         '<div class="detail-card detail-card-wide">' +
           "<h3>会派履歴</h3>" +
-          partyHistoryHtml +
+          renderSimpleBlockRows(partyHistoryRows) +
         "</div>" +
 
         '<div class="detail-card detail-card-wide">' +
           "<h3>委員会履歴</h3>" +
-          committeeHistoryHtml +
+          renderSimpleBlockRows(committeeHistoryRows) +
         "</div>" +
 
         '<div class="detail-card detail-card-wide">' +
           "<h3>審議会履歴</h3>" +
-          councilHistoryHtml +
+          renderSimpleBlockRows(councilHistoryRows) +
         "</div>" +
 
         '<div class="detail-card detail-card-wide">' +
           "<h3>連絡先履歴</h3>" +
-          contactHistoryHtml +
+          renderSimpleBlockRows(contactHistoryRows) +
         "</div>" +
       "</div>";
+
+    const detailSearchInput = detailAreaEl.querySelector("#detailSearchInput");
+    if (detailSearchInput) {
+      detailSearchInput.addEventListener("input", function () {
+        renderDetail(detailAreaEl, memberId);
+      });
+    }
   }
 
   function bindRowEvents(resultArea, detailArea) {
@@ -254,7 +470,7 @@ window.APP_STABLE = (function () {
 
     const searchName = document.getElementById("searchName");
     const searchParty = document.getElementById("searchParty");
-    const searchStatus = document.getElementById("searchStatus");
+    const searchCommittee = document.getElementById("searchCommittee");
 
     function redraw() {
       const allRows = window.APP.buildMemberList();
@@ -262,7 +478,7 @@ window.APP_STABLE = (function () {
       currentRows = window.APP.filterMemberList(allRows, {
         name: searchName.value,
         party_id: searchParty.value,
-        status: searchStatus.value
+        committee_id: searchCommittee.value
       });
 
       if (selectedMemberId && !currentRows.some(function (row) { return row.member_id === selectedMemberId; })) {
@@ -276,12 +492,13 @@ window.APP_STABLE = (function () {
     }
 
     renderPartyOptions(searchParty);
+    renderCommitteeOptions(searchCommittee);
     renderStatus(statusBox);
     redraw();
 
     searchName.addEventListener("input", redraw);
     searchParty.addEventListener("change", redraw);
-    searchStatus.addEventListener("change", redraw);
+    searchCommittee.addEventListener("change", redraw);
   }
 
   return {
