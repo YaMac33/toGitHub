@@ -54,6 +54,24 @@ window.APP = (function () {
     }) || null;
   }
 
+  function getMeetingById(meetingId) {
+    return getArray("meetings").find(function (meeting) {
+      return meeting.meeting_id === meetingId;
+    }) || null;
+  }
+
+  function getSpecialCommitteeById(specialCommitteeId) {
+    return getArray("special_committees").find(function (row) {
+      return row.special_committee_id === specialCommitteeId;
+    }) || null;
+  }
+
+  function getSpecialCommitteeInstanceById(instanceId) {
+    return getArray("special_committee_instances").find(function (row) {
+      return row.special_committee_instance_id === instanceId;
+    }) || null;
+  }
+
   function getCurrentOfficeTermsByMemberId(memberId, baseDate) {
     return getArray("office_terms").filter(function (term) {
       return term.member_id === memberId && isCurrentOfficeTerm(term, baseDate);
@@ -73,30 +91,24 @@ window.APP = (function () {
   }
 
   function getCurrentStatusByMemberId(memberId, baseDate) {
-    const terms = getCurrentOfficeTermsByMemberId(memberId, baseDate);
-    return terms.length > 0 ? "現職" : "過去在任";
+    return getCurrentOfficeTermsByMemberId(memberId, baseDate).length > 0 ? "現職" : "過去在任";
   }
 
   function formatPartyLabel(party, roleName) {
     if (!party) return "";
-    const name = party.party_name || "";
-    const role = roleName || "";
-    return role ? name + "（" + role + "）" : name;
+    return roleName ? (party.party_name || "") + "（" + roleName + "）" : (party.party_name || "");
   }
 
   function getCurrentPartyRecordByMemberId(memberId, baseDate) {
-    const records = getArray("member_parties")
+    return getArray("member_parties")
       .filter(function (row) {
-        return row.member_id === memberId &&
-          isCurrentRange(row.start_date, row.end_date, baseDate);
+        return row.member_id === memberId && isCurrentRange(row.start_date, row.end_date, baseDate);
       })
       .sort(function (a, b) {
         const aStart = a.start_date || "";
         const bStart = b.start_date || "";
         return aStart < bStart ? 1 : aStart > bStart ? -1 : 0;
-      });
-
-    return records[0] || null;
+      })[0] || null;
   }
 
   function getPartyHistoryByMemberId(memberId) {
@@ -114,15 +126,13 @@ window.APP = (function () {
   function getCurrentPartyNameByMemberId(memberId, baseDate) {
     const record = getCurrentPartyRecordByMemberId(memberId, baseDate);
     if (!record) return "";
-    const party = getPartyById(record.party_id);
-    return formatPartyLabel(party, record.role_name || "");
+    return formatPartyLabel(getPartyById(record.party_id), record.role_name || "");
   }
 
   function getCurrentCommitteeRecordsByMemberId(memberId, baseDate) {
     return getArray("member_committees")
       .filter(function (row) {
-        return row.member_id === memberId &&
-          isCurrentRange(row.start_date, row.end_date, baseDate);
+        return row.member_id === memberId && isCurrentRange(row.start_date, row.end_date, baseDate);
       })
       .sort(function (a, b) {
         const committeeA = getCommitteeById(a.committee_id);
@@ -148,8 +158,7 @@ window.APP = (function () {
   function getCurrentCouncilRecordsByMemberId(memberId, baseDate) {
     return getArray("member_councils")
       .filter(function (row) {
-        return row.member_id === memberId &&
-          isCurrentRange(row.start_date, row.end_date, baseDate);
+        return row.member_id === memberId && isCurrentRange(row.start_date, row.end_date, baseDate);
       })
       .sort(function (a, b) {
         const councilA = getCouncilById(a.council_id);
@@ -173,18 +182,15 @@ window.APP = (function () {
   }
 
   function getCurrentContactRecordByMemberId(memberId, baseDate) {
-    const records = getArray("contacts")
+    return getArray("contacts")
       .filter(function (row) {
-        return row.member_id === memberId &&
-          isCurrentRange(row.start_date, row.end_date, baseDate);
+        return row.member_id === memberId && isCurrentRange(row.start_date, row.end_date, baseDate);
       })
       .sort(function (a, b) {
         const aStart = a.start_date || "";
         const bStart = b.start_date || "";
         return aStart < bStart ? 1 : aStart > bStart ? -1 : 0;
-      });
-
-    return records[0] || null;
+      })[0] || null;
   }
 
   function getContactHistoryByMemberId(memberId) {
@@ -202,44 +208,133 @@ window.APP = (function () {
   function formatCommitteeLabel(record) {
     const committee = getCommitteeById(record.committee_id);
     if (!committee) return "";
-    const name = committee.committee_name || "";
-    const role = record.role_name || "";
-    return role ? name + "（" + role + "）" : name;
+    return record.role_name ? committee.committee_name + "（" + record.role_name + "）" : committee.committee_name;
   }
 
   function formatCouncilLabel(record) {
     const council = getCouncilById(record.council_id);
     if (!council) return "";
-    const name = council.council_name || "";
-    const role = record.role_name || "";
-    return role ? name + "（" + role + "）" : name;
+    return record.role_name ? council.council_name + "（" + record.role_name + "）" : council.council_name;
   }
 
   function getCurrentCommitteeLabelsByMemberId(memberId, baseDate) {
     return getCurrentCommitteeRecordsByMemberId(memberId, baseDate)
       .map(formatCommitteeLabel)
-      .filter(function (label) {
-        return label !== "";
-      });
+      .filter(Boolean);
   }
 
   function getCurrentCouncilLabelsByMemberId(memberId, baseDate) {
     return getCurrentCouncilRecordsByMemberId(memberId, baseDate)
       .map(formatCouncilLabel)
-      .filter(function (label) {
-        return label !== "";
+      .filter(Boolean);
+  }
+
+  function getSpecialCommitteeMemberRowsByMemberId(memberId) {
+    return getArray("special_committee_members").filter(function (row) {
+      return row.member_id === memberId;
+    });
+  }
+
+  function buildSpecialCommitteeJoinedRow(memberRow) {
+    const instance = getSpecialCommitteeInstanceById(memberRow.special_committee_instance_id);
+    if (!instance) return null;
+
+    const specialCommittee = getSpecialCommitteeById(instance.special_committee_id);
+    const meeting = getMeetingById(instance.meeting_id);
+
+    return {
+      special_committee_instance_id: instance.special_committee_instance_id || "",
+      meeting_id: instance.meeting_id || "",
+      meeting_name: meeting ? (meeting.session_name || "") : "",
+      meeting_start_date: meeting ? (meeting.start_date || "") : "",
+      special_committee_id: instance.special_committee_id || "",
+      special_committee_name: specialCommittee ? (specialCommittee.special_committee_name || "") : "",
+      special_committee_type: specialCommittee ? (specialCommittee.special_committee_type || "") : "",
+      established_date: instance.established_date || "",
+      instance_end_date: instance.end_date || "",
+      instance_note: instance.note || "",
+      member_id: memberRow.member_id || "",
+      role_name: memberRow.role_name || "",
+      member_start_date: memberRow.start_date || "",
+      member_end_date: memberRow.end_date || "",
+      member_note: memberRow.note || ""
+    };
+  }
+
+  function getCurrentSpecialCommitteeRowsByMemberId(memberId, baseDate) {
+    return getSpecialCommitteeMemberRowsByMemberId(memberId)
+      .map(buildSpecialCommitteeJoinedRow)
+      .filter(function (row) {
+        if (!row) return false;
+        const memberCurrent = isCurrentRange(row.member_start_date, row.member_end_date, baseDate);
+        const instanceCurrent = isCurrentRange(row.established_date, row.instance_end_date, baseDate);
+        return memberCurrent && instanceCurrent;
+      })
+      .sort(function (a, b) {
+        const ad = a.established_date || "";
+        const bd = b.established_date || "";
+        if (ad !== bd) return ad < bd ? -1 : 1;
+        const ao = a.special_committee_name || "";
+        const bo = b.special_committee_name || "";
+        return ao < bo ? -1 : ao > bo ? 1 : 0;
       });
+  }
+
+  function getSpecialCommitteeHistoryByMemberId(memberId) {
+    return getSpecialCommitteeMemberRowsByMemberId(memberId)
+      .map(buildSpecialCommitteeJoinedRow)
+      .filter(Boolean)
+      .sort(function (a, b) {
+        const ad = a.established_date || "";
+        const bd = b.established_date || "";
+        if (ad !== bd) return ad < bd ? 1 : -1;
+        const ao = a.special_committee_name || "";
+        const bo = b.special_committee_name || "";
+        return ao < bo ? -1 : ao > bo ? 1 : 0;
+      });
+  }
+
+  function formatCurrentSpecialCommitteeLabel(row) {
+    const base = (row.meeting_name || "") + " / " + (row.special_committee_name || "");
+    return row.role_name ? base + "（" + row.role_name + "）" : base;
+  }
+
+  function buildCurrentCommitteeDisplayRows(memberId, baseDate) {
+    const regularRows = getCurrentCommitteeRecordsByMemberId(memberId, baseDate).map(function (row) {
+      const committee = getCommitteeById(row.committee_id);
+      return {
+        section_type: "regular",
+        sort_key: committee ? Number(committee.sort_order || 9999) : 9999,
+        label: formatCommitteeLabel(row)
+      };
+    });
+
+    const specialRows = getCurrentSpecialCommitteeRowsByMemberId(memberId, baseDate).map(function (row) {
+      return {
+        section_type: "special",
+        sort_key: row.established_date || "",
+        label: formatCurrentSpecialCommitteeLabel(row)
+      };
+    });
+
+    return {
+      regular: regularRows,
+      special: specialRows
+    };
   }
 
   function buildMemberList(baseDate) {
     return getArray("members")
       .slice()
       .sort(function (a, b) {
-        const aOrder = Number(a.sort_order || 0);
-        const bOrder = Number(b.sort_order || 0);
-        return aOrder - bOrder;
+        return Number(a.sort_order || 0) - Number(b.sort_order || 0);
       })
       .map(function (member) {
+        const currentCommittees = buildCurrentCommitteeDisplayRows(member.member_id, baseDate);
+        const currentCommitteeLabels = currentCommittees.regular.concat(currentCommittees.special).map(function (row) {
+          return row.label;
+        });
+
         return {
           member_id: member.member_id || "",
           member_no: member.member_no || "",
@@ -247,7 +342,7 @@ window.APP = (function () {
           age: member.age || "",
           current_status: getCurrentStatusByMemberId(member.member_id, baseDate),
           current_party_name: getCurrentPartyNameByMemberId(member.member_id, baseDate),
-          current_committees: getCurrentCommitteeLabelsByMemberId(member.member_id, baseDate),
+          current_committee_labels: currentCommitteeLabels,
           current_councils: getCurrentCouncilLabelsByMemberId(member.member_id, baseDate)
         };
       });
@@ -260,9 +355,7 @@ window.APP = (function () {
       })
       .slice()
       .sort(function (a, b) {
-        const aOrder = Number(a.sort_order || 0);
-        const bOrder = Number(b.sort_order || 0);
-        return aOrder - bOrder;
+        return Number(a.sort_order || 0) - Number(b.sort_order || 0);
       })
       .map(function (party) {
         return {
@@ -273,28 +366,59 @@ window.APP = (function () {
   }
 
   function getCommitteeOptions() {
-    return getArray("committees")
+    const regularOptions = getArray("committees")
       .filter(function (committee) {
         return String(committee.active_flag || "0") === "1";
       })
       .slice()
       .sort(function (a, b) {
-        const aOrder = Number(a.sort_order || 0);
-        const bOrder = Number(b.sort_order || 0);
-        return aOrder - bOrder;
+        return Number(a.sort_order || 0) - Number(b.sort_order || 0);
       })
       .map(function (committee) {
         return {
-          committee_id: committee.committee_id || "",
-          committee_name: committee.committee_name || ""
+          value: "REGULAR:" + (committee.committee_id || ""),
+          label: committee.committee_name || ""
         };
       });
+
+    const specialOptions = getArray("special_committees")
+      .filter(function (row) {
+        return String(row.active_flag || "0") === "1";
+      })
+      .slice()
+      .sort(function (a, b) {
+        return Number(a.sort_order || 9999) - Number(b.sort_order || 9999);
+      })
+      .map(function (row) {
+        return {
+          value: "SPECIAL:" + (row.special_committee_id || ""),
+          label: row.special_committee_name || ""
+        };
+      });
+
+    return regularOptions.concat(specialOptions);
   }
 
-  function hasCurrentCommittee(memberId, committeeId, baseDate) {
-    return getCurrentCommitteeRecordsByMemberId(memberId, baseDate).some(function (row) {
-      return row.committee_id === committeeId;
-    });
+  function hasCurrentCommittee(memberId, committeeSelectorValue, baseDate) {
+    if (!committeeSelectorValue) return true;
+
+    const parts = String(committeeSelectorValue).split(":");
+    const selectorType = parts[0] || "";
+    const selectorId = parts[1] || "";
+
+    if (selectorType === "REGULAR") {
+      return getCurrentCommitteeRecordsByMemberId(memberId, baseDate).some(function (row) {
+        return row.committee_id === selectorId;
+      });
+    }
+
+    if (selectorType === "SPECIAL") {
+      return getCurrentSpecialCommitteeRowsByMemberId(memberId, baseDate).some(function (row) {
+        return row.special_committee_id === selectorId;
+      });
+    }
+
+    return true;
   }
 
   function buildSearchTextForMember(memberId, baseDate) {
@@ -302,10 +426,11 @@ window.APP = (function () {
     const officeTerms = getOfficeTermsByMemberId(memberId);
     const partyHistory = getPartyHistoryByMemberId(memberId);
     const committeeHistory = getCommitteeHistoryByMemberId(memberId);
+    const specialCommitteeHistory = getSpecialCommitteeHistoryByMemberId(memberId);
     const councilHistory = getCouncilHistoryByMemberId(memberId);
     const contactHistory = getContactHistoryByMemberId(memberId);
     const currentParty = getCurrentPartyNameByMemberId(memberId, baseDate);
-    const currentCommittees = getCurrentCommitteeLabelsByMemberId(memberId, baseDate);
+    const currentCommittees = buildCurrentCommitteeDisplayRows(memberId, baseDate);
     const currentCouncils = getCurrentCouncilLabelsByMemberId(memberId, baseDate);
     const currentContact = getCurrentContactRecordByMemberId(memberId, baseDate);
 
@@ -319,7 +444,8 @@ window.APP = (function () {
     }
 
     chunks.push(currentParty || "");
-    chunks.push((currentCommittees || []).join(" "));
+    chunks.push(currentCommittees.regular.map(function (row) { return row.label; }).join(" "));
+    chunks.push(currentCommittees.special.map(function (row) { return row.label; }).join(" "));
     chunks.push((currentCouncils || []).join(" "));
 
     officeTerms.forEach(function (row) {
@@ -340,6 +466,15 @@ window.APP = (function () {
       chunks.push(committee ? committee.committee_name : "");
       chunks.push(row.role_name || "");
       chunks.push(row.note || "");
+    });
+
+    specialCommitteeHistory.forEach(function (row) {
+      chunks.push(row.meeting_name || "");
+      chunks.push(row.special_committee_name || "");
+      chunks.push(row.special_committee_type || "");
+      chunks.push(row.role_name || "");
+      chunks.push(row.member_note || "");
+      chunks.push(row.instance_note || "");
     });
 
     councilHistory.forEach(function (row) {
@@ -381,25 +516,19 @@ window.APP = (function () {
   function filterMemberList(rows, conditions, baseDate) {
     const name = (conditions.name || "").trim().toLowerCase();
     const partyId = (conditions.party_id || "").trim();
-    const committeeId = (conditions.committee_id || "").trim();
+    const committeeSelectorValue = (conditions.committee_selector || "").trim();
     const keyword = (conditions.keyword || "").trim().toLowerCase();
 
     return rows.filter(function (row) {
-      const hitName =
-        !name ||
-        String(row.member_name || "").toLowerCase().includes(name);
+      const hitName = !name || String(row.member_name || "").toLowerCase().includes(name);
 
       const currentPartyRecord = getCurrentPartyRecordByMemberId(row.member_id, baseDate);
       const currentPartyId = currentPartyRecord ? currentPartyRecord.party_id : "";
       const hitParty = !partyId || currentPartyId === partyId;
 
-      const hitCommittee =
-        !committeeId ||
-        hasCurrentCommittee(row.member_id, committeeId, baseDate);
+      const hitCommittee = !committeeSelectorValue || hasCurrentCommittee(row.member_id, committeeSelectorValue, baseDate);
 
-      const hitKeyword =
-        !keyword ||
-        buildSearchTextForMember(row.member_id, baseDate).includes(keyword);
+      const hitKeyword = !keyword || buildSearchTextForMember(row.member_id, baseDate).includes(keyword);
 
       return hitName && hitParty && hitCommittee && hitKeyword;
     });
@@ -410,7 +539,7 @@ window.APP = (function () {
     if (!member) return null;
 
     const currentContact = getCurrentContactRecordByMemberId(memberId, baseDate);
-    const officeTerms = getOfficeTermsByMemberId(memberId);
+
     const partyHistory = getPartyHistoryByMemberId(memberId).map(function (row) {
       const party = getPartyById(row.party_id);
       return {
@@ -422,7 +551,7 @@ window.APP = (function () {
       };
     });
 
-    const committeeHistory = getCommitteeHistoryByMemberId(memberId).map(function (row) {
+    const committeeHistoryRegular = getCommitteeHistoryByMemberId(memberId).map(function (row) {
       const committee = getCommitteeById(row.committee_id);
       return {
         start_date: row.start_date || "",
@@ -430,6 +559,18 @@ window.APP = (function () {
         committee_name: committee ? committee.committee_name : "",
         role_name: row.role_name || "",
         note: row.note || ""
+      };
+    });
+
+    const committeeHistorySpecial = getSpecialCommitteeHistoryByMemberId(memberId).map(function (row) {
+      return {
+        meeting_name: row.meeting_name || "",
+        special_committee_name: row.special_committee_name || "",
+        role_name: row.role_name || "",
+        start_date: row.member_start_date || "",
+        end_date: row.member_end_date || "",
+        established_date: row.established_date || "",
+        note: row.member_note || row.instance_note || ""
       };
     });
 
@@ -461,6 +602,8 @@ window.APP = (function () {
       };
     });
 
+    const currentCommittees = buildCurrentCommitteeDisplayRows(memberId, baseDate);
+
     return {
       member_id: member.member_id || "",
       member_no: member.member_no || "",
@@ -473,7 +616,8 @@ window.APP = (function () {
       note: member.note || "",
       current_status: getCurrentStatusByMemberId(memberId, baseDate),
       current_party_name: getCurrentPartyNameByMemberId(memberId, baseDate),
-      current_committees: getCurrentCommitteeLabelsByMemberId(memberId, baseDate),
+      current_committees_regular: currentCommittees.regular,
+      current_committees_special: currentCommittees.special,
       current_councils: getCurrentCouncilLabelsByMemberId(memberId, baseDate),
       current_contact: currentContact ? {
         postal_code: currentContact.postal_code || "",
@@ -487,9 +631,10 @@ window.APP = (function () {
         email_visibility: currentContact.email_visibility || "",
         contact_note: currentContact.contact_note || ""
       } : null,
-      office_terms: officeTerms,
+      office_terms: getOfficeTermsByMemberId(memberId),
       party_history: partyHistory,
-      committee_history: committeeHistory,
+      committee_history_regular: committeeHistoryRegular,
+      committee_history_special: committeeHistorySpecial,
       council_history: councilHistory,
       contact_history: contactHistory
     };
@@ -502,7 +647,11 @@ window.APP = (function () {
       parties: getArray("parties").length,
       member_parties: getArray("member_parties").length,
       member_committees: getArray("member_committees").length,
-      member_councils: getArray("member_councils").length
+      member_councils: getArray("member_councils").length,
+      meetings: getArray("meetings").length,
+      special_committees: getArray("special_committees").length,
+      special_committee_instances: getArray("special_committee_instances").length,
+      special_committee_members: getArray("special_committee_members").length
     };
   }
 
