@@ -11,14 +11,12 @@ project/
    │
    ├─ members.html             ← 議員管理ページ
    ├─ meetings.html            ← 定例会ページ
-   ├─ rosters.html             ← 委員名簿ページ
    ├─ questions.html           ← 一般質問ページ
    │
    ├─ app.js                   ← 共通データ処理
    ├─ view_home.js             ← ホーム用UI
    ├─ view_members.js          ← 議員管理用UI
    ├─ view_meetings.js         ← 定例会用UI
-   ├─ view_rosters.js          ← 委員名簿用UI
    ├─ view_questions.js        ← 一般質問用UI
    │
    └─ data/                    ← VBAで生成されるJS
