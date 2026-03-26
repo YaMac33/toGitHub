@@ -529,6 +529,9 @@ Excel入力時の確認用として使ってください。</p>
 | MS002 | M002 | S002 | 会長 | 2024-06-01 |  |  | 2026-03-25 | 2026-03-25 |</code></pre>
 
 <h3>13-9. 議員連絡先履歴</h3>
+<p>このシートは、<strong>住所・電話・メールなどの連絡先</strong>を期間付きで管理します。<br>
+また、各項目ごとに<strong>公開範囲</strong>を設定できるようにしています。</p>
+
 <table>
   <thead>
     <tr>
@@ -544,10 +547,13 @@ Excel入力時の確認用として使ってください。</p>
     <tr><td>end_date</td><td>適用終了日</td><td></td></tr>
     <tr><td>postal_code</td><td>郵便番号</td><td>770-0001</td></tr>
     <tr><td>address</td><td>住所</td><td>徳島県○○市中央町1-1</td></tr>
+    <tr><td>address_visibility</td><td>住所の公開範囲</td><td>CITIZEN</td></tr>
     <tr><td>phone_home</td><td>自宅電話</td><td>088-111-1111</td></tr>
+    <tr><td>phone_home_visibility</td><td>自宅電話の公開範囲</td><td>SECRETARIAT</td></tr>
     <tr><td>phone_mobile</td><td>携帯電話</td><td>090-1111-1111</td></tr>
+    <tr><td>phone_mobile_visibility</td><td>携帯電話の公開範囲</td><td>STAFF</td></tr>
     <tr><td>email</td><td>メールアドレス</td><td>yamada@example.jp</td></tr>
-    <tr><td>is_public</td><td>公開可否</td><td>1</td></tr>
+    <tr><td>email_visibility</td><td>メールの公開範囲</td><td>SECRETARIAT</td></tr>
     <tr><td>contact_note</td><td>連絡先備考</td><td>議会用連絡先</td></tr>
     <tr><td>created_at</td><td>作成日</td><td>2026-03-25</td></tr>
     <tr><td>updated_at</td><td>更新日</td><td>2026-03-25</td></tr>
@@ -555,11 +561,27 @@ Excel入力時の確認用として使ってください。</p>
 </table>
 
 <p><strong>入力イメージ</strong></p>
-<pre><code>| contact_record_id | member_id | start_date | end_date | postal_code | address | phone_home | phone_mobile | email | is_public | contact_note | created_at | updated_at |
-|---|---|---|---|---|---|---|---|---|---:|---|---|---|
-| CT001 | M001 | 2023-05-01 |  | 770-0001 | 徳島県○○市中央町1-1 | 088-111-1111 | 090-1111-1111 | yamada@example.jp | 1 | 議会用連絡先 | 2026-03-25 | 2026-03-25 |
-| CT002 | M001 | 2019-05-01 | 2023-04-30 | 770-0005 | 徳島県○○市旧住所5-5 | 088-555-5555 | 090-5555-5555 | old_yamada@example.jp | 0 | 前期連絡先 | 2026-03-25 | 2026-03-25 |</code></pre>
+<pre><code>| contact_record_id | member_id | start_date | end_date | postal_code | address | address_visibility | phone_home | phone_home_visibility | phone_mobile | phone_mobile_visibility | email | email_visibility | contact_note | created_at | updated_at |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| CT001 | M001 | 2023-05-01 |  | 770-0001 | 徳島県○○市中央町1-1 | CITIZEN | 088-111-1111 | SECRETARIAT | 090-1111-1111 | STAFF | yamada@example.jp | SECRETARIAT | 議会用連絡先 | 2026-03-25 | 2026-03-25 |</code></pre>
 
+<p><strong>公開範囲の入力値</strong></p>
+<ul>
+  <li>全角空白 = 未設定</li>
+  <li>PRIVATE = 非公開</li>
+  <li>SECRETARIAT = 事務局まで</li>
+  <li>STAFF = 職員まで</li>
+  <li>CITIZEN = 市民まで</li>
+</ul>
+
+<p><strong>補足</strong></p>
+<ul>
+  <li><code>end_date</code> が空欄の場合は、現在有効な連絡先として扱います。</li>
+  <li>電話やメールが存在しない場合は、その項目は空欄で構いません。</li>
+  <li>公開範囲は、値が入っている連絡先項目について設定します。</li>
+  <li>従来の <code>is_public</code> は廃止し、各項目ごとに公開範囲を持つ仕様に変更しています。</li>
+</ul>
+    
 <h3>13-10. 変更履歴</h3>
 <table>
   <thead>
