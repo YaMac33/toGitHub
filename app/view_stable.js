@@ -3,6 +3,7 @@ window.APP_STABLE = (function () {
 
   let currentRows = [];
   let selectedMemberId = "";
+  let currentKeyword = "";
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -22,6 +23,21 @@ window.APP_STABLE = (function () {
     if (!keyword) return safeText;
     const regex = new RegExp("(" + escapeRegExp(keyword) + ")", "gi");
     return safeText.replace(regex, '<span class="hit-mark">$1</span>');
+  }
+
+  function visibilityLabel(code) {
+    switch (String(code || "").trim()) {
+      case "PRIVATE":
+        return "非公開";
+      case "SECRETARIAT":
+        return "事務局まで";
+      case "STAFF":
+        return "職員まで";
+      case "CITIZEN":
+        return "市民まで";
+      default:
+        return "";
+    }
   }
 
   function toWareki(dateStr) {
@@ -115,8 +131,8 @@ window.APP_STABLE = (function () {
       return [
         '<tr class="clickable-row' + selectedClass + '" data-member-id="' + escapeHtml(row.member_id) + '">',
         "<td>" + escapeHtml(row.member_no) + "</td>",
-        "<td>" + escapeHtml(row.member_name) + "</td>",
-        "<td>" + escapeHtml(row.current_party_name) + "</td>",
+        "<td>" + highlightText(row.member_name, currentKeyword) + "</td>",
+        "<td>" + highlightText(row.current_party_name, currentKeyword) + "</td>",
         "<td>" + escapeHtml(row.current_status) + "</td>",
         "</tr>"
       ].join("");
@@ -138,11 +154,11 @@ window.APP_STABLE = (function () {
       "</div>";
   }
 
-  function filterDetailRows(rows, keyword, mapper) {
+  function filterRowsByKeyword(rows, mapper) {
     if (!rows || rows.length === 0) return [];
-    if (!keyword) return rows;
+    if (!currentKeyword) return rows;
     return rows.filter(function (row) {
-      return mapper(row).includes(keyword);
+      return mapper(row).toLowerCase().includes(currentKeyword.toLowerCase());
     });
   }
 
@@ -156,15 +172,15 @@ window.APP_STABLE = (function () {
     }).join("");
   }
 
-  function renderCurrentBlockRows(items, keyword) {
+  function renderCurrentBlockRows(items) {
     if (!items || items.length === 0) {
       return '<div class="empty-small">データなし</div>';
     }
 
-    const filtered = !keyword
+    const filtered = !currentKeyword
       ? items
       : items.filter(function (item) {
-          return String(item).includes(keyword);
+          return String(item).toLowerCase().includes(currentKeyword.toLowerCase());
         });
 
     if (filtered.length === 0) {
@@ -172,7 +188,7 @@ window.APP_STABLE = (function () {
     }
 
     return filtered.map(function (item) {
-      return '<div class="history-row">' + highlightText(item, keyword) + "</div>";
+      return '<div class="history-row">' + highlightText(item, currentKeyword) + "</div>";
     }).join("");
   }
 
@@ -188,21 +204,16 @@ window.APP_STABLE = (function () {
       return;
     }
 
-    const keywordInputValue = detailAreaEl.querySelector("#detailSearchInput")
-      ? detailAreaEl.querySelector("#detailSearchInput").value.trim()
-      : "";
-
-    const currentCommitteesHtml = renderCurrentBlockRows(detail.current_committees || [], keywordInputValue);
-    const currentCouncilsHtml = renderCurrentBlockRows(detail.current_councils || [], keywordInputValue);
-    const currentPartyHtml = (!keywordInputValue || String(detail.current_party_name || "").includes(keywordInputValue))
+    const currentCommitteesHtml = renderCurrentBlockRows(detail.current_committees || []);
+    const currentCouncilsHtml = renderCurrentBlockRows(detail.current_councils || []);
+    const currentPartyHtml = (!currentKeyword || String(detail.current_party_name || "").toLowerCase().includes(currentKeyword.toLowerCase()))
       ? (detail.current_party_name
-          ? '<div class="history-row">' + highlightText(detail.current_party_name, keywordInputValue) + "</div>"
+          ? '<div class="history-row">' + highlightText(detail.current_party_name, currentKeyword) + "</div>"
           : '<div class="empty-small">データなし</div>')
       : '<div class="empty-small">該当なし</div>';
 
-    const officeTermsRows = filterDetailRows(
+    const officeTermsRows = filterRowsByKeyword(
       detail.office_terms || [],
-      keywordInputValue,
       function (row) {
         return [
           formatPeriod(row.term_start_date, row.term_end_date),
@@ -225,12 +236,11 @@ window.APP_STABLE = (function () {
         text += " / " + row.note;
       }
 
-      return highlightText(text, keywordInputValue);
+      return highlightText(text, currentKeyword);
     });
 
-    const partyHistoryRows = filterDetailRows(
+    const partyHistoryRows = filterRowsByKeyword(
       detail.party_history || [],
-      keywordInputValue,
       function (row) {
         return [
           formatPeriod(row.start_date, row.end_date),
@@ -253,12 +263,11 @@ window.APP_STABLE = (function () {
         text += " / " + row.note;
       }
 
-      return highlightText(text, keywordInputValue);
+      return highlightText(text, currentKeyword);
     });
 
-    const committeeHistoryRows = filterDetailRows(
+    const committeeHistoryRows = filterRowsByKeyword(
       detail.committee_history || [],
-      keywordInputValue,
       function (row) {
         return [
           formatPeriod(row.start_date, row.end_date),
@@ -281,12 +290,11 @@ window.APP_STABLE = (function () {
         text += " / " + row.note;
       }
 
-      return highlightText(text, keywordInputValue);
+      return highlightText(text, currentKeyword);
     });
 
-    const councilHistoryRows = filterDetailRows(
+    const councilHistoryRows = filterRowsByKeyword(
       detail.council_history || [],
-      keywordInputValue,
       function (row) {
         return [
           formatPeriod(row.start_date, row.end_date),
@@ -309,45 +317,63 @@ window.APP_STABLE = (function () {
         text += " / " + row.note;
       }
 
-      return highlightText(text, keywordInputValue);
+      return highlightText(text, currentKeyword);
     });
 
-    const contactHistoryRows = filterDetailRows(
+    const contactHistoryRows = filterRowsByKeyword(
       detail.contact_history || [],
-      keywordInputValue,
       function (row) {
         return [
           formatPeriod(row.start_date, row.end_date),
           row.address || "",
+          row.address_visibility || "",
           row.phone_home || "",
+          row.phone_home_visibility || "",
           row.phone_mobile || "",
+          row.phone_mobile_visibility || "",
           row.email || "",
+          row.email_visibility || "",
           row.contact_note || ""
         ].join(" ");
       }
     ).map(function (row) {
       let text =
         formatPeriod(row.start_date, row.end_date) +
-        " / " +
-        (row.address || "");
+        " / 住所: " + (row.address || "");
+
+      if (row.address_visibility) {
+        text += " / 住所公開範囲: " + visibilityLabel(row.address_visibility);
+      }
 
       if (row.phone_home) {
-        text += " / " + row.phone_home;
+        text += " / 自宅電話: " + row.phone_home;
+      }
+
+      if (row.phone_home_visibility) {
+        text += " / 自宅電話公開範囲: " + visibilityLabel(row.phone_home_visibility);
       }
 
       if (row.phone_mobile) {
-        text += " / " + row.phone_mobile;
+        text += " / 携帯電話: " + row.phone_mobile;
+      }
+
+      if (row.phone_mobile_visibility) {
+        text += " / 携帯電話公開範囲: " + visibilityLabel(row.phone_mobile_visibility);
       }
 
       if (row.email) {
-        text += " / " + row.email;
+        text += " / メール: " + row.email;
+      }
+
+      if (row.email_visibility) {
+        text += " / メール公開範囲: " + visibilityLabel(row.email_visibility);
       }
 
       if (row.contact_note) {
         text += " / " + row.contact_note;
       }
 
-      return highlightText(text, keywordInputValue);
+      return highlightText(text, currentKeyword);
     });
 
     const currentContactBlocks = [];
@@ -355,19 +381,19 @@ window.APP_STABLE = (function () {
       const candidates = [
         "郵便番号: " + (detail.current_contact.postal_code || ""),
         "住所: " + (detail.current_contact.address || ""),
-        "住所公開範囲: " + (detail.current_contact.address_visibility || ""),
+        "住所公開範囲: " + visibilityLabel(detail.current_contact.address_visibility),
         "自宅電話: " + (detail.current_contact.phone_home || ""),
-        "自宅電話公開範囲: " + (detail.current_contact.phone_home_visibility || ""),
+        "自宅電話公開範囲: " + visibilityLabel(detail.current_contact.phone_home_visibility),
         "携帯電話: " + (detail.current_contact.phone_mobile || ""),
-        "携帯電話公開範囲: " + (detail.current_contact.phone_mobile_visibility || ""),
+        "携帯電話公開範囲: " + visibilityLabel(detail.current_contact.phone_mobile_visibility),
         "メール: " + (detail.current_contact.email || ""),
-        "メール公開範囲: " + (detail.current_contact.email_visibility || ""),
+        "メール公開範囲: " + visibilityLabel(detail.current_contact.email_visibility),
         "備考: " + (detail.current_contact.contact_note || "")
       ];
 
       candidates.forEach(function (line) {
-        if (!keywordInputValue || line.includes(keywordInputValue)) {
-          currentContactBlocks.push('<div class="history-row">' + highlightText(line, keywordInputValue) + "</div>");
+        if (!currentKeyword || line.toLowerCase().includes(currentKeyword.toLowerCase())) {
+          currentContactBlocks.push('<div class="history-row">' + highlightText(line, currentKeyword) + "</div>");
         }
       });
     }
@@ -377,12 +403,8 @@ window.APP_STABLE = (function () {
       : '<div class="empty-small">' + (detail.current_contact ? "該当なし" : "データなし") + "</div>";
 
     detailAreaEl.innerHTML =
-      '<div class="detail-search-wrap">' +
-        '<input id="detailSearchInput" type="text" placeholder="詳細内検索（現在所属 + 履歴）" value="' + escapeHtml(keywordInputValue) + '">' +
-      "</div>" +
-
       '<div class="detail-header">' +
-        '<div class="detail-title">' + escapeHtml(detail.member_name) + "（" + escapeHtml(detail.member_name_short) + "）</div>" +
+        '<div class="detail-title">' + highlightText(detail.member_name, currentKeyword) + "（" + highlightText(detail.member_name_short, currentKeyword) + "）</div>" +
         '<div class="detail-subtitle">議員ID: ' + escapeHtml(detail.member_id) + " / " + escapeHtml(detail.current_status) + "</div>" +
       "</div>" +
 
@@ -390,11 +412,11 @@ window.APP_STABLE = (function () {
         '<div class="detail-card">' +
           "<h3>基本情報</h3>" +
           '<div class="history-row">番号: ' + escapeHtml(detail.member_no) + "</div>" +
-          '<div class="history-row">氏名かな: ' + escapeHtml(detail.member_kana) + "</div>" +
+          '<div class="history-row">氏名かな: ' + highlightText(detail.member_kana, currentKeyword) + "</div>" +
           '<div class="history-row">生年月日: ' + escapeHtml(toWareki(detail.birth_date)) + "</div>" +
           '<div class="history-row">年齢: ' + escapeHtml(detail.age) + "</div>" +
-          '<div class="history-row">性別: ' + escapeHtml(detail.gender) + "</div>" +
-          '<div class="history-row">備考: ' + escapeHtml(detail.note) + "</div>" +
+          '<div class="history-row">性別: ' + highlightText(detail.gender, currentKeyword) + "</div>" +
+          '<div class="history-row">備考: ' + highlightText(detail.note, currentKeyword) + "</div>" +
         "</div>" +
 
         '<div class="detail-card">' +
@@ -442,13 +464,6 @@ window.APP_STABLE = (function () {
           renderSimpleBlockRows(contactHistoryRows) +
         "</div>" +
       "</div>";
-
-    const detailSearchInput = detailAreaEl.querySelector("#detailSearchInput");
-    if (detailSearchInput) {
-      detailSearchInput.addEventListener("input", function () {
-        renderDetail(detailAreaEl, memberId);
-      });
-    }
   }
 
   function bindRowEvents(resultArea, detailArea) {
@@ -471,14 +486,18 @@ window.APP_STABLE = (function () {
     const searchName = document.getElementById("searchName");
     const searchParty = document.getElementById("searchParty");
     const searchCommittee = document.getElementById("searchCommittee");
+    const searchKeyword = document.getElementById("searchKeyword");
 
     function redraw() {
+      currentKeyword = (searchKeyword.value || "").trim();
+
       const allRows = window.APP.buildMemberList();
 
       currentRows = window.APP.filterMemberList(allRows, {
         name: searchName.value,
         party_id: searchParty.value,
-        committee_id: searchCommittee.value
+        committee_id: searchCommittee.value,
+        keyword: searchKeyword.value
       });
 
       if (selectedMemberId && !currentRows.some(function (row) { return row.member_id === selectedMemberId; })) {
@@ -499,6 +518,7 @@ window.APP_STABLE = (function () {
     searchName.addEventListener("input", redraw);
     searchParty.addEventListener("change", redraw);
     searchCommittee.addEventListener("change", redraw);
+    searchKeyword.addEventListener("input", redraw);
   }
 
   return {
