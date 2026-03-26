@@ -643,7 +643,7 @@ HTML = ビュー</code></pre>
       </tbody>
     </table>
 
-    <h3>13-12. 入力時の超重要ルール</h3>
+        <h3>13-12. 入力時の超重要ルール</h3>
     <table>
       <thead>
         <tr>
@@ -659,6 +659,125 @@ HTML = ビュー</code></pre>
         <tr><td>ageは計算列</td><td>手入力しない</td></tr>
       </tbody>
     </table>
+
+    <h2>13-13. meetings.html（議会回・委員会ビュー）について</h2>
+    <p><strong>meetings.html</strong> は、議員個人ではなく、<strong>会議回（定例会・臨時会）を起点に議会日程や特別委員会を確認するための画面</strong>です。</p>
+
+    <h3>13-13-1. 画面の目的</h3>
+    <ul>
+      <li>どの会議回で、どのイベントがあったかを確認する</li>
+      <li>どの会議回で、どの特別委員会が設置されたかを確認する</li>
+      <li>その特別委員会の委員名簿を確認する</li>
+      <li>会期外開催でも、当該会議回に紐づく議会運営委員会や会派代表者会議を確認する</li>
+    </ul>
+
+    <h3>13-13-2. 読み込むデータ</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>ファイル</th>
+          <th>役割</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>meetings.js</code></td><td>会議回マスタ（第○回定例会・臨時会の枠）</td></tr>
+        <tr><td><code>event_types.js</code></td><td>イベント種別マスタ（本会議、常任委員会、議会運営委員会、会派代表者会議 など）</td></tr>
+        <tr><td><code>events.js</code></td><td>議会イベント履歴</td></tr>
+        <tr><td><code>special_committees.js</code></td><td>特別委員会マスタ</td></tr>
+        <tr><td><code>special_committee_instances.js</code></td><td>特別委員会設置履歴</td></tr>
+        <tr><td><code>special_committee_meetings.js</code></td><td>特別委員会会議日</td></tr>
+        <tr><td><code>special_committee_members.js</code></td><td>特別委員会委員名簿履歴</td></tr>
+        <tr><td><code>committees.js</code></td><td>常任委員会・議会運営委員会などの委員会マスタ</td></tr>
+        <tr><td><code>members.js</code></td><td>委員名簿表示用の議員マスタ</td></tr>
+      </tbody>
+    </table>
+
+    <h3>13-13-3. データの考え方</h3>
+    <p>meetings.html では、次の考え方でデータを扱います。</p>
+    <ul>
+      <li><strong>会議回 = 枠</strong></li>
+      <li><strong>イベント = その会議回に関連する出来事</strong></li>
+      <li><strong>特別委員会 = 設置される対象</strong></li>
+      <li><strong>委員名簿 = その特別委員会に所属した議員</strong></li>
+    </ul>
+
+    <p>重要なのは、<strong>イベント日が会期外でも、当該定例会・臨時会のためのイベントであれば、その会議回に紐づける</strong>ことです。</p>
+
+    <h3>13-13-4. 会期外イベントの扱い</h3>
+    <p>議会運営委員会や会派代表者会議は、会期開始前に行われることがあります。<br>
+    その場合でも、<strong>どの会議回のためのイベントか</strong>が明確であれば、<code>meeting_id</code> はその会議回を設定します。</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>項目</th>
+          <th>考え方</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>meeting_id</code></td><td>そのイベントが対象とする会議回</td></tr>
+        <tr><td><code>event_date</code></td><td>実際の開催日</td></tr>
+      </tbody>
+    </table>
+
+    <p>例：</p>
+    <pre><code>第1回定例会の開始日: 2024-02-20
+議会運営委員会の開催日: 2024-02-13
+
+→ 会期外開催だが、meeting_id は 第1回定例会 を設定する</code></pre>
+
+    <h3>13-13-5. meetings.html で確認できること</h3>
+    <ul>
+      <li>会議回一覧</li>
+      <li>会議回ごとの本会議日程</li>
+      <li>会議回ごとの議会運営委員会開催日</li>
+      <li>会議回ごとの会派代表者会議開催日</li>
+      <li>会議回ごとの常任委員会開催日</li>
+      <li>会議回ごとの特別委員会一覧</li>
+      <li>特別委員会ごとの会議日</li>
+      <li>特別委員会ごとの委員名簿</li>
+    </ul>
+
+    <h3>13-13-6. 会議回マスタに追加した列</h3>
+    <p>会議回の詳細表示では、将来的に日程表へのリンクも表示する想定です。<br>
+    そのため、会議回マスタに次の列を追加しています。</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>列名</th>
+          <th>内容</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>schedule_file_path</code></td><td>日程表ファイルへのパス</td></tr>
+      </tbody>
+    </table>
+
+    <h3>13-13-7. 特別委員会設置履歴に追加した列</h3>
+    <p>特別委員会の詳細表示では、将来的に名簿ファイルへのリンクも表示する想定です。<br>
+    そのため、特別委員会設置履歴に次の列を追加しています。</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>列名</th>
+          <th>内容</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>roster_file_path</code></td><td>名簿ファイルへのパス</td></tr>
+      </tbody>
+    </table>
+
+    <h3>13-13-8. 今後の拡張方針</h3>
+    <ul>
+      <li>会期日数の表示</li>
+      <li>議会運営委員会開催日の集約表示</li>
+      <li>日程表リンクの表示</li>
+      <li>特別委員会名簿リンクの表示</li>
+      <li>将来的な印刷専用HTMLへの対応</li>
+    </ul>
 
     <h2>14. 今後の実装方針メモ</h2>
     <ul>
