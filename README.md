@@ -1,28 +1,45 @@
 
 ```
 project/
-├─ source.xlsx
+├─ source.xlsm                 ← 正本データ（Excel）
+│
 └─ app/
-   ├─ readme.html       ← 説明書
-　　├─ index.html        ← 入口（切り替え制御）
-　　├─ stable.html       ← 本番用（安定版）
-　　├─ trial.html        ← 検証用（実験版）
-　　├─ app.js            ← 共通ロジック
-　　├─ view_stable.js    ← stable専用UI
-　　├─ view_trial.js     ← trial専用UI
-　　├─ style.css         ← 共通スタイル
-　　└─ data/
-　　   ├─ members.js
-　　   ├─ office_terms.js
-　　   ├─ parties.js
-　　   ├─ member_parties.js
-　　   ├─ committees.js
-　　   ├─ member_committees.js
-　　   ├─ councils.js
-　　   ├─ member_councils.js
-　　   ├─ contacts.js
-　　   ├─ change_logs.js
-　　   └─ codes.js
+   ├─ index.html               ← stable / trial 切替の入口
+   ├─ stable.html              ← ホーム（本番）
+   ├─ trial.html               ← ホーム（試作）
+   ├─ readme.html              ← 説明書
+   │
+   ├─ members.html             ← 議員管理ページ
+   ├─ meetings.html            ← 定例会ページ
+   ├─ rosters.html             ← 委員名簿ページ
+   ├─ questions.html           ← 一般質問ページ
+   │
+   ├─ app.js                   ← 共通データ処理
+   ├─ view_home.js             ← ホーム用UI
+   ├─ view_members.js          ← 議員管理用UI
+   ├─ view_meetings.js         ← 定例会用UI
+   ├─ view_rosters.js          ← 委員名簿用UI
+   ├─ view_questions.js        ← 一般質問用UI
+   │
+   └─ data/                    ← VBAで生成されるJS
+      ├─ members.js
+      ├─ office_terms.js
+      ├─ parties.js
+      ├─ member_parties.js
+      ├─ committees.js
+      ├─ member_committees.js
+      ├─ councils.js
+      ├─ member_councils.js
+      ├─ contacts.js
+      ├─ change_logs.js
+      ├─ codes.js
+      ├─ meeting_rounds.js
+      ├─ event_types.js
+      ├─ assembly_events.js
+      ├─ special_committees.js
+      ├─ special_committee_setups.js
+      ├─ special_committee_meetings.js
+      └─ special_committee_rosters.js
 ```
 
 # 議員管理システム（内部向けREADME）
