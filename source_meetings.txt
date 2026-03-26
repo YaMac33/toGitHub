@@ -1,8 +1,16 @@
 Option Explicit
 
 ' =========================================================
-' 議員管理システム用
+' source_meetings.xlsm 用
 ' Excelシート → app/data/*.js 出力VBA
+' 対象:
+'   ・会議回マスタ
+'   ・イベント種別マスタ
+'   ・議会イベント履歴
+'   ・特別委員会マスタ
+'   ・特別委員会設置履歴
+'   ・特別委員会会議日
+'   ・特別委員会委員名簿履歴
 ' =========================================================
 
 ' -----------------------------
@@ -40,50 +48,6 @@ Public Sub ExportActiveSheetData()
 
 ErrHandler:
     MsgBox "ExportActiveSheetData エラー: " & Err.Description, vbCritical
-End Sub
-
-Public Sub ExportMembers()
-    ExportSheetData "議員マスタ"
-End Sub
-
-Public Sub ExportOfficeTerms()
-    ExportSheetData "議員在任履歴"
-End Sub
-
-Public Sub ExportParties()
-    ExportSheetData "会派マスタ"
-End Sub
-
-Public Sub ExportMemberParties()
-    ExportSheetData "議員_会派履歴"
-End Sub
-
-Public Sub ExportCommittees()
-    ExportSheetData "委員会マスタ"
-End Sub
-
-Public Sub ExportMemberCommittees()
-    ExportSheetData "議員_委員会所属履歴"
-End Sub
-
-Public Sub ExportCouncils()
-    ExportSheetData "審議会マスタ"
-End Sub
-
-Public Sub ExportMemberCouncils()
-    ExportSheetData "議員_審議会所属履歴"
-End Sub
-
-Public Sub ExportContacts()
-    ExportSheetData "議員連絡先履歴"
-End Sub
-
-Public Sub ExportChangeLogs()
-    ExportSheetData "変更履歴"
-End Sub
-
-Public Sub ExportCodes()
-    ExportSheetData "設定・コード値マスタ"
 End Sub
 
 Public Sub ExportMeetings()
@@ -260,7 +224,7 @@ End Function
 
 Private Function IsNumericField(ByVal headerName As String) As Boolean
     Select Case headerName
-        Case "age", "sort_order", "elected_count", "member_no", "fiscal_year", "year", "term_no"
+        Case "fiscal_year", "year", "term_no", "sort_order"
             IsNumericField = True
         Case Else
             IsNumericField = False
@@ -347,17 +311,6 @@ End Function
 
 Private Function GetAllSheetConfigs() As Variant
     GetAllSheetConfigs = Array( _
-        Array("議員マスタ", "members.js", "members"), _
-        Array("議員在任履歴", "office_terms.js", "office_terms"), _
-        Array("会派マスタ", "parties.js", "parties"), _
-        Array("議員_会派履歴", "member_parties.js", "member_parties"), _
-        Array("委員会マスタ", "committees.js", "committees"), _
-        Array("議員_委員会所属履歴", "member_committees.js", "member_committees"), _
-        Array("審議会マスタ", "councils.js", "councils"), _
-        Array("議員_審議会所属履歴", "member_councils.js", "member_councils"), _
-        Array("議員連絡先履歴", "contacts.js", "contacts"), _
-        Array("変更履歴", "change_logs.js", "change_logs"), _
-        Array("設定・コード値マスタ", "codes.js", "codes"), _
         Array("会議回マスタ", "meetings.js", "meetings"), _
         Array("イベント種別マスタ", "event_types.js", "event_types"), _
         Array("議会イベント履歴", "events.js", "events"), _
