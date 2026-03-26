@@ -27,5 +27,23 @@ window.APP_DATA.special_committee_members = [
     start_date: "2024-02-21",
     end_date: "",
     note: ""
+  },
+  {
+    special_committee_member_id: "SCMB004",
+    special_committee_instance_id: "SCI002",
+    member_id: "M001",
+    role_name: "委員",
+    start_date: "2024-02-21",
+    end_date: "",
+    note: ""
+  },
+  {
+    special_committee_member_id: "SCMB005",
+    special_committee_instance_id: "SCI002",
+    member_id: "M003",
+    role_name: "委員長",
+    start_date: "2024-02-21",
+    end_date: "2024-06-01",
+    note: ""
   }
 ];
