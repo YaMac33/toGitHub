@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>議会事務局システム ホーム</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f7f8fa;
+      color: #222;
+      font-family: sans-serif;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    .hero {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+    }
+
+    .hero-title {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.4;
+    }
+
+    .hero-desc {
+      margin: 0;
+      color: #555;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .menu-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 150px;
+      padding: 20px;
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-radius: 14px;
+      text-decoration: none;
+      color: inherit;
+      box-sizing: border-box;
+      transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .menu-card:hover {
+      background: #f8fbff;
+      border-color: #b8d4f5;
+      transform: translateY(-1px);
+    }
+
+    .menu-card-title {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.4;
+    }
+
+    .menu-card-desc {
+      margin: 0;
+      color: #555;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .menu-card-link {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #3b5f8a;
+      text-align: right;
+    }
+
+    .menu-card-wide {
+      grid-column: 1 / -1;
+      min-height: 110px;
+    }
+
+    @media (max-width: 800px) {
+      .page {
+        padding: 16px;
+      }
+
+      .card-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-card-wide {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1 class="hero-title">議会事務局システム ホーム</h1>
+      <p class="hero-desc">各ページへの入口です。利用したい機能を選択してください。</p>
+    </section>
+
+    <section class="card-grid">
+      <a class="menu-card" href="members.html">
+        <div>
+          <h2 class="menu-card-title">議員管理</h2>
+          <p class="menu-card-desc">議員の基本情報・会派・委員会・履歴・連絡先を確認</p>
+        </div>
+        <div class="menu-card-link">開く</div>
+      </a>
+
+      <a class="menu-card" href="meetings.html">
+        <div>
+          <h2 class="menu-card-title">定例会</h2>
+          <p class="menu-card-desc">会期・本会議・委員会日程・特別委員会の設置状況を確認</p>
+        </div>
+        <div class="menu-card-link">開く</div>
+      </a>
+
+      <a class="menu-card" href="rosters.html">
+        <div>
+          <h2 class="menu-card-title">委員名簿</h2>
+          <p class="menu-card-desc">委員会・特別委員会ごとの名簿を確認</p>
+        </div>
+        <div class="menu-card-link">開く</div>
+      </a>
+
+      <a class="menu-card" href="questions.html">
+        <div>
+          <h2 class="menu-card-title">一般質問</h2>
+          <p class="menu-card-desc">一般質問・通告内容の検索システムへ移動</p>
+        </div>
+        <div class="menu-card-link">開く</div>
+      </a>
+
+      <a class="menu-card menu-card-wide" href="readme.html" target="_blank" rel="noopener">
+        <div>
+          <h2 class="menu-card-title">説明書</h2>
+          <p class="menu-card-desc">システムの使い方・データ構造・運用ルールを確認</p>
+        </div>
+        <div class="menu-card-link">別タブで開く</div>
+      </a>
+    </section>
+  </div>
+</body>
+</html>
