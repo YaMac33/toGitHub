@@ -35,7 +35,7 @@ window.APP_DATA.meetings = [
     meeting_id: "MTG2024_03",
     fiscal_year: "2024",
     year: "2024",
-    term_no: "3",
+    term_no: "1",
     session_type: "EXTRA",
     session_name: "令和6年第1回臨時会",
     start_date: "2024-08-10",
