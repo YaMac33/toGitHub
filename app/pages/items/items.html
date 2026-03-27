@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>items</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f7f8fa;
+      color: #222;
+      font-family: sans-serif;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .page-header {
+      margin-bottom: 16px;
+    }
+
+    .page-title {
+      margin: 0 0 6px;
+      font-size: 24px;
+    }
+
+    .page-desc {
+      margin: 0;
+      color: #555;
+      font-size: 14px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-sizing: border-box;
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .status-details {
+      background: #fff;
+      border: 1px solid #dde3ea;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .status-details summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: bold;
+      user-select: none;
+    }
+
+    .status-details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .status-details summary::before {
+      content: "▶ ";
+      color: #555;
+    }
+
+    .status-details[open] summary::before {
+      content: "▼ ";
+    }
+
+    .status-body {
+      border-top: 1px solid #edf1f5;
+      padding: 14px 16px;
+    }
+
+    .status-line {
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      margin: 0;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 220px 260px 220px 1fr;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .field input,
+    .field select {
+      height: 38px;
+      padding: 0 10px;
+      border: 1px solid #c8d0db;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background: #fff;
+    }
+
+    .result-meta {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 10px;
+    }
+
+    .result-table-wrap {
+      overflow-x: auto;
+      padding-top: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th, td {
+      border-bottom: 1px solid #e5e9ef;
+      padding: 10px 8px;
+      text-align: left;
+      font-size: 14px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f2f5f9;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .clickable-row {
+      cursor: pointer;
+    }
+
+    .clickable-row:hover {
+      background: #f8fbff;
+    }
+
+    .empty {
+      padding: 18px;
+      text-align: center;
+      color: #666;
+      border: 1px dashed #ccd5df;
+      border-radius: 10px;
+      background: #fafbfc;
+    }
+
+    @media (max-width: 900px) {
+      .search-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .page {
+        padding: 14px;
+      }
+
+      .search-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <h1 class="page-title">案件管理</h1>
+      <p class="page-desc">議案・請願・陳情・発議案を一覧表示する画面です。</p>
+    </header>
+
+    <details class="status-details">
+      <summary>動作確認</summary>
+      <div class="status-body">
+        <div id="statusBox" class="status-line">読み込み中...</div>
+      </div>
+    </details>
+
+    <section class="card">
+      <h2>検索条件</h2>
+      <div class="search-row">
+        <div class="field">
+          <label for="searchClass">大分類</label>
+          <select id="searchClass">
+            <option value="">すべて</option>
+            <option value="BILL">議案</option>
+            <option value="PROPOSAL">発議案</option>
+            <option value="PETITION">請願</option>
+            <option value="REQUEST">陳情</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="searchSubclass">中分類</label>
+          <select id="searchSubclass">
+            <option value="">すべて</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="searchYearWareki">年（和暦）</label>
+          <select id="searchYearWareki">
+            <option value="">すべて</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="searchText">件名検索</label>
+          <input id="searchText" type="text" placeholder="例: 補正予算 / 条例 / 請願" />
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>案件一覧</h2>
+      <div id="resultMeta" class="result-meta">0件</div>
+      <div id="resultArea"></div>
+    </section>
+  </div>
+
+  <script src="../../data/meetings.js"></script>
+  <script src="../../data/events.js"></script>
+  <script src="../../data/council_terms.js"></script>
+  <script src="../../data/items.js"></script>
+  <script src="../../data/item_actions.js"></script>
+
+  <script src="../../js/items/view_items.js"></script>
+</body>
+</html>
