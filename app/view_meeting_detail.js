@@ -3,6 +3,8 @@ window.APP_DATA = window.APP_DATA || {};
 window.MEETING_DETAIL_VIEW = (function () {
   "use strict";
 
+  let currentDetail = null;
+
   function getArray(name) {
     return Array.isArray(window.APP_DATA[name]) ? window.APP_DATA[name] : [];
   }
@@ -189,7 +191,9 @@ window.MEETING_DETAIL_VIEW = (function () {
         label: label,
         note: noteParts.join(" / "),
         css_class: cls,
-        sort_order_in_day: order
+        sort_order_in_day: order,
+        source_type: "normal",
+        source_id: row.event_id || ""
       };
     });
 
@@ -203,7 +207,9 @@ window.MEETING_DETAIL_VIEW = (function () {
           label: label,
           note: row.note || "",
           css_class: "special",
-          sort_order_in_day: 5
+          sort_order_in_day: 5,
+          source_type: "special",
+          source_id: row.special_committee_meeting_id || ""
         };
       });
     });
@@ -324,9 +330,11 @@ window.MEETING_DETAIL_VIEW = (function () {
           : "";
 
         const inTermClass = isInTerm(dateStr, detail.start_date, detail.end_date) ? " in-term" : "";
+        const hasEventsClass = items.length > 0 ? " has-events" : "";
+        const dataAttr = items.length > 0 ? ' data-date="' + escapeHtml(dateStr) + '"' : "";
 
         cells.push(
-          '<div class="calendar-cell' + inTermClass + '">' +
+          '<div class="calendar-cell' + inTermClass + hasEventsClass + '"' + dataAttr + '>' +
             '<div class="calendar-day">' + escapeHtml(String(day)) + '</div>' +
             '<div class="calendar-items">' + itemHtml + moreHtml + '</div>' +
           '</div>'
@@ -349,6 +357,8 @@ window.MEETING_DETAIL_VIEW = (function () {
         '</div>'
       );
     }).join("");
+
+    bindCalendarDayClicks();
   }
 
   function renderSpecialCommittees(detail) {
@@ -454,6 +464,66 @@ window.MEETING_DETAIL_VIEW = (function () {
     };
   }
 
+  function openDayModal(dateStr) {
+    if (!currentDetail) return;
+
+    const items = currentDetail.date_events.filter(function (row) {
+      return row.event_date === dateStr;
+    });
+
+    const backdrop = document.getElementById("dayModalBackdrop");
+    const title = document.getElementById("dayModalTitle");
+    const body = document.getElementById("dayModalBody");
+
+    title.textContent = toWareki(dateStr) + " の会議詳細";
+
+    if (!items.length) {
+      body.innerHTML = '<div class="empty">この日のイベントはありません。</div>';
+    } else {
+      body.innerHTML = items.map(function (item) {
+        return (
+          '<div class="modal-item">' +
+            '<div class="modal-item-title">' + escapeHtml(item.label) + '</div>' +
+            '<div class="modal-item-note">' + (item.note ? escapeHtml(item.note) : "補足なし") + '</div>' +
+          '</div>'
+        );
+      }).join("");
+    }
+
+    backdrop.classList.add("show");
+  }
+
+  function closeDayModal() {
+    document.getElementById("dayModalBackdrop").classList.remove("show");
+  }
+
+  function bindCalendarDayClicks() {
+    document.querySelectorAll(".calendar-cell.has-events[data-date]").forEach(function (cell) {
+      cell.addEventListener("click", function () {
+        openDayModal(cell.dataset.date || "");
+      });
+    });
+  }
+
+  function bindModalEvents() {
+    const backdrop = document.getElementById("dayModalBackdrop");
+    const closeBtn = document.getElementById("dayModalClose");
+
+    closeBtn.addEventListener("click", closeDayModal);
+
+    backdrop.addEventListener("click", function (e) {
+      if (e.target === backdrop) {
+        closeDayModal();
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        closeDayModal();
+      }
+    });
+  }
+
   function render(detail) {
     const pageTitle = document.getElementById("pageTitle");
     const pageDesc = document.getElementById("pageDesc");
@@ -471,6 +541,8 @@ window.MEETING_DETAIL_VIEW = (function () {
   }
 
   function init() {
+    bindModalEvents();
+
     const meetingId = qs("meeting_id");
 
     if (!meetingId) {
@@ -490,6 +562,8 @@ window.MEETING_DETAIL_VIEW = (function () {
       document.getElementById("specialCommitteeArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
       return;
     }
+
+    currentDetail = detail;
 
     renderStatus([
       "meeting_detail.html 読み込み成功",
