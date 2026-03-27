@@ -773,6 +773,105 @@ HTML = ビュー</code></pre>
       <li>議会運営委員会開催日の集約表示</li>
     </ul>
 
+    <h2>15. 案件管理ページ（議案・請願・陳情・発議案）</h2>
+
+    <p>議会で扱われる「議案・請願・陳情・発議案」を一元管理し、<br>
+    「どの会議で何が提案・処理されたか」を双方向で追跡できるようにしたページです。</p>
+
+    <h3>15-1. 管理対象</h3>
+    <ul>
+      <li>議案（条例・予算・決算・契約・人事・財産・専決処分など）</li>
+      <li>発議案（条例・意見書・決議など）</li>
+      <li>請願</li>
+      <li>陳情</li>
+    </ul>
+
+    <h3>15-2. 案件マスタの役割</h3>
+    <p>案件そのもの（タイトル・分類・番号など）を管理します。</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>項目</th>
+          <th>内容</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>item_id</code></td><td>内部用ID（変更不可）</td></tr>
+        <tr><td><code>item_no</code></td><td>表示用番号（議案第○号など）</td></tr>
+        <tr><td><code>item_class</code></td><td>大分類（議案・請願・陳情・発議案）</td></tr>
+        <tr><td><code>item_subclass</code></td><td>中分類（条例・予算など）</td></tr>
+        <tr><td><code>numbering_scope</code></td><td>番号体系（YEAR / TERM）</td></tr>
+        <tr><td><code>term_id</code></td><td>任期単位番号用（請願・陳情のみ）</td></tr>
+        <tr><td><code>year / fiscal_year</code></td><td>年・年度（西暦）</td></tr>
+        <tr><td><code>year_wareki / fiscal_year_wareki</code></td><td>和暦表示用</td></tr>
+        <tr><td><code>title</code></td><td>件名</td></tr>
+        <tr><td><code>summary</code></td><td>概要（検索用）</td></tr>
+        <tr><td><code>is_budget</code></td><td>予算系フラグ（補正予算抽出用）</td></tr>
+      </tbody>
+    </table>
+
+    <h3>15-3. 番号体系の違い</h3>
+    <ul>
+      <li>議案・発議案 → 年ごとに番号付与</li>
+      <li>請願・陳情 → 任期ごとに番号付与</li>
+    </ul>
+
+    <p>この違いは <code>numbering_scope</code> と <code>term_id</code> によって管理します。</p>
+
+    <h3>15-4. 案件アクション履歴の役割</h3>
+    <p>「その案件が会議の中でどう処理されたか」を記録します。</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>項目</th>
+          <th>内容</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>item_id</code></td><td>対象案件</td></tr>
+        <tr><td><code>meeting_id</code></td><td>どの会議回か</td></tr>
+        <tr><td><code>event_id</code></td><td>どのイベントか</td></tr>
+        <tr><td><code>action_type</code></td><td>処理内容（提案・付託など）</td></tr>
+        <tr><td><code>result</code></td><td>結果（通った / 通らなかった）</td></tr>
+        <tr><td><code>action_date</code></td><td>処理日</td></tr>
+      </tbody>
+    </table>
+
+    <h3>15-5. action_type と result の考え方</h3>
+    <p>処理内容と結果は分離して管理します。</p>
+
+    <ul>
+      <li>action_type → 何が起きたか（提案・付託など）</li>
+      <li>result → 最終結果（通った / 通らなかった）</li>
+    </ul>
+
+    <p>なお、最終結果は <code>DECIDED</code> のときのみ記録します。</p>
+
+    <h3>15-6. 結果の統一ルール</h3>
+    <ul>
+      <li>可決・同意・承認・認定・採択 → 「通った（PASSED）」</li>
+      <li>否決・不採択 → 「通らなかった（REJECTED）」</li>
+    </ul>
+
+    <p>細かい用語の違いは <code>note</code> に記録します。</p>
+
+    <h3>15-7. この設計でできること</h3>
+    <ul>
+      <li>「この定例会で何が提案・議決されたか」の一覧表示</li>
+      <li>「議案第○号がどの会議でどうなったか」の追跡</li>
+      <li>補正予算のみの抽出</li>
+      <li>請願・陳情の任期単位管理</li>
+    </ul>
+
+    <h3>15-8. 今後の拡張方針</h3>
+    <ul>
+      <li>議案ごとの詳細ページ（PDFリンクなど）</li>
+      <li>委員会審査の詳細表示</li>
+      <li>議案検索機能の強化（全文検索）</li>
+    </ul>
+
     <h2>まとめ</h2>
     <ul>
       <li>サーバ不要の議員管理システム</li>
