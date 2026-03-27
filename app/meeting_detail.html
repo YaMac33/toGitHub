@@ -151,6 +151,15 @@
       background: #f8fbff;
     }
 
+    .calendar-cell.has-events {
+      cursor: pointer;
+    }
+
+    .calendar-cell.has-events:hover {
+      background: #eef6ff;
+      border-color: #8fb4ea;
+    }
+
     .calendar-day {
       font-size: 13px;
       font-weight: bold;
@@ -242,6 +251,89 @@
       padding: 4px 0;
     }
 
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      z-index: 999;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      width: min(720px, 100%);
+      max-height: 80vh;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      border: 1px solid #d6dde7;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e7edf4;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 1;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .modal-close {
+      border: 1px solid #cbd6e2;
+      background: #fff;
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .modal-close:hover {
+      background: #f5f8fb;
+    }
+
+    .modal-body {
+      padding: 16px;
+    }
+
+    .modal-item {
+      border: 1px solid #e5e9ef;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background: #fbfcfd;
+    }
+
+    .modal-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-item-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .modal-item-note {
+      color: #555;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
     @media (max-width: 1100px) {
       .calendar-cell {
         min-height: 100px;
@@ -302,6 +394,16 @@
       <h2>特別委員会</h2>
       <div id="specialCommitteeArea" class="detail-grid"></div>
     </section>
+  </div>
+
+  <div id="dayModalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div id="dayModalTitle" class="modal-title">日別詳細</div>
+        <button id="dayModalClose" class="modal-close" type="button">閉じる</button>
+      </div>
+      <div id="dayModalBody" class="modal-body"></div>
+    </div>
   </div>
 
   <script src="data/members.js"></script>
