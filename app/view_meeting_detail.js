@@ -120,16 +120,33 @@ window.MEETING_DETAIL_VIEW = (function () {
       });
   }
 
+  function roleOrder(roleName) {
+    const role = String(roleName || "").trim();
+    if (role === "委員長") return 1;
+    if (role === "副委員長") return 2;
+    return 9;
+  }
+
   function getSpecialCommitteeMembersByInstanceId(instanceId) {
     return getArray("special_committee_members")
       .filter(function (row) {
         return row.special_committee_instance_id === instanceId;
       })
       .sort(function (a, b) {
-        const ar = a.role_name || "";
-        const br = b.role_name || "";
-        if (ar !== br) return ar < br ? -1 : 1;
-        return (a.member_id || "") < (b.member_id || "") ? -1 : 1;
+        const ra = roleOrder(a.role_name);
+        const rb = roleOrder(b.role_name);
+        if (ra !== rb) return ra - rb;
+
+        const am = getMemberById(a.member_id);
+        const bm = getMemberById(b.member_id);
+
+        const ano = Number(am && am.member_no ? am.member_no : 999999);
+        const bno = Number(bm && bm.member_no ? bm.member_no : 999999);
+        if (ano !== bno) return ano - bno;
+
+        const an = am ? (am.member_name || "") : (a.member_id || "");
+        const bn = bm ? (bm.member_name || "") : (b.member_id || "");
+        return an < bn ? -1 : an > bn ? 1 : 0;
       });
   }
 
