@@ -146,8 +146,9 @@ window.MEETINGS_VIEW = (function () {
     selectEl.innerHTML = html;
   }
 
-  function goMeetingDetail(meetingId) {
-    window.location.href = "meeting_detail.html?meeting_id=" + encodeURIComponent(meetingId);
+  function goMeetingDetailInNewTab(meetingId) {
+    const url = "meeting_detail.html?meeting_id=" + encodeURIComponent(meetingId);
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   function renderTable(containerEl, rows) {
@@ -190,7 +191,7 @@ window.MEETINGS_VIEW = (function () {
       rowEl.addEventListener("click", function () {
         const meetingId = rowEl.dataset.meetingId || "";
         if (meetingId) {
-          goMeetingDetail(meetingId);
+          goMeetingDetailInNewTab(meetingId);
         }
       });
     });
