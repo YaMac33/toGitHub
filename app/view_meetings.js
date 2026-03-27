@@ -4,7 +4,6 @@ window.MEETINGS_VIEW = (function () {
   "use strict";
 
   let currentRows = [];
-  let currentKeyword = "";
 
   function getArray(name) {
     return Array.isArray(window.APP_DATA[name]) ? window.APP_DATA[name] : [];
@@ -17,17 +16,6 @@ window.MEETINGS_VIEW = (function () {
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
-  }
-
-  function escapeRegExp(value) {
-    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
-  function highlightText(text, keyword) {
-    const safeText = escapeHtml(text);
-    if (!keyword) return safeText;
-    const regex = new RegExp("(" + escapeRegExp(keyword) + ")", "gi");
-    return safeText.replace(regex, '<span class="hit-mark">$1</span>');
   }
 
   function toWareki(dateStr) {
@@ -69,45 +57,6 @@ window.MEETINGS_VIEW = (function () {
     return value || "";
   }
 
-  function getMeetingById(meetingId) {
-    return getArray("meetings").find(function (row) {
-      return row.meeting_id === meetingId;
-    }) || null;
-  }
-
-  function getCommitteeById(committeeId) {
-    return getArray("committees").find(function (row) {
-      return row.committee_id === committeeId;
-    }) || null;
-  }
-
-  function getSpecialCommitteeById(specialCommitteeId) {
-    return getArray("special_committees").find(function (row) {
-      return row.special_committee_id === specialCommitteeId;
-    }) || null;
-  }
-
-  function getMemberById(memberId) {
-    return getArray("members").find(function (row) {
-      return row.member_id === memberId;
-    }) || null;
-  }
-
-  function getEventsByMeetingId(meetingId) {
-    return getArray("events")
-      .filter(function (row) {
-        return row.meeting_id === meetingId;
-      })
-      .sort(function (a, b) {
-        const ad = a.event_date || "";
-        const bd = b.event_date || "";
-        if (ad !== bd) return ad < bd ? -1 : 1;
-        const ac = a.committee_id || "";
-        const bc = b.committee_id || "";
-        return ac < bc ? -1 : ac > bc ? 1 : 0;
-      });
-  }
-
   function getSpecialCommitteeInstancesByMeetingId(meetingId) {
     return getArray("special_committee_instances")
       .filter(function (row) {
@@ -117,30 +66,6 @@ window.MEETINGS_VIEW = (function () {
         const ad = a.established_date || "";
         const bd = b.established_date || "";
         return ad < bd ? -1 : ad > bd ? 1 : 0;
-      });
-  }
-
-  function getSpecialCommitteeMeetingsByInstanceId(instanceId) {
-    return getArray("special_committee_meetings")
-      .filter(function (row) {
-        return row.special_committee_instance_id === instanceId;
-      })
-      .sort(function (a, b) {
-        const ad = a.meeting_date || "";
-        const bd = b.meeting_date || "";
-        return ad < bd ? -1 : ad > bd ? 1 : 0;
-      });
-  }
-
-  function getSpecialCommitteeMembersByInstanceId(instanceId) {
-    return getArray("special_committee_members")
-      .filter(function (row) {
-        return row.special_committee_instance_id === instanceId;
-      })
-      .sort(function (a, b) {
-        const am = a.member_id || "";
-        const bm = b.member_id || "";
-        return am < bm ? -1 : am > bm ? 1 : 0;
       });
   }
 
@@ -161,52 +86,6 @@ window.MEETINGS_VIEW = (function () {
       });
   }
 
-  function buildMeetingSearchText(meetingId) {
-    const meeting = getMeetingById(meetingId);
-    const normalEvents = getEventsByMeetingId(meetingId);
-    const instances = getSpecialCommitteeInstancesByMeetingId(meetingId);
-    const chunks = [];
-
-    if (meeting) {
-      chunks.push(meeting.session_name || "");
-      chunks.push(sessionTypeLabel(meeting.session_type || ""));
-      chunks.push(meeting.note || "");
-      chunks.push(meeting.schedule_file_path || "");
-    }
-
-    normalEvents.forEach(function (row) {
-      const committee = getCommitteeById(row.committee_id);
-      chunks.push(row.event_date || "");
-      chunks.push(row.note || "");
-      chunks.push(committee ? committee.committee_name : "");
-      chunks.push(row.event_type_id || "");
-      chunks.push(String(row.duration || ""));
-    });
-
-    instances.forEach(function (instance) {
-      const specialCommittee = getSpecialCommitteeById(instance.special_committee_id);
-      chunks.push(specialCommittee ? specialCommittee.special_committee_name : "");
-      chunks.push(instance.established_date || "");
-      chunks.push(instance.end_date || "");
-      chunks.push(instance.note || "");
-      chunks.push(instance.roster_file_path || "");
-
-      getSpecialCommitteeMeetingsByInstanceId(instance.special_committee_instance_id).forEach(function (meetingRow) {
-        chunks.push(meetingRow.meeting_date || "");
-        chunks.push(meetingRow.note || "");
-      });
-
-      getSpecialCommitteeMembersByInstanceId(instance.special_committee_instance_id).forEach(function (memberRow) {
-        const member = getMemberById(memberRow.member_id);
-        chunks.push(member ? member.member_name : "");
-        chunks.push(member ? member.member_name_short || "" : "");
-        chunks.push(memberRow.role_name || "");
-      });
-    });
-
-    return chunks.join(" ").toLowerCase();
-  }
-
   function buildMeetingList() {
     return getArray("meetings")
       .slice()
@@ -217,8 +96,6 @@ window.MEETINGS_VIEW = (function () {
         const instances = getSpecialCommitteeInstancesByMeetingId(meeting.meeting_id);
         return {
           meeting_id: meeting.meeting_id || "",
-          fiscal_year: meeting.fiscal_year || "",
-          term_no: meeting.term_no || "",
           session_type: meeting.session_type || "",
           session_name: meeting.session_name || "",
           start_date: meeting.start_date || "",
@@ -229,16 +106,10 @@ window.MEETINGS_VIEW = (function () {
   }
 
   function filterMeetingList(rows, conditions) {
-    const meetingText = (conditions.meeting_text || "").trim().toLowerCase();
     const sessionType = (conditions.session_type || "").trim();
     const specialCommitteeId = (conditions.special_committee_id || "").trim();
-    const keyword = (conditions.keyword || "").trim().toLowerCase();
 
     return rows.filter(function (row) {
-      const hitMeetingText =
-        !meetingText ||
-        String(row.session_name || "").toLowerCase().includes(meetingText);
-
       const hitSessionType =
         !sessionType ||
         row.session_type === sessionType;
@@ -249,11 +120,7 @@ window.MEETINGS_VIEW = (function () {
           return instance.special_committee_id === specialCommitteeId;
         });
 
-      const hitKeyword =
-        !keyword ||
-        buildMeetingSearchText(row.meeting_id).includes(keyword);
-
-      return hitMeetingText && hitSessionType && hitSpecialCommittee && hitKeyword;
+      return hitSessionType && hitSpecialCommittee;
     });
   }
 
@@ -261,12 +128,8 @@ window.MEETINGS_VIEW = (function () {
     statusEl.textContent = [
       "meetings.html 読み込み成功",
       "meetings: " + getArray("meetings").length + "件",
-      "event_types: " + getArray("event_types").length + "件",
-      "events: " + getArray("events").length + "件",
       "special_committees: " + getArray("special_committees").length + "件",
-      "special_committee_instances: " + getArray("special_committee_instances").length + "件",
-      "special_committee_meetings: " + getArray("special_committee_meetings").length + "件",
-      "special_committee_members: " + getArray("special_committee_members").length + "件"
+      "special_committee_instances: " + getArray("special_committee_instances").length + "件"
     ].join("\n");
   }
 
@@ -296,9 +159,10 @@ window.MEETINGS_VIEW = (function () {
     const bodyHtml = rows.map(function (row) {
       return [
         '<tr class="clickable-row" data-meeting-id="' + escapeHtml(row.meeting_id) + '">',
-        "<td>" + highlightText(row.session_name, currentKeyword) + "</td>",
+        "<td>" + escapeHtml(row.session_name) + "</td>",
         "<td>" + escapeHtml(sessionTypeLabel(row.session_type)) + "</td>",
         "<td>" + escapeHtml(toWareki(row.start_date)) + "</td>",
+        "<td>" + escapeHtml(toWareki(row.end_date)) + "</td>",
         "<td>" + escapeHtml(String(row.special_committee_count)) + "</td>",
         "</tr>"
       ].join("");
@@ -306,17 +170,18 @@ window.MEETINGS_VIEW = (function () {
 
     containerEl.innerHTML =
       '<div class="result-table-wrap">' +
-      "<table>" +
-      "<thead>" +
-      "<tr>" +
-      "<th>会議回</th>" +
-      "<th>種別</th>" +
-      "<th>開始日</th>" +
-      "<th>特別委員会数</th>" +
-      "</tr>" +
-      "</thead>" +
-      "<tbody>" + bodyHtml + "</tbody>" +
-      "</table>" +
+        "<table>" +
+          "<thead>" +
+            "<tr>" +
+              "<th>会議回</th>" +
+              "<th>種別</th>" +
+              "<th>開始日</th>" +
+              "<th>終了日</th>" +
+              "<th>特別委員会数</th>" +
+            "</tr>" +
+          "</thead>" +
+          "<tbody>" + bodyHtml + "</tbody>" +
+        "</table>" +
       "</div>";
   }
 
@@ -331,47 +196,33 @@ window.MEETINGS_VIEW = (function () {
     });
   }
 
-  function renderEmptyDetail(detailArea) {
-    detailArea.innerHTML = '<div class="empty">会議回をクリックすると詳細ページへ移動します。</div>';
-  }
-
   function init() {
     const statusBox = document.getElementById("statusBox");
     const resultMeta = document.getElementById("resultMeta");
     const resultArea = document.getElementById("resultArea");
-    const detailArea = document.getElementById("detailArea");
 
-    const searchMeetingText = document.getElementById("searchMeetingText");
     const searchSessionType = document.getElementById("searchSessionType");
     const searchSpecialCommittee = document.getElementById("searchSpecialCommittee");
-    const searchMeetingKeyword = document.getElementById("searchMeetingKeyword");
 
     function redraw() {
-      currentKeyword = (searchMeetingKeyword.value || "").trim();
-
       const allRows = buildMeetingList();
 
       currentRows = filterMeetingList(allRows, {
-        meeting_text: searchMeetingText.value,
         session_type: searchSessionType.value,
-        special_committee_id: searchSpecialCommittee.value,
-        keyword: searchMeetingKeyword.value
+        special_committee_id: searchSpecialCommittee.value
       });
 
       resultMeta.textContent = currentRows.length + "件";
       renderTable(resultArea, currentRows);
       bindRowEvents(resultArea);
-      renderEmptyDetail(detailArea);
     }
 
     renderStatus(statusBox);
     renderSpecialCommitteeOptions(searchSpecialCommittee);
     redraw();
 
-    searchMeetingText.addEventListener("input", redraw);
     searchSessionType.addEventListener("change", redraw);
     searchSpecialCommittee.addEventListener("change", redraw);
-    searchMeetingKeyword.addEventListener("input", redraw);
   }
 
   return {
