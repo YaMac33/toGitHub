@@ -22,10 +22,89 @@ window.MEETING_DETAIL_VIEW = (function () {
       .replaceAll("'", "&#39;");
   }
 
+  function toWareki(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr + "T00:00:00");
+    if (Number.isNaN(d.getTime())) return dateStr;
+
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const day = d.getDate();
+
+    const reiwaStart = new Date("2019-05-01T00:00:00");
+    const heiseiStart = new Date("1989-01-08T00:00:00");
+    const showaStart = new Date("1926-12-25T00:00:00");
+
+    let eraName = "";
+    let eraYear = 0;
+
+    if (d >= reiwaStart) {
+      eraName = "令和";
+      eraYear = y - 2018;
+    } else if (d >= heiseiStart) {
+      eraName = "平成";
+      eraYear = y - 1988;
+    } else if (d >= showaStart) {
+      eraName = "昭和";
+      eraYear = y - 1925;
+    } else {
+      return y + "年" + m + "月" + day + "日";
+    }
+
+    const eraYearLabel = eraYear === 1 ? "元" : String(eraYear);
+    return eraName + eraYearLabel + "年" + m + "月" + day + "日";
+  }
+
   function sessionTypeLabel(value) {
     if (value === "REGULAR") return "定例会";
     if (value === "EXTRA") return "臨時会";
     return value || "";
+  }
+
+  function itemClassLabel(value) {
+    if (value === "BILL") return "議案";
+    if (value === "PROPOSAL") return "発議案";
+    if (value === "PETITION") return "請願";
+    if (value === "REQUEST") return "陳情";
+    return value || "";
+  }
+
+  function itemSubclassLabel(value) {
+    const map = {
+      ORDINANCE: "条例",
+      BUDGET: "予算",
+      SETTLEMENT: "決算",
+      CONTRACT: "契約",
+      PERSONNEL: "人事",
+      PROPERTY: "財産",
+      SPECIAL_DECISION: "専決処分",
+      OPINION: "意見書",
+      RESOLUTION: "決議",
+      GENERAL: "一般",
+      OTHER: "その他"
+    };
+    return map[value] || value || "";
+  }
+
+  function actionTypeLabel(value) {
+    const map = {
+      PROPOSED: "提案",
+      REFERRED: "付託",
+      REPORTED: "報告",
+      CONTINUED: "継続審査",
+      WITHDRAWN: "取下げ",
+      DECIDED: "最終結果"
+    };
+    return map[value] || value || "";
+  }
+
+  function resultLabel(value) {
+    const map = {
+      NONE: "結果なし",
+      PASSED: "通った",
+      REJECTED: "通らなかった"
+    };
+    return map[value] || value || "";
   }
 
   function getMeetingById(meetingId) {
@@ -49,6 +128,18 @@ window.MEETING_DETAIL_VIEW = (function () {
   function getMemberById(memberId) {
     return getArray("members").find(function (row) {
       return row.member_id === memberId;
+    }) || null;
+  }
+
+  function getEventById(eventId) {
+    return getArray("events").find(function (row) {
+      return row.event_id === eventId;
+    }) || null;
+  }
+
+  function getItemById(itemId) {
+    return getArray("items").find(function (row) {
+      return row.item_id === itemId;
     }) || null;
   }
 
@@ -243,6 +334,85 @@ window.MEETING_DETAIL_VIEW = (function () {
     return dateStr >= startDate && dateStr <= endDate;
   }
 
+  function buildMeetingItemRelations(meetingId) {
+    const actions = getArray("item_actions")
+      .filter(function (row) {
+        return row.meeting_id === meetingId;
+      })
+      .map(function (row) {
+        const item = getItemById(row.item_id);
+        const event = getEventById(row.event_id);
+        if (!item) return null;
+
+        return {
+          action_id: row.action_id || "",
+          item_id: row.item_id || "",
+          item: item,
+          action_type: row.action_type || "",
+          result: row.result || "",
+          action_date: row.action_date || "",
+          note: row.note || "",
+          meeting_id: row.meeting_id || "",
+          event_id: row.event_id || "",
+          event: event
+        };
+      })
+      .filter(Boolean)
+      .sort(function (a, b) {
+        const ad = a.action_date || "";
+        const bd = b.action_date || "";
+        if (ad !== bd) return ad < bd ? -1 : 1;
+        const an = Number(a.item.item_no_numeric || 0);
+        const bn = Number(b.item.item_no_numeric || 0);
+        if (an !== bn) return an - bn;
+        const at = a.action_type || "";
+        const bt = b.action_type || "";
+        return at < bt ? -1 : at > bt ? 1 : 0;
+      });
+
+    const proposedMap = new Map();
+    actions
+      .filter(function (row) {
+        return row.action_type === "PROPOSED";
+      })
+      .forEach(function (row) {
+        if (!proposedMap.has(row.item_id)) {
+          proposedMap.set(row.item_id, row);
+        }
+      });
+
+    const decidedMap = new Map();
+    actions
+      .filter(function (row) {
+        return row.action_type === "DECIDED";
+      })
+      .forEach(function (row) {
+        if (!decidedMap.has(row.item_id)) {
+          decidedMap.set(row.item_id, row);
+        }
+      });
+
+    const proposedItems = Array.from(proposedMap.values()).sort(function (a, b) {
+      const ac = a.item.item_class || "";
+      const bc = b.item.item_class || "";
+      if (ac !== bc) return ac < bc ? -1 : 1;
+      return Number(a.item.item_no_numeric || 0) - Number(b.item.item_no_numeric || 0);
+    });
+
+    const decidedItems = Array.from(decidedMap.values()).sort(function (a, b) {
+      const ac = a.item.item_class || "";
+      const bc = b.item.item_class || "";
+      if (ac !== bc) return ac < bc ? -1 : 1;
+      return Number(a.item.item_no_numeric || 0) - Number(b.item.item_no_numeric || 0);
+    });
+
+    return {
+      proposed_items: proposedItems,
+      decided_items: decidedItems,
+      action_history: actions
+    };
+  }
+
   function renderSummary(detail) {
     const summaryArea = document.getElementById("summaryArea");
     const steeringDates = detail.steering_dates.length
@@ -305,12 +475,12 @@ window.MEETING_DETAIL_VIEW = (function () {
           return (
             '<div class="calendar-item ' + escapeHtml(item.css_class) + '">' +
               escapeHtml(item.label) +
-            '</div>'
+            "</div>"
           );
         }).join("");
 
         const moreHtml = hiddenCount > 0
-          ? '<div class="calendar-more">+' + escapeHtml(String(hiddenCount)) + '件</div>'
+          ? '<div class="calendar-more">+' + escapeHtml(String(hiddenCount)) + "件</div>"
           : "";
 
         const inTermClass = isInTerm(dateStr, detail.start_date, detail.end_date) ? " in-term" : "";
@@ -318,10 +488,10 @@ window.MEETING_DETAIL_VIEW = (function () {
         const dataAttr = items.length > 0 ? ' data-date="' + escapeHtml(dateStr) + '"' : "";
 
         cells.push(
-          '<div class="calendar-cell' + inTermClass + hasEventsClass + '"' + dataAttr + '>' +
-            '<div class="calendar-day">' + escapeHtml(String(day)) + '</div>' +
-            '<div class="calendar-items">' + itemHtml + moreHtml + '</div>' +
-          '</div>'
+          '<div class="calendar-cell' + inTermClass + hasEventsClass + '"' + dataAttr + ">" +
+            '<div class="calendar-day">' + escapeHtml(String(day)) + "</div>" +
+            '<div class="calendar-items">' + itemHtml + moreHtml + "</div>" +
+          "</div>"
         );
       }
 
@@ -334,11 +504,11 @@ window.MEETING_DETAIL_VIEW = (function () {
           '<div class="calendar-title">' + escapeHtml(String(monthInfo.year)) + "年" + escapeHtml(String(monthInfo.monthIndex + 1)) + "月</div>" +
           '<div class="calendar-grid">' +
             weekdayLabels.map(function (label) {
-              return '<div class="weekday-head">' + escapeHtml(label) + '</div>';
+              return '<div class="weekday-head">' + escapeHtml(label) + "</div>";
             }).join("") +
             cells.join("") +
-          '</div>' +
-        '</div>'
+          "</div>" +
+        "</div>"
       );
     }).join("");
 
@@ -363,7 +533,7 @@ window.MEETING_DETAIL_VIEW = (function () {
             const text = row.note
               ? toWareki(row.meeting_date) + " / " + row.note
               : toWareki(row.meeting_date);
-            return '<div class="history-row">' + escapeHtml(text) + '</div>';
+            return '<div class="history-row">' + escapeHtml(text) + "</div>";
           }).join("")
         : '<div class="empty-small">データなし</div>';
 
@@ -372,30 +542,130 @@ window.MEETING_DETAIL_VIEW = (function () {
             const text = row.role_name
               ? row.member_name + "（" + row.role_name + "）"
               : row.member_name;
-            return '<div class="history-row">' + escapeHtml(text) + '</div>';
+            return '<div class="history-row">' + escapeHtml(text) + "</div>";
           }).join("")
         : '<div class="empty-small">データなし</div>';
 
       return (
         '<div class="detail-subcard">' +
-          '<h3>' + escapeHtml(sc.special_committee_name) + '</h3>' +
-          '<div class="history-row">設置日: ' + escapeHtml(toWareki(sc.established_date)) + '</div>' +
-          '<div class="history-row">終了日: ' + escapeHtml(sc.end_date ? toWareki(sc.end_date) : "継続中") + '</div>' +
+          "<h3>" + escapeHtml(sc.special_committee_name) + "</h3>" +
+          '<div class="history-row">設置日: ' + escapeHtml(toWareki(sc.established_date)) + "</div>" +
+          '<div class="history-row">終了日: ' + escapeHtml(sc.end_date ? toWareki(sc.end_date) : "継続中") + "</div>" +
           rosterHtml +
-          (sc.note ? '<div class="history-row">備考: ' + escapeHtml(sc.note) + '</div>' : "") +
+          (sc.note ? '<div class="history-row">備考: ' + escapeHtml(sc.note) + "</div>" : "") +
           '<div class="detail-grid" style="margin-top:12px;">' +
             '<div class="detail-subcard">' +
-              '<h3>会議日</h3>' +
+              "<h3>会議日</h3>" +
               meetingDatesHtml +
-            '</div>' +
+            "</div>" +
             '<div class="detail-subcard">' +
-              '<h3>委員名簿</h3>' +
+              "<h3>委員名簿</h3>" +
               membersHtml +
-            '</div>' +
-          '</div>' +
-        '</div>'
+            "</div>" +
+          "</div>" +
+        "</div>"
       );
     }).join("");
+  }
+
+  function goItemDetail(itemId) {
+    const url = "../items/item_detail.html?item_id=" + encodeURIComponent(itemId);
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function renderItemCards(containerId, rows, type) {
+    const container = document.getElementById(containerId);
+
+    if (!rows.length) {
+      container.innerHTML = '<div class="empty-small">データなし</div>';
+      return;
+    }
+
+    container.innerHTML = rows.map(function (row) {
+      const item = row.item;
+      let metaLine = "";
+
+      if (type === "proposed") {
+        metaLine = "提案日: " + toWareki(row.action_date);
+      } else if (type === "decided") {
+        metaLine = "結果: " + resultLabel(row.result) + " / 結果日: " + toWareki(row.action_date);
+      }
+
+      return (
+        '<div class="item-card" data-item-id="' + escapeHtml(item.item_id) + '">' +
+          '<div class="item-pills">' +
+            '<span class="pill">' + escapeHtml(itemClassLabel(item.item_class)) + "</span>" +
+            '<span class="pill">' + escapeHtml(itemSubclassLabel(item.item_subclass)) + "</span>" +
+            '<span class="pill">' + escapeHtml(item.year_wareki || "") + "</span>" +
+          "</div>" +
+          '<div class="item-no">' + escapeHtml(item.item_no) + "</div>" +
+          '<div class="item-title">' + escapeHtml(item.title || "") + "</div>" +
+          '<div class="item-meta">' + escapeHtml(metaLine) + "</div>" +
+        "</div>"
+      );
+    }).join("");
+
+    container.querySelectorAll(".item-card").forEach(function (card) {
+      card.addEventListener("click", function () {
+        const itemId = card.dataset.itemId || "";
+        if (itemId) goItemDetail(itemId);
+      });
+    });
+  }
+
+  function renderActionHistory(containerId, rows) {
+    const container = document.getElementById(containerId);
+
+    if (!rows.length) {
+      container.innerHTML = '<div class="empty-small">データなし</div>';
+      return;
+    }
+
+    container.innerHTML = rows.map(function (row) {
+      const item = row.item;
+      let line = toWareki(row.action_date) + " / " + item.item_no + " / " + actionTypeLabel(row.action_type);
+      if (row.action_type === "DECIDED") {
+        line += " / " + resultLabel(row.result);
+      }
+      if (row.note) {
+        line += " / " + row.note;
+      }
+
+      return (
+        '<div class="action-row" data-item-id="' + escapeHtml(item.item_id) + '">' +
+          escapeHtml(line) +
+        "</div>"
+      );
+    }).join("");
+
+    container.querySelectorAll(".action-row").forEach(function (rowEl) {
+      rowEl.addEventListener("click", function () {
+        const itemId = rowEl.dataset.itemId || "";
+        if (itemId) goItemDetail(itemId);
+      });
+    });
+  }
+
+  function renderItems(detail) {
+    const area = document.getElementById("itemsArea");
+
+    area.innerHTML =
+      '<div class="item-block">' +
+        "<h3>提案された案件</h3>" +
+        '<div id="proposedItemsWrap"></div>' +
+      "</div>" +
+      '<div class="item-block">' +
+        "<h3>最終結果が出た案件</h3>" +
+        '<div id="decidedItemsWrap"></div>' +
+      "</div>" +
+      '<div class="item-block">' +
+        "<h3>案件履歴一覧</h3>" +
+        '<div id="itemActionHistoryWrap"></div>' +
+      "</div>";
+
+    renderItemCards("proposedItemsWrap", detail.items.proposed_items, "proposed");
+    renderItemCards("decidedItemsWrap", detail.items.decided_items, "decided");
+    renderActionHistory("itemActionHistoryWrap", detail.items.action_history);
   }
 
   function buildDetail(meetingId) {
@@ -444,7 +714,8 @@ window.MEETING_DETAIL_VIEW = (function () {
       schedule_file_path: meeting.schedule_file_path || "",
       steering_dates: steeringDates,
       date_events: buildDateEvents(meetingId),
-      special_committees: specialCommittees
+      special_committees: specialCommittees,
+      items: buildMeetingItemRelations(meetingId)
     };
   }
 
@@ -467,9 +738,9 @@ window.MEETING_DETAIL_VIEW = (function () {
       body.innerHTML = items.map(function (item) {
         return (
           '<div class="modal-item">' +
-            '<div class="modal-item-title">' + escapeHtml(item.label) + '</div>' +
-            '<div class="modal-item-note">' + (item.note ? escapeHtml(item.note) : "補足なし") + '</div>' +
-          '</div>'
+            '<div class="modal-item-title">' + escapeHtml(item.label) + "</div>" +
+            '<div class="modal-item-note">' + (item.note ? escapeHtml(item.note) : "補足なし") + "</div>" +
+          "</div>"
         );
       }).join("");
     }
@@ -518,6 +789,7 @@ window.MEETING_DETAIL_VIEW = (function () {
     renderSummary(detail);
     renderCalendar(detail);
     renderSpecialCommittees(detail);
+    renderItems(detail);
   }
 
   function renderStatus(text) {
@@ -534,6 +806,7 @@ window.MEETING_DETAIL_VIEW = (function () {
       document.getElementById("summaryArea").innerHTML = '<div class="empty">meeting_id がありません。</div>';
       document.getElementById("calendarArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
       document.getElementById("specialCommitteeArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
+      document.getElementById("itemsArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
       return;
     }
 
@@ -544,6 +817,7 @@ window.MEETING_DETAIL_VIEW = (function () {
       document.getElementById("summaryArea").innerHTML = '<div class="empty">該当する会議回がありません。</div>';
       document.getElementById("calendarArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
       document.getElementById("specialCommitteeArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
+      document.getElementById("itemsArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
       return;
     }
 
@@ -553,7 +827,10 @@ window.MEETING_DETAIL_VIEW = (function () {
       "meeting_detail.html 読み込み成功",
       "meeting_id: " + detail.meeting_id,
       "date_events: " + detail.date_events.length + "件",
-      "special_committees: " + detail.special_committees.length + "件"
+      "special_committees: " + detail.special_committees.length + "件",
+      "proposed_items: " + detail.items.proposed_items.length + "件",
+      "decided_items: " + detail.items.decided_items.length + "件",
+      "item_action_history: " + detail.items.action_history.length + "件"
     ].join("\n"));
 
     render(detail);
