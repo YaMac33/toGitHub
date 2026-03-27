@@ -5,10 +5,6 @@ window.ITEM_DETAIL_VIEW = (function () {
     return Array.isArray(window.APP_DATA[name]) ? window.APP_DATA[name] : [];
   }
 
-  function qs(name) {
-    return new URLSearchParams(window.location.search).get(name) || "";
-  }
-
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replaceAll("&", "&amp;")

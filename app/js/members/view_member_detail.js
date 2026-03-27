@@ -47,10 +47,6 @@ window.MEMBER_DETAIL_VIEW = (function () {
     return eraName + eraYearLabel + "年" + m + "月" + day + "日";
   }
 
-  function formatPeriod(startDate, endDate) {
-    return toWareki(startDate || "") + " ～ " + (endDate ? toWareki(endDate) : "継続中");
-  }
-
   function visibilityLabel(code) {
     switch (String(code || "").trim()) {
       case "PRIVATE":

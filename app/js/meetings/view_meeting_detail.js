@@ -22,39 +22,6 @@ window.MEETING_DETAIL_VIEW = (function () {
       .replaceAll("'", "&#39;");
   }
 
-  function toWareki(dateStr) {
-    if (!dateStr) return "";
-    const d = new Date(dateStr + "T00:00:00");
-    if (Number.isNaN(d.getTime())) return dateStr;
-
-    const y = d.getFullYear();
-    const m = d.getMonth() + 1;
-    const day = d.getDate();
-
-    const reiwaStart = new Date("2019-05-01T00:00:00");
-    const heiseiStart = new Date("1989-01-08T00:00:00");
-    const showaStart = new Date("1926-12-25T00:00:00");
-
-    let eraName = "";
-    let eraYear = 0;
-
-    if (d >= reiwaStart) {
-      eraName = "令和";
-      eraYear = y - 2018;
-    } else if (d >= heiseiStart) {
-      eraName = "平成";
-      eraYear = y - 1988;
-    } else if (d >= showaStart) {
-      eraName = "昭和";
-      eraYear = y - 1925;
-    } else {
-      return y + "年" + m + "月" + day + "日";
-    }
-
-    const eraYearLabel = eraYear === 1 ? "元" : String(eraYear);
-    return eraName + eraYearLabel + "年" + m + "月" + day + "日";
-  }
-
   function sessionTypeLabel(value) {
     if (value === "REGULAR") return "定例会";
     if (value === "EXTRA") return "臨時会";
