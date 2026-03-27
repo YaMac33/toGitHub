@@ -15,7 +15,7 @@
     }
 
     .page {
-      max-width: 1440px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
       box-sizing: border-box;
@@ -58,7 +58,7 @@
 
     .search-row {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) 220px 220px minmax(240px, 1fr);
+      grid-template-columns: 240px 320px;
       gap: 12px;
     }
 
@@ -73,7 +73,6 @@
       font-weight: bold;
     }
 
-    .field input,
     .field select {
       height: 38px;
       padding: 0 10px;
@@ -84,57 +83,15 @@
       background: #fff;
     }
 
-    .main-split {
-      display: grid;
-      grid-template-columns: minmax(320px, 38%) minmax(520px, 62%);
-      gap: 16px;
-      min-height: 72vh;
-    }
-
-    .pane-card {
-      background: #fff;
-      border: 1px solid #dde3ea;
-      border-radius: 12px;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      min-height: 72vh;
-      overflow: hidden;
-    }
-
-    .pane-header {
-      padding: 16px 16px 10px;
-      border-bottom: 1px solid #edf1f5;
-      flex: 0 0 auto;
-    }
-
-    .pane-title {
-      margin: 0 0 8px;
-      font-size: 18px;
-    }
-
     .result-meta {
       font-size: 14px;
       color: #555;
-    }
-
-    .left-pane-body {
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow-y: auto;
-      padding: 0 16px 16px;
-    }
-
-    .right-pane-body {
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow-y: auto;
-      padding: 16px;
+      margin-bottom: 10px;
     }
 
     .result-table-wrap {
       overflow-x: auto;
-      padding-top: 12px;
+      padding-top: 4px;
     }
 
     table {
@@ -167,10 +124,6 @@
       background: #f8fbff;
     }
 
-    .selected-row {
-      background: #eef6ff;
-    }
-
     .empty {
       padding: 18px;
       text-align: center;
@@ -180,160 +133,13 @@
       background: #fafbfc;
     }
 
-    .empty-small {
-      color: #666;
-      font-size: 14px;
-      padding: 4px 0;
-    }
-
-    .detail-header {
-      margin-bottom: 12px;
-    }
-
-    .detail-title {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 4px;
-    }
-
-    .detail-subtitle {
-      font-size: 13px;
-      color: #666;
-    }
-
-    .detail-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .detail-card {
-      background: #fff;
-      border: 1px solid #dde3ea;
-      border-radius: 10px;
-      padding: 12px;
-      box-sizing: border-box;
-    }
-
-    .detail-card-wide {
-      grid-column: 1 / -1;
-    }
-
-    .detail-card h3 {
-      margin: 0 0 10px;
-      font-size: 16px;
-    }
-
-    .history-row {
-      padding: 8px 0;
-      border-bottom: 1px solid #edf1f5;
-      font-size: 14px;
-      line-height: 1.5;
-      word-break: break-word;
-    }
-
-    .history-row:last-child {
-      border-bottom: 0;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid #c8d0db;
-      background: #f8fafc;
-      font-size: 12px;
-      margin-right: 6px;
-      margin-bottom: 6px;
-    }
-
-    .link-line {
-      margin-top: 6px;
-      font-size: 14px;
-    }
-
-    .link-line a {
-      color: #1457b8;
-      text-decoration: none;
-    }
-
-    .link-line a:hover {
-      text-decoration: underline;
-    }
-
-    .hit-mark {
-      background: #fff1a8;
-      padding: 0 2px;
-      border-radius: 2px;
-    }
-
-    .date-group {
-      border-top: 1px solid #edf1f5;
-      padding-top: 10px;
-      margin-top: 10px;
-    }
-
-    .date-group:first-child {
-      border-top: 0;
-      padding-top: 0;
-      margin-top: 0;
-    }
-
-    .date-title {
-      font-weight: bold;
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-
-    .date-item {
-      padding: 6px 0 6px 12px;
-      position: relative;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .date-item::before {
-      content: "・";
-      position: absolute;
-      left: 0;
-      top: 6px;
-    }
-
-    .sub-note {
-      color: #555;
-      font-size: 13px;
-      margin-left: 12px;
-      margin-top: 2px;
-    }
-
-    @media (max-width: 1100px) {
+    @media (max-width: 700px) {
       .search-row {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    @media (max-width: 1000px) {
-      .main-split {
         grid-template-columns: 1fr;
-        min-height: auto;
       }
 
-      .pane-card {
-        min-height: auto;
-      }
-
-      .left-pane-body,
-      .right-pane-body {
-        min-height: auto;
-        max-height: none;
-        overflow: visible;
-      }
-    }
-
-    @media (max-width: 800px) {
-      .search-row,
-      .detail-grid {
-        grid-template-columns: 1fr;
+      .page {
+        padding: 14px;
       }
     }
   </style>
@@ -342,7 +148,7 @@
   <div class="page">
     <header class="page-header">
       <h1 class="page-title">議会回・委員会ビュー</h1>
-      <p class="page-desc">左で会議回を選び、右で日付ベースの議会日程と特別委員会詳細を確認する画面です。</p>
+      <p class="page-desc">会議回一覧から詳細ページへ遷移する画面です。</p>
     </header>
 
     <section class="card">
@@ -353,11 +159,6 @@
     <section class="card">
       <h2>検索条件</h2>
       <div class="search-row">
-        <div class="field">
-          <label for="searchMeetingText">会議回名</label>
-          <input id="searchMeetingText" type="text" placeholder="例: 第1回 / 定例会" />
-        </div>
-
         <div class="field">
           <label for="searchSessionType">会議種別</label>
           <select id="searchSessionType">
@@ -371,33 +172,13 @@
           <label for="searchSpecialCommittee">特別委員会</label>
           <select id="searchSpecialCommittee"></select>
         </div>
-
-        <div class="field">
-          <label for="searchMeetingKeyword">全体キーワード検索</label>
-          <input id="searchMeetingKeyword" type="text" placeholder="例: 予算 / 初回 / 委員長 / 議運" />
-        </div>
       </div>
     </section>
 
-    <section class="main-split">
-      <section class="pane-card">
-        <div class="pane-header">
-          <h2 class="pane-title">会議回一覧</h2>
-          <div id="resultMeta" class="result-meta">0件</div>
-        </div>
-        <div class="left-pane-body">
-          <div id="resultArea"></div>
-        </div>
-      </section>
-
-      <section class="pane-card">
-        <div class="pane-header">
-          <h2 class="pane-title">詳細</h2>
-        </div>
-        <div id="detailArea" class="right-pane-body">
-          <div class="empty">一覧から会議回を選択すると詳細を表示します。</div>
-        </div>
-      </section>
+    <section class="card">
+      <h2>会議回一覧</h2>
+      <div id="resultMeta" class="result-meta">0件</div>
+      <div id="resultArea"></div>
     </section>
   </div>
 
