@@ -247,10 +247,63 @@
       margin-bottom: 6px;
     }
 
+    .link-line {
+      margin-top: 6px;
+      font-size: 14px;
+    }
+
+    .link-line a {
+      color: #1457b8;
+      text-decoration: none;
+    }
+
+    .link-line a:hover {
+      text-decoration: underline;
+    }
+
     .hit-mark {
       background: #fff1a8;
       padding: 0 2px;
       border-radius: 2px;
+    }
+
+    .date-group {
+      border-top: 1px solid #edf1f5;
+      padding-top: 10px;
+      margin-top: 10px;
+    }
+
+    .date-group:first-child {
+      border-top: 0;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .date-title {
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .date-item {
+      padding: 6px 0 6px 12px;
+      position: relative;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .date-item::before {
+      content: "・";
+      position: absolute;
+      left: 0;
+      top: 6px;
+    }
+
+    .sub-note {
+      color: #555;
+      font-size: 13px;
+      margin-left: 12px;
+      margin-top: 2px;
     }
 
     @media (max-width: 1100px) {
@@ -289,7 +342,7 @@
   <div class="page">
     <header class="page-header">
       <h1 class="page-title">議会回・委員会ビュー</h1>
-      <p class="page-desc">左で会議回を選び、右で本会議・議運・会派代表者会議・特別委員会と名簿を確認する画面です。</p>
+      <p class="page-desc">左で会議回を選び、右で日付ベースの議会日程と特別委員会詳細を確認する画面です。</p>
     </header>
 
     <section class="card">
