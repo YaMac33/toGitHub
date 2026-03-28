@@ -1,43 +1,64 @@
-// =============================
-// utils.js（共通ユーティリティ）
-// =============================
+(function () {
+  "use strict";
 
-// HTMLエスケープ
-function escapeHtml(value) {
-  if (value === null || value === undefined) return "";
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+  window.APP_UTILS = window.APP_UTILS || {};
 
-// 正規表現エスケープ
-function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replceAll("'", "&#39;");
+  }
 
-// URLパラメータ取得
-function qs(name) {
-  const params = new URLSearchParams(window.location.search);
-  return params.get(name);
-}
+  function escapeRegExp(value) {
+    return String(value == null ? "" : value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
 
-// 今日の日付（yyyy-mm-dd）
-function todayString() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+  function qs(name) {
+    return new URLSearchParams(window.location.search).get(name) || "";
+  }
 
-// 現在判定（期間内か）
-function isCurrentRange(startDate, endDate, baseDate) {
-  if (!startDate) return false;
-  const base = baseDate || todayString();
-  if (startDate > base) return false;
-  if (endDate && endDate < base) return false;
-  return true;
-}
+  function todayString() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+
+  function isCurrentRange(startDate, endDate, baseDate) {
+    if (!startDate) return false;
+
+    const base = baseDate || todayString();
+
+    if (startDate > base) return false;
+    if (endDate && endDate < base) return false;
+
+    return true;
+  }
+
+  function safeArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function getById(list, keyName, keyValue) {
+    return safeArray(list).find(function (row) {
+      return row && row[keyName] === keyValue;
+    }) || null;
+  }
+
+  function openInNewTab(url) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  window.APP_UTILS.escapeHtml = escapeHtml;
+  window.APP_UTILS.escapeRegExp = escapeRegExp;
+  window.APP_UTILS.qs = qs;
+  window.APP_UTILS.todayString = todayString;
+  window.APP_UTILS.isCurrentRange = isCurrentRange;
+  window.APP_UTILS.safeArray = safeArray;
+  window.APP_UTILS.getById = getById;
+  window.APP_UTILS.openInNewTab = openInNewTab;
+})();
