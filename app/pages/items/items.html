@@ -4,170 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>items</title>
+
+  <link rel="stylesheet" href="../../css/common.css" />
+
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #f7f8fa;
-      color: #222;
-      font-family: sans-serif;
-    }
-
-    .page {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .page-header {
-      margin-bottom: 16px;
-    }
-
-    .page-title {
-      margin: 0 0 6px;
-      font-size: 24px;
-    }
-
-    .page-desc {
-      margin: 0;
-      color: #555;
-      font-size: 14px;
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid #dde3ea;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-sizing: border-box;
-    }
-
-    .card h2 {
-      margin: 0 0 12px;
-      font-size: 18px;
-    }
-
-    .status-details {
-      background: #fff;
-      border: 1px solid #dde3ea;
-      border-radius: 12px;
-      margin-bottom: 16px;
-      overflow: hidden;
-    }
-
-    .status-details summary {
-      list-style: none;
-      cursor: pointer;
-      padding: 14px 16px;
-      font-size: 15px;
-      font-weight: bold;
-      user-select: none;
-    }
-
-    .status-details summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .status-details summary::before {
-      content: "▶ ";
-      color: #555;
-    }
-
-    .status-details[open] summary::before {
-      content: "▼ ";
-    }
-
-    .status-body {
-      border-top: 1px solid #edf1f5;
-      padding: 14px 16px;
-    }
-
-    .status-line {
-      font-size: 14px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      margin: 0;
-    }
-
     .search-row {
-      display: grid;
       grid-template-columns: 220px 260px 220px 1fr;
-      gap: 12px;
-      align-items: end;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .field label {
-      font-size: 13px;
-      font-weight: bold;
-    }
-
-    .field input,
-    .field select {
-      height: 38px;
-      padding: 0 10px;
-      border: 1px solid #c8d0db;
-      border-radius: 8px;
-      font-size: 14px;
-      box-sizing: border-box;
-      background: #fff;
-    }
-
-    .result-meta {
-      font-size: 14px;
-      color: #555;
-      margin-bottom: 10px;
-    }
-
-    .result-table-wrap {
-      overflow-x: auto;
-      padding-top: 4px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-    }
-
-    th, td {
-      border-bottom: 1px solid #e5e9ef;
-      padding: 10px 8px;
-      text-align: left;
-      font-size: 14px;
-      vertical-align: top;
-    }
-
-    th {
-      background: #f2f5f9;
-      font-weight: bold;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-
-    .clickable-row {
-      cursor: pointer;
-    }
-
-    .clickable-row:hover {
-      background: #f8fbff;
-    }
-
-    .empty {
-      padding: 18px;
-      text-align: center;
-      color: #666;
-      border: 1px dashed #ccd5df;
-      border-radius: 10px;
-      background: #fafbfc;
     }
 
     @media (max-width: 900px) {
@@ -177,10 +19,6 @@
     }
 
     @media (max-width: 700px) {
-      .page {
-        padding: 14px;
-      }
-
       .search-row {
         grid-template-columns: 1fr;
       }
@@ -243,6 +81,7 @@
     </section>
   </div>
 
+  <script src="../../js/core/common.js"></script>
   <script src="../../js/core/utils.js"></script>
   <script src="../../js/core/formatters.js"></script>
 

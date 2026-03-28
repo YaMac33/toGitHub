@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>分野③：会議回・イベント管理 - 議員管理システム</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.7;
+      color: #333;
+      background: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-nav {
+      background: #1f2937;
+      color: #fff;
+      padding: 12px 20px;
+    }
+
+    .header-nav a {
+      color: #93c5fd;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .header-nav a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .domain-tag {
+      display: inline-block;
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: 0.85rem;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      color: #111827;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+    }
+
+    .h2-icon {
+      margin-right: 8px;
+      color: #2563eb;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      color: #374151;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      border-left: 4px solid #93c5fd;
+      padding-left: 10px;
+    }
+
+    p {
+      margin: 0 0 16px;
+    }
+
+    ul {
+      margin: 0 0 20px 1.5em;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 32px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    td code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.9em;
+      color: #0f172a;
+    }
+
+    .concept-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .concept-title {
+      font-weight: bold;
+      color: #166534;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    .alert-box {
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-left: 4px solid #e11d48;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 24px 0;
+    }
+
+    .alert-title {
+      font-weight: bold;
+      color: #9f1239;
+      margin-bottom: 8px;
+    }
+
+    .tree-diagram {
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 16px;
+      border-radius: 6px;
+      font-family: monospace;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 768px) {
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-nav">
+    <div style="max-width: 950px; margin: 0 auto;">
+      <a href="index.html">← トップ（目次）へ戻る</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <span class="domain-tag">分野③：会議回・イベント</span>
+    <h1>会議回・イベント管理</h1>
+    <p>このページでは、議員個人ではなく、<strong>定例会や臨時会といった「会議回」を起点に、議会日程や特別委員会の情報を管理・確認するための仕様</strong>を解説します。</p>
+
+    <div class="concept-box">
+      <div class="concept-title">💡 基本概念：「枠」と「中身」の関係</div>
+      <p>このシステムでは、議会の日程を以下の2つの階層に分けて管理します。</p>
+      <div class="tree-diagram">
+【会議回マスタ（枠組み）】 例：令和6年 第1回定例会
+  ├─ 【イベント履歴（中身）】 2月20日：本会議（初日）
+  ├─ 【イベント履歴（中身）】 2月26日：総務常任委員会
+  └─ 【イベント履歴（中身）】 3月15日：本会議（最終日）
+      </div>
+      <p style="margin-bottom: 0;">すべての出来事（イベント）は、必ず「どの会議回で行われたものか（meeting_id）」を紐づける必要があります。</p>
+    </div>
+
+    <h2><span class="h2-icon">📅</span>1. 会議回とイベント（日程）の管理</h2>
+    
+    <h3>1-1. 会議回マスタ（meetings シート）</h3>
+    <p>「第○回定例会」や「第○回臨時会」といった、議会の大きな枠組みを定義します。</p>
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>入れる内容</th><th>入力例</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>meeting_id</code></td><td>会議回ID</td><td>MT001</td></tr>
+        <tr><td><code>meeting_name</code></td><td>会議回名</td><td>令和6年 第1回定例会</td></tr>
+        <tr><td><code>start_date</code></td><td>会期開始日</td><td>2024-02-20</td></tr>
+        <tr><td><code>end_date</code></td><td>会期終了日</td><td>2024-03-15</td></tr>
+        <tr><td><code>schedule_file_path</code></td><td>日程表ファイル（PDF等）へのパス</td><td>/files/schedule_r6_1.pdf</td></tr>
+      </tbody>
+    </table>
+
+    <h3>1-2. 議会イベント履歴（events シート）</h3>
+    <p>本会議、常任委員会、議会運営委員会などが「いつ開催されたか」を記録します。</p>
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>入れる内容</th><th>入力例</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>event_id</code></td><td>イベント履歴ID</td><td>EV001</td></tr>
+        <tr><td><code>meeting_id</code></td><td>対象となる会議回ID</td><td>MT001</td></tr>
+        <tr><td><code>event_type_id</code></td><td>イベント種別ID（※）</td><td>ET_HONKAIGI</td></tr>
+        <tr><td><code>event_date</code></td><td>開催日</td><td>2024-02-20</td></tr>
+        <tr><td><code>note</code></td><td>備考</td><td>本会議初日</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 0.9em; color: #4b5563;">※イベント種別IDは、<code>event_types</code> シートで定義された「本会議」「常任委員会」「代表者会議」などのIDを入力します。</p>
+
+    <div class="alert-box">
+      <div class="alert-title">⚠️ 最重要ルール：会期外イベントの扱い</div>
+      <p>議会運営委員会や会派代表者会議は、定例会の「会期開始前」に行われることがよくあります。<br>
+      イベントの開催日（<code>event_date</code>）が会期外であっても、<strong>「その会議回のために行われたイベント」であれば、必ずその会議回の <code>meeting_id</code> を設定して紐づけてください。</strong></p>
+      <ul style="margin-bottom: 0;">
+        <li>【例】 第1回定例会の開始日：2024-02-20</li>
+        <li>【例】 議会運営委員会の開催日：2024-02-13</li>
+        <li><strong>→ 会期外開催だが、meeting_id は「第1回定例会」のものを設定する。</strong></li>
+      </ul>
+    </div>
+
+    <h2><span class="h2-icon">🔖</span>2. 特別委員会の管理</h2>
+    <p>常任委員会とは異なり、会議回ごとに設置・消滅する「特別委員会」は以下のシート群を組み合わせて管理します。</p>
+
+    <h3>2-1. 特別委員会マスタ（special_committees シート）</h3>
+    <p>設置される特別委員会そのものを定義します。</p>
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>入れる内容</th><th>入力例</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>special_committee_id</code></td><td>特別委員会ID</td><td>SC001</td></tr>
+        <tr><td><code>committee_name</code></td><td>特別委員会名</td><td>予算特別委員会</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2-2. 設置履歴（special_committee_instances シート）</h3>
+    <p>その特別委員会が「どの会議回」で設置されたかを記録します。</p>
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>入れる内容</th><th>入力例</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>instance_id</code></td><td>設置履歴ID</td><td>SCI001</td></tr>
+        <tr><td><code>meeting_id</code></td><td>対象の会議回ID</td><td>MT001</td></tr>
+        <tr><td><code>special_committee_id</code></td><td>特別委員会ID</td><td>SC001</td></tr>
+        <tr><td><code>roster_file_path</code></td><td>委員名簿ファイル（PDF等）へのパス</td><td>/files/roster_budget_r6_1.pdf</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2-3. 会議日・名簿（meetings & members シート）</h3>
+    <p>上記で設置された <code>instance_id</code> に対して、開催された日付（<code>special_committee_meetings</code>）と、所属する議員のリスト（<code>special_committee_members</code>）をそれぞれ紐づけて入力します。</p>
+
+  </div>
+</body>
+</html>

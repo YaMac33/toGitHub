@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>分野④：案件・議案管理 - 議員管理システム</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.7;
+      color: #333;
+      background: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-nav {
+      background: #1f2937;
+      color: #fff;
+      padding: 12px 20px;
+    }
+
+    .header-nav a {
+      color: #93c5fd;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .header-nav a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .domain-tag {
+      display: inline-block;
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: 0.85rem;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      color: #111827;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+    }
+
+    .h2-icon {
+      margin-right: 8px;
+      color: #2563eb;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      color: #374151;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      border-left: 4px solid #93c5fd;
+      padding-left: 10px;
+    }
+
+    p {
+      margin: 0 0 16px;
+    }
+
+    ul {
+      margin: 0 0 20px 1.5em;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 32px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    td code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.9em;
+      color: #0f172a;
+    }
+
+    .concept-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .concept-title {
+      font-weight: bold;
+      color: #1e3a8a;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    .rule-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid #22c55e;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 24px 0;
+    }
+
+    .rule-title {
+      font-weight: bold;
+      color: #166534;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    .card h4 {
+      margin: 0 0 8px 0;
+      color: #4b5563;
+    }
+
+    @media (max-width: 768px) {
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .grid-2col {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-nav">
+    <div style="max-width: 950px; margin: 0 auto;">
+      <a href="index.html">← トップ（目次）へ戻る</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <span class="domain-tag">分野④：案件管理</span>
+    <h1>案件・議案管理</h1>
+    <p>このページでは、議会で扱われる「議案・請願・陳情・発議案」を一元管理し、「どの会議で何が提案され、最終的にどう処理されたか」をトラッキング（追跡）するための入力仕様を解説します。</p>
+
+    <div class="concept-box">
+      <div class="concept-title">💡 基本概念：案件そのものと「アクション」を分離する</div>
+      <p>案件管理は以下の2つのシートを組み合わせて表現します。</p>
+      <ul>
+        <li><strong>案件マスタ（items）：</strong> 議案のタイトル、番号、分類など、「案件そのもの」の情報。</li>
+        <li><strong>アクション履歴（item_actions）：</strong> その案件が、どの会議（本会議や委員会）で提案され、付託され、最終的にどう決まったかという「処理の履歴」。</li>
+      </ul>
+    </div>
+
+    <h2><span class="h2-icon">📄</span>1. 案件マスタ（items シート）</h2>
+    <p>議案や請願の基本情報を登録します。</p>
+
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>入れる内容</th><th>入力例</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>item_id</code></td><td>案件を一意にする内部ID（変更不可）</td><td>I001</td></tr>
+        <tr><td><code>item_no</code></td><td>表示用番号</td><td>議案第1号</td></tr>
+        <tr><td><code>item_class</code></td><td>大分類（議案・請願・陳情・発議案）</td><td>議案</td></tr>
+        <tr><td><code>item_subclass</code></td><td>中分類（条例、予算、決算、人事など）</td><td>条例</td></tr>
+        <tr><td><code>numbering_scope</code></td><td>番号体系（YEAR または TERM）</td><td>YEAR</td></tr>
+        <tr><td><code>term_id</code></td><td>任期単位番号用（請願・陳情のみ使用）</td><td></td></tr>
+        <tr><td><code>year / fiscal_year</code></td><td>年・年度（西暦）</td><td>2024</td></tr>
+        <tr><td><code>year_wareki / fiscal_year_wareki</code></td><td>和暦表示用</td><td>令和6</td></tr>
+        <tr><td><code>title</code></td><td>件名</td><td>○○市税条例の一部を改正する条例</td></tr>
+        <tr><td><code>summary</code></td><td>概要（検索用キーワード等）</td><td></td></tr>
+        <tr><td><code>is_budget</code></td><td>予算系フラグ（1=予算関連、0=それ以外）</td><td>0</td></tr>
+      </tbody>
+    </table>
+
+    <div class="rule-box">
+      <div class="rule-title">番号体系（numbering_scope）の違いについて</div>
+      <p>議会における番号の振り方は、案件の種類によってリセットされるタイミングが異なります。正しく設定してください。</p>
+      <div class="grid-2col">
+        <div class="card">
+          <h4>📌 YEAR（年ごと）</h4>
+          <p><strong>議案・発議案</strong>などに使用。<br>毎年1月に第1号からリセットされます。</p>
+        </div>
+        <div class="card">
+          <h4>📌 TERM（任期ごと）</h4>
+          <p><strong>請願・陳情</strong>などに使用。<br>改選（任期4年）のタイミングで第1号からリセットされます。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2><span class="h2-icon">🔄</span>2. 案件アクション履歴（item_actions シート）</h2>
+    <p>その案件が会議の中で「どう処理されたか」を時系列で記録します。</p>
+
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>入れる内容</th><th>入力例</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>action_id</code></td><td>履歴ID</td><td>IA001</td></tr>
+        <tr><td><code>item_id</code></td><td>対象案件のID</td><td>I001</td></tr>
+        <tr><td><code>meeting_id</code></td><td>どの会議回（定例会等）か</td><td>MT001</td></tr>
+        <tr><td><code>event_id</code></td><td>どのイベント（本会議等）か</td><td>EV001</td></tr>
+        <tr><td><code>action_type</code></td><td>処理内容（提案、付託、議決など）</td><td>PROPOSAL</td></tr>
+        <tr><td><code>result</code></td><td>最終結果（※議決時のみ入力）</td><td>PASSED</td></tr>
+        <tr><td><code>action_date</code></td><td>処理日</td><td>2024-02-20</td></tr>
+        <tr><td><code>note</code></td><td>細かい用語や備考</td><td>原案可決</td></tr>
+      </tbody>
+    </table>
+
+    <h2><span class="h2-icon">✅</span>3. アクション（action_type）と結果（result）の入力ルール</h2>
+
+    <p><code>action_type</code> と <code>result</code> は明確に分離して管理します。</p>
+    <ul>
+      <li><strong>action_type（何が起きたか）：</strong> 提案、委員会付託、委員長報告、議決（DECIDED）など。</li>
+      <li><strong>result（どうなったか）：</strong> 議案が「通った」か「通らなかった」か。<strong>最終結果が出た（DECIDED）時にのみ記録します。</strong></li>
+    </ul>
+
+    <div class="rule-box" style="border-left-color: #3b82f6; background-color: #eff6ff; border-color: #bfdbfe;">
+      <div class="rule-title" style="color: #1d4ed8;">結果（result）の統一ルール（超重要）</div>
+      <p>議会用語は案件によって「可決」「同意」「認定」「採択」など様々ですが、システム上での検索や集計を容易にするため、<code>result</code> 列には以下の<strong>2種類の英語のいずれか</strong>に統一して入力してください。実際の細かな用語は <code>note</code> 列に記載します。</p>
+      
+      <table style="background: #fff; margin-bottom: 0;">
+        <tr>
+          <th style="width: 30%;">入力する英語（result）</th>
+          <th>該当する議会用語（noteに記載するもの）</th>
+        </tr>
+        <tr>
+          <td><strong>PASSED</strong>（通った）</td>
+          <td>可決、同意、承認、認定、採択</td>
+        </tr>
+        <tr>
+          <td><strong>REJECTED</strong>（通らなかった）</td>
+          <td>否決、不同意、不認定、不採択</td>
+        </tr>
+      </table>
+    </div>
+
+  </div>
+</body>
+</html>
