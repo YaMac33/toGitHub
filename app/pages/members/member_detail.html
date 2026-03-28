@@ -4,176 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>member_detail</title>
+
+  <link rel="stylesheet" href="../../css/common.css" />
+
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #f7f8fa;
-      color: #222;
-      font-family: sans-serif;
-    }
-
-    .page {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .page-header {
-      margin-bottom: 16px;
-    }
-
-    .back-link {
-      display: inline-block;
-      margin-bottom: 10px;
-      color: #1457b8;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    .back-link:hover {
-      text-decoration: underline;
-    }
-
     .page-title {
-      margin: 0 0 6px;
       font-size: 28px;
-    }
-
-    .page-desc {
-      margin: 0;
-      color: #555;
-      font-size: 14px;
-    }
-
-    .status-details {
-      background: #fff;
-      border: 1px solid #dde3ea;
-      border-radius: 12px;
-      margin-bottom: 16px;
-      overflow: hidden;
-    }
-
-    .status-details summary {
-      list-style: none;
-      cursor: pointer;
-      padding: 14px 16px;
-      font-size: 15px;
-      font-weight: bold;
-      user-select: none;
-    }
-
-    .status-details summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .status-details summary::before {
-      content: "▶ ";
-      color: #555;
-    }
-
-    .status-details[open] summary::before {
-      content: "▼ ";
-    }
-
-    .status-body {
-      border-top: 1px solid #edf1f5;
-      padding: 14px 16px;
-    }
-
-    .status-line {
-      font-size: 14px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      margin: 0;
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid #dde3ea;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-sizing: border-box;
-    }
-
-    .card h2 {
-      margin: 0 0 12px;
-      font-size: 20px;
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .summary-item {
-      padding: 10px 12px;
-      border: 1px solid #e5e9ef;
-      border-radius: 10px;
-      background: #fbfcfd;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .summary-item-wide {
-      grid-column: 1 / -1;
-    }
-
-    .summary-label {
-      font-weight: bold;
-      color: #444;
-      margin-right: 6px;
-    }
-
-    .detail-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    .detail-subcard {
-      border: 1px solid #e5e9ef;
-      border-radius: 10px;
-      padding: 12px;
-      background: #fff;
-    }
-
-    .detail-subcard h3 {
-      margin: 0 0 10px;
-      font-size: 16px;
-    }
-
-    .section-title {
-      font-size: 14px;
-      font-weight: bold;
-      color: #444;
-      margin: 8px 0 6px;
-    }
-
-    .history-row {
-      padding: 8px 0;
-      border-bottom: 1px solid #edf1f5;
-      font-size: 14px;
-      line-height: 1.5;
-      word-break: break-word;
-    }
-
-    .history-row:last-child {
-      border-bottom: 0;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid #c8d0db;
-      background: #f8fafc;
-      font-size: 12px;
-      margin-right: 6px;
-      margin-bottom: 6px;
     }
 
     .toggle-wrap {
@@ -196,36 +32,12 @@
     .toggle-content.is-collapsed .history-row:nth-child(n + 4) {
       display: none;
     }
-
-    .empty {
-      padding: 18px;
-      text-align: center;
-      color: #666;
-      border: 1px dashed #ccd5df;
-      border-radius: 10px;
-      background: #fafbfc;
-    }
-
-    .empty-small {
-      color: #666;
-      font-size: 14px;
-      padding: 4px 0;
-    }
-
-    @media (max-width: 800px) {
-      .page {
-        padding: 14px;
-      }
-
-      .summary-grid {
-        grid-template-columns: 1fr;
-      }
-    }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="page-header">
+      <a href="members.html" class="back-link">← 議員一覧へ戻る</a>
       <h1 id="pageTitle" class="page-title">議員詳細</h1>
       <p id="pageDesc" class="page-desc">議員の詳細を表示します。</p>
     </header>
@@ -273,23 +85,24 @@
     </section>
   </div>
 
-<script src="../../data/members/members.js"></script>
-<script src="../../data/members/office_terms.js"></script>
-<script src="../../data/members/parties.js"></script>
-<script src="../../data/members/member_parties.js"></script>
-<script src="../../data/committees/committees.js"></script>
-<script src="../../data/committees/member_committees.js"></script>
-<script src="../../data/councils/councils.js"></script>
-<script src="../../data/councils/member_councils.js"></script>
-<script src="../../data/members/contacts.js"></script>
-<script src="../../data/meetings/meetings.js"></script>
-<script src="../../data/committees/special_committees.js"></script>
-<script src="../../data/committees/special_committee_instances.js"></script>
-<script src="../../data/committees/special_committee_members.js"></script>
+  <script src="../../data/members/members.js"></script>
+  <script src="../../data/members/office_terms.js"></script>
+  <script src="../../data/members/parties.js"></script>
+  <script src="../../data/members/member_parties.js"></script>
+  <script src="../../data/committees/committees.js"></script>
+  <script src="../../data/committees/member_committees.js"></script>
+  <script src="../../data/councils/councils.js"></script>
+  <script src="../../data/councils/member_councils.js"></script>
+  <script src="../../data/members/contacts.js"></script>
+  <script src="../../data/meetings/meetings.js"></script>
+  <script src="../../data/committees/special_committees.js"></script>
+  <script src="../../data/committees/special_committee_instances.js"></script>
+  <script src="../../data/committees/special_committee_members.js"></script>
 
-<script src="../../js/core/utils.js"></script>
-<script src="../../js/core/formatters.js"></script>
-<script src="../../js/core/app.js"></script>
-<script src="../../js/members/view_member_detail.js"></script>
+  <script src="../../js/core/common.js"></script>
+  <script src="../../js/core/utils.js"></script>
+  <script src="../../js/core/formatters.js"></script>
+  <script src="../../js/core/app.js"></script>
+  <script src="../../js/members/view_member_detail.js"></script>
 </body>
 </html>
