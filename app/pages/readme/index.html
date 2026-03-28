@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>システム総合マニュアル - 目次</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: #f8fafc; /* 全体的に少し明るいグレーの背景 */
+      margin: 0;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #111827;
+      margin-bottom: 10px;
+    }
+
+    p.lead {
+      color: #6b7280;
+      font-size: 1.1rem;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      color: #1f2937;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      border-color: #2563eb;
+      box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+      color: #1d4ed8; /* リンクっぽく青色に */
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #4b5563;
+      flex-grow: 1;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      width: fit-content;
+    }
+
+    .tag-admin { background: #fee2e2; color: #991b1b; }
+    .tag-common { background: #fef3c7; color: #92400e; }
+    .tag-domain { background: #e0e7ff; color: #3730a3; }
+
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>議員管理・議会通告システム マニュアル</h1>
+      <p class="lead">調べたい業務分野や目的に合わせて、該当のマニュアルを選択してください。</p>
+    </header>
+
+    <h2 class="section-title">全体・共通ルール</h2>
+    <div class="grid">
+      <a href="02_operation.html" class="card">
+        <span class="tag tag-common">必須</span>
+        <h2>共通運用・データ入力ルール</h2>
+        <p>エクセルの「現在」の考え方、IDの紐づけなど、データを入力する人が必ず知っておくべき共通ルールとトラブル対応をまとめています。</p>
+      </a>
+      <a href="01_system.html" class="card">
+        <span class="tag tag-admin">管理者向け</span>
+        <h2>システム概要・開発ガイド</h2>
+        <p>VBAの実行方法やディレクトリ構成など、システムの裏側の仕組みと保守・拡張方針について解説しています。</p>
+      </a>
+    </div>
+
+    <h2 class="section-title">業務分野別（ドメイン）仕様書</h2>
+    <div class="grid">
+      <a href="03_members.html" class="card">
+        <span class="tag tag-domain">分野①</span>
+        <h2>議員・連絡先マスタ管理</h2>
+        <p>議員個人の基本情報、在任履歴、および公開範囲を設定できる連絡先履歴の入力仕様です。</p>
+      </a>
+      <a href="04_groups.html" class="card">
+        <span class="tag tag-domain">分野②</span>
+        <h2>組織・所属マスタ管理</h2>
+        <p>会派、常任委員会、審議会などの「組織」と、そこへの議員の所属履歴の入力仕様です。</p>
+      </a>
+      <a href="05_meetings.html" class="card">
+        <span class="tag tag-domain">分野③</span>
+        <h2>会議回・イベント管理</h2>
+        <p>定例会や臨時会のスケジュール（本会議・委員会日程）と、特別委員会の設置・名簿に関する仕様です。</p>
+      </a>
+      <a href="06_items.html" class="card">
+        <span class="tag tag-domain">分野④</span>
+        <h2>案件・議案管理</h2>
+        <p>議案・請願・陳情・発議案が、どの会議でどのように処理され、どういった結果になったかを追跡する仕様です。</p>
+      </a>
+      <a href="07_questions.html" class="card">
+        <span class="tag tag-domain">分野⑤</span>
+        <h2>通告・一般質問管理</h2>
+        <p>議員が行う一般質問の通告一覧（大・中・小項目のツリー表示）の入力方法と画面の仕様です。</p>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
