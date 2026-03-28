@@ -1,0 +1,17 @@
+/* 共通ベース */
+
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: #f5f5f5;
+}
+
+h1, h2 {
+  margin-top: 0;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+}
