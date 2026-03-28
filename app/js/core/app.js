@@ -1,26 +1,18 @@
+/* /app/js/core/app.js */
 window.APP_DATA = window.APP_DATA || {};
 
 window.APP = (function () {
   "use strict";
 
+  if (!window.APP_UTILS || !window.APP_UTILS.todayString || !window.APP_UTILS.isCurrentRange) {
+    throw new Error("APP_UTILS is not loaded. Load js/core/utils.js before js/core/app.js.");
+  }
+
+  const todayString = window.APP_UTILS.todayString;
+  const isCurrentRange = window.APP_UTILS.isCurrentRange;
+
   function getArray(name) {
     return Array.isArray(window.APP_DATA[name]) ? window.APP_DATA[name] : [];
-  }
-
-  function todayString() {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return y + "-" + m + "-" + day;
-  }
-
-  function isCurrentRange(startDate, endDate, baseDate) {
-    const base = baseDate || todayString();
-    if (!startDate) return false;
-    if (startDate > base) return false;
-    if (endDate && endDate < base) return false;
-    return true;
   }
 
   function getMemberById(memberId) {
