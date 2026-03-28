@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>システム概要・開発者向けガイド - 議員管理システム</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.7;
+      color: #333;
+      background: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-nav {
+      background: #1f2937;
+      color: #fff;
+      padding: 12px 20px;
+    }
+
+    .header-nav a {
+      color: #93c5fd;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .header-nav a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-top: 0;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 12px;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      color: #111827;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #d1d5db;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      margin-top: 28px;
+      margin-bottom: 12px;
+      color: #374151;
+    }
+
+    p {
+      margin: 0 0 16px;
+    }
+
+    ul {
+      margin: 0 0 20px 1.5em;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .philosophy-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 6px solid #3b82f6;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .philosophy-box strong {
+      display: block;
+      font-size: 1.2rem;
+      color: #1e3a8a;
+      margin-bottom: 12px;
+    }
+
+    pre {
+      background: #1e293b;
+      color: #f8fafc;
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 16px 0;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .inline-code {
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+      border: 1px solid #e2e8f0;
+    }
+
+    .tree {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: monospace;
+      line-height: 1.6;
+      color: #334155;
+    }
+
+    .note {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      color: #92400e;
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-nav">
+    <div style="max-width: 900px; margin: 0 auto;">
+      <a href="index.html">← トップ（目次）へ戻る</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1>システム概要・開発者向けガイド</h1>
+    <p>本ドキュメントは、システム管理者や将来の開発・保守担当者に向けて、本システムのアーキテクチャ、ディレクトリ構造、および拡張方針について解説します。</p>
+
+    <div class="philosophy-box">
+      <strong>コア設計思想</strong>
+      <p>一言で表すと：<br>
+      <span class="inline-code">「Excelをデータベース（正本）として、ブラウザ（JS）でJOINして表示するシステム」</span></p>
+      <ul>
+        <li><strong>Excel = DB（正本）</strong></li>
+        <li><strong>JS = 配信されるデータ（APIの代替）</strong></li>
+        <li><strong>HTML/CSS = ビュー（フロントエンド）</strong></li>
+      </ul>
+    </div>
+
+    <h2>1. アーキテクチャの特徴</h2>
+    <ul>
+      <li><strong>サーバ不要（完全静的ホスティング）：</strong> Webサーバ側でのデータベース構築や動的処理（PHP, Ruby, Node.js等）が不要です。LGWAN環境のローカルネットワークや、静的ファイルホスティング環境でそのまま動作します。</li>
+      <li><strong>Excelベースの運用：</strong> 非エンジニアの職員でも、使い慣れたExcelインターフェースで安全にデータの追加・修正が可能です。</li>
+      <li><strong>履歴ベースの設計：</strong> データを上書きせず、期間（開始日〜終了日）を持たせた履歴テーブルとして保持することで、過去の任意の時点の状態を再現可能なRDB的構造を持っています。</li>
+    </ul>
+
+    <h2>2. ディレクトリ構成</h2>
+    <p>システム全体は以下の構造で配置されています。</p>
+    <div class="tree">
+project/<br>
+├─ source.xlsm &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 正本データ（Excel・VBA内包）<br>
+│<br>
+└─ app/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← Webアプリのルート<br>
+&nbsp;&nbsp;&nbsp;├─ index.html &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← アプリの入り口<br>
+&nbsp;&nbsp;&nbsp;│<br>
+&nbsp;&nbsp;&nbsp;├─ pages/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 画面（HTML）群<br>
+&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;├─ members/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 議員・詳細画面<br>
+&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;├─ meetings/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 会議回・イベント画面<br>
+&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;├─ items/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 案件管理画面<br>
+&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;├─ questions/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 通告検索システム<br>
+&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;└─ readme/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 本ドキュメント群<br>
+&nbsp;&nbsp;&nbsp;│<br>
+&nbsp;&nbsp;&nbsp;├─ js/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← ロジック群<br>
+&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;├─ core/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← ユーティリティ、共通フォーマッタ<br>
+&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;└─ (各ドメイン)/ &nbsp;&nbsp;← 画面ごとの描画制御JS<br>
+&nbsp;&nbsp;&nbsp;│<br>
+&nbsp;&nbsp;&nbsp;└─ data/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 【自動生成】Excelから出力されるJSデータ群<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ members/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← members.js, parties.js など<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ committees/ &nbsp;&nbsp;&nbsp;&nbsp;← committees.js など<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ ...
+    </div>
+
+    <h2>3. データの紐づけ原則（リレーション）</h2>
+    <p>すべてのデータは名前ではなく<strong>ID</strong>をキーとしてJOINされます。フロントエンドのJS側で、このIDを元に関連データを配列から抽出・結合して画面を描画します。</p>
+    <ul>
+      <li><span class="inline-code">member_id</span> → すべての個人履歴（所属、連絡先など）の中核</li>
+      <li><span class="inline-code">party_id</span> → 会派情報</li>
+      <li><span class="inline-code">committee_id</span> → 委員会情報</li>
+      <li><span class="inline-code">meeting_id</span> → 会議回ごとのスケジュールやイベント</li>
+    </ul>
+
+    <h2>4. VBAによるデータ配信の仕組み</h2>
+    <p>ExcelのVBAマクロは、各シートの内容をJSON形式の配列として構築し、それをJavaScriptの変数（<span class="inline-code">window.APP_DATA.〜</span>）に代入する形の <span class="inline-code">.js</span> ファイルとして書き出します。</p>
+
+    <h3>エクスポート手順</h3>
+    <ol>
+      <li>Excel上で <span class="inline-code">Alt + F8</span> を押下。</li>
+      <li><strong>初回または全体更新時：</strong> <span class="inline-code">ExportAllData</span> を実行（全シートを一括出力）。</li>
+      <li><strong>一部更新時：</strong> 修正したシートをアクティブにし、<span class="inline-code">ExportActiveSheetData</span> を実行。</li>
+    </ol>
+
+    <div class="note">
+      出力先は <span class="inline-code">app/data/</span> 以下の各ドメインフォルダです。出力されたJSファイルは、そのままブラウザから読み込まれ、データベースの役割を果たします。
+    </div>
+
+    <h2>5. 開発方針と今後の拡張性</h2>
+    <p>本システムは「同じ設計パターン」を踏襲することで、容易に機能を拡張できます。</p>
+
+    <h3>基本ステップ</h3>
+    <ol>
+      <li><strong>まず動かす：</strong> 新しいExcelシートを作成し、データをIDで紐付ける。</li>
+      <li><strong>データ分離：</strong> <span class="inline-code">app.js</span> などの共通ロジックに依存しすぎず、ドメインごとにJSとビュー（HTML）を分離する。</li>
+      <li><strong>UI強化：</strong> データが正しくJOINできることを確認した後に、見た目を整える。</li>
+    </ol>
+
+    <h3>拡張のアイデア</h3>
+    <p>以下のような機能も、現在のディレクトリ構成（新しいフォルダとHTML/JSを追加）とExcelシートの追加のみで実装可能です。</p>
+    <ul>
+      <li>表決履歴（どの議員がどの議案に賛成・反対したか）</li>
+      <li>行政視察履歴（いつ・どこへ・何の目的で視察したか）</li>
+      <li>政務活動費の支出管理</li>
+    </ul>
+
+  </div>
+</body>
+</html>
