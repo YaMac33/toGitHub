@@ -9,10 +9,10 @@
 
   <style>
     .search-row {
-      grid-template-columns: 220px 260px 220px 1fr;
+      grid-template-columns: 180px 180px 220px 220px 1fr;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1000px) {
       .search-row {
         grid-template-columns: 1fr 1fr;
       }
@@ -43,6 +43,20 @@
       <h2>検索条件</h2>
       <div class="search-row">
         <div class="field">
+          <label for="searchEra">元号</label>
+          <select id="searchEra">
+            <option value="">選択してください</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="searchYearWareki">年（和暦）</label>
+          <select id="searchYearWareki" disabled>
+            <option value="">元号を先に選択</option>
+          </select>
+        </div>
+
+        <div class="field">
           <label for="searchClass">大分類</label>
           <select id="searchClass">
             <option value="">すべて</option>
@@ -56,13 +70,6 @@
         <div class="field">
           <label for="searchSubclass">中分類</label>
           <select id="searchSubclass">
-            <option value="">すべて</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="searchYearWareki">年（和暦）</label>
-          <select id="searchYearWareki">
             <option value="">すべて</option>
           </select>
         </div>
