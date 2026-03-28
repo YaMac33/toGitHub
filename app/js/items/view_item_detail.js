@@ -68,7 +68,7 @@ window.ITEM_DETAIL_VIEW = (function () {
       '<div class="summary-item"><span class="summary-label">大分類</span>' + escapeHtml(classLabel(item.item_class)) + "</div>" +
       '<div class="summary-item"><span class="summary-label">中分類</span>' + escapeHtml(subclassLabel(item.item_subclass)) + "</div>" +
       '<div class="summary-item"><span class="summary-label">番号</span>' + escapeHtml(item.item_no) + "</div>" +
-      '<div class="summary-item"><span class="summary-label">番号体系</span>' + escapeHtml(item.numbering_scope) + "</div>" +
+      '<div class="summary-item"><span class="summary-label">番号体系</span>' + escapeHtml(item.numbering_scope || "") + "</div>" +
       '<div class="summary-item"><span class="summary-label">年度</span>' + escapeHtml(item.fiscal_year_wareki || "") + "</div>" +
       '<div class="summary-item"><span class="summary-label">年</span>' + escapeHtml(item.year_wareki || "") + "</div>" +
       '<div class="summary-item"><span class="summary-label">任期</span>' + escapeHtml(term ? term.term_name : "") + "</div>" +
