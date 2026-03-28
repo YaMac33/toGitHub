@@ -1,82 +1,92 @@
 
 ```
-project/
-├─ source.xlsm                 ← 正本データ（Excel）
+app/
+├─ index.html
 │
-└─ app/
-    ├─ index.html
-    │
-    ├─ pages/
-    │  ├─ members/
-    │  │  ├─ members.html
-    │  │  └─ member_detail.html
-    │  ├─ meetings/
-    │  │  ├─ meetings.html
-    │  │  └─ meeting_detail.html
-    │  ├─ items/
-    │  │  ├─ items.html
-    │  │  └─ item_detail.html
-    │  ├─ questions/
-    │  │  └─ questions.html
-    │  └─ readme/
-    │     └─ readme.html
-    │
-    ├─ js/
-    │  ├─ core/
-    │  │  ├─ utils.js
-    │  │  ├─ formatters.js
-    │  │  └─ app.js
-    │  │
-    │  ├─ members/
-    │  │  ├─ view_members.js
-    │  │  └─ view_member_detail.js
-    │  │
-    │  ├─ meetings/
-    │  │  ├─ view_meetings.js
-    │  │  └─ view_meeting_detail.js
-    │  │
-    │  ├─ items/
-    │  │  ├─ view_items.js
-    │  │  └─ view_item_detail.js
-    │  │
-    │  └─ questions/
-    │     └─ （なし）
-    │
-    ├─ data/
-    │  ├─ members/
-    │  │  ├─ members.js
-    │  │  ├─ office_terms.js
-    │  │  ├─ parties.js
-    │  │  ├─ member_parties.js
-    │  │  └─ contacts.js
-    │  │
-    │  ├─ committees/
-    │  │  ├─ committees.js
-    │  │  ├─ member_committees.js
-    │  │  ├─ special_committees.js
-    │  │  ├─ special_committee_instances.js
-    │  │  ├─ special_committee_meetings.js
-    │  │  └─ special_committee_members.js
-    │  │
-    │  ├─ meetings/
-    │  │  ├─ meetings.js
-    │  │  ├─ event_types.js
-    │  │  └─ events.js
-    │  │
-    │  ├─ items/
-    │  │  ├─ items.js
-    │  │  ├─ item_actions.js
-    │  │  └─ council_terms.js
-    │  │
-    │  ├─ councils/
-    │  │  ├─ councils.js
-    │  │  └─ member_councils.js
-    │  │
-    │  └─ questions/
-    │     └─ questions.js
-    │
-    └─ source/
-      └─ （なし or 未使用）
+├─ pages/
+│  ├─ members/
+│  │  ├─ members.html
+│  │  └─ member_detail.html
+│  │
+│  ├─ meetings/
+│  │  ├─ meetings.html
+│  │  └─ meeting_detail.html
+│  │
+│  ├─ items/
+│  │  ├─ items.html
+│  │  └─ item_detail.html
+│  │
+│  ├─ questions/
+│  │  └─ questions.html
+│  │
+│  └─ readme/
+│     └─ readme.html
+│
+├─ js/
+│  ├─ core/                     ← ★共通JS
+│  │  ├─ common.js              ← 全ページ共通（初期化・土台）
+│  │  ├─ copy.js                ← コピー機能
+│  │  ├─ utils.js               ← 汎用関数
+│  │  ├─ formatters.js          ← 日付・表示系
+│  │  └─ app.js                 ← 全体制御（任意）
+│  │
+│  ├─ members/
+│  │  ├─ view_members.js
+│  │  └─ view_member_detail.js
+│  │
+│  ├─ meetings/
+│  │  ├─ view_meetings.js
+│  │  └─ view_meeting_detail.js
+│  │
+│  ├─ items/
+│  │  ├─ view_items.js
+│  │  └─ view_item_detail.js
+│  │
+│  └─ questions/
+│     └─ （なし or 将来）
+│
+├─ css/
+│  ├─ common.css                ← ★全ページ共通ベース
+│  ├─ copy.css                  ← ★コピーUI専用
+│  ├─ page.css                  ← ページレイアウト（任意）
+│  ├─ table.css                 ← テーブル系（任意）
+│  └─ components.css            ← UI部品（任意）
+│
+├─ data/
+│  ├─ members/
+│  │  ├─ members.js
+│  │  ├─ office_terms.js
+│  │  ├─ parties.js
+│  │  ├─ member_parties.js
+│  │  └─ contacts.js
+│  │
+│  ├─ committees/
+│  │  ├─ committees.js
+│  │  ├─ member_committees.js
+│  │  ├─ special_committees.js
+│  │  ├─ special_committee_instances.js
+│  │  ├─ special_committee_meetings.js
+│  │  └─ special_committee_members.js
+│  │
+│  ├─ meetings/
+│  │  ├─ meetings.js
+│  │  ├─ event_types.js
+│  │  └─ events.js
+│  │
+│  ├─ items/
+│  │  ├─ items.js
+│  │  ├─ item_actions.js
+│  │  └─ council_terms.js
+│  │
+│  ├─ councils/
+│  │  ├─ councils.js
+│  │  └─ member_councils.js
+│  │
+│  └─ questions/
+│     └─ questions.js
+│
+└─ source/
+   └─ （未使用 or Excel元データ）
 
 ```
 
@@ -105,85 +115,7 @@ HTML + JavaScriptで表示（LG環境対応）
 # 2. システム構成
 
 ■ ディレクトリ構成
-```
-project/
-├─ source.xlsm                 ← 正本データ（Excel）
-│
-└─ app/
-    ├─ index.html
-    │
-    ├─ pages/
-    │  ├─ members/
-    │  │  ├─ members.html
-    │  │  └─ member_detail.html
-    │  ├─ meetings/
-    │  │  ├─ meetings.html
-    │  │  └─ meeting_detail.html
-    │  ├─ items/
-    │  │  ├─ items.html
-    │  │  └─ item_detail.html
-    │  ├─ questions/
-    │  │  └─ questions.html
-    │  └─ readme/
-    │     └─ readme.html
-    │
-    ├─ js/
-    │  ├─ core/
-    │  │  ├─ utils.js
-    │  │  ├─ formatters.js
-    │  │  └─ app.js
-    │  │
-    │  ├─ members/
-    │  │  ├─ view_members.js
-    │  │  └─ view_member_detail.js
-    │  │
-    │  ├─ meetings/
-    │  │  ├─ view_meetings.js
-    │  │  └─ view_meeting_detail.js
-    │  │
-    │  ├─ items/
-    │  │  ├─ view_items.js
-    │  │  └─ view_item_detail.js
-    │  │
-    │  └─ questions/
-    │     └─ （なし）
-    │
-    ├─ data/
-    │  ├─ members/
-    │  │  ├─ members.js
-    │  │  ├─ office_terms.js
-    │  │  ├─ parties.js
-    │  │  ├─ member_parties.js
-    │  │  └─ contacts.js
-    │  │
-    │  ├─ committees/
-    │  │  ├─ committees.js
-    │  │  ├─ member_committees.js
-    │  │  ├─ special_committees.js
-    │  │  ├─ special_committee_instances.js
-    │  │  ├─ special_committee_meetings.js
-    │  │  └─ special_committee_members.js
-    │  │
-    │  ├─ meetings/
-    │  │  ├─ meetings.js
-    │  │  ├─ event_types.js
-    │  │  └─ events.js
-    │  │
-    │  ├─ items/
-    │  │  ├─ items.js
-    │  │  ├─ item_actions.js
-    │  │  └─ council_terms.js
-    │  │
-    │  ├─ councils/
-    │  │  ├─ councils.js
-    │  │  └─ member_councils.js
-    │  │
-    │  └─ questions/
-    │     └─ questions.js
-    │
-    └─ source/
-      └─ （なし or 未使用）
-```
+※冒頭に記載のとおり
 ---
 
 # 3. データ設計
