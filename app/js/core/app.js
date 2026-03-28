@@ -1,4 +1,3 @@
-/* /app/js/core/app.js */
 window.APP_DATA = window.APP_DATA || {};
 
 window.APP = (function () {

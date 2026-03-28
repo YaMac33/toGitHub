@@ -1,14 +1,8 @@
 window.MEMBERS_VIEW = (function () {
   "use strict";
 
-  function escapeHtml(value) {
-    return String(value == null ? "" : value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
+  const escapeHtml = window.APP_UTILS.escapeHtml;
+  const openInNewTab = window.APP_UTILS.openInNewTab;
 
   function renderStatus(statusEl) {
     const counts = window.APP.getSummaryCounts();
@@ -47,7 +41,7 @@ window.MEMBERS_VIEW = (function () {
 
   function goMemberDetailInNewTab(memberId) {
     const url = "member_detail.html?member_id=" + encodeURIComponent(memberId);
-    window.open(url, "_blank", "noopener,noreferrer");
+    openInNewTab(url);
   }
 
   function renderTable(containerEl, rows) {

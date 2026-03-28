@@ -9,7 +9,7 @@
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
-      .replceAll("'", "&#39;");
+      .replaceAll("'", "&#39;");
   }
 
   function escapeRegExp(value) {
