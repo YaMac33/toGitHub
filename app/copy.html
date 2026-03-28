@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>README</title>
+<style>
+  body {
+    font-family: sans-serif;
+    padding: 20px;
+  }
+
+  .code-block {
+    position: relative;
+    margin-bottom: 30px;
+  }
+
+  pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    overflow-x: auto;
+    border-radius: 6px;
+  }
+
+  button.copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>index.html</h2>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+  <pre><code>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;body&gt;
+  Hello World
+&lt;/body&gt;
+&lt;/html&gt;
+  </code></pre>
+</div>
+
+<h2>app.js</h2>
+<div class="code-block">
+  <button class="copy-btn" onclick="copyCode(this)">コピー</button>
+  <pre><code>
+function init() {
+  console.log("start");
+}
+  </code></pre>
+</div>
+
+<script>
+function copyCode(button) {
+  const code = button.parentElement.querySelector("code").innerText;
+
+  // ★① モダンブラウザ（推奨）
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code)
+      .then(() => {
+        button.innerText = "コピー済";
+        setTimeout(() => button.innerText = "コピー", 1500);
+      })
+      .catch(() => fallbackCopy(code, button));
+  } else {
+    // ★② フォールバック（古い環境）
+    fallbackCopy(code, button);
+  }
+}
+
+function fallbackCopy(text, button) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    document.execCommand("copy");
+    button.innerText = "コピー済";
+  } catch (err) {
+    alert("コピーできませんでした");
+  }
+
+  document.body.removeChild(textarea);
+  setTimeout(() => button.innerText = "コピー", 1500);
+}
+</script>
+
+</body>
+</html>
