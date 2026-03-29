@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sample_agenda_meeting</title>
+  <link rel="stylesheet" href="../../css/common.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <h1 class="page-title">議題サンプル表示</h1>
+      <p class="page-desc">会議回ベースで議題一覧を表示する最小サンプルです。</p>
+    </header>
+
+    <section class="card">
+      <h2>議題一覧</h2>
+      <div id="agendaArea"></div>
+    </section>
+  </div>
+
+  <script src="../../data/agendas/agendas.js"></script>
+  <script src="../../data/agendas/agenda_actions.js"></script>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var meetingId = "MTG2024_01";
+
+      var agendas = window.APP_DATA && Array.isArray(window.APP_DATA.agendas)
+        ? window.APP_DATA.agendas
+        : [];
+
+      var agendaActions = window.APP_DATA && Array.isArray(window.APP_DATA.agenda_actions)
+        ? window.APP_DATA.agenda_actions
+        : [];
+
+      function escapeHtml(value) {
+        return String(value == null ? "" : value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function getAgendaById(agendaId) {
+        return agendas.find(function (row) {
+          return row.agenda_id === agendaId;
+        }) || null;
+      }
+
+      function actionTypeLabel(v) {
+        var map = {
+          PROPOSED: "議題提示",
+          DISCUSSED: "協議",
+          DECIDED: "決定",
+          REPORTED: "報告",
+          CONTINUED: "継続"
+        };
+        return map[v] || v || "";
+      }
+
+      var rows = agendaActions
+        .filter(function (row) {
+          return row.meeting_id === meetingId;
+        })
+        .map(function (row) {
+          var agenda = getAgendaById(row.agenda_id);
+          return {
+            agenda_title: agenda ? agenda.agenda_title : row.agenda_id,
+            agenda_category: agenda ? agenda.agenda_category : "",
+            action_type: row.action_type,
+            action_date: row.action_date,
+            note: row.note || ""
+          };
+        });
+
+      var html = "";
+
+      if (!rows.length) {
+        html = '<div class="empty">データがありません。</div>';
+      } else {
+        html = rows.map(function (row) {
+          return (
+            '<div class="history-row">' +
+              '<div><strong>' + escapeHtml(row.agenda_title) + '</strong></div>' +
+              '<div>区分: ' + escapeHtml(row.agenda_category) + '</div>' +
+              '<div>扱い: ' + escapeHtml(actionTypeLabel(row.action_type)) + '</div>' +
+              '<div>日付: ' + escapeHtml(row.action_date) + '</div>' +
+              '<div>備考: ' + escapeHtml(row.note) + '</div>' +
+            '</div>'
+          );
+        }).join("");
+      }
+
+      document.getElementById("agendaArea").innerHTML = html;
+    })();
+  </script>
+</body>
+</html>
