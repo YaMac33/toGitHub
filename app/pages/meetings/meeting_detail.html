@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>会議情報詳細</title>
+  <title>meeting_detail</title>
 
   <link rel="stylesheet" href="../../css/common.css" />
 
@@ -287,6 +287,55 @@
       background: #f8fbff;
     }
 
+    .agenda-section {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .agenda-block {
+      border: 1px solid #e5e9ef;
+      border-radius: 10px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .agenda-block h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .agenda-card {
+      border: 1px solid #e5e9ef;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background: #fbfcfd;
+    }
+
+    .agenda-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .agenda-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .agenda-summary {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #374151;
+    }
+
+    .agenda-meta {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.5;
+    }
+
     @media (max-width: 1100px) {
       .calendar-cell {
         min-height: 100px;
@@ -342,6 +391,11 @@
     </section>
 
     <section class="card">
+      <h2>議題</h2>
+      <div id="agendasArea" class="agenda-section"></div>
+    </section>
+
+    <section class="card">
       <h2>案件</h2>
       <div id="itemsArea" class="items-section"></div>
     </section>
@@ -369,6 +423,9 @@
   <script src="../../data/committees/special_committee_instances.js"></script>
   <script src="../../data/committees/special_committee_meetings.js"></script>
   <script src="../../data/committees/special_committee_members.js"></script>
+
+  <script src="../../data/agendas/agendas.js"></script>
+  <script src="../../data/agendas/agenda_actions.js"></script>
 
   <script src="../../data/items/items.js"></script>
   <script src="../../data/items/item_actions.js"></script>
