@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>分野⑥：議題（アジェンダ）管理 - 議員管理システム</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.7;
+      color: #333;
+      background: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-nav {
+      background: #1f2937;
+      color: #fff;
+      padding: 12px 20px;
+    }
+
+    .header-nav a {
+      color: #93c5fd;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .header-nav a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .domain-tag {
+      display: inline-block;
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: 0.85rem;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      color: #111827;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+    }
+
+    .h2-icon {
+      margin-right: 8px;
+      color: #2563eb;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      color: #374151;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      border-left: 4px solid #93c5fd;
+      padding-left: 10px;
+    }
+
+    p {
+      margin: 0 0 16px;
+    }
+
+    ul {
+      margin: 0 0 20px 1.5em;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 32px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #334155;
+      white-space: nowrap;
+      width: 25%;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    td code, p code, li code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+      color: #0f172a;
+    }
+
+    pre {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: #334155;
+    }
+
+    .path-line {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13.5px;
+      color: #1e40af;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+
+    .concept-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .concept-title {
+      font-weight: bold;
+      color: #1e3a8a;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    .rule-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid #22c55e;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 24px 0;
+    }
+
+    .rule-title {
+      font-weight: bold;
+      color: #166534;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+
+    @media (max-width: 768px) {
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-nav">
+    <div style="max-width: 950px; margin: 0 auto;">
+      <a href="index.html">← トップ（目次）へ戻る</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <span class="domain-tag">分野⑥：議題管理</span>
+    <h1>議題（アジェンダ）管理</h1>
+    <p>このページでは、議案等とは別に「議運や会派代表者会議などで、どんな議題が、いつ、どの会議で扱われたか」を追えるようにするための設計と運用仕様を解説します。</p>
+
+    <div class="concept-box">
+      <div class="concept-title">💡 基本概念：この機能でできること</div>
+      <ul>
+        <li><strong>会議回詳細ページ</strong>で、その回に扱われた議題を確認する</li>
+        <li><strong>議題一覧ページ</strong>で、議題ごとの履歴件数や関係会議数を確認する</li>
+        <li><strong>議題詳細ページ</strong>で、1つの議題がいつどの会議で扱われたかを時系列で追う</li>
+      </ul>
+    </div>
+
+    <h2><span class="h2-icon">📁</span>1. 関係ファイル</h2>
+
+    <h3>1-1. ページ（HTML）</h3>
+    <div class="path-line">app/pages/agendas/agenda.html</div>
+    <p>議題一覧ページ。議題ごとに検索し、詳細ページへ遷移します。</p>
+
+    <div class="path-line">app/pages/agendas/agenda_detail.html</div>
+    <p>議題詳細ページ。議題ベースで履歴を確認します。</p>
+
+    <div class="path-line">app/pages/meetings/meeting_detail.html</div>
+    <p>会議回詳細ページ。会議回ベースで議題を確認します。</p>
+
+    <h3>1-2. ロジック（JS）</h3>
+    <div class="path-line">app/js/agendas/view_agendas.js</div>
+    <p>議題一覧ページの表示ロジックです。</p>
+
+    <div class="path-line">app/js/agendas/view_agenda_detail.js</div>
+    <p>議題詳細ページの表示ロジックです。</p>
+
+    <div class="path-line">app/js/meetings/view_meeting_detail.js</div>
+    <p>会議回詳細ページの中で、議題も表示するロジックを持っています。</p>
+
+    <h3>1-3. データソース</h3>
+    <div class="path-line">app/data/agendas/agendas.js</div>
+    <p>議題マスタです。</p>
+
+    <div class="path-line">app/data/agendas/agenda_actions.js</div>
+    <p>議題アクション履歴です。</p>
+
+    <div class="path-line">app/data/meetings/events.js</div>
+    <p>会議イベントマスタです。議題履歴の表示順や会議種別判定に使います。</p>
+
+    <h2><span class="h2-icon">💾</span>2. データベース設計</h2>
+
+    <h3>2-1. 議題マスタ（agendas シート）</h3>
+    <p>議題そのものを管理するマスタです。議題名や分類を持ちます。</p>
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>agenda_id</code></td><td>議題ID</td></tr>
+        <tr><td><code>agenda_category</code></td><td>大分類（議運、会派代表者会議、その他）</td></tr>
+        <tr><td><code>agenda_subcategory</code></td><td>中分類（日程調整、議案取扱、報告など）</td></tr>
+        <tr><td><code>agenda_title</code></td><td>議題名</td></tr>
+        <tr><td><code>agenda_summary</code></td><td>概要</td></tr>
+        <tr><td><code>note</code></td><td>備考</td></tr>
+        <tr><td><code>sort_order</code></td><td>表示順</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2-2. 議題アクション履歴（agenda_actions シート）</h3>
+    <p>議題がどの会議で、いつ、どのように扱われたかを持つ履歴です。<strong>議題を追う中心テーブル</strong>になります。</p>
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>agenda_action_id</code></td><td>議題履歴ID</td></tr>
+        <tr><td><code>agenda_id</code></td><td>議題ID</td></tr>
+        <tr><td><code>meeting_id</code></td><td>会議回ID</td></tr>
+        <tr><td><code>event_id</code></td><td>イベントID</td></tr>
+        <tr><td><code>action_type</code></td><td>扱い（議題提示・協議・決定・報告・継続など）</td></tr>
+        <tr><td><code>action_date</code></td><td>扱った日</td></tr>
+        <tr><td><code>note</code></td><td>備考</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2-3. events の役割</h3>
+    <p><code>agenda_actions</code> だけでは「同じ日に複数の議運がある場合の順番」を持てないため、<code>events</code> 側の情報も併せて使います。</p>
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>event_id</code></td><td>会議イベントID</td></tr>
+        <tr><td><code>event_date</code></td><td>開催日</td></tr>
+        <tr><td><code>event_type_id</code></td><td>議運 / 本会議 / 会派代表者会議などの種別</td></tr>
+        <tr><td><code>sort_order</code></td><td>同じ日の中での並び順</td></tr>
+        <tr><td><code>note</code></td><td>補足</td></tr>
+      </tbody>
+    </table>
+
+    <div class="rule-box">
+      <div class="rule-title">同日処理の基本ルール</div>
+      <ul>
+        <li>同じ日でも <code>event_id</code> が違えば別会議として扱います。</li>
+        <li>同じ日の表示順は <code>events.sort_order</code> を使用します。</li>
+        <li><code>meeting_detail.html</code> では、同じ日・同じ <code>event_id</code> の議題をまとめて表示します。</li>
+      </ul>
+    </div>
+
+    <h2><span class="h2-icon">📋</span>3. 議題一覧ページ（agenda.html）の仕様</h2>
+    <p>議題マスタを基準にして一覧表示します。</p>
+
+    <h3>3-1. 主な機能と表示列</h3>
+    <ul>
+      <li><strong>絞り込み：</strong> 大分類、中分類</li>
+      <li><strong>フリーワード検索：</strong> 議題名、概要、備考、初回会議名</li>
+      <li><strong>表示列：</strong> 大分類、中分類、議題、初回日、最終日、関係会議数、履歴数</li>
+    </ul>
+
+    <h3>3-2. 集計ロジック</h3>
+    <p>議題一覧では、<code>agenda_actions</code> を見て以下を自動計算します。</p>
+    <ul>
+      <li><strong>初回日：</strong> 最も古い <code>action_date</code></li>
+      <li><strong>最終日：</strong> 最も新しい <code>action_date</code></li>
+      <li><strong>関係会議数：</strong> <code>meeting_id</code> のユニーク件数</li>
+      <li><strong>履歴数：</strong> <code>agenda_actions</code> の件数</li>
+    </ul>
+
+    <h2><span class="h2-icon">🔍</span>4. 議題詳細ページ（agenda_detail.html）の仕様</h2>
+    <p>1つの議題に対して、いつ、どの会議で、どう扱われたかを時系列で表示します。</p>
+
+    <ul>
+      <li><strong>基本情報：</strong> 大分類、中分類、内部ID、表示順、議題、概要、備考</li>
+      <li><strong>履歴表示（1行ごと）：</strong> 日時、会議回、会議種別、扱い（議題提示・協議等）、備考</li>
+    </ul>
+
+    <h2><span class="h2-icon">🗓️</span>5. 会議回詳細ページ（meeting_detail.html）での議題表示仕様</h2>
+    <p>会議回詳細では、「会議回ベース」で議題を表示します。議題一覧や詳細が「議題ベース」なのに対し、こちらは<strong>「その回で何が扱われたか」</strong>に重点を置きます。</p>
+
+    <h3>5-1. 表示ルール</h3>
+    <ul>
+      <li>同じ日・同じ <code>event_id</code> は1つのグループにまとめます。</li>
+      <li>グループの上に「日時」「会議種別」を出します。</li>
+      <li>その下に、その会議で扱った議題（扱い内容を含む）を箇条書き風に並べます。</li>
+      <li>議題の下の備考は、一覧性を高めるためここでは表示しません。</li>
+    </ul>
+
+    <h2><span class="h2-icon">🛠️</span>6. コード上の補助関数</h2>
+    <p>各コード値を表示用の日本語ラベルに変換するための主要なマッピング関数です。</p>
+
+    <h3>6-1. 大分類の変換（agendaCategoryLabel）</h3>
+<pre><code>function agendaCategoryLabel(value) {
+  const map = {
+    STEERING: "議運",
+    LEADERS: "会派代表者会議",
+    OTHER: "その他"
+  };
+  return map[value] || value || "";
+}</code></pre>
+
+    <h3>6-2. 中分類の変換（agendaSubcategoryLabel）</h3>
+<pre><code>function agendaSubcategoryLabel(value) {
+  const map = {
+    SCHEDULE: "日程調整",
+    BILL_HANDLING: "議案取扱",
+    QUESTION_HANDLING: "一般質問取扱",
+    COORDINATION: "調整",
+    REPORT: "報告",
+    OTHER: "その他"
+  };
+  return map[value] || value || "";
+}</code></pre>
+
+    <h3>6-3. 扱いの変換（agendaActionTypeLabel）</h3>
+<pre><code>function agendaActionTypeLabel(value) {
+  const map = {
+    PROPOSAL: "提示",
+    DISCUSSION: "協議",
+    DECISION: "決定",
+    REPORT: "報告",
+    CONTINUATION: "継続"
+  };
+  return map[value] || value || "";
+}</code></pre>
+
+    <h2><span class="h2-icon">🚀</span>7. 今後の拡張について</h2>
+    <p>必要に応じて、アジェンダに関する資料ファイル（PDF等）へのパスを持つ列を追加したり、特定の議題に関連する「議案」や「請願」と紐づける中間テーブル（アイテムとの紐付け）を作成することで、よりリッチな議会運営のトラッキングが可能になります。</p>
+
+  </div>
+</body>
+</html>
