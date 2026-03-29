@@ -1,0 +1,363 @@
+Option Explicit
+
+' =========================================================
+' 一般質問データ → app/data/questions/questions.js 出力
+'
+' 前提シート
+'  1) 通告ヘッダ
+'  2) 通告明細
+'
+' 前提列（1行目ヘッダ）
+'
+' ■ 通告ヘッダ
+' question_id
+' meeting_id
+' fiscal_year
+' number
+' year
+' session
+' notice_no
+' member_id
+' member_name
+' group_name
+' allotted_minutes
+' note
+' sort_order
+' created_at
+' updated_at
+'
+' ■ 通告明細
+' detail_id
+' question_id
+' major_no
+' middle_no
+' minor_no
+' content
+' sort_order
+' created_at
+' updated_at
+'
+' 出力先
+'   ThisWorkbook.Path & "\app\data\questions\questions.js"
+'
+' ※ このブックが app と同階層にない場合は
+'    GetOutputPath() を必要に応じて修正してください。
+' =========================================================
+
+Public Sub ExportQuestionsJs()
+
+    Const SHEET_HEADER As String = "通告ヘッダ"
+    Const SHEET_DETAIL As String = "通告明細"
+
+    Dim wsH As Worksheet
+    Dim wsD As Worksheet
+
+    Dim lastRowH As Long
+    Dim lastRowD As Long
+    Dim lastColH As Long
+    Dim lastColD As Long
+
+    Dim mapH As Object
+    Dim colH As Object
+    Dim colD As Object
+
+    Dim r As Long
+    Dim qid As String
+    Dim detailSort As Long
+    Dim outPath As String
+    Dim jsonText As String
+    Dim lineText As String
+    Dim firstItem As Boolean
+
+    Set wsH = ThisWorkbook.Worksheets(SHEET_HEADER)
+    Set wsD = ThisWorkbook.Worksheets(SHEET_DETAIL)
+
+    lastRowH = wsH.Cells(wsH.Rows.Count, 1).End(xlUp).Row
+    lastRowD = wsD.Cells(wsD.Rows.Count, 1).End(xlUp).Row
+    lastColH = wsH.Cells(1, wsH.Columns.Count).End(xlToLeft).Column
+    lastColD = wsD.Cells(1, wsD.Columns.Count).End(xlToLeft).Column
+
+    Set colH = BuildHeaderMap(wsH, lastColH)
+    Set colD = BuildHeaderMap(wsD, lastColD)
+
+    ValidateHeaderColumns colH, Array( _
+        "question_id", "meeting_id", "fiscal_year", "number", "year", "session", _
+        "notice_no", "member_id", "member_name", "group_name", _
+        "allotted_minutes", "note", "sort_order", "created_at", "updated_at")
+
+    ValidateHeaderColumns colD, Array( _
+        "detail_id", "question_id", "major_no", "middle_no", "minor_no", _
+        "content", "sort_order", "created_at", "updated_at")
+
+    ' -----------------------------------------
+    ' 通告ヘッダを question_id キーで保持
+    ' -----------------------------------------
+    Set mapH = CreateObject("Scripting.Dictionary")
+
+    For r = 2 To lastRowH
+        qid = Trim$(CStr(wsH.Cells(r, colH("question_id")).Value))
+        If qid <> "" Then
+            If mapH.Exists(qid) Then
+                Err.Raise vbObjectError + 1001, , "通告ヘッダで question_id が重複しています: " & qid
+            End If
+
+            Dim h As Object
+            Set h = CreateObject("Scripting.Dictionary")
+
+            h("question_id") = GetCellText(wsH, r, colH, "question_id")
+            h("meeting_id") = GetCellText(wsH, r, colH, "meeting_id")
+            h("fiscal_year") = GetCellText(wsH, r, colH, "fiscal_year")
+            h("number") = GetCellText(wsH, r, colH, "number")
+            h("year") = GetCellText(wsH, r, colH, "year")
+            h("session") = GetCellText(wsH, r, colH, "session")
+            h("notice_no") = GetCellText(wsH, r, colH, "notice_no")
+            h("member_id") = GetCellText(wsH, r, colH, "member_id")
+            h("member_name") = GetCellText(wsH, r, colH, "member_name")
+            h("group_name") = GetCellText(wsH, r, colH, "group_name")
+            h("allotted_minutes") = GetCellText(wsH, r, colH, "allotted_minutes")
+            h("note") = GetCellText(wsH, r, colH, "note")
+            h("sort_order") = GetCellText(wsH, r, colH, "sort_order")
+            h("created_at") = GetCellText(wsH, r, colH, "created_at")
+            h("updated_at") = GetCellText(wsH, r, colH, "updated_at")
+
+            mapH.Add qid, h
+        End If
+    Next r
+
+    ' -----------------------------------------
+    ' JSON本体作成
+    ' 現在の view_questions.js が読めるように
+    ' 1行=1明細 の配列を出力
+    ' -----------------------------------------
+    jsonText = ""
+    jsonText = jsonText & "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
+    jsonText = jsonText & "window.APP_DATA.questions = [" & vbCrLf
+
+    firstItem = True
+
+    For r = 2 To lastRowD
+
+        qid = GetCellText(wsD, r, colD, "question_id")
+        If qid <> "" Then
+
+            If Not mapH.Exists(qid) Then
+                Err.Raise vbObjectError + 1002, , "通告明細の question_id が通告ヘッダに存在しません: " & qid
+            End If
+
+            Dim hd As Object
+            Set hd = mapH(qid)
+
+            detailSort = NzLong(GetCellText(wsD, r, colD, "sort_order"))
+
+            lineText = "  {" & vbCrLf
+            lineText = lineText & "    fiscal_year: " & JsQuote(hd("fiscal_year")) & "," & vbCrLf
+            lineText = lineText & "    id: " & JsQuote(BuildLegacyId(hd, wsD, r, colD, detailSort)) & "," & vbCrLf
+            lineText = lineText & "    question_id: " & JsQuote(hd("question_id")) & "," & vbCrLf
+            lineText = lineText & "    detail_id: " & JsQuote(GetCellText(wsD, r, colD, "detail_id")) & "," & vbCrLf
+            lineText = lineText & "    meeting_id: " & JsQuote(hd("meeting_id")) & "," & vbCrLf
+            lineText = lineText & "    member_id: " & JsQuote(hd("member_id")) & "," & vbCrLf
+            lineText = lineText & "    number: " & JsQuote(hd("number")) & "," & vbCrLf
+            lineText = lineText & "    year: " & JsQuote(hd("year")) & "," & vbCrLf
+            lineText = lineText & "    session: " & JsQuote(hd("session")) & "," & vbCrLf
+            lineText = lineText & "    notice_no: " & JsQuote(hd("notice_no")) & "," & vbCrLf
+            lineText = lineText & "    member_name: " & JsQuote(hd("member_name")) & "," & vbCrLf
+            lineText = lineText & "    group: " & JsQuote(hd("group_name")) & "," & vbCrLf
+            lineText = lineText & "    allotted_minutes: " & JsQuote(hd("allotted_minutes")) & "," & vbCrLf
+            lineText = lineText & "    major_no: " & JsQuote(GetCellText(wsD, r, colD, "major_no")) & "," & vbCrLf
+            lineText = lineText & "    middle_no: " & JsQuote(GetCellText(wsD, r, colD, "middle_no")) & "," & vbCrLf
+            lineText = lineText & "    minor_no: " & JsQuote(GetCellText(wsD, r, colD, "minor_no")) & "," & vbCrLf
+            lineText = lineText & "    content: " & JsQuote(GetCellText(wsD, r, colD, "content")) & "," & vbCrLf
+            lineText = lineText & "    header_note: " & JsQuote(hd("note")) & "," & vbCrLf
+            lineText = lineText & "    header_sort_order: " & JsQuote(hd("sort_order")) & "," & vbCrLf
+            lineText = lineText & "    detail_sort_order: " & JsQuote(GetCellText(wsD, r, colD, "sort_order")) & "," & vbCrLf
+            lineText = lineText & "    created_at: " & JsQuote(GetCellText(wsD, r, colD, "created_at")) & "," & vbCrLf
+            lineText = lineText & "    updated_at: " & JsQuote(GetCellText(wsD, r, colD, "updated_at")) & vbCrLf
+            lineText = lineText & "  }"
+
+            If Not firstItem Then
+                jsonText = jsonText & "," & vbCrLf
+            End If
+
+            jsonText = jsonText & lineText
+            firstItem = False
+
+        End If
+    Next r
+
+    jsonText = jsonText & vbCrLf & "];" & vbCrLf
+    jsonText = jsonText & "window.RECORDS = window.APP_DATA.questions;" & vbCrLf
+
+    ' -----------------------------------------
+    ' 出力
+    ' -----------------------------------------
+    outPath = GetOutputPath()
+    EnsureParentFolderExists outPath
+    WriteUtf8Text outPath, jsonText
+
+    MsgBox "questions.js を出力しました:" & vbCrLf & outPath, vbInformation
+
+End Sub
+
+' =========================================================
+' 出力先
+' =========================================================
+Private Function GetOutputPath() As String
+    ' 例:
+    ' このブックが C:\work\project にあるなら
+    ' C:\work\project\app\data\questions\questions.js に出力
+    GetOutputPath = ThisWorkbook.Path & "\app\data\questions\questions.js"
+End Function
+
+' =========================================================
+' 旧互換の id を作る
+' 例: R811佐藤太郎3
+' number + year + session + notice_no + member_name + detail_sort
+' =========================================================
+Private Function BuildLegacyId(ByVal hd As Object, ByVal wsD As Worksheet, ByVal rowNo As Long, ByVal colD As Object, ByVal detailSort As Long) As String
+    BuildLegacyId = _
+        CStr(hd("number")) & _
+        CStr(hd("year")) & _
+        CStr(hd("session")) & _
+        CStr(hd("notice_no")) & _
+        CStr(hd("member_name")) & _
+        CStr(detailSort)
+End Function
+
+' =========================================================
+' ヘッダ名 → 列番号
+' =========================================================
+Private Function BuildHeaderMap(ByVal ws As Worksheet, ByVal lastCol As Long) As Object
+    Dim dic As Object
+    Dim c As Long
+    Dim key As String
+
+    Set dic = CreateObject("Scripting.Dictionary")
+
+    For c = 1 To lastCol
+        key = Trim$(CStr(ws.Cells(1, c).Value))
+        If key <> "" Then
+            dic(key) = c
+        End If
+    Next c
+
+    Set BuildHeaderMap = dic
+End Function
+
+Private Sub ValidateHeaderColumns(ByVal colMap As Object, ByVal requiredCols As Variant)
+    Dim i As Long
+    For i = LBound(requiredCols) To UBound(requiredCols)
+        If Not colMap.Exists(CStr(requiredCols(i))) Then
+            Err.Raise vbObjectError + 1100, , "必要な列がありません: " & CStr(requiredCols(i))
+        End If
+    Next i
+End Sub
+
+' =========================================================
+' セル値取得
+' =========================================================
+Private Function GetCellText(ByVal ws As Worksheet, ByVal rowNo As Long, ByVal colMap As Object, ByVal key As String) As String
+    Dim v As Variant
+
+    If Not colMap.Exists(key) Then
+        GetCellText = ""
+        Exit Function
+    End If
+
+    v = ws.Cells(rowNo, colMap(key)).Value
+
+    If IsError(v) Then
+        GetCellText = ""
+    ElseIf IsDate(v) Then
+        GetCellText = Format$(CDate(v), "yyyy-mm-dd")
+    Else
+        GetCellText = Trim$(CStr(v))
+    End If
+End Function
+
+Private Function NzLong(ByVal s As String) As Long
+    If Trim$(s) = "" Then
+        NzLong = 0
+    ElseIf IsNumeric(s) Then
+        NzLong = CLng(s)
+    Else
+        NzLong = 0
+    End If
+End Function
+
+' =========================================================
+' JS文字列用エスケープ
+' =========================================================
+Private Function JsQuote(ByVal s As String) As String
+    Dim t As String
+    t = s
+    t = Replace(t, "\", "\\")
+    t = Replace(t, """", "\""")
+    t = Replace(t, vbCrLf, "\n")
+    t = Replace(t, vbCr, "\n")
+    t = Replace(t, vbLf, "\n")
+    JsQuote = """" & t & """"
+End Function
+
+' =========================================================
+' 親フォルダ作成
+' =========================================================
+Private Sub EnsureParentFolderExists(ByVal filePath As String)
+
+    Dim fso As Object
+    Dim parentPath As String
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    parentPath = fso.GetParentFolderName(filePath)
+
+    If parentPath <> "" Then
+        CreateFoldersRecursive parentPath
+    End If
+
+End Sub
+
+Private Sub CreateFoldersRecursive(ByVal folderPath As String)
+
+    Dim fso As Object
+    Dim parts() As String
+    Dim buildPath As String
+    Dim i As Long
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+
+    If fso.FolderExists(folderPath) Then Exit Sub
+
+    parts = Split(folderPath, "\")
+    buildPath = parts(0)
+
+    If Right$(buildPath, 1) = ":" Then
+        buildPath = buildPath & "\"
+    End If
+
+    For i = 1 To UBound(parts)
+        If Right$(buildPath, 1) <> "\" Then buildPath = buildPath & "\"
+        buildPath = buildPath & parts(i)
+        If Not fso.FolderExists(buildPath) Then
+            fso.CreateFolder buildPath
+        End If
+    Next i
+
+End Sub
+
+' =========================================================
+' UTF-8 保存
+' =========================================================
+Private Sub WriteUtf8Text(ByVal filePath As String, ByVal textBody As String)
+
+    Dim stm As Object
+    Set stm = CreateObject("ADODB.Stream")
+
+    With stm
+        .Type = 2                 ' text
+        .Charset = "utf-8"
+        .Open
+        .WriteText textBody
+        .SaveToFile filePath, 2   ' overwrite
+        .Close
+    End With
+
+End Sub
