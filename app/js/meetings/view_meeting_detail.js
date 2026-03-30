@@ -135,15 +135,36 @@ window.MEETING_DETAIL_VIEW = (function () {
     return diff > 0 ? diff : "";
   }
 
-  function formatDurationHours(v) {
+  function formatDurationHM(v) {
     if (v === null || v === undefined || v === "") return "";
-    const num = Number(v);
-    if (!Number.isFinite(num)) return String(v);
 
-    const totalMinutes = Math.round(num * 60);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return hours + "時間" + minutes + "分";
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (!s) return "";
+      if (s.includes(":")) return s;
+
+      if (!isNaN(Number(s))) {
+        v = Number(s);
+      } else {
+        return s;
+      }
+    }
+
+    if (typeof v === "number") {
+      if (v < 1) {
+        const totalMinutes = Math.round(v * 24 * 60);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        return h + ":" + String(m).padStart(2, "0");
+      }
+
+      const totalMinutes = Math.round(v * 60);
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      return h + ":" + String(m).padStart(2, "0");
+    }
+
+    return String(v);
   }
 
   function buildMeetingEvents(meetingId) {
@@ -172,8 +193,9 @@ window.MEETING_DETAIL_VIEW = (function () {
       }
 
       const noteParts = [];
-      if (row.duration !== "" && row.duration !== undefined) {
-        noteParts.push("所要時間: " + formatDurationHours(row.duration));
+      const durationLabel = formatDurationHM(row.duration);
+      if (durationLabel) {
+        noteParts.push("実時間: " + durationLabel);
       }
       if (row.note) {
         noteParts.push(row.note);
@@ -207,6 +229,7 @@ window.MEETING_DETAIL_VIEW = (function () {
 
     return normalEvents.concat(specialEvents).sort(function (a, b) {
       if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
       return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
     });
   }
@@ -400,6 +423,36 @@ window.MEETING_DETAIL_VIEW = (function () {
     });
   }
 
+  function compressRangeNumbers(rows, prefixBuilder) {
+    const nums = rows
+      .map(function (row) { return Number(row.item_no_numeric || 0); })
+      .filter(function (num) { return num > 0; })
+      .sort(function (a, b) { return a - b; });
+
+    if (!nums.length) {
+      return rows.map(function (row) { return row.item_no || ""; }).join("、");
+    }
+
+    const ranges = [];
+    let start = nums[0];
+    let prev = nums[0];
+
+    for (let i = 1; i < nums.length; i += 1) {
+      if (nums[i] === prev + 1) {
+        prev = nums[i];
+      } else {
+        ranges.push([start, prev]);
+        start = nums[i];
+        prev = nums[i];
+      }
+    }
+    ranges.push([start, prev]);
+
+    return ranges.map(function (range) {
+      return prefixBuilder(range[0], range[1]);
+    }).join("、");
+  }
+
   function buildNumberRangeLabel(items) {
     if (!items.length) return "";
 
@@ -407,24 +460,31 @@ window.MEETING_DETAIL_VIEW = (function () {
       return items[0].item_no || "";
     }
 
-    const first = items[0];
-    const last = items[items.length - 1];
-
-    const allBills = items.every(function (row) {
-      return row.item_class === "BILL";
+    const firstClass = items[0].item_class || "";
+    const sameClass = items.every(function (row) {
+      return row.item_class === firstClass;
     });
 
-    if (allBills) {
-      let contiguous = true;
-      for (let i = 1; i < items.length; i += 1) {
-        if (items[i].item_no_numeric !== items[i - 1].item_no_numeric + 1) {
-          contiguous = false;
-          break;
-        }
-      }
-      if (contiguous) {
-        return "議案第" + first.item_no_numeric + "号〜第" + last.item_no_numeric + "号";
-      }
+    if (!sameClass) {
+      return items.map(function (row) {
+        return row.item_no || "";
+      }).join("、");
+    }
+
+    if (firstClass === "BILL") {
+      return compressRangeNumbers(items, function (start, end) {
+        return start === end
+          ? "議案第" + start + "号"
+          : "議案第" + start + "号〜第" + end + "号";
+      });
+    }
+
+    if (firstClass === "PROPOSAL") {
+      return compressRangeNumbers(items, function (start, end) {
+        return start === end
+          ? "発議案第" + start + "号"
+          : "発議案第" + start + "号〜第" + end + "号";
+      });
     }
 
     return items.map(function (row) {
@@ -471,21 +531,70 @@ window.MEETING_DETAIL_VIEW = (function () {
     return lines;
   }
 
+  function buildQuestionEvents(meetingId) {
+    const headers = getArray("questions")
+      .filter(function (row) {
+        return row.meeting_id === meetingId && row.question_date;
+      })
+      .slice()
+      .sort(function (a, b) {
+        const ad = a.question_date || "";
+        const bd = b.question_date || "";
+        if (ad !== bd) return ad < bd ? -1 : 1;
+        return Number(a.notice_no || 0) - Number(b.notice_no || 0);
+      });
+
+    const grouped = {};
+
+    headers.forEach(function (row) {
+      const dateKey = row.question_date;
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(row);
+    });
+
+    return Object.keys(grouped).sort().map(function (dateKey) {
+      const rows = grouped[dateKey];
+      const detailText = rows.map(function (row) {
+        let line = "通告No" + (row.notice_no || "") + " " + (row.member_name || "");
+        if (row.group_name) {
+          line += "（" + row.group_name + "）";
+        }
+        if (row.allotted_minutes !== "" && row.allotted_minutes !== undefined && row.allotted_minutes !== null) {
+          line += "（" + row.allotted_minutes + "分）";
+        }
+        if (row.note) {
+          line += " / " + row.note;
+        }
+        return line;
+      }).join("\n");
+
+      return {
+        date: dateKey,
+        category: "question",
+        label: "一般質問（" + rows.length + "件）",
+        sort_order: 2,
+        css_class: "question",
+        detail_text: detailText
+      };
+    });
+  }
+
   function buildItemCalendarEvents(groupedPatterns) {
     const events = [];
 
     groupedPatterns.forEach(function (group) {
       const numberLabel = buildNumberRangeLabel(group.items);
-      const cssSuffixPassed = "decided-passed";
-      const cssSuffixRejected = "decided-rejected";
 
       if (group.pattern_type === "petition_request") {
         if (group.referred_date) {
           events.push({
             date: group.referred_date,
             category: "item",
+            raw_label: "付託",
             label: "付託（" + numberLabel + "）",
-            sort_order: 3,
+            sort_order: 4,
             css_class: "referred",
             detail_text: "付託（" + numberLabel + "）"
           });
@@ -493,12 +602,13 @@ window.MEETING_DETAIL_VIEW = (function () {
 
         if (group.decided_date) {
           const decidedLabel = group.decided_result_label || "議決";
-          const decidedCss = decidedLabel === "不採択" ? cssSuffixRejected : cssSuffixPassed;
+          const decidedCss = decidedLabel === "不採択" ? "decided-rejected" : "decided-passed";
           events.push({
             date: group.decided_date,
             category: "item",
+            raw_label: decidedLabel,
             label: decidedLabel + "（" + numberLabel + "）",
-            sort_order: 5,
+            sort_order: 6,
             css_class: decidedCss,
             detail_text: decidedLabel + "（" + numberLabel + "）"
           });
@@ -508,8 +618,9 @@ window.MEETING_DETAIL_VIEW = (function () {
           events.push({
             date: group.continued_date,
             category: "item",
+            raw_label: "継続審査",
             label: "継続審査（" + numberLabel + "）",
-            sort_order: 4,
+            sort_order: 5,
             css_class: "continued",
             detail_text: "継続審査（" + numberLabel + "）"
           });
@@ -522,8 +633,9 @@ window.MEETING_DETAIL_VIEW = (function () {
         events.push({
           date: group.proposed_date,
           category: "item",
+          raw_label: "提案",
           label: "提案（" + numberLabel + "）",
-          sort_order: 2,
+          sort_order: 3,
           css_class: "proposed",
           detail_text: "提案（" + numberLabel + "）"
         });
@@ -533,8 +645,9 @@ window.MEETING_DETAIL_VIEW = (function () {
         events.push({
           date: group.referred_date,
           category: "item",
+          raw_label: "付託",
           label: "付託（" + numberLabel + "）",
-          sort_order: 3,
+          sort_order: 4,
           css_class: "referred",
           detail_text: "付託（" + numberLabel + "）"
         });
@@ -544,8 +657,9 @@ window.MEETING_DETAIL_VIEW = (function () {
         events.push({
           date: group.continued_date,
           category: "item",
+          raw_label: "継続審査",
           label: "継続審査（" + numberLabel + "）",
-          sort_order: 4,
+          sort_order: 5,
           css_class: "continued",
           detail_text: "継続審査（" + numberLabel + "）"
         });
@@ -554,13 +668,14 @@ window.MEETING_DETAIL_VIEW = (function () {
       if (group.decided_date) {
         const decidedLabel = group.decided_result_label || "議決";
         const rejectedLabels = ["否決", "不採択"];
-        const decidedCss = rejectedLabels.includes(decidedLabel) ? cssSuffixRejected : cssSuffixPassed;
+        const decidedCss = rejectedLabels.includes(decidedLabel) ? "decided-rejected" : "decided-passed";
 
         events.push({
           date: group.decided_date,
           category: "item",
+          raw_label: decidedLabel,
           label: decidedLabel + "（" + numberLabel + "）",
-          sort_order: 5,
+          sort_order: 6,
           css_class: decidedCss,
           detail_text: decidedLabel + "（" + numberLabel + "）"
         });
@@ -570,19 +685,132 @@ window.MEETING_DETAIL_VIEW = (function () {
         events.push({
           date: group.withdrawn_date,
           category: "item",
+          raw_label: "取下げ",
           label: "取下げ（" + numberLabel + "）",
-          sort_order: 6,
+          sort_order: 7,
           css_class: "withdrawn",
           detail_text: "取下げ（" + numberLabel + "）"
         });
       }
     });
 
-    return events;
+    return compressItemCalendarEvents(events);
   }
 
-  function buildIntegratedCalendarEvents(meetingEvents, itemEvents) {
-    return meetingEvents.concat(itemEvents).sort(function (a, b) {
+  function compressItemCalendarEvents(events) {
+    const grouped = {};
+
+    events.forEach(function (event) {
+      const match = String(event.label || "").match(/^(.+?)（(.+)）$/);
+      const numberLabel = match ? match[2] : "";
+      const key = [
+        event.date || "",
+        event.raw_label || "",
+        event.css_class || "",
+        event.sort_order || 0
+      ].join("|");
+
+      if (!grouped[key]) {
+        grouped[key] = {
+          date: event.date || "",
+          category: "item",
+          raw_label: event.raw_label || "",
+          sort_order: event.sort_order || 0,
+          css_class: event.css_class || "",
+          detail_texts: [],
+          items: []
+        };
+      }
+
+      grouped[key].detail_texts.push(event.detail_text || event.label || "");
+      if (numberLabel) {
+        grouped[key].items = grouped[key].items.concat(extractNumberUnits(numberLabel));
+      }
+    });
+
+    return Object.values(grouped).map(function (group) {
+      const compressedLabel = group.raw_label + "（" + buildCompressedNumberText(group.items) + "）";
+      return {
+        date: group.date,
+        category: "item",
+        label: compressedLabel,
+        sort_order: group.sort_order,
+        css_class: group.css_class,
+        detail_text: group.detail_texts.join("\n")
+      };
+    });
+  }
+
+  function extractNumberUnits(numberLabel) {
+    return String(numberLabel || "")
+      .split("、")
+      .map(function (text) {
+        return text.trim();
+      })
+      .filter(Boolean);
+  }
+
+  function buildCompressedNumberText(items) {
+    if (!items.length) return "";
+
+    const billItems = [];
+    const proposalItems = [];
+    const otherItems = [];
+
+    items.forEach(function (text) {
+      const billMatch = text.match(/^議案第(\d+)号$/);
+      const proposalMatch = text.match(/^発議案第(\d+)号$/);
+
+      if (billMatch) {
+        billItems.push(Number(billMatch[1]));
+      } else if (proposalMatch) {
+        proposalItems.push(Number(proposalMatch[1]));
+      } else {
+        otherItems.push(text);
+      }
+    });
+
+    const result = [];
+
+    if (billItems.length) {
+      result.push(compressNumbersWithPrefix(billItems, "議案第", "号"));
+    }
+    if (proposalItems.length) {
+      result.push(compressNumbersWithPrefix(proposalItems, "発議案第", "号"));
+    }
+    if (otherItems.length) {
+      result.push(otherItems.join("、"));
+    }
+
+    return result.join("、");
+  }
+
+  function compressNumbersWithPrefix(nums, prefix, suffix) {
+    const sorted = nums.slice().sort(function (a, b) { return a - b; });
+    const ranges = [];
+    let start = sorted[0];
+    let prev = sorted[0];
+
+    for (let i = 1; i < sorted.length; i += 1) {
+      if (sorted[i] === prev + 1) {
+        prev = sorted[i];
+      } else {
+        ranges.push([start, prev]);
+        start = sorted[i];
+        prev = sorted[i];
+      }
+    }
+    ranges.push([start, prev]);
+
+    return ranges.map(function (range) {
+      return range[0] === range[1]
+        ? prefix + range[0] + suffix
+        : prefix + range[0] + suffix + "〜第" + range[1] + suffix;
+    }).join("、");
+  }
+
+  function buildIntegratedCalendarEvents(meetingEvents, questionEvents, itemEvents) {
+    return meetingEvents.concat(questionEvents).concat(itemEvents).sort(function (a, b) {
       if (a.date !== b.date) return a.date < b.date ? -1 : 1;
       if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
       return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
@@ -694,7 +922,7 @@ window.MEETING_DETAIL_VIEW = (function () {
         }).join("");
 
         const moreHtml = hiddenCount > 0
-          ? '<div class="calendar-more">+' + escapeHtml(String(hiddenCount)) + "件</div>"
+          ? '<div class="calendar-more">+' + escapeHtml(String(hiddenCount)) + "件</div>'
           : "";
 
         const inTermClass = isInTerm(dateStr, detail.start_date, detail.end_date) ? " in-term" : "";
@@ -782,32 +1010,62 @@ window.MEETING_DETAIL_VIEW = (function () {
     }).join("");
   }
 
-  function renderPatternBlock(title, groups) {
+  function renderPatternBlock(title, groups, blockId) {
     if (!groups.length) return "";
 
-    return (
-      '<div class="pattern-block">' +
-        '<div class="pattern-title">' + escapeHtml(title) + "</div>" +
-        groups.map(function (group) {
-          const lines = buildPatternLines(group);
-          const numberLabel = buildNumberRangeLabel(group.items);
+    const contentHtml = groups.map(function (group) {
+      const lines = buildPatternLines(group);
+      const numberLabel = buildNumberRangeLabel(group.items);
 
-          return (
-            '<div class="pattern-item">' +
-              '<div class="pattern-item-title">' + escapeHtml(numberLabel) + ":</div>" +
-              lines.map(function (line) {
-                return (
-                  '<div class="history-row">' +
-                    '<span class="summary-label">' + escapeHtml(line.label) + "</span>" +
-                    escapeHtml(toWareki(line.value)) +
-                  "</div>"
-                );
-              }).join("") +
-            "</div>"
-          );
-        }).join("") +
+      return (
+        '<div class="pattern-item">' +
+          '<div class="pattern-item-title">' + escapeHtml(numberLabel) + ":</div>" +
+          lines.map(function (line) {
+            return (
+              '<div class="history-row">' +
+                '<span class="summary-label">' + escapeHtml(line.label) + "</span>" +
+                escapeHtml(toWareki(line.value)) +
+              "</div>"
+            );
+          }).join("") +
+        "</div>"
+      );
+    }).join("");
+
+    const shouldCollapse = groups.length >= 3 || contentHtml.length > 500;
+
+    return (
+      '<div class="pattern-block" data-block-id="' + escapeHtml(blockId) + '">' +
+        '<div class="pattern-title">' + escapeHtml(title) + "</div>" +
+        '<div class="pattern-content' + (shouldCollapse ? ' is-collapsed' : '') + '">' +
+          contentHtml +
+        "</div>" +
+        (shouldCollapse
+          ? '<div class="pattern-toggle-wrap"><button type="button" class="pattern-toggle-btn">もっと見る</button></div>'
+          : "") +
       "</div>"
     );
+  }
+
+  function bindPatternToggleButtons() {
+    document.querySelectorAll(".pattern-block .pattern-toggle-btn").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const block = button.closest(".pattern-block");
+        if (!block) return;
+
+        const content = block.querySelector(".pattern-content");
+        if (!content) return;
+
+        const collapsed = content.classList.contains("is-collapsed");
+        if (collapsed) {
+          content.classList.remove("is-collapsed");
+          button.textContent = "閉じる";
+        } else {
+          content.classList.add("is-collapsed");
+          button.textContent = "もっと見る";
+        }
+      });
+    });
   }
 
   function renderItems(detail) {
@@ -828,13 +1086,12 @@ window.MEETING_DETAIL_VIEW = (function () {
     });
 
     let html = "";
-    html += renderPatternBlock("基本形（議案）", basicBillGroups);
-    html += renderPatternBlock("請願・陳情", petitionRequestGroups);
-    html += renderPatternBlock("発議案", proposalGroups);
+    html += renderPatternBlock("基本形（議案）", basicBillGroups, "basic-bill");
+    html += renderPatternBlock("請願・陳情", petitionRequestGroups, "petition-request");
+    html += renderPatternBlock("発議案", proposalGroups, "proposal");
 
     if (exceptionGroups.length) {
-      html += '<div class="pattern-block">';
-      html += '<div class="pattern-title">例外</div>';
+      let exceptionHtml = "";
 
       ["fasttrack", "additional", "additional_fasttrack", "additional_continued", "withdrawn", "other"].forEach(function (type) {
         const rows = exceptionGroups.filter(function (row) {
@@ -842,16 +1099,16 @@ window.MEETING_DETAIL_VIEW = (function () {
         });
         if (!rows.length) return;
 
-        html += '<div class="pattern-item">';
-        html += '<div class="pattern-item-title">▼ ' + escapeHtml(getPatternLabel(type)) + "</div>";
+        exceptionHtml += '<div class="pattern-item">';
+        exceptionHtml += '<div class="pattern-item-title">▼ ' + escapeHtml(getPatternLabel(type)) + "</div>";
 
         rows.forEach(function (group) {
           const lines = buildPatternLines(group);
           const numberLabel = buildNumberRangeLabel(group.items);
 
-          html += '<div class="pattern-item">';
-          html += '<div class="pattern-item-title">' + escapeHtml(numberLabel) + ":</div>";
-          html += lines.map(function (line) {
+          exceptionHtml += '<div class="pattern-item">';
+          exceptionHtml += '<div class="pattern-item-title">' + escapeHtml(numberLabel) + ":</div>";
+          exceptionHtml += lines.map(function (line) {
             return (
               '<div class="history-row">' +
                 '<span class="summary-label">' + escapeHtml(line.label) + "</span>" +
@@ -859,16 +1116,29 @@ window.MEETING_DETAIL_VIEW = (function () {
               "</div>"
             );
           }).join("");
-          html += "</div>";
+          exceptionHtml += "</div>";
         });
 
-        html += "</div>";
+        exceptionHtml += "</div>";
       });
 
-      html += "</div>";
+      const shouldCollapse = exceptionGroups.length >= 3 || exceptionHtml.length > 500;
+
+      html += (
+        '<div class="pattern-block" data-block-id="exception">' +
+          '<div class="pattern-title">例外</div>' +
+          '<div class="pattern-content' + (shouldCollapse ? ' is-collapsed' : '') + '">' +
+            exceptionHtml +
+          '</div>' +
+          (shouldCollapse
+            ? '<div class="pattern-toggle-wrap"><button type="button" class="pattern-toggle-btn">もっと見る</button></div>'
+            : '') +
+        '</div>'
+      );
     }
 
     area.innerHTML = html || '<div class="empty">表示対象がありません。</div>';
+    bindPatternToggleButtons();
   }
 
   function buildDetail(meetingId) {
@@ -912,7 +1182,8 @@ window.MEETING_DETAIL_VIEW = (function () {
     const standardProposedDate = getStandardProposedDate(itemUnits);
     const itemPatterns = groupMeetingItemPatterns(itemUnits, standardProposedDate);
     const itemCalendarEvents = buildItemCalendarEvents(itemPatterns);
-    const integratedCalendarEvents = buildIntegratedCalendarEvents(meetingEvents, itemCalendarEvents);
+    const questionEvents = buildQuestionEvents(meetingId);
+    const integratedCalendarEvents = buildIntegratedCalendarEvents(meetingEvents, questionEvents, itemCalendarEvents);
 
     return {
       meeting_id: meeting.meeting_id || "",
