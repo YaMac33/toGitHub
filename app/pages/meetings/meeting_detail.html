@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>会議情報詳細</title>
+  <title>meeting_detail</title>
 
   <link rel="stylesheet" href="../../css/common.css" />
 
@@ -100,7 +100,6 @@
       line-height: 1.4;
       border-radius: 8px;
       padding: 4px 6px;
-      background: #eef3f8;
       word-break: break-word;
     }
 
@@ -121,6 +120,30 @@
     }
 
     .calendar-item.special {
+      background: #fdeef0;
+    }
+
+    .calendar-item.proposed {
+      background: #e8f3ff;
+    }
+
+    .calendar-item.referred {
+      background: #fff4dd;
+    }
+
+    .calendar-item.continued {
+      background: #f4eefe;
+    }
+
+    .calendar-item.decided-passed {
+      background: #eef8ea;
+    }
+
+    .calendar-item.decided-rejected {
+      background: #fdeef0;
+    }
+
+    .calendar-item.withdrawn {
       background: #fdeef0;
     }
 
@@ -213,127 +236,85 @@
       line-height: 1.5;
     }
 
-    .items-section {
+    .detail-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 12px;
     }
 
-    .item-block {
+    .pattern-block {
+      border: 1px solid #e5e9ef;
+      border-radius: 10px;
+      padding: 12px;
+      background: #fff;
+      margin-bottom: 12px;
+    }
+
+    .pattern-block:last-child {
+      margin-bottom: 0;
+    }
+
+    .pattern-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .pattern-item {
+      border-top: 1px solid #edf1f5;
+      padding-top: 10px;
+      margin-top: 10px;
+    }
+
+    .pattern-item:first-child {
+      border-top: 0;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .pattern-item-title {
+      font-weight: bold;
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+
+    .detail-subcard {
       border: 1px solid #e5e9ef;
       border-radius: 10px;
       padding: 12px;
       background: #fff;
     }
 
-    .item-block h3 {
+    .detail-subcard h3 {
       margin: 0 0 10px;
       font-size: 16px;
     }
 
-    .item-card {
-      border: 1px solid #e5e9ef;
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      background: #fbfcfd;
-      cursor: pointer;
-    }
-
-    .item-card:last-child {
-      margin-bottom: 0;
-    }
-
-    .item-card:hover {
-      background: #f4f8fd;
-      border-color: #bfd3ee;
-    }
-
-    .item-pills {
-      margin-bottom: 6px;
-    }
-
-    .item-no {
-      font-weight: bold;
-      margin-bottom: 4px;
-      font-size: 14px;
-    }
-
-    .item-title {
-      margin-bottom: 6px;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .item-meta {
-      font-size: 13px;
-      color: #555;
-      line-height: 1.5;
-    }
-
-    .action-row {
-      border-bottom: 1px solid #edf1f5;
+    .history-row {
       padding: 8px 0;
+      border-bottom: 1px solid #edf1f5;
       font-size: 14px;
-      line-height: 1.6;
-      cursor: pointer;
+      line-height: 1.5;
+      word-break: break-word;
     }
 
-    .action-row:last-child {
+    .history-row:last-child {
       border-bottom: 0;
     }
 
-    .action-row:hover {
-      background: #f8fbff;
-    }
-
-    .agenda-section {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    .agenda-block {
-      border: 1px solid #e5e9ef;
+    .empty {
+      padding: 18px;
+      text-align: center;
+      color: #666;
+      border: 1px dashed #ccd5df;
       border-radius: 10px;
-      padding: 12px;
-      background: #fff;
+      background: #fafbfc;
     }
 
-    .agenda-block h3 {
-      margin: 0 0 10px;
-      font-size: 16px;
-    }
-
-    .agenda-card {
-      border: 1px solid #e5e9ef;
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      background: #fbfcfd;
-    }
-
-    .agenda-card:last-child {
-      margin-bottom: 0;
-    }
-
-    .agenda-title {
-      font-weight: bold;
-      margin-bottom: 4px;
+    .empty-small {
+      color: #666;
       font-size: 14px;
-    }
-
-    .agenda-summary {
-      margin-bottom: 6px;
-      font-size: 14px;
-      line-height: 1.5;
-      color: #374151;
-    }
-
-    .agenda-meta {
-      font-size: 13px;
-      color: #555;
-      line-height: 1.5;
+      padding: 4px 0;
     }
 
     @media (max-width: 1100px) {
@@ -343,6 +324,10 @@
     }
 
     @media (max-width: 900px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
       .calendar-grid {
         grid-template-columns: repeat(7, minmax(90px, 1fr));
         overflow-x: auto;
@@ -350,6 +335,10 @@
     }
 
     @media (max-width: 700px) {
+      .page {
+        padding: 14px;
+      }
+
       .calendar-cell {
         min-height: 90px;
         padding: 6px;
@@ -364,7 +353,7 @@
 <body>
   <div class="page">
     <header class="page-header">
-      <h1 id="pageTitle" class="page-title">会議情報詳細</h1>
+      <h1 id="pageTitle" class="page-title">会議回詳細</h1>
       <p id="pageDesc" class="page-desc">会議回の詳細を表示します。</p>
     </header>
 
@@ -391,13 +380,8 @@
     </section>
 
     <section class="card">
-      <h2>議題</h2>
-      <div id="agendasArea" class="agenda-section"></div>
-    </section>
-
-    <section class="card">
       <h2>案件</h2>
-      <div id="itemsArea" class="items-section"></div>
+      <div id="itemsArea" class="detail-grid"></div>
     </section>
   </div>
 
@@ -410,6 +394,10 @@
       <div id="dayModalBody" class="modal-body"></div>
     </div>
   </div>
+
+  <script src="../../js/core/common.js"></script>
+  <script src="../../js/core/utils.js"></script>
+  <script src="../../js/core/formatters.js"></script>
 
   <script src="../../data/members/members.js"></script>
 
@@ -424,16 +412,10 @@
   <script src="../../data/committees/special_committee_meetings.js"></script>
   <script src="../../data/committees/special_committee_members.js"></script>
 
-  <script src="../../data/agendas/agendas.js"></script>
-  <script src="../../data/agendas/agenda_actions.js"></script>
-
   <script src="../../data/items/items.js"></script>
   <script src="../../data/items/item_actions.js"></script>
   <script src="../../data/items/council_terms.js"></script>
 
-  <script src="../../js/core/common.js"></script>
-  <script src="../../js/core/utils.js"></script>
-  <script src="../../js/core/formatters.js"></script>
   <script src="../../js/meetings/view_meeting_detail.js"></script>
 </body>
 </html>
