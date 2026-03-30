@@ -110,19 +110,32 @@
       font-weight: 600;
       color: #334155;
       white-space: nowrap;
+      width: 25%;
     }
 
     tbody tr:nth-child(even) {
       background: #f8fafc;
     }
 
-    td code {
+    td code, p code, li code {
       background: #f1f5f9;
       padding: 2px 6px;
       border-radius: 4px;
-      font-family: ui-monospace, monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 0.9em;
       color: #0f172a;
+    }
+
+    .path-line {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13.5px;
+      color: #1e40af;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      display: inline-block;
     }
 
     .concept-box {
@@ -152,6 +165,22 @@
     .rule-title {
       font-weight: bold;
       color: #166534;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+
+    .important-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #f59e0b;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 24px 0;
+    }
+
+    .important-title {
+      font-weight: bold;
+      color: #92400e;
       margin-bottom: 8px;
       font-size: 1.05rem;
     }
@@ -197,100 +226,154 @@
   <div class="container">
     <span class="domain-tag">分野④：案件管理</span>
     <h1>案件・議案管理</h1>
-    <p>このページでは、議会で扱われる「議案・請願・陳情・発議案」を一元管理し、「どの会議で何が提案され、最終的にどう処理されたか」をトラッキング（追跡）するための入力仕様を解説します。</p>
+    <p>このページでは、議会で扱われる「議案・請願・陳情・発議案」を一元管理し、一覧表示や詳細、会議回ごとのアクション履歴を確認するためのシステム設計と運用ルールを解説します。</p>
 
     <div class="concept-box">
       <div class="concept-title">💡 基本概念：案件そのものと「アクション」を分離する</div>
-      <p>案件管理は以下の2つのシートを組み合わせて表現します。</p>
+      <p>案件管理は以下のテーブル（シート）を組み合わせて表現します。</p>
       <ul>
         <li><strong>案件マスタ（items）：</strong> 議案のタイトル、番号、分類など、「案件そのもの」の情報。</li>
-        <li><strong>アクション履歴（item_actions）：</strong> その案件が、どの会議（本会議や委員会）で提案され、付託され、最終的にどう決まったかという「処理の履歴」。</li>
+        <li><strong>アクション履歴（item_actions）：</strong> その案件が、どの会議で提案され、付託され、最終的にどう決まったかという「処理の履歴」。</li>
+        <li><strong>任期マスタ（council_terms）：</strong> 請願・陳情などの番号をリセットする基準となる任期情報。</li>
       </ul>
     </div>
 
-    <h2><span class="h2-icon">📄</span>1. 案件マスタ（items シート）</h2>
-    <p>議案や請願の基本情報を登録します。</p>
+    <h2><span class="h2-icon">🖥️</span>1. 画面の仕様と「その回での結果」</h2>
+    
+    <h3>1-1. 一覧ページ（items.html）の挙動</h3>
+    <p>案件一覧ページは、データ量が多くなるため<strong>初期状態では何も表示されません。</strong>以下の順序で絞り込みを行います。</p>
+    <ol>
+      <li><strong>初期表示：</strong> 案件一覧は非表示</li>
+      <li><strong>元号を選択：</strong> 該当する案件を全件表示</li>
+      <li><strong>年（和暦）を選択：</strong> さらに絞り込み</li>
+      <li><strong>詳細検索：</strong> その後に大分類・中分類・件名検索で追加絞り込みが可能</li>
+    </ol>
+    <p>一覧には「会議回（提案された回）」「番号」「件名」「その回での結果」が表示されます。</p>
 
-    <table>
-      <thead>
-        <tr><th>列名（内部キー）</th><th>入れる内容</th><th>入力例</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>item_id</code></td><td>案件を一意にする内部ID（変更不可）</td><td>I001</td></tr>
-        <tr><td><code>item_no</code></td><td>表示用番号</td><td>議案第1号</td></tr>
-        <tr><td><code>item_class</code></td><td>大分類（議案・請願・陳情・発議案）</td><td>議案</td></tr>
-        <tr><td><code>item_subclass</code></td><td>中分類（条例、予算、決算、人事など）</td><td>条例</td></tr>
-        <tr><td><code>numbering_scope</code></td><td>番号体系（YEAR または TERM）</td><td>YEAR</td></tr>
-        <tr><td><code>term_id</code></td><td>任期単位番号用（請願・陳情のみ使用）</td><td></td></tr>
-        <tr><td><code>year / fiscal_year</code></td><td>年・年度（西暦）</td><td>2024</td></tr>
-        <tr><td><code>year_wareki / fiscal_year_wareki</code></td><td>和暦表示用</td><td>令和6</td></tr>
-        <tr><td><code>title</code></td><td>件名</td><td>○○市税条例の一部を改正する条例</td></tr>
-        <tr><td><code>summary</code></td><td>概要（検索用キーワード等）</td><td></td></tr>
-        <tr><td><code>is_budget</code></td><td>予算系フラグ（1=予算関連、0=それ以外）</td><td>0</td></tr>
-      </tbody>
-    </table>
-
-    <div class="rule-box">
-      <div class="rule-title">番号体系（numbering_scope）の違いについて</div>
-      <p>議会における番号の振り方は、案件の種類によってリセットされるタイミングが異なります。正しく設定してください。</p>
-      <div class="grid-2col">
-        <div class="card">
-          <h4>📌 YEAR（年ごと）</h4>
-          <p><strong>議案・発議案</strong>などに使用。<br>毎年1月に第1号からリセットされます。</p>
-        </div>
-        <div class="card">
-          <h4>📌 TERM（任期ごと）</h4>
-          <p><strong>請願・陳情</strong>などに使用。<br>改選（任期4年）のタイミングで第1号からリセットされます。</p>
-        </div>
-      </div>
+    <div class="important-box">
+      <div class="important-title">🔥 最重要：「その回での結果」の算出ロジック</div>
+      <p>一覧に表示される「その回での結果」は、案件が提案された会議回において、<strong>最終的にどのような状態になったか</strong>を自動計算して表示します。</p>
+      <ul>
+        <li><code>DECIDED</code>（議決）がある場合：<strong><code>result_label</code>（可決・採択など）</strong>を表示</li>
+        <li><code>CONTINUED</code>（継続）の場合：<strong>継続審査</strong>を表示</li>
+        <li><code>WITHDRAWN</code>（取下げ）の場合：<strong>取下げ</strong>を表示</li>
+        <li><code>REFERRED</code>（付託）の場合：<strong>付託</strong>を表示</li>
+        <li><code>PROPOSED</code>（提案）のみの場合：<strong>提案</strong>を表示</li>
+      </ul>
+      <p style="margin-bottom: 0; font-size: 0.9em;">この仕組みにより、一覧画面を見ただけで「その会議回で最終的にどうなったか」を直感的に把握できます。</p>
     </div>
 
-    <h2><span class="h2-icon">🔄</span>2. 案件アクション履歴（item_actions シート）</h2>
-    <p>その案件が会議の中で「どう処理されたか」を時系列で記録します。</p>
+    <h3>1-2. 詳細ページ（item_detail.html）の表示内容</h3>
+    <p>案件詳細ページでは、案件の基本情報（大分類、中分類、番号、番号体系、年度、年、任期、所管、予算系フラグ、内部ID、概要、備考）に加え、<strong>アクション履歴（いつ、どの会議・イベントで、どう処理され、結果どうなったか）</strong>を時系列で表示します。</p>
 
+    <h2><span class="h2-icon">📁</span>2. 関係ファイル</h2>
+    
+    <h3>2-1. ページ（HTML）とロジック（JS）</h3>
+    <div class="path-line">app/pages/items/items.html</div>
+    <p>案件一覧ページ</p>
+    <div class="path-line">app/pages/items/item_detail.html</div>
+    <p>案件詳細ページ</p>
+    <div class="path-line">app/js/items/view_items.js</div>
+    <p>案件一覧の表示ロジック</p>
+    <div class="path-line">app/js/items/view_item_detail.js</div>
+    <p>案件詳細の表示ロジック</p>
+
+    <h3>2-2. データソース（Excelから出力されるJS）</h3>
+    <div class="path-line">app/data/items/items.js</div>
+    <p>案件マスタデータ</p>
+    <div class="path-line">app/data/items/item_actions.js</div>
+    <p>案件アクション履歴データ</p>
+    <div class="path-line">app/data/items/council_terms.js</div>
+    <p>任期マスタデータ</p>
+
+    <h2><span class="h2-icon">💾</span>3. データベース設計（Excel入力仕様）</h2>
+
+    <h3>3-1. 任期マスタ（council_terms シート）</h3>
     <table>
       <thead>
-        <tr><th>列名（内部キー）</th><th>入れる内容</th><th>入力例</th></tr>
+        <tr><th>列名（内部キー）</th><th>内容</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>action_id</code></td><td>履歴ID</td><td>IA001</td></tr>
-        <tr><td><code>item_id</code></td><td>対象案件のID</td><td>I001</td></tr>
-        <tr><td><code>meeting_id</code></td><td>どの会議回（定例会等）か</td><td>MT001</td></tr>
-        <tr><td><code>event_id</code></td><td>どのイベント（本会議等）か</td><td>EV001</td></tr>
-        <tr><td><code>action_type</code></td><td>処理内容（提案、付託、議決など）</td><td>PROPOSAL</td></tr>
-        <tr><td><code>result</code></td><td>最終結果（※議決時のみ入力）</td><td>PASSED</td></tr>
-        <tr><td><code>action_date</code></td><td>処理日</td><td>2024-02-20</td></tr>
-        <tr><td><code>note</code></td><td>細かい用語や備考</td><td>原案可決</td></tr>
+        <tr><td><code>term_id</code></td><td>任期ID</td></tr>
+        <tr><td><code>term_name</code></td><td>任期名</td></tr>
+        <tr><td><code>start_date</code></td><td>開始日</td></tr>
+        <tr><td><code>end_date</code></td><td>終了日</td></tr>
+        <tr><td><code>note</code></td><td>備考</td></tr>
+        <tr><td><code>created_at</code></td><td>作成日</td></tr>
+        <tr><td><code>updated_at</code></td><td>更新日</td></tr>
       </tbody>
     </table>
 
-    <h2><span class="h2-icon">✅</span>3. アクション（action_type）と結果（result）の入力ルール</h2>
+    <h3>3-2. 案件マスタ（items シート）</h3>
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>内容</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>item_id</code></td><td>案件ID</td></tr>
+        <tr><td><code>item_class</code></td><td>大分類（議案・請願・陳情・発議案）</td></tr>
+        <tr><td><code>item_subclass</code></td><td>中分類（条例・予算など）</td></tr>
+        <tr><td><code>item_no</code></td><td>番号表示（例：議案第1号）</td></tr>
+        <tr><td><code>item_no_numeric</code></td><td>番号の数値部分（ソート用）</td></tr>
+        <tr><td><code>numbering_scope</code></td><td>番号体系（YEAR / TERM）</td></tr>
+        <tr><td><code>term_id</code></td><td>任期ID（請願・陳情などで使用）</td></tr>
+        <tr><td><code>fiscal_year</code></td><td>年度（西暦）</td></tr>
+        <tr><td><code>fiscal_year_wareki</code></td><td>年度（和暦）</td></tr>
+        <tr><td><code>year</code></td><td>年（西暦）</td></tr>
+        <tr><td><code>year_wareki</code></td><td>年（和暦）</td></tr>
+        <tr><td><code>title</code></td><td>件名</td></tr>
+        <tr><td><code>summary</code></td><td>概要</td></tr>
+        <tr><td><code>department</code></td><td>所管（担当部署など）</td></tr>
+        <tr><td><code>is_budget</code></td><td>予算系フラグ</td></tr>
+        <tr><td><code>note</code></td><td>備考</td></tr>
+        <tr><td><code>sort_order</code></td><td>表示順</td></tr>
+        <tr><td><code>created_at</code></td><td>作成日</td></tr>
+        <tr><td><code>updated_at</code></td><td>更新日</td></tr>
+      </tbody>
+    </table>
 
-    <p><code>action_type</code> と <code>result</code> は明確に分離して管理します。</p>
-    <ul>
-      <li><strong>action_type（何が起きたか）：</strong> 提案、委員会付託、委員長報告、議決（DECIDED）など。</li>
-      <li><strong>result（どうなったか）：</strong> 議案が「通った」か「通らなかった」か。<strong>最終結果が出た（DECIDED）時にのみ記録します。</strong></li>
-    </ul>
+    <h3>3-3. 案件アクション履歴（item_actions シート）</h3>
+    <table>
+      <thead>
+        <tr><th>列名（内部キー）</th><th>内容</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>action_id</code></td><td>アクションID</td></tr>
+        <tr><td><code>item_id</code></td><td>案件ID</td></tr>
+        <tr><td><code>meeting_id</code></td><td>会議回ID</td></tr>
+        <tr><td><code>event_id</code></td><td>イベントID</td></tr>
+        <tr><td><code>action_type</code></td><td>アクション種別（PROPOSED, REFERRED等）</td></tr>
+        <tr><td><code>result</code></td><td>大きい判定（NONE / PASSED / REJECTED）</td></tr>
+        <tr><td><code>result_label</code></td><td>画面表示用の結果名（可決・同意・不採択など）</td></tr>
+        <tr><td><code>action_date</code></td><td>アクション日</td></tr>
+        <tr><td><code>note</code></td><td>補足メモ</td></tr>
+        <tr><td><code>created_at</code></td><td>作成日</td></tr>
+        <tr><td><code>updated_at</code></td><td>更新日</td></tr>
+      </tbody>
+    </table>
+
+    <h2><span class="h2-icon">✅</span>4. アクションと結果の分離ルール</h2>
+
+    <p>案件アクション履歴では、システムの集計・検索のしやすさと、画面での実務的な表現を両立させるため、判定と表示を分けて管理します。</p>
 
     <div class="rule-box" style="border-left-color: #3b82f6; background-color: #eff6ff; border-color: #bfdbfe;">
-      <div class="rule-title" style="color: #1d4ed8;">結果（result）の統一ルール（超重要）</div>
-      <p>議会用語は案件によって「可決」「同意」「認定」「採択」など様々ですが、システム上での検索や集計を容易にするため、<code>result</code> 列には以下の<strong>2種類の英語のいずれか</strong>に統一して入力してください。実際の細かな用語は <code>note</code> 列に記載します。</p>
-      
-      <table style="background: #fff; margin-bottom: 0;">
-        <tr>
-          <th style="width: 30%;">入力する英語（result）</th>
-          <th>該当する議会用語（noteに記載するもの）</th>
-        </tr>
-        <tr>
-          <td><strong>PASSED</strong>（通った）</td>
-          <td>可決、同意、承認、認定、採択</td>
-        </tr>
-        <tr>
-          <td><strong>REJECTED</strong>（通らなかった）</td>
-          <td>否決、不同意、不認定、不採択</td>
-        </tr>
-      </table>
+      <div class="rule-title" style="color: #1d4ed8;">4つの項目の役割</div>
+      <ul style="margin-bottom: 0;">
+        <li><strong><code>action_type</code>：</strong> 何をしたか（提案、付託、継続審査などシステム上の状態）</li>
+        <li><strong><code>result</code>：</strong> 大きい判定（通った [PASSED] / 通らなかった [REJECTED] / 判定なし [NONE]）</li>
+        <li><strong><code>result_label</code>：</strong> 画面に表示したい結果名（可決、同意、承認、不採択など、実務に近い表現）</li>
+        <li><strong><code>note</code>：</strong> 補足説明（全会一致、賛成多数など）</li>
+      </ul>
     </div>
+
+    <h2><span class="h2-icon">🚀</span>5. 今後の拡張方針</h2>
+    <p>本システムは今後、以下のような機能拡張を想定した設計となっています。</p>
+    <ul>
+      <li>案件一覧に「会議回ごと」の絞り込みを追加</li>
+      <li>「補正予算のみ」を抽出する検索機能</li>
+      <li>案件詳細から、提案された「会議回詳細（meeting_detail.html）」へ遷移する導線の強化</li>
+      <li>結果表示の細分化ルールの追加</li>
+    </ul>
 
   </div>
 </body>
