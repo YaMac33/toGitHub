@@ -9,18 +9,28 @@ window.MEETING_DETAIL_VIEW = (function () {
     return Array.isArray(window.APP_DATA[name]) ? window.APP_DATA[name] : [];
   }
 
+  function getQuestionHeaders() {
+    if (window.APP_DATA && Array.isArray(window.APP_DATA.questions)) {
+      return window.APP_DATA.questions;
+    }
+    if (Array.isArray(window.RECORDS)) {
+      return window.RECORDS;
+    }
+    return [];
+  }
+
   function qs(name) {
     return new URLSearchParams(window.location.search).get(name) || "";
   }
 
   function escapeHtml(value) {
-    return window.APP_UTILS && window.APP_UTILS.escapeHtml
+    return window.APP_UTILS && typeof window.APP_UTILS.escapeHtml === "function"
       ? window.APP_UTILS.escapeHtml(value)
       : String(value == null ? "" : value);
   }
 
   function toWareki(dateStr) {
-    return window.APP_FORMATTERS && window.APP_FORMATTERS.toWareki
+    return window.APP_FORMATTERS && typeof window.APP_FORMATTERS.toWareki === "function"
       ? window.APP_FORMATTERS.toWareki(dateStr)
       : (dateStr || "");
   }
@@ -141,7 +151,7 @@ window.MEETING_DETAIL_VIEW = (function () {
     if (typeof v === "string") {
       const s = v.trim();
       if (!s) return "";
-      if (s.includes(":")) return s;
+      if (s.indexOf(":") >= 0) return s;
 
       if (!isNaN(Number(s))) {
         v = Number(s);
@@ -151,7 +161,9 @@ window.MEETING_DETAIL_VIEW = (function () {
     }
 
     if (typeof v === "number") {
-      if (v < 1) {
+      if (!Number.isFinite(v)) return "";
+
+      if (v >= 0 && v < 1) {
         const totalMinutes = Math.round(v * 24 * 60);
         const h = Math.floor(totalMinutes / 60);
         const m = totalMinutes % 60;
@@ -176,20 +188,16 @@ window.MEETING_DETAIL_VIEW = (function () {
       if (row.event_type_id === "PLENARY") {
         label = "本会議";
         cls = "plenary";
-        order = 1;
       } else if (row.event_type_id === "STEERING_COMMITTEE") {
         label = "議会運営委員会";
         cls = "steering";
-        order = 1;
       } else if (row.event_type_id === "LEADERS_MEETING") {
         label = "会派代表者会議";
         cls = "leaders";
-        order = 1;
       } else {
         const committee = getCommitteeById(row.committee_id);
         label = committee ? committee.committee_name : "常任委員会";
         cls = "standing";
-        order = 1;
       }
 
       const noteParts = [];
@@ -327,42 +335,20 @@ window.MEETING_DETAIL_VIEW = (function () {
   }
 
   function classifyMeetingItemUnit(unit, standardProposedDate) {
-    if (unit.withdrawn_date) {
-      return "withdrawn";
-    }
-
-    if (unit.item_class === "PROPOSAL") {
-      return "proposal";
-    }
-
-    if (unit.item_class === "PETITION" || unit.item_class === "REQUEST") {
-      return "petition_request";
-    }
+    if (unit.withdrawn_date) return "withdrawn";
+    if (unit.item_class === "PROPOSAL") return "proposal";
+    if (unit.item_class === "PETITION" || unit.item_class === "REQUEST") return "petition_request";
 
     const isAdditional = !!unit.proposed_date && !!standardProposedDate && unit.proposed_date !== standardProposedDate;
     const hasReferred = !!unit.referred_date;
     const hasDecided = !!unit.decided_date;
     const hasContinued = !!unit.continued_date;
 
-    if (isAdditional && !hasReferred && hasDecided) {
-      return "additional_fasttrack";
-    }
-
-    if (isAdditional && hasReferred && hasContinued) {
-      return "additional_continued";
-    }
-
-    if (isAdditional && hasReferred && hasDecided) {
-      return "additional";
-    }
-
-    if (!isAdditional && !hasReferred && hasDecided) {
-      return "fasttrack";
-    }
-
-    if (!isAdditional && hasReferred && (hasDecided || hasContinued)) {
-      return "basic_bill";
-    }
+    if (isAdditional && !hasReferred && hasDecided) return "additional_fasttrack";
+    if (isAdditional && hasReferred && hasContinued) return "additional_continued";
+    if (isAdditional && hasReferred && hasDecided) return "additional";
+    if (!isAdditional && !hasReferred && hasDecided) return "fasttrack";
+    if (!isAdditional && hasReferred && (hasDecided || hasContinued)) return "basic_bill";
 
     return "other";
   }
@@ -388,7 +374,6 @@ window.MEETING_DETAIL_VIEW = (function () {
     itemUnits.forEach(function (unit) {
       unit.pattern_type = classifyMeetingItemUnit(unit, standardProposedDate);
 
-      const decidedLabelKey = unit.decided_result_label || "";
       const key = [
         unit.pattern_type,
         unit.proposed_date || "",
@@ -396,7 +381,7 @@ window.MEETING_DETAIL_VIEW = (function () {
         unit.decided_date || "",
         unit.continued_date || "",
         unit.withdrawn_date || "",
-        decidedLabelKey
+        unit.decided_result_label || ""
       ].join("|");
 
       if (!groupedMap[key]) {
@@ -407,7 +392,7 @@ window.MEETING_DETAIL_VIEW = (function () {
           decided_date: unit.decided_date || "",
           continued_date: unit.continued_date || "",
           withdrawn_date: unit.withdrawn_date || "",
-          decided_result_label: decidedLabelKey,
+          decided_result_label: unit.decided_result_label || "",
           items: []
         };
       }
@@ -455,10 +440,7 @@ window.MEETING_DETAIL_VIEW = (function () {
 
   function buildNumberRangeLabel(items) {
     if (!items.length) return "";
-
-    if (items.length === 1) {
-      return items[0].item_no || "";
-    }
+    if (items.length === 1) return items[0].item_no || "";
 
     const firstClass = items[0].item_class || "";
     const sameClass = items.every(function (row) {
@@ -532,7 +514,7 @@ window.MEETING_DETAIL_VIEW = (function () {
   }
 
   function buildQuestionEvents(meetingId) {
-    const headers = getArray("questions")
+    const headers = getQuestionHeaders()
       .filter(function (row) {
         return row.meeting_id === meetingId && row.question_date;
       })
@@ -558,15 +540,11 @@ window.MEETING_DETAIL_VIEW = (function () {
       const rows = grouped[dateKey];
       const detailText = rows.map(function (row) {
         let line = "通告No" + (row.notice_no || "") + " " + (row.member_name || "");
-        if (row.group_name) {
-          line += "（" + row.group_name + "）";
-        }
+        if (row.group_name) line += "（" + row.group_name + "）";
         if (row.allotted_minutes !== "" && row.allotted_minutes !== undefined && row.allotted_minutes !== null) {
           line += "（" + row.allotted_minutes + "分）";
         }
-        if (row.note) {
-          line += " / " + row.note;
-        }
+        if (row.note) line += " / " + row.note;
         return line;
       }).join("\n");
 
@@ -667,8 +645,7 @@ window.MEETING_DETAIL_VIEW = (function () {
 
       if (group.decided_date) {
         const decidedLabel = group.decided_result_label || "議決";
-        const rejectedLabels = ["否決", "不採択"];
-        const decidedCss = rejectedLabels.includes(decidedLabel) ? "decided-rejected" : "decided-passed";
+        const decidedCss = ["否決", "不採択"].includes(decidedLabel) ? "decided-rejected" : "decided-passed";
 
         events.push({
           date: group.decided_date,
@@ -729,11 +706,11 @@ window.MEETING_DETAIL_VIEW = (function () {
     });
 
     return Object.values(grouped).map(function (group) {
-      const compressedLabel = group.raw_label + "（" + buildCompressedNumberText(group.items) + "）";
+      const compressed = buildCompressedNumberText(group.items);
       return {
         date: group.date,
         category: "item",
-        label: compressedLabel,
+        label: compressed ? (group.raw_label + "（" + compressed + "）") : group.raw_label,
         sort_order: group.sort_order,
         css_class: group.css_class,
         detail_text: group.detail_texts.join("\n")
@@ -820,6 +797,7 @@ window.MEETING_DETAIL_VIEW = (function () {
   function buildDateEventMap(events) {
     const map = {};
     events.forEach(function (row) {
+      if (!row.date) return;
       if (!map[row.date]) {
         map[row.date] = [];
       }
