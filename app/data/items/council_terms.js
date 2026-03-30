@@ -1,5 +1,4 @@
 window.APP_DATA = window.APP_DATA || {};
-
 window.APP_DATA.council_terms = [
   {
     term_id: "TERM-R5",
