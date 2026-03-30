@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>meetings系 仕様説明書（最新版） - 議員管理システム</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.7;
+      color: #333;
+      background: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-nav {
+      background: #1f2937;
+      color: #fff;
+      padding: 12px 20px;
+    }
+
+    .header-nav a {
+      color: #93c5fd;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .header-nav a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .domain-tag {
+      display: inline-block;
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: 0.85rem;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      color: #111827;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+    }
+
+    .h2-icon {
+      margin-right: 8px;
+      color: #2563eb;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      color: #374151;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      border-left: 4px solid #93c5fd;
+      padding-left: 10px;
+    }
+
+    p {
+      margin: 0 0 16px;
+    }
+
+    ul, ol {
+      margin: 0 0 20px 1.5em;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 32px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    td code, p code, li code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+    }
+
+    pre.light-bg {
+      background: #f8fafc;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .concept-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .concept-title {
+      font-weight: bold;
+      color: #1e3a8a;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    .rule-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid #22c55e;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 24px 0;
+    }
+
+    .rule-title {
+      font-weight: bold;
+      color: #166534;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+
+    .important-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #f59e0b;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 24px 0;
+    }
+
+    .important-title {
+      font-weight: bold;
+      color: #92400e;
+      margin-bottom: 8px;
+      font-size: 1.1rem;
+    }
+
+    .highlight-text {
+      color: #1d4ed8;
+      font-weight: bold;
+      background: #eff6ff;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .error-text {
+      color: #b91c1c;
+      font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-nav">
+    <div style="max-width: 950px; margin: 0 auto;">
+      <a href="index.html">← トップ（目次）へ戻る</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <span class="domain-tag">分野③・機能拡張：meeting_detail</span>
+    <h1>meetings系 仕様説明書（最新版）</h1>
+
+    <div class="concept-box">
+      <div class="concept-title">💡 ① システムの役割（全体像）</div>
+      <p>この機能は <strong style="color: #1e3a8a; font-size: 1.1em;">👉 「会議回を軸に、すべての出来事を時系列で可視化するシステム」</strong> です。</p>
+      <p style="margin-bottom: 8px;">以下の3つを統合して表示します：</p>
+      <ul style="margin-bottom: 0;">
+        <li><strong>会議イベント</strong>（本会議・委員会など）</li>
+        <li><strong>案件の流れ</strong>（提案・付託・議決など）</li>
+        <li><strong>一般質問</strong>（NEW）</li>
+      </ul>
+    </div>
+
+    <h2><span class="h2-icon">🖥️</span>② 画面構成（meeting_detail.html）</h2>
+    <p>画面は上から順に以下の要素で構成されます。</p>
+    <ol>
+      <li>会議回概要</li>
+      <li>月間カレンダー（メイン）</li>
+      <li>特別委員会</li>
+      <li>案件（カード表示）</li>
+    </ol>
+
+    <h2><span class="h2-icon">📅</span>③ カレンダー仕様（最重要）</h2>
+    <p>カレンダーの最大の役割は <span class="highlight-text">👉 「その日に何が起きたか」を1画面で把握する</span> ことです。</p>
+
+    <h3>表示されるイベント種類</h3>
+    <ul>
+      <li><strong>① 会議イベント：</strong> 本会議、議会運営委員会、常任委員会、特別委員会</li>
+      <li><strong>② 一般質問（NEW）：</strong> 通告ヘッダから生成し、同日は「一般質問（3件）」のようにまとめて表示</li>
+      <li><strong>③ 案件イベント：</strong> 提案、付託、継続審査、議決、取下げ</li>
+    </ul>
+
+    <div class="rule-box" style="border-left-color: #3b82f6; background-color: #eff6ff; border-color: #bfdbfe;">
+      <div class="rule-title" style="color: #1d4ed8;">表示順ルール（重要）</div>
+      <p>カレンダー内は必ず以下の順で並べることで「議会の流れ」を正しく表現します。</p>
+      <ol style="margin-bottom: 0; font-weight: bold; color: #1e40af;">
+        <li>会議</li>
+        <li>一般質問</li>
+        <li>提案</li>
+        <li>付託</li>
+        <li>継続審査</li>
+        <li>議決</li>
+        <li>取下げ</li>
+      </ol>
+    </div>
+
+    <h3>カレンダーセル表示とクリック時モーダル</h3>
+    <ul>
+      <li><strong>基本：</strong> セル内は最大3件まで表示し、それ以上は「+◯件」と略記します。</li>
+      <li><strong>モーダル表示：</strong> クリックするとその日の全件詳細を表示します。</li>
+    </ul>
+
+<pre class="light-bg"><code>【モーダルの表示内容例】
+
+[会議]
+・本会議 / 委員会名
+
+[一般質問]
+・通告No1 山田太郎（40分）
+・通告No2 佐藤花子（30分）
+※noteがあれば追加（例：山田太郎（40分） / 初質問）
+
+[案件]
+・可決（議案第1号〜第5号）</code></pre>
+
+    <h2><span class="h2-icon">🎤</span>④ 一般質問仕様（NEW）</h2>
+    
+    <h3>使用データ：通告ヘッダ（必須列）</h3>
+    <table>
+      <thead>
+        <tr><th>列名</th><th>役割</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>question_id</code></td><td>ID</td></tr>
+        <tr><td><code>meeting_id</code></td><td>対象の会議回</td></tr>
+        <tr><td><code style="color: #059669; font-weight: bold;">question_date</code></td><td><strong>【新規追加】質問が行われる日付</strong></td></tr>
+        <tr><td><code>notice_no</code></td><td>通告番号</td></tr>
+        <tr><td><code>member_name</code> / <code>group_name</code></td><td>議員名 / 会派名</td></tr>
+        <tr><td><code>allotted_minutes</code></td><td>持ち時間</td></tr>
+        <tr><td><code>note</code></td><td>備考</td></tr>
+      </tbody>
+    </table>
+
+    <h3>データ処理・表示ルール</h3>
+    <ol>
+      <li><code>meeting_id</code> で現在の会議回に絞り込み</li>
+      <li><code>question_date</code> でグルーピング</li>
+      <li>カレンダー上は <strong>1日1イベント（例：「一般質問（3件）」）</strong> に集約して件数表示</li>
+      <li>モーダル内で「通告No、議員名、会派名、持ち時間、note」を展開表示</li>
+    </ol>
+
+    <h2><span class="h2-icon">🗂️</span>⑤ 案件表示（カードUI）</h2>
+    <p>カレンダーの下部に、案件の流れをパターンごとにカード表示します。</p>
+
+    <h3>表示順（確定）と各カードの内容</h3>
+    <ol>
+      <li><strong>基本形（議案）：</strong> 提案日、付託日、議決日を表示</li>
+      <li><strong>請願・陳情：</strong> 付託日（＝上程日扱い）、議決日を表示</li>
+      <li><strong>発議案：</strong> 提案日＝議決日 として表示</li>
+      <li><strong>例外（あれば）：</strong> 先議、追加議案、追加議案（先議）、継続審査、取下げ</li>
+    </ol>
+
+<pre class="light-bg"><code>【基本形（議案）の表示例】
+議案第1号〜第5号
+  提案日：◯年◯月◯日
+  付託日：◯年◯月◯日
+  議決日：◯年◯月◯日
+
+【例外カードの表示例】
+追加議案（先議）
+議案第10号
+  提案日：◯日
+  議決日：◯日</code></pre>
+
+    <p><span class="highlight-text">👉 非表示ルール：</span> 例外が0件の場合は、例外カード自体を表示しません。</p>
+
+    <h2><span class="h2-icon">🔘</span>⑥ カードUI仕様（開閉アクション）</h2>
+    <ul>
+      <li><strong>初期状態：</strong> 高さを固定し、一部の案件のみを表示します。</li>
+      <li><strong>ボタン動作：</strong> 「もっと見る」を押すと全件表示に展開し、ボタンの文字が「閉じる」に変わります。</li>
+      <li><strong>対象カード：</strong> 基本形、請願・陳情、例外すべてに適用されます。</li>
+    </ul>
+
+    <h2><span class="h2-icon">⚙️</span>⑦ 案件判定ロジック（超重要）</h2>
+    <p>案件がどのパターンのカードに分類されるかは、以下の流れで判定します。</p>
+
+    <table>
+      <thead>
+        <tr><th>区分</th><th>判定ロジック（アクションの流れ）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>基本形（議案）</strong></td><td><code>PROPOSED</code> → <code>REFERRED</code> → <code>DECIDED</code></td></tr>
+        <tr><td><strong>発議案</strong></td><td><code>PROPOSED</code> → <code>DECIDED</code> （同日）</td></tr>
+        <tr><td><strong>請願・陳情</strong></td><td><code>PROPOSED</code>（＝付託） → <code>DECIDED</code></td></tr>
+        <tr><td><strong>継続審査（決算）</strong></td><td>一般質問最終日：提案<br>最終日：付託 ＋ 継続審査</td></tr>
+        <tr><td><strong>継続審査（通常）</strong></td><td>最終日：継続審査</td></tr>
+        <tr><td><strong>例外：先議</strong></td><td>提案日 ＝ 議決日 （付託なし）</td></tr>
+        <tr><td><strong>例外：追加議案</strong></td><td>提案日 ≠ 初日</td></tr>
+        <tr><td><strong>例外：追加（先議）</strong></td><td>追加 ＋ 先議</td></tr>
+      </tbody>
+    </table>
+
+    <h2><span class="h2-icon">🔄</span>⑧ カレンダー統合のポイント</h2>
+    <p>会議、案件、一般質問という出所の異なるデータを、すべて同じ形式（イベントオブジェクト）に変換してカレンダーに流し込みます。</p>
+    <ul>
+      <li><strong>変換フォーマット：</strong> <code>date</code>, <code>label</code>, <code>type</code>, <code>sort_order</code></li>
+      <li><strong>type 一覧：</strong> <code>meeting</code>, <code>question</code>, <code>item</code></li>
+      <li><strong>表示制御：</strong> 同日イベントはまとめ、同種イベントは件数などで集約表示します。</li>
+    </ul>
+
+    <h2><span class="h2-icon">🗄️</span>⑨ データ設計まとめ</h2>
+    <p>この画面を動かすための必須テーブル（シート）です。</p>
+    <ul>
+      <li><code>meetings</code>（会議回）</li>
+      <li><code>events</code>（会議イベント）</li>
+      <li><code>items</code>（案件）</li>
+      <li><code>item_actions</code>（案件履歴）</li>
+      <li><code>questions</code>（通告ヘッダ・一般質問）</li>
+    </ul>
+
+    <hr style="margin: 40px 0; border: none; border-top: 2px dashed #cbd5e1;">
+
+    <h2><span class="h2-icon">🛠️</span>⑩ 保守ポイント（非エンジニア向け）</h2>
+    
+    <div class="important-box">
+      <div class="important-title">修正する場所の目安</div>
+      <ul>
+        <li><strong>一般質問を追加したい：</strong> <span class="highlight-text">👉 Excelの通告ヘッダ（questions）に1行追加</span></li>
+        <li><strong>カレンダーがおかしい：</strong> <span class="highlight-text">👉 まず <code>question_date</code>, <code>action_date</code>, <code>meeting_id</code> を確認</span></li>
+        <li><strong>案件の分類がおかしい：</strong> <span class="highlight-text">👉 <code>action_type</code> を確認</span></li>
+        <li><strong>表示される文字が変：</strong> <span class="highlight-text">👉 <code>result_label</code> を確認</span></li>
+      </ul>
+    </div>
+
+    <h2><span class="h2-icon">⚠️</span>⑪ よくあるミス（エラーの原因）</h2>
+    <table style="border-left: 4px solid #ef4444;">
+      <tbody>
+        <tr><td style="width: 40%;"><strong><span class="error-text">❌ question_date が未入力</span></strong></td><td>カレンダーに出現しません。</td></tr>
+        <tr><td><strong><span class="error-text">❌ meeting_id が違う</span></strong></td><td>現在の会議回の画面に表示されません。</td></tr>
+        <tr><td><strong><span class="error-text">❌ 日付の形式が違う</span></strong></td><td>カレンダーの並びが崩れたり、エラーになります。</td></tr>
+      </tbody>
+    </table>
+
+    <h2><span class="h2-icon">✨</span>⑫ この設計の強み</h2>
+    <div class="rule-box" style="border-left-color: #10b981; background-color: #f0fdf4; border-color: #a7f3d0;">
+      <ul style="margin-bottom: 0; font-weight: bold; color: #065f46; font-size: 1.05em;">
+        <li>会議単位で「すべて」が見える</li>
+        <li>Excelの運用フローをそのまま使える</li>
+        <li>「追加」や「先議」などの例外パターンにも対応できる</li>
+        <li>UIが崩れにくい堅牢なカードとカレンダーの設計</li>
+        <li>サーバー不要でLGWAN環境でも軽快に動く（完全静的）</li>
+      </ul>
+    </div>
+
+  </div>
+</body>
+</html>
