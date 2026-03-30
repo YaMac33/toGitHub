@@ -171,17 +171,6 @@ window.MEETING_DETAIL_VIEW = (function () {
     return map[value] || value || "";
   }
 
-  function agendaActionTypeLabel(value) {
-    const map = {
-      PROPOSED: "議題提示",
-      DISCUSSED: "協議",
-      DECIDED: "決定",
-      REPORTED: "報告",
-      CONTINUED: "継続"
-    };
-    return map[value] || value || "";
-  }
-
   function eventTypeLabelFromEvent(event) {
     if (!event) return "";
 
@@ -472,6 +461,10 @@ window.MEETING_DETAIL_VIEW = (function () {
       ? detail.steering_dates.map(toWareki).join("、")
       : "なし";
 
+    const leaderDates = detail.leader_dates && detail.leader_dates.length
+      ? detail.leader_dates.map(toWareki).join("、")
+      : "なし";
+
     const scheduleHtml = detail.schedule_file_path
       ? '<a href="' + escapeHtml(detail.schedule_file_path) + '" target="_blank" rel="noopener noreferrer">日程表</a>'
       : "なし";
@@ -485,6 +478,10 @@ window.MEETING_DETAIL_VIEW = (function () {
       '<div class="summary-item summary-item-wide">' +
         '<span class="summary-label">議会運営委員会 開催日</span>' +
         escapeHtml(steeringDates) +
+      "</div>" +
+      '<div class="summary-item summary-item-wide">' +
+        '<span class="summary-label">会派代表者会議 開催日</span>' +
+        escapeHtml(leaderDates) +
       "</div>" +
       '<div class="summary-item summary-item-wide link-line">' +
         '<span class="summary-label">日程表</span>' +
@@ -659,8 +656,7 @@ window.MEETING_DETAIL_VIEW = (function () {
 
       groupMap[key].items.push({
         agenda_title: agenda.agenda_title || "",
-        agenda_sort: Number(agenda.sort_order || 999999),
-        action_type: row.action_type || ""
+        agenda_sort: Number(agenda.sort_order || 999999)
       });
     });
 
@@ -834,6 +830,14 @@ window.MEETING_DETAIL_VIEW = (function () {
         return row.event_date || "";
       });
 
+    const leaderDates = getEventsByMeetingId(meetingId)
+      .filter(function (row) {
+        return row.event_type_id === "LEADERS_MEETING";
+      })
+      .map(function (row) {
+        return row.event_date || "";
+      });
+
     const specialCommittees = getSpecialCommitteeInstancesByMeetingId(meetingId).map(function (instance) {
       const scMaster = getSpecialCommitteeById(instance.special_committee_id);
       return {
@@ -867,6 +871,7 @@ window.MEETING_DETAIL_VIEW = (function () {
       term_days: calcInclusiveDays(meeting.start_date, meeting.end_date),
       schedule_file_path: meeting.schedule_file_path || "",
       steering_dates: steeringDates,
+      leader_dates: leaderDates,
       date_events: buildDateEvents(meetingId),
       special_committees: specialCommittees,
       agendas: buildMeetingAgendaRelations(meetingId),
