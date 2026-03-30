@@ -5,6 +5,7 @@ window.ITEMS_VIEW = (function () {
   const openInNewTab = window.APP_UTILS.openInNewTab;
   const classLabel = window.APP_FORMATTERS.itemClassLabel;
   const subclassLabel = window.APP_FORMATTERS.itemSubclassLabel;
+  const resultLabel = window.APP_FORMATTERS.resultLabel;
 
   function getArray(name) {
     return Array.isArray(window.APP_DATA[name]) ? window.APP_DATA[name] : [];
@@ -26,6 +27,12 @@ window.ITEMS_VIEW = (function () {
     return "その他";
   }
 
+  function getMeetingById(meetingId) {
+    return getArray("meetings").find(function (row) {
+      return row.meeting_id === meetingId;
+    }) || null;
+  }
+
   function getSortedItems() {
     return getArray("items")
       .slice()
@@ -40,6 +47,83 @@ window.ITEMS_VIEW = (function () {
 
         return Number(a.item_no_numeric || 0) - Number(b.item_no_numeric || 0);
       });
+  }
+
+  function getItemActions(itemId) {
+    return getArray("item_actions")
+      .filter(function (row) {
+        return row.item_id === itemId;
+      })
+      .slice()
+      .sort(function (a, b) {
+        const ad = a.action_date || "";
+        const bd = b.action_date || "";
+        if (ad !== bd) return ad < bd ? -1 : 1;
+        return (a.action_id || "") < (b.action_id || "") ? -1 : 1;
+      });
+  }
+
+  function getProposedAction(itemId) {
+    return getItemActions(itemId).find(function (row) {
+      return row.action_type === "PROPOSED";
+    }) || null;
+  }
+
+  function getDecidedActionForMeeting(itemId, meetingId) {
+    if (!meetingId) return null;
+    return getItemActions(itemId).find(function (row) {
+      return row.meeting_id === meetingId && row.action_type === "DECIDED";
+    }) || null;
+  }
+
+  function getLatestActionForMeeting(itemId, meetingId) {
+    if (!meetingId) return null;
+
+    const rows = getItemActions(itemId).filter(function (row) {
+      return row.meeting_id === meetingId;
+    });
+
+    if (!rows.length) return null;
+    return rows[rows.length - 1];
+  }
+
+  function getMeetingResultLabel(itemId, meetingId) {
+    const decided = getDecidedActionForMeeting(itemId, meetingId);
+    if (decided) {
+      return resultLabel(decided.result);
+    }
+
+    const latest = getLatestActionForMeeting(itemId, meetingId);
+    if (!latest) return "";
+
+    if (latest.action_type === "CONTINUED") return "継続審査";
+    if (latest.action_type === "WITHDRAWN") return "取下げ";
+    if (latest.action_type === "REFERRED") return "付託";
+    if (latest.action_type === "REPORTED") return "報告";
+    if (latest.action_type === "PROPOSED") return "提案";
+    return latest.action_type || "";
+  }
+
+  function buildDisplayRows() {
+    return getSortedItems().map(function (item) {
+      const proposed = getProposedAction(item.item_id);
+      const proposedMeeting = proposed ? getMeetingById(proposed.meeting_id) : null;
+
+      return {
+        item_id: item.item_id || "",
+        item_class: item.item_class || "",
+        item_subclass: item.item_subclass || "",
+        item_no: item.item_no || "",
+        item_no_numeric: item.item_no_numeric || 0,
+        year: item.year || "",
+        year_wareki: item.year_wareki || "",
+        title: item.title || "",
+        department: item.department || "",
+        proposed_meeting_id: proposed ? (proposed.meeting_id || "") : "",
+        proposed_meeting_name: proposedMeeting ? (proposedMeeting.session_name || "") : "",
+        meeting_result_label: getMeetingResultLabel(item.item_id, proposed ? proposed.meeting_id : "")
+      };
+    });
   }
 
   function renderStatus() {
@@ -151,8 +235,8 @@ window.ITEMS_VIEW = (function () {
       const source = [
         row.item_no || "",
         row.title || "",
-        row.summary || "",
-        row.department || ""
+        row.proposed_meeting_name || "",
+        row.meeting_result_label || ""
       ].join(" ").toLowerCase();
 
       const hitText = !searchText || source.includes(searchText);
@@ -185,24 +269,20 @@ window.ITEMS_VIEW = (function () {
         "<table>" +
           "<thead>" +
             "<tr>" +
+              "<th>会議回</th>" +
               "<th>番号</th>" +
-              "<th>大分類</th>" +
-              "<th>中分類</th>" +
-              "<th>年</th>" +
               "<th>件名</th>" +
-              "<th>所管</th>" +
+              "<th>その回での結果</th>" +
             "</tr>" +
           "</thead>" +
           "<tbody>" +
             rows.map(function (row) {
               return (
                 '<tr class="clickable-row" data-item-id="' + escapeHtml(row.item_id) + '">' +
+                  "<td>" + escapeHtml(row.proposed_meeting_name || "") + "</td>" +
                   "<td>" + escapeHtml(row.item_no) + "</td>" +
-                  "<td>" + escapeHtml(classLabel(row.item_class)) + "</td>" +
-                  "<td>" + escapeHtml(subclassLabel(row.item_subclass)) + "</td>" +
-                  "<td>" + escapeHtml(row.year_wareki || "") + "</td>" +
                   "<td>" + escapeHtml(row.title || "") + "</td>" +
-                  "<td>" + escapeHtml(row.department || "") + "</td>" +
+                  "<td>" + escapeHtml(row.meeting_result_label || "") + "</td>" +
                 "</tr>"
               );
             }).join("") +
@@ -222,7 +302,7 @@ window.ITEMS_VIEW = (function () {
 
   function redraw() {
     const searchEra = document.getElementById("searchEra").value;
-    const rows = getSortedItems();
+    const rows = buildDisplayRows();
 
     if (!searchEra) {
       renderEmptyGuide();
