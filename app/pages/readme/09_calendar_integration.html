@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>カレンダー・案件統合ビュー仕様 - 議員管理システム</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.7;
+      color: #333;
+      background: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-nav {
+      background: #1f2937;
+      color: #fff;
+      padding: 12px 20px;
+    }
+
+    .header-nav a {
+      color: #93c5fd;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .header-nav a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .domain-tag {
+      display: inline-block;
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: 0.85rem;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      background-color: #f1f5f9;
+      padding: 14px 16px;
+      border-left: 6px solid #1e3a8a;
+      border-radius: 0 8px 8px 0;
+      font-size: 1.5rem;
+      color: #0f172a;
+      margin-top: 56px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+    }
+
+    .section-header-user {
+      border-left-color: #059669;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      color: #111827;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 6px;
+    }
+
+    h4 {
+      font-size: 1.1rem;
+      color: #374151;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      border-left: 4px solid #93c5fd;
+      padding-left: 10px;
+    }
+
+    p {
+      margin: 0 0 16px;
+    }
+
+    ul, ol {
+      margin: 0 0 20px 1.5em;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 32px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    td code, p code, li code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+    }
+
+    pre {
+      background: #1e293b;
+      color: #f8fafc;
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    pre.light-bg {
+      background: #f8fafc;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+
+    .concept-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+
+    .concept-title {
+      font-weight: bold;
+      color: #1e3a8a;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    .rule-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid #22c55e;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 24px 0;
+    }
+
+    .rule-title {
+      font-weight: bold;
+      color: #166534;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+
+    .important-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #f59e0b;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 24px 0;
+    }
+
+    .important-title {
+      font-weight: bold;
+      color: #92400e;
+      margin-bottom: 8px;
+      font-size: 1.1rem;
+    }
+
+    .step-flow {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      font-weight: bold;
+      color: #1e40af;
+      margin: 16px 0 24px;
+    }
+
+    .step-arrow {
+      color: #94a3b8;
+    }
+
+    @media (max-width: 768px) {
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-nav">
+    <div style="max-width: 950px; margin: 0 auto;">
+      <a href="index.html">← トップ（目次）へ戻る</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <span class="domain-tag">機能拡張：meeting_detail</span>
+    <h1>カレンダー・案件統合ビュー仕様</h1>
+    
+    <div class="concept-box" style="margin-top: 24px;">
+      <div class="concept-title">📑 目次</div>
+      <ul style="margin-bottom: 0;">
+        <li><a href="#dev-guide" style="color: #2563eb; text-decoration: none; font-weight: bold;">第1部：開発者向け説明書（設計・実装仕様）</a></li>
+        <li><a href="#user-guide" style="color: #2563eb; text-decoration: none; font-weight: bold;">第2部：非エンジニア向け保守説明書</a></li>
+      </ul>
+    </div>
+
+    <h2 id="dev-guide" class="section-header">
+      <span style="margin-right: 12px;">💻</span>第1部：開発者向け説明書（設計・実装仕様）
+    </h2>
+
+    <h3>1. 概要</h3>
+    <p>本機能は <code>meeting_detail</code> 画面において、以下の2つの要素を<strong>月間カレンダーに統合表示</strong>します。</p>
+    <ul>
+      <li><strong>会議イベント</strong>（本会議・委員会等）</li>
+      <li><strong>案件進行</strong>（提案・付託・議決等）</li>
+    </ul>
+    <p>また、下部の「案件」欄では、進行パターン単位での要約表示を行います。</p>
+
+    <h3>2. データ構造</h3>
+    
+    <h4>2-1. 入力データ</h4>
+    <p>以下のデータマスタおよび履歴を使用します。</p>
+    <ul>
+      <li><code>meetings</code></li>
+      <li><code>events</code></li>
+      <li><code>items</code></li>
+      <li><code>item_actions</code></li>
+      <li><code>special_committee_*</code></li>
+    </ul>
+
+    <h4>2-2. 案件単位データ（内部生成）</h4>
+<pre><code>itemUnit {
+  item_id
+  item_class
+  item_no
+  item_no_numeric
+  title
+
+  proposed_date
+  referred_date
+  decided_date
+  continued_date
+  withdrawn_date
+
+  decided_result_label
+}</code></pre>
+
+    <h4>2-3. 統合イベント形式</h4>
+<pre><code>calendarEvent {
+  date
+  category   // meeting | item
+  label      // 表示文字
+  sort_order
+  css_class
+  detail_text
+}</code></pre>
+
+    <h3>3. 処理フロー</h3>
+    <ol>
+      <li><strong>① 案件アクション取得</strong><br>
+        <code>item_actions WHERE meeting_id = ?</code> を取得します。
+      </li>
+      <li style="margin-top: 12px;"><strong>② 案件単位へ集約</strong><br>
+        <code>action_type</code> ごとに日付を割り当てます。
+        <table style="margin-top: 8px;">
+          <thead>
+            <tr><th style="width: 50%;">action_type</th><th>格納先</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>PROPOSED</code></td><td><code>proposed_date</code></td></tr>
+            <tr><td><code>REFERRED</code></td><td><code>referred_date</code></td></tr>
+            <tr><td><code>DECIDED</code></td><td><code>decided_date</code></td></tr>
+            <tr><td><code>CONTINUED</code></td><td><code>continued_date</code></td></tr>
+            <tr><td><code>WITHDRAWN</code></td><td><code>withdrawn_date</code></td></tr>
+          </tbody>
+        </table>
+      </li>
+      <li><strong>③ 標準提案日算出</strong><br>
+        対象：<code>item_class = BILL</code> AND <code>action_type = PROPOSED</code><br>
+        ロジック：<strong>最頻出日</strong>を採用します。
+      </li>
+      <li style="margin-top: 12px;"><strong>④ 区分判定</strong><br>
+        以下の判定順（上から優先）で区分を出力します。
+        <ol style="margin-top: 8px; margin-bottom: 8px;">
+          <li>withdrawn</li>
+          <li>proposal</li>
+          <li>petition_request</li>
+          <li>additional_fasttrack</li>
+          <li>additional_continued</li>
+          <li>additional</li>
+          <li>fasttrack</li>
+          <li>basic_bill</li>
+          <li>other</li>
+        </ol>
+      </li>
+      <li><strong>⑤ グルーピング</strong><br>
+        同一条件（区分、日付構成、<code>result_label</code>）でまとめます。
+      </li>
+      <li style="margin-top: 12px;"><strong>⑥ カレンダーイベント生成</strong><br>
+        各案件からカレンダー表示用のデータを生成します。
+        <table style="margin-top: 8px;">
+          <thead>
+            <tr><th style="width: 50%;">項目</th><th>表示内容</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>proposed_date</code></td><td>提案</td></tr>
+            <tr><td><code>referred_date</code></td><td>付託</td></tr>
+            <tr><td><code>decided_date</code></td><td><code>result_label</code> の値</td></tr>
+            <tr><td><code>continued_date</code></td><td>継続審査</td></tr>
+            <tr><td><code>withdrawn_date</code></td><td>取下げ</td></tr>
+          </tbody>
+        </table>
+      </li>
+      <li><strong>⑦ 会議イベントと統合</strong><br>
+        <code>meetingEvents</code> + <code>itemEvents</code> を結合してカレンダーに描画します。
+      </li>
+    </ol>
+
+    <h3>4. カレンダー表示仕様</h3>
+    
+    <h4>4-1. 並び順</h4>
+    <ol>
+      <li>会議</li>
+      <li>提案</li>
+      <li>付託</li>
+      <li>継続審査</li>
+      <li>議決系</li>
+      <li>取下げ</li>
+    </ol>
+
+    <h4>4-2. 表示制限</h4>
+    <ul>
+      <li>最大表示件数：<strong>3件</strong>まで</li>
+      <li>超過した場合：<strong>+N件</strong> のように略記表示</li>
+    </ul>
+
+    <h4>4-3. 表示例</h4>
+<pre class="light-bg"><code>3/25
+・本会議
+・可決（議案第1号〜第5号）
+・継続審査（議案第6号）
++2件</code></pre>
+
+    <h4>4-4. モーダル</h4>
+    <ul>
+      <li>日付や「+N件」をクリックすると、全件を同一の並び順で表示するモーダルを展開します。</li>
+    </ul>
+
+    <h3>5. 案件欄表示仕様</h3>
+    
+    <h4>5-1. 大枠の表示順</h4>
+    <ol>
+      <li>基本形（議案）</li>
+      <li>請願・陳情</li>
+      <li>発議案</li>
+      <li>例外</li>
+    </ol>
+
+    <h4>5-2. 「例外」内の順序</h4>
+    <ol>
+      <li>先議</li>
+      <li>追加議案</li>
+      <li>追加議案（先議）</li>
+      <li>追加議案（継続審査）</li>
+      <li>取下げ</li>
+      <li>その他</li>
+    </ol>
+
+    <h4>5-3. 画面表示例</h4>
+<pre class="light-bg"><code>【基本形（議案）】
+議案第1号〜第5号:
+  提案日: R6/2/20
+  付託日: R6/2/21
+  議決日: R6/3/25
+
+【請願・陳情】
+受理番号第1号:
+  付託日: R6/2/21
+  採択日: R6/3/25</code></pre>
+
+    <h3>6. 重要設計ルール</h3>
+    
+    <div class="rule-box">
+      <div class="rule-title">① カレンダーと案件欄の役割分離</div>
+      <table style="margin-top: 8px; margin-bottom: 0;">
+        <thead>
+          <tr><th style="width: 50%;">項目</th><th>役割</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>カレンダー</strong></td><td>日付ベース（その日に何が起きたか）</td></tr>
+          <tr><td><strong>案件欄</strong></td><td>パターンベース（案件がどういう流れで進んだか）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ul>
+      <li><strong>② result / result_label の役割：</strong><br>
+        <code>result</code> はシステム上の判定用、<code>result_label</code> は画面表示用として厳格に使い分けます。
+      </li>
+      <li><strong>③ 請願・陳情の扱い：</strong><br>
+        上程日は表示せず、<strong>付託日＝開始扱い</strong>とします。
+      </li>
+      <li><strong>④ 発議案の扱い：</strong><br>
+        提案日と議決日は<strong>同日可</strong>とします。
+      </li>
+    </ul>
+
+
+    <h2 id="user-guide" class="section-header section-header-user">
+      <span style="margin-right: 12px;">📝</span>第2部：非エンジニア向け保守説明書
+    </h2>
+
+    <h3>1. この画面で何ができるか</h3>
+    <p>この画面では、以下の2つの情報を直感的に確認できます。</p>
+    <ul>
+      <li><strong>会議の日程</strong></li>
+      <li><strong>議案・請願などの処理状況</strong></li>
+    </ul>
+    <p>これらを「カレンダー（日別）」と「一覧（案件別）」の両方から確認することができます。</p>
+
+    <h3>2. 見方</h3>
+    <h4>カレンダーの見方</h4>
+    <p>1日ごとに「会議（本会議など）」と「議案の動き（提案・付託・可決など）」が表示されます。</p>
+<pre class="light-bg"><code>【例：3月25日のマス】
+・本会議
+・可決（議案第1号〜第5号）
+・継続審査（議案第6号）</code></pre>
+    <p>※日付や「+2件」などの文字をクリックすると、その日のすべての詳細が表示されます。</p>
+
+    <h3>3. 下の「案件」欄</h3>
+    <p>案件の流れをパターンごとにまとめて表示します。見出しには以下の意味があります。</p>
+    <table>
+      <thead>
+        <tr><th style="width: 30%;">見出し</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>基本形</strong></td><td>通常の議案の流れ</td></tr>
+        <tr><td><strong>請願・陳情</strong></td><td>市民から提出されたもの</td></tr>
+        <tr><td><strong>発議案</strong></td><td>議員から提出されたもの</td></tr>
+        <tr><td><strong>例外</strong></td><td>先議、追加議案、取下げなどの特殊ケース</td></tr>
+      </tbody>
+    </table>
+
+    <h3>4. データ修正方法</h3>
+    <p>修正を行う場合は、Excelの以下のシートを編集します。</p>
+    <ul>
+      <li><code>案件マスタ</code> (items)</li>
+      <li><code>案件アクション履歴</code> (item_actions)</li>
+      <li><code>任期マスタ</code> (council_terms)</li>
+    </ul>
+
+    <h4>よくある修正ケース</h4>
+    <ol>
+      <li><strong>可決・否決の修正：</strong> <code>result_label</code> を変更します。（例：可決 → 否決）</li>
+      <li><strong>日付の修正：</strong> <code>action_date</code> を正しい日付に修正します。</li>
+      <li><strong>継続審査になった場合：</strong> <code>action_type</code> を <code>CONTINUED</code> にし、<code>result_label</code> を「継続審査」にします。</li>
+      <li><strong>取下げになった場合：</strong> <code>action_type</code> を <code>WITHDRAWN</code> にします。</li>
+    </ol>
+
+    <h3>5. 入力時の注意点（NGと正しい例）</h3>
+    <table style="border-left: 4px solid #ef4444;">
+      <thead>
+        <tr><th style="background: #fef2f2; color: #991b1b;">❌ よくあるNG（エラーの原因）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>・日付が未入力（空欄）になっている</td></tr>
+        <tr><td>・<code>item_id</code> が案件マスタとアクション履歴で一致していない</td></tr>
+        <tr><td>・<code>action_type</code> の英語の綴りが間違っている</td></tr>
+      </tbody>
+    </table>
+
+    <table style="border-left: 4px solid #22c55e;">
+      <thead>
+        <tr><th style="background: #f0fdf4; color: #166534;">✅ 正しい入力例（議決の場合）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>
+          <code>action_type</code>: DECIDED<br>
+          <code>result</code>: PASSED<br>
+          <code>result_label</code>: 可決
+        </td></tr>
+      </tbody>
+    </table>
+
+    <h3>6. 更新手順</h3>
+    <p>データを修正して画面に反映させるまでの流れです。</p>
+    <div class="step-flow">
+      <span>① Excel修正</span>
+      <span class="step-arrow">➔</span>
+      <span>② VBA実行</span>
+      <span class="step-arrow">➔</span>
+      <span>③ JS生成</span>
+      <span class="step-arrow">➔</span>
+      <span>④ GitHub反映</span>
+      <span class="step-arrow">➔</span>
+      <span>⑤ 画面確認</span>
+    </div>
+
+    <h3>7. よくあるトラブル</h3>
+    <table>
+      <thead>
+        <tr><th style="width: 30%;">現象</th><th>原因・確認するところ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>案件が表示されない</strong></td><td>マスタと履歴で <code>item_id</code> が一致していないか確認してください。</td></tr>
+        <tr><td><strong>日付がおかしい</strong></td><td><code>action_date</code> の入力形式（YYYY-MM-DDなど）が正しいか確認してください。</td></tr>
+        <tr><td><strong>カレンダーに出ない</strong></td><td><code>meeting_id</code> が対象の会議回のものと一致しているか確認してください。</td></tr>
+      </tbody>
+    </table>
+
+    <div class="important-box">
+      <div class="important-title">🔥 最後に（保守の要点）</div>
+      <p>この画面と機能拡張における設計のポイントは以下の2点です。</p>
+      <ul>
+        <li><strong>カレンダー ＝ 日付の事実（いつ何が起きたか）</strong></li>
+        <li><strong>案件欄 ＝ 流れの整理（その案件がどう進んだか）</strong></li>
+      </ul>
+      <p style="margin-bottom: 0;">この役割分担の原則を崩さない限り、今後どのような特殊な案件パターンが増えたとしても、システムが破綻することなく拡張し続けることができます。</p>
+    </div>
+
+  </div>
+</body>
+</html>
