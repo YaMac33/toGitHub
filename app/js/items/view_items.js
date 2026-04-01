@@ -33,6 +33,24 @@ window.ITEMS_VIEW = (function () {
     }) || null;
   }
 
+  function formatMeetingLabel(meeting) {
+    if (!meeting) return "";
+
+    const era = meeting.number === "R" ? "令和"
+      : meeting.number === "H" ? "平成"
+      : meeting.number === "S" ? "昭和"
+      : "";
+
+    const year = meeting.year || "";
+    const session = meeting.session || "";
+
+    const type = meeting.meeting_type === "REGULAR" ? "定例会"
+      : meeting.meeting_type === "EXTRA" ? "臨時会"
+      : "定例会";
+
+    return era + year + "年第" + session + "回" + type;
+  }
+
   function getSortedItems() {
     return getArray("items")
       .slice()
@@ -120,7 +138,7 @@ window.ITEMS_VIEW = (function () {
         title: item.title || "",
         department: item.department || "",
         proposed_meeting_id: proposed ? (proposed.meeting_id || "") : "",
-        proposed_meeting_name: proposedMeeting ? (proposedMeeting.session_name || "") : "",
+        proposed_meeting_name: formatMeetingLabel(proposedMeeting),
         meeting_result_label: getMeetingResultLabel(item.item_id, proposed ? proposed.meeting_id : "")
       };
     });
