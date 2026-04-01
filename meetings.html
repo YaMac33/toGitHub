@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会議一覧</title>
+  <style>
+    /* 最低限のスタイル */
+    body { font-family: sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    .clickable-row { cursor: pointer; }
+    .clickable-row:hover { background-color: #f0f0f0; }
+    .empty { color: #666; padding: 10px 0; }
+    #statusBox { background: #eee; padding: 10px; margin-bottom: 20px; font-family: monospace; white-space: pre-wrap; }
+    .search-area { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>会議一覧</h1>
+  
+  <div id="statusBox"></div>
+
+  <div class="search-area">
+    <label for="searchSessionType">種別:</label>
+    <select id="searchSessionType">
+      <option value="">すべて</option>
+      <option value="REGULAR">定例会</option>
+      <option value="EXTRA">臨時会</option>
+    </select>
+
+    <label for="searchSpecialCommittee">特別委員会:</label>
+    <select id="searchSpecialCommittee">
+      </select>
+  </div>
+
+  <div>検索結果: <span id="resultMeta">0件</span></div>
+
+  <div id="resultArea"></div>
+
+  <script>
+    window.APP_DATA = window.APP_DATA || {};
+    window.APP_UTILS = {
+      escapeHtml: function(str) { return String(str).replace(/[&<>"']/g, function(m) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[m]; }); },
+      openInNewTab: function(url) { window.open(url, '_blank'); }
+    };
+    window.APP_FORMATTERS = {
+      toWareki: function(dateStr) { return dateStr; /* 実装に合わせて修正 */ },
+      sessionTypeLabel: function(val) { return val === "REGULAR" ? "定例会" : val === "EXTRA" ? "臨時会" : val; }
+    };
+  </script>
+
+  <script src="app/js/meetings/view_meetings.js"></script>
+
+</body>
+</html>
