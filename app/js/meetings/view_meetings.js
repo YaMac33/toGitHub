@@ -1,193 +1,271 @@
-window.APP_DATA = window.APP_DATA || {};
-
 window.MEETINGS_VIEW = (function () {
   "use strict";
 
-  let currentRows = [];
+  const SPECIAL_CODES = ["IKY", "TKY", "IKK", "TKK"];
 
-  const escapeHtml = window.APP_UTILS.escapeHtml;
-  const openInNewTab = window.APP_UTILS.openInNewTab;
-  const toWareki = window.APP_FORMATTERS.toWareki;
-  const sessionTypeLabel = window.APP_FORMATTERS.sessionTypeLabel;
+  function init() {
+    const rows = getMeetings();
+    const groups = buildMeetingGroups(rows);
 
-  function getArray(name) {
-    return Array.isArray(window.APP_DATA[name]) ? window.APP_DATA[name] : [];
-  }
+    fillSpecialCommitteeOptions(groups);
+    bindEvents();
+    render();
 
-  function getSpecialCommitteeInstancesByMeetingId(meetingId) {
-    return getArray("special_committee_instances")
-      .filter(function (row) {
-        return row.meeting_id === meetingId;
-      })
-      .sort(function (a, b) {
-        const ad = a.established_date || "";
-        const bd = b.established_date || "";
-        return ad < bd ? -1 : ad > bd ? 1 : 0;
-      });
-  }
-
-  function getSpecialCommitteeOptions() {
-    return getArray("special_committees")
-      .filter(function (row) {
-        return String(row.active_flag || "0") === "1";
-      })
-      .slice()
-      .sort(function (a, b) {
-        return Number(a.sort_order || 9999) - Number(b.sort_order || 9999);
-      })
-      .map(function (row) {
-        return {
-          special_committee_id: row.special_committee_id || "",
-          special_committee_name: row.special_committee_name || ""
-        };
-      });
-  }
-
-  function buildMeetingList() {
-    return getArray("meetings")
-      .slice()
-      .sort(function (a, b) {
-        return Number(a.sort_order || 9999) - Number(b.sort_order || 9999);
-      })
-      .map(function (meeting) {
-        const instances = getSpecialCommitteeInstancesByMeetingId(meeting.meeting_id);
-        return {
-          meeting_id: meeting.meeting_id || "",
-          session_type: meeting.session_type || "",
-          session_name: meeting.session_name || "",
-          start_date: meeting.start_date || "",
-          end_date: meeting.end_date || "",
-          special_committee_count: instances.length
-        };
-      });
-  }
-
-  function filterMeetingList(rows, conditions) {
-    const sessionType = (conditions.session_type || "").trim();
-    const specialCommitteeId = (conditions.special_committee_id || "").trim();
-
-    return rows.filter(function (row) {
-      const hitSessionType =
-        !sessionType ||
-        row.session_type === sessionType;
-
-      const hitSpecialCommittee =
-        !specialCommitteeId ||
-        getSpecialCommitteeInstancesByMeetingId(row.meeting_id).some(function (instance) {
-          return instance.special_committee_id === specialCommitteeId;
-        });
-
-      return hitSessionType && hitSpecialCommittee;
-    });
-  }
-
-  function renderStatus(statusEl) {
-    statusEl.textContent = [
-      "meetings.html 読み込み成功",
-      "meetings: " + getArray("meetings").length + "件",
-      "special_committees: " + getArray("special_committees").length + "件",
-      "special_committee_instances: " + getArray("special_committee_instances").length + "件"
-    ].join("\n");
-  }
-
-  function renderSpecialCommitteeOptions(selectEl) {
-    const options = getSpecialCommitteeOptions();
-    const html = ['<option value="">すべて</option>']
-      .concat(options.map(function (row) {
-        return '<option value="' + escapeHtml(row.special_committee_id) + '">' +
-          escapeHtml(row.special_committee_name) +
-          "</option>";
-      }))
-      .join("");
-
-    selectEl.innerHTML = html;
-  }
-
-  function goMeetingDetailInNewTab(meetingId) {
-    const url = "meeting_detail.html?meeting_id=" + encodeURIComponent(meetingId);
-    openInNewTab(url);
-  }
-
-  function renderTable(containerEl, rows) {
     if (!rows.length) {
-      containerEl.innerHTML = '<div class="empty">該当データがありません。</div>';
+      setStatus("meetings.js にデータがありません。");
       return;
     }
 
-    const bodyHtml = rows.map(function (row) {
-      return [
-        '<tr class="clickable-row" data-meeting-id="' + escapeHtml(row.meeting_id) + '">',
-        "<td>" + escapeHtml(row.session_name) + "</td>",
-        "<td>" + escapeHtml(sessionTypeLabel(row.session_type)) + "</td>",
-        "<td>" + escapeHtml(toWareki(row.start_date)) + "</td>",
-        "<td>" + escapeHtml(toWareki(row.end_date)) + "</td>",
-        "<td>" + escapeHtml(String(row.special_committee_count)) + "</td>",
-        "</tr>"
-      ].join("");
-    }).join("");
-
-    containerEl.innerHTML =
-      '<div class="result-table-wrap">' +
-        "<table>" +
-          "<thead>" +
-            "<tr>" +
-              "<th>会議回</th>" +
-              "<th>種別</th>" +
-              "<th>開始日</th>" +
-              "<th>終了日</th>" +
-              "<th>特別委員会数</th>" +
-            "</tr>" +
-          "</thead>" +
-          "<tbody>" + bodyHtml + "</tbody>" +
-        "</table>" +
-      "</div>";
+    setStatus([
+      "meetings.html 読み込み成功",
+      "会議回: " + groups.length + "件",
+      "元データ行: " + rows.length + "件"
+    ].join("\n"));
   }
 
-  function bindRowEvents(resultArea) {
-    resultArea.querySelectorAll(".clickable-row").forEach(function (rowEl) {
-      rowEl.addEventListener("click", function () {
-        const meetingId = rowEl.dataset.meetingId || "";
-        if (meetingId) {
-          goMeetingDetailInNewTab(meetingId);
+  function getMeetings() {
+    return Array.isArray(window.APP_DATA && window.APP_DATA.meetings)
+      ? window.APP_DATA.meetings.slice()
+      : [];
+  }
+
+  function bindEvents() {
+    const sessionTypeEl = document.getElementById("searchSessionType");
+    const specialCommitteeEl = document.getElementById("searchSpecialCommittee");
+
+    if (sessionTypeEl) {
+      sessionTypeEl.addEventListener("change", render);
+    }
+    if (specialCommitteeEl) {
+      specialCommitteeEl.addEventListener("change", render);
+    }
+  }
+
+  function buildMeetingGroups(rows) {
+    const map = {};
+
+    rows.forEach(function (row) {
+      const meetingId = String(row.meeting_id || "").trim();
+      if (!meetingId) return;
+
+      if (!map[meetingId]) {
+        map[meetingId] = {
+          meeting_id: meetingId,
+          session_name: buildSessionName(row),
+          session_type_code: String(row.session_type_code || "").trim(),
+          start_date: String(row.held_date || "").trim(),
+          end_date: String(row.held_date || "").trim(),
+          special_committee_names: [],
+          detail_url: "./meeting_detail.html?meeting_id=" + encodeURIComponent(meetingId)
+        };
+      }
+
+      const group = map[meetingId];
+      const heldDate = String(row.held_date || "").trim();
+      const meetingName = String(row.meeting_name || "").trim();
+      const meetingTypeCode = String(row.meeting_type_code || "").trim();
+
+      if (heldDate) {
+        if (!group.start_date || heldDate < group.start_date) {
+          group.start_date = heldDate;
+        }
+        if (!group.end_date || heldDate > group.end_date) {
+          group.end_date = heldDate;
+        }
+      }
+
+      if (
+        meetingName &&
+        SPECIAL_CODES.indexOf(meetingTypeCode) >= 0 &&
+        group.special_committee_names.indexOf(meetingName) === -1
+      ) {
+        group.special_committee_names.push(meetingName);
+      }
+    });
+
+    const groups = Object.keys(map).map(function (key) {
+      const group = map[key];
+      group.special_committee_names.sort();
+      return group;
+    });
+
+    groups.sort(compareMeetingGroups);
+    return groups;
+  }
+
+  function buildSessionName(row) {
+    const eraCode = String(row.era_code || "").trim();
+    const warekiYear = Number(row.wareki_year || 0);
+    const sessionNo = Number(row.session || 0);
+    const sessionTypeLabel = String(row.session_type_label || "").trim();
+
+    return (
+      eraCodeToLabel(eraCode) +
+      String(warekiYear || "") +
+      "年第" +
+      String(sessionNo || "") +
+      "回" +
+      sessionTypeLabel
+    );
+  }
+
+  function eraCodeToLabel(eraCode) {
+    const value = String(eraCode || "").trim().toUpperCase();
+    if (value === "R") return "令和";
+    if (value === "H") return "平成";
+    if (value === "S") return "昭和";
+    return value;
+  }
+
+  function compareMeetingGroups(a, b) {
+    const ad = String(a.start_date || "");
+    const bd = String(b.start_date || "");
+    if (ad !== bd) return ad > bd ? -1 : 1;
+
+    const aid = String(a.meeting_id || "");
+    const bid = String(b.meeting_id || "");
+    return aid < bid ? -1 : aid > bid ? 1 : 0;
+  }
+
+  function fillSpecialCommitteeOptions(groups) {
+    const el = document.getElementById("searchSpecialCommittee");
+    if (!el) return;
+
+    const names = [];
+    const seen = {};
+
+    groups.forEach(function (group) {
+      group.special_committee_names.forEach(function (name) {
+        if (!seen[name]) {
+          seen[name] = true;
+          names.push(name);
         }
       });
     });
+
+    names.sort();
+
+    el.innerHTML =
+      '<option value="">すべて</option>' +
+      names.map(function (name) {
+        return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + "</option>";
+      }).join("");
   }
 
-  function init() {
-    const statusBox = document.getElementById("statusBox");
+  function applyFilters(groups) {
+    const sessionType = getValue("searchSessionType");
+    const specialCommittee = getValue("searchSpecialCommittee");
+
+    return groups.filter(function (group) {
+      if (sessionType && String(group.session_type_code || "") !== sessionType) {
+        return false;
+      }
+
+      if (specialCommittee && group.special_committee_names.indexOf(specialCommittee) === -1) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  function render() {
+    const rows = getMeetings();
+    const groups = buildMeetingGroups(rows);
+    const filtered = applyFilters(groups);
+
     const resultMeta = document.getElementById("resultMeta");
     const resultArea = document.getElementById("resultArea");
 
-    const searchSessionType = document.getElementById("searchSessionType");
-    const searchSpecialCommittee = document.getElementById("searchSpecialCommittee");
-
-    function redraw() {
-      const allRows = buildMeetingList();
-
-      currentRows = filterMeetingList(allRows, {
-        session_type: searchSessionType.value,
-        special_committee_id: searchSpecialCommittee.value
-      });
-
-      resultMeta.textContent = currentRows.length + "件";
-      renderTable(resultArea, currentRows);
-      bindRowEvents(resultArea);
+    if (resultMeta) {
+      resultMeta.textContent = filtered.length + "件";
     }
 
-    renderStatus(statusBox);
-    renderSpecialCommitteeOptions(searchSpecialCommittee);
-    redraw();
+    if (!resultArea) return;
 
-    searchSessionType.addEventListener("change", redraw);
-    searchSpecialCommittee.addEventListener("change", redraw);
+    if (!filtered.length) {
+      resultArea.innerHTML = '<div class="empty">該当する会議回はありません。</div>';
+      return;
+    }
+
+    resultArea.innerHTML = filtered.map(renderGroupCard).join("");
   }
 
+  function renderGroupCard(group) {
+    const specialCommittees = group.special_committee_names.length
+      ? group.special_committee_names.join("、")
+      : "なし";
+
+    return (
+      '<a href="' + escapeHtml(group.detail_url) + '" ' +
+        'class="detail-subcard" ' +
+        'style="display:block; margin-bottom:12px; text-decoration:none; color:inherit;">' +
+
+        '<div style="font-size:18px; font-weight:bold; margin-bottom:10px;">' +
+          escapeHtml(group.session_name) +
+        "</div>" +
+
+        '<div class="history-row">' +
+          '<span class="summary-label">期間</span>' +
+          escapeHtml(buildPeriodText(group.start_date, group.end_date)) +
+        "</div>" +
+
+        '<div class="history-row">' +
+          '<span class="summary-label">特別委員会</span>' +
+          escapeHtml(specialCommittees) +
+        "</div>" +
+
+      "</a>"
+    );
+  }
+
+  function buildPeriodText(startDate, endDate) {
+    if (!startDate && !endDate) return "";
+    if (startDate && endDate && startDate === endDate) {
+      return formatDateSlash(startDate);
+    }
+    return formatDateSlash(startDate) + " ～ " + formatDateSlash(endDate);
+  }
+
+  function formatDateSlash(dateStr) {
+    const value = String(dateStr || "").trim();
+    if (!value) return "";
+
+    const parts = value.split("-");
+    if (parts.length !== 3) return value;
+
+    return (
+      parts[0] + "/" +
+      String(Number(parts[1])).padStart(2, "0") + "/" +
+      String(Number(parts[2])).padStart(2, "0")
+    );
+  }
+
+  function getValue(id) {
+    const el = document.getElementById(id);
+    return el ? String(el.value || "") : "";
+  }
+
+  function setStatus(text) {
+    const el = document.getElementById("statusBox");
+    if (el) {
+      el.textContent = text;
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+
   return {
-    init: init
+    init: init,
+    render: render
   };
 })();
-
-document.addEventListener("DOMContentLoaded", function () {
-  window.MEETINGS_VIEW.init();
-});
