@@ -1,22 +1,15 @@
+app/js/meetings/view_meeting_detail.js を、以下に差し替えてください。
 window.APP_DATA = window.APP_DATA || {};
 
 window.MEETING_DETAIL_VIEW = (function () {
   "use strict";
 
+  const SPECIAL_CODES = ["IKY", "TKY", "IKK", "TKK"];
+
   let currentDetail = null;
 
   function getArray(name) {
     return Array.isArray(window.APP_DATA[name]) ? window.APP_DATA[name] : [];
-  }
-
-  function getQuestionHeaders() {
-    if (window.APP_DATA && Array.isArray(window.APP_DATA.questions)) {
-      return window.APP_DATA.questions;
-    }
-    if (Array.isArray(window.RECORDS)) {
-      return window.RECORDS;
-    }
-    return [];
   }
 
   function qs(name) {
@@ -26,114 +19,114 @@ window.MEETING_DETAIL_VIEW = (function () {
   function escapeHtml(value) {
     return window.APP_UTILS && typeof window.APP_UTILS.escapeHtml === "function"
       ? window.APP_UTILS.escapeHtml(value)
-      : String(value == null ? "" : value);
+      : String(value == null ? "" : value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
   }
 
-  function toWareki(dateStr) {
-    return window.APP_FORMATTERS && typeof window.APP_FORMATTERS.toWareki === "function"
-      ? window.APP_FORMATTERS.toWareki(dateStr)
-      : (dateStr || "");
+  function getMeetingRowsByMeetingId(meetingId) {
+    return getArray("meetings")
+      .filter(function (row) {
+        return String(row.meeting_id || "") === String(meetingId || "");
+      })
+      .sort(compareMeetingRows);
+  }
+
+  function getQuestionsByMeetingId(meetingId) {
+    return getArray("questions")
+      .filter(function (row) {
+        return String(row.meeting_id || "") === String(meetingId || "");
+      })
+      .sort(function (a, b) {
+        const ad = String(a.question_date || "");
+        const bd = String(b.question_date || "");
+        if (ad !== bd) return ad < bd ? -1 : 1;
+
+        const an = Number(a.notice_no || 0);
+        const bn = Number(b.notice_no || 0);
+        if (an !== bn) return an - bn;
+
+        const as = Number(a.sort_order || 0);
+        const bs = Number(b.sort_order || 0);
+        return as - bs;
+      });
+  }
+
+  function compareMeetingRows(a, b) {
+    const ad = String(a.held_date || "");
+    const bd = String(b.held_date || "");
+    if (ad !== bd) return ad < bd ? -1 : 1;
+
+    const as = Number(a.day_sequence || 0);
+    const bs = Number(b.day_sequence || 0);
+    if (as !== bs) return as - bs;
+
+    const ar = String(a.row_id || "");
+    const br = String(b.row_id || "");
+    return ar < br ? -1 : ar > br ? 1 : 0;
+  }
+
+  function eraCodeToLabel(code) {
+    const value = String(code || "").trim().toUpperCase();
+    if (value === "R") return "令和";
+    if (value === "H") return "平成";
+    if (value === "S") return "昭和";
+    return value;
+  }
+
+  function buildSessionName(row) {
+    if (!row) return "";
+    return (
+      eraCodeToLabel(row.era_code) +
+      String(Number(row.wareki_year || 0) || "") +
+      "年第" +
+      String(Number(row.session || 0) || "") +
+      "回" +
+      String(row.session_type_label || "")
+    );
   }
 
   function sessionTypeLabel(value) {
-    if (value === "REGULAR") return "定例会";
-    if (value === "EXTRA") return "臨時会";
-    return value || "";
+    const v = String(value || "").trim();
+    if (v === "TEI") return "定例会";
+    if (v === "RIN") return "臨時会";
+    return v;
   }
 
-  function getMeetingById(meetingId) {
-    return getArray("meetings").find(function (row) {
-      return row.meeting_id === meetingId;
-    }) || null;
+  function formatDateJa(dateStr) {
+    const value = String(dateStr || "").trim();
+    if (!value) return "";
+    const parts = value.split("-");
+    if (parts.length !== 3) return value;
+    return Number(parts[0]) + "年" + Number(parts[1]) + "月" + Number(parts[2]) + "日";
   }
 
-  function getCommitteeById(committeeId) {
-    return getArray("committees").find(function (row) {
-      return row.committee_id === committeeId;
-    }) || null;
-  }
+  function formatDurationMinutes(value) {
+    if (value === null || value === undefined || value === "") return "";
 
-  function getSpecialCommitteeById(specialCommitteeId) {
-    return getArray("special_committees").find(function (row) {
-      return row.special_committee_id === specialCommitteeId;
-    }) || null;
-  }
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) return "";
+      if (value > 0 && value < 1) {
+        return String(Math.round(value * 24 * 60)) + "分";
+      }
+      return String(Math.round(value)) + "分";
+    }
 
-  function getMemberById(memberId) {
-    return getArray("members").find(function (row) {
-      return row.member_id === memberId;
-    }) || null;
-  }
+    const text = String(value).trim();
+    if (!text) return "";
 
-  function getItemById(itemId) {
-    return getArray("items").find(function (row) {
-      return row.item_id === itemId;
-    }) || null;
-  }
+    if (!isNaN(Number(text))) {
+      const num = Number(text);
+      if (num > 0 && num < 1) {
+        return String(Math.round(num * 24 * 60)) + "分";
+      }
+      return String(Math.round(num)) + "分";
+    }
 
-  function getEventsByMeetingId(meetingId) {
-    return getArray("events")
-      .filter(function (row) {
-        return row.meeting_id === meetingId;
-      })
-      .sort(function (a, b) {
-        const ad = a.event_date || "";
-        const bd = b.event_date || "";
-        if (ad !== bd) return ad < bd ? -1 : 1;
-        return (a.event_id || "") < (b.event_id || "") ? -1 : 1;
-      });
-  }
-
-  function getSpecialCommitteeInstancesByMeetingId(meetingId) {
-    return getArray("special_committee_instances")
-      .filter(function (row) {
-        return row.meeting_id === meetingId;
-      })
-      .sort(function (a, b) {
-        const ad = a.established_date || "";
-        const bd = b.established_date || "";
-        return ad < bd ? -1 : ad > bd ? 1 : 0;
-      });
-  }
-
-  function getSpecialCommitteeMeetingsByInstanceId(instanceId) {
-    return getArray("special_committee_meetings")
-      .filter(function (row) {
-        return row.special_committee_instance_id === instanceId;
-      })
-      .sort(function (a, b) {
-        return (a.meeting_date || "") < (b.meeting_date || "") ? -1 : 1;
-      });
-  }
-
-  function roleOrder(roleName) {
-    const role = String(roleName || "").trim();
-    if (role === "委員長") return 1;
-    if (role === "副委員長") return 2;
-    return 9;
-  }
-
-  function getSpecialCommitteeMembersByInstanceId(instanceId) {
-    return getArray("special_committee_members")
-      .filter(function (row) {
-        return row.special_committee_instance_id === instanceId;
-      })
-      .sort(function (a, b) {
-        const ra = roleOrder(a.role_name);
-        const rb = roleOrder(b.role_name);
-        if (ra !== rb) return ra - rb;
-
-        const am = getMemberById(a.member_id);
-        const bm = getMemberById(b.member_id);
-
-        const ano = Number(am && am.member_no ? am.member_no : 999999);
-        const bno = Number(bm && bm.member_no ? bm.member_no : 999999);
-        if (ano !== bno) return ano - bno;
-
-        const an = am ? (am.member_name || "") : (a.member_id || "");
-        const bn = bm ? (bm.member_name || "") : (b.member_id || "");
-        return an < bn ? -1 : an > bn ? 1 : 0;
-      });
+    return text;
   }
 
   function calcInclusiveDays(startDate, endDate) {
@@ -145,391 +138,75 @@ window.MEETING_DETAIL_VIEW = (function () {
     return diff > 0 ? diff : "";
   }
 
-  function formatDurationHM(v) {
-    if (v === null || v === undefined || v === "") return "";
-
-    if (typeof v === "string") {
-      const s = v.trim();
-      if (!s) return "";
-      if (s.indexOf(":") >= 0) return s;
-
-      if (!isNaN(Number(s))) {
-        v = Number(s);
-      } else {
-        return s;
-      }
-    }
-
-    if (typeof v === "number") {
-      if (!Number.isFinite(v)) return "";
-
-      if (v >= 0 && v < 1) {
-        const totalMinutes = Math.round(v * 24 * 60);
-        const h = Math.floor(totalMinutes / 60);
-        const m = totalMinutes % 60;
-        return h + ":" + String(m).padStart(2, "0");
-      }
-
-      const totalMinutes = Math.round(v * 60);
-      const h = Math.floor(totalMinutes / 60);
-      const m = totalMinutes % 60;
-      return h + ":" + String(m).padStart(2, "0");
-    }
-
-    return String(v);
+  function getSteeringDates(rows) {
+    return rows
+      .filter(function (row) {
+        return String(row.meeting_type_code || "") === "GIUN" && row.held_date;
+      })
+      .map(function (row) {
+        return String(row.held_date || "");
+      })
+      .filter(Boolean)
+      .filter(function (date, index, arr) {
+        return arr.indexOf(date) === index;
+      })
+      .sort();
   }
 
-  function buildMeetingEvents(meetingId) {
-    const normalEvents = getEventsByMeetingId(meetingId).map(function (row) {
-      let label = "";
-      let cls = "";
-      let order = 1;
-
-      if (row.event_type_id === "PLENARY") {
-        label = "本会議";
-        cls = "plenary";
-      } else if (row.event_type_id === "STEERING_COMMITTEE") {
-        label = "議会運営委員会";
-        cls = "steering";
-      } else if (row.event_type_id === "LEADERS_MEETING") {
-        label = "会派代表者会議";
-        cls = "leaders";
-      } else {
-        const committee = getCommitteeById(row.committee_id);
-        label = committee ? committee.committee_name : "常任委員会";
-        cls = "standing";
-      }
-
-      const noteParts = [];
-      const durationLabel = formatDurationHM(row.duration);
-      if (durationLabel) {
-        noteParts.push("実時間: " + durationLabel);
-      }
-      if (row.note) {
-        noteParts.push(row.note);
-      }
-
+  function buildMeetingCalendarEvents(rows) {
+    return rows.map(function (row) {
       return {
-        date: row.event_date || "",
+        date: String(row.held_date || ""),
         category: "meeting",
-        label: label,
-        sort_order: order,
-        css_class: cls,
-        detail_text: noteParts.join(" / ") || label
+        label: String(row.meeting_name || ""),
+        sort_order: 1,
+        css_class: getMeetingCssClass(row.meeting_type_code),
+        detail_text: buildMeetingDetailText(row)
       };
-    });
-
-    const specialEvents = getSpecialCommitteeInstancesByMeetingId(meetingId).flatMap(function (instance) {
-      const specialCommittee = getSpecialCommitteeById(instance.special_committee_id);
-      const label = specialCommittee ? specialCommittee.special_committee_name : "特別委員会";
-
-      return getSpecialCommitteeMeetingsByInstanceId(instance.special_committee_instance_id).map(function (row) {
-        return {
-          date: row.meeting_date || "",
-          category: "meeting",
-          label: label,
-          sort_order: 1,
-          css_class: "special",
-          detail_text: row.note || label
-        };
-      });
-    });
-
-    return normalEvents.concat(specialEvents).sort(function (a, b) {
-      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
-      if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
-      return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
+    }).filter(function (row) {
+      return row.date && row.label;
     });
   }
 
-  function getItemActionsByMeetingId(meetingId) {
-    return getArray("item_actions")
-      .filter(function (row) {
-        return row.meeting_id === meetingId;
-      })
-      .sort(function (a, b) {
-        const ad = a.action_date || "";
-        const bd = b.action_date || "";
-        if (ad !== bd) return ad < bd ? -1 : 1;
-        return (a.action_id || "") < (b.action_id || "") ? -1 : 1;
-      });
+  function getMeetingCssClass(meetingTypeCode) {
+    const code = String(meetingTypeCode || "").trim();
+
+    if (code === "HNKG") return "plenary";
+    if (code === "GIUN") return "steering";
+    if (code === "KDHK") return "leaders";
+    if (SPECIAL_CODES.indexOf(code) >= 0) return "special";
+
+    if (
+      code === "SOMJ" ||
+      code === "TSKJ" ||
+      code === "KDKJ" ||
+      code === "BKFJ" ||
+      /_KYO$/.test(code)
+    ) {
+      return "standing";
+    }
+
+    return "standing";
   }
 
-  function buildMeetingItemUnits(meetingId) {
-    const actions = getItemActionsByMeetingId(meetingId);
-    const map = {};
+  function buildMeetingDetailText(row) {
+    const parts = [];
+    const name = String(row.meeting_name || "").trim();
+    const duration = formatDurationMinutes(row.duration_minutes);
 
-    actions.forEach(function (row) {
-      const item = getItemById(row.item_id);
-      if (!item) return;
+    if (name) parts.push(name);
+    if (duration) parts.push("実時間: " + duration);
 
-      if (!map[row.item_id]) {
-        map[row.item_id] = {
-          item_id: item.item_id || "",
-          item_class: item.item_class || "",
-          item_no: item.item_no || "",
-          item_no_numeric: Number(item.item_no_numeric || 0),
-          title: item.title || "",
-          meeting_id: meetingId,
-          proposed_date: "",
-          referred_date: "",
-          decided_date: "",
-          continued_date: "",
-          withdrawn_date: "",
-          decided_result_label: "",
-          actions: []
-        };
-      }
-
-      const unit = map[row.item_id];
-      unit.actions.push(row);
-
-      if (row.action_type === "PROPOSED" && !unit.proposed_date) {
-        unit.proposed_date = row.action_date || "";
-      }
-      if (row.action_type === "REFERRED" && !unit.referred_date) {
-        unit.referred_date = row.action_date || "";
-      }
-      if (row.action_type === "DECIDED" && !unit.decided_date) {
-        unit.decided_date = row.action_date || "";
-        unit.decided_result_label = row.result_label || "";
-      }
-      if (row.action_type === "CONTINUED" && !unit.continued_date) {
-        unit.continued_date = row.action_date || "";
-      }
-      if (row.action_type === "WITHDRAWN" && !unit.withdrawn_date) {
-        unit.withdrawn_date = row.action_date || "";
-      }
-    });
-
-    return Object.values(map).sort(function (a, b) {
-      return a.item_no_numeric - b.item_no_numeric;
-    });
+    return parts.join(" / ");
   }
 
-  function getStandardProposedDate(itemUnits) {
-    const countMap = {};
-
-    itemUnits
-      .filter(function (row) {
-        return row.item_class === "BILL" && row.proposed_date;
-      })
-      .forEach(function (row) {
-        if (!countMap[row.proposed_date]) {
-          countMap[row.proposed_date] = 0;
-        }
-        countMap[row.proposed_date] += 1;
-      });
-
-    let bestDate = "";
-    let bestCount = -1;
-
-    Object.keys(countMap).forEach(function (dateKey) {
-      if (countMap[dateKey] > bestCount) {
-        bestDate = dateKey;
-        bestCount = countMap[dateKey];
-      }
-    });
-
-    return bestDate;
-  }
-
-  function classifyMeetingItemUnit(unit, standardProposedDate) {
-    if (unit.withdrawn_date) return "withdrawn";
-    if (unit.item_class === "PROPOSAL") return "proposal";
-    if (unit.item_class === "PETITION" || unit.item_class === "REQUEST") return "petition_request";
-
-    const isAdditional = !!unit.proposed_date && !!standardProposedDate && unit.proposed_date !== standardProposedDate;
-    const hasReferred = !!unit.referred_date;
-    const hasDecided = !!unit.decided_date;
-    const hasContinued = !!unit.continued_date;
-
-    if (isAdditional && !hasReferred && hasDecided) return "additional_fasttrack";
-    if (isAdditional && hasReferred && hasContinued) return "additional_continued";
-    if (isAdditional && hasReferred && hasDecided) return "additional";
-    if (!isAdditional && !hasReferred && hasDecided) return "fasttrack";
-    if (!isAdditional && hasReferred && (hasDecided || hasContinued)) return "basic_bill";
-
-    return "other";
-  }
-
-  function getPatternLabel(type) {
-    const map = {
-      basic_bill: "基本形（議案）",
-      petition_request: "請願・陳情",
-      proposal: "発議案",
-      fasttrack: "先議",
-      additional: "追加議案",
-      additional_fasttrack: "追加議案（先議）",
-      additional_continued: "追加議案（継続審査）",
-      withdrawn: "取下げ",
-      other: "その他"
-    };
-    return map[type] || "その他";
-  }
-
-  function groupMeetingItemPatterns(itemUnits, standardProposedDate) {
-    const groupedMap = {};
-
-    itemUnits.forEach(function (unit) {
-      unit.pattern_type = classifyMeetingItemUnit(unit, standardProposedDate);
-
-      const key = [
-        unit.pattern_type,
-        unit.proposed_date || "",
-        unit.referred_date || "",
-        unit.decided_date || "",
-        unit.continued_date || "",
-        unit.withdrawn_date || "",
-        unit.decided_result_label || ""
-      ].join("|");
-
-      if (!groupedMap[key]) {
-        groupedMap[key] = {
-          pattern_type: unit.pattern_type,
-          proposed_date: unit.proposed_date || "",
-          referred_date: unit.referred_date || "",
-          decided_date: unit.decided_date || "",
-          continued_date: unit.continued_date || "",
-          withdrawn_date: unit.withdrawn_date || "",
-          decided_result_label: unit.decided_result_label || "",
-          items: []
-        };
-      }
-
-      groupedMap[key].items.push(unit);
-    });
-
-    return Object.values(groupedMap).map(function (group) {
-      group.items.sort(function (a, b) {
-        return a.item_no_numeric - b.item_no_numeric;
-      });
-      return group;
-    });
-  }
-
-  function compressRangeNumbers(rows, prefixBuilder) {
-    const nums = rows
-      .map(function (row) { return Number(row.item_no_numeric || 0); })
-      .filter(function (num) { return num > 0; })
-      .sort(function (a, b) { return a - b; });
-
-    if (!nums.length) {
-      return rows.map(function (row) { return row.item_no || ""; }).join("、");
-    }
-
-    const ranges = [];
-    let start = nums[0];
-    let prev = nums[0];
-
-    for (let i = 1; i < nums.length; i += 1) {
-      if (nums[i] === prev + 1) {
-        prev = nums[i];
-      } else {
-        ranges.push([start, prev]);
-        start = nums[i];
-        prev = nums[i];
-      }
-    }
-    ranges.push([start, prev]);
-
-    return ranges.map(function (range) {
-      return prefixBuilder(range[0], range[1]);
-    }).join("、");
-  }
-
-  function buildNumberRangeLabel(items) {
-    if (!items.length) return "";
-    if (items.length === 1) return items[0].item_no || "";
-
-    const firstClass = items[0].item_class || "";
-    const sameClass = items.every(function (row) {
-      return row.item_class === firstClass;
-    });
-
-    if (!sameClass) {
-      return items.map(function (row) {
-        return row.item_no || "";
-      }).join("、");
-    }
-
-    if (firstClass === "BILL") {
-      return compressRangeNumbers(items, function (start, end) {
-        return start === end
-          ? "議案第" + start + "号"
-          : "議案第" + start + "号〜第" + end + "号";
-      });
-    }
-
-    if (firstClass === "PROPOSAL") {
-      return compressRangeNumbers(items, function (start, end) {
-        return start === end
-          ? "発議案第" + start + "号"
-          : "発議案第" + start + "号〜第" + end + "号";
-      });
-    }
-
-    return items.map(function (row) {
-      return row.item_no || "";
-    }).join("、");
-  }
-
-  function buildPatternLines(group) {
-    const lines = [];
-
-    if (group.pattern_type === "petition_request") {
-      if (group.referred_date) {
-        lines.push({ label: "付託日", value: group.referred_date });
-      }
-      if (group.decided_date) {
-        const decidedLabel = group.decided_result_label || "議決";
-        lines.push({ label: decidedLabel + "日", value: group.decided_date });
-      }
-      if (group.continued_date) {
-        lines.push({ label: "継続審査決定日", value: group.continued_date });
-      }
-      return lines;
-    }
-
-    if (group.proposed_date) {
-      lines.push({ label: "提案日", value: group.proposed_date });
-    }
-    if (group.referred_date) {
-      lines.push({ label: "付託日", value: group.referred_date });
-    }
-    if (group.decided_date) {
-      lines.push({
-        label: (group.decided_result_label || "議決") + "日",
-        value: group.decided_date
-      });
-    }
-    if (group.continued_date) {
-      lines.push({ label: "継続審査決定日", value: group.continued_date });
-    }
-    if (group.withdrawn_date) {
-      lines.push({ label: "取下げ日", value: group.withdrawn_date });
-    }
-
-    return lines;
-  }
-
-  function buildQuestionEvents(meetingId) {
-    const headers = getQuestionHeaders()
-      .filter(function (row) {
-        return row.meeting_id === meetingId && row.question_date;
-      })
-      .slice()
-      .sort(function (a, b) {
-        const ad = a.question_date || "";
-        const bd = b.question_date || "";
-        if (ad !== bd) return ad < bd ? -1 : 1;
-        return Number(a.notice_no || 0) - Number(b.notice_no || 0);
-      });
-
+  function buildQuestionCalendarEvents(questionRows) {
     const grouped = {};
 
-    headers.forEach(function (row) {
-      const dateKey = row.question_date;
+    questionRows.forEach(function (row) {
+      const dateKey = String(row.question_date || "");
+      if (!dateKey) return;
+
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
       }
@@ -538,256 +215,29 @@ window.MEETING_DETAIL_VIEW = (function () {
 
     return Object.keys(grouped).sort().map(function (dateKey) {
       const rows = grouped[dateKey];
-      const detailText = rows.map(function (row) {
-        let line = "通告No" + (row.notice_no || "") + " " + (row.member_name || "");
-        if (row.group_name) line += "（" + row.group_name + "）";
-        if (row.allotted_minutes !== "" && row.allotted_minutes !== undefined && row.allotted_minutes !== null) {
-          line += "（" + row.allotted_minutes + "分）";
-        }
-        if (row.note) line += " / " + row.note;
-        return line;
-      }).join("\n");
-
       return {
         date: dateKey,
         category: "question",
         label: "一般質問（" + rows.length + "件）",
         sort_order: 2,
         css_class: "question",
-        detail_text: detailText
+        detail_text: rows.map(function (row) {
+          const parts = [];
+          parts.push("通告No" + String(row.notice_no || ""));
+          parts.push(String(row.member_name || ""));
+          if (row.group_name) {
+            parts[parts.length - 1] += "（" + String(row.group_name) + "）";
+          }
+          const minutes = formatDurationMinutes(row.allotted_minutes);
+          if (minutes) parts.push(minutes);
+          return parts.join(" ");
+        }).join("\n")
       };
     });
   }
 
-  function buildItemCalendarEvents(groupedPatterns) {
-    const events = [];
-
-    groupedPatterns.forEach(function (group) {
-      const numberLabel = buildNumberRangeLabel(group.items);
-
-      if (group.pattern_type === "petition_request") {
-        if (group.referred_date) {
-          events.push({
-            date: group.referred_date,
-            category: "item",
-            raw_label: "付託",
-            label: "付託（" + numberLabel + "）",
-            sort_order: 4,
-            css_class: "referred",
-            detail_text: "付託（" + numberLabel + "）"
-          });
-        }
-
-        if (group.decided_date) {
-          const decidedLabel = group.decided_result_label || "議決";
-          const decidedCss = decidedLabel === "不採択" ? "decided-rejected" : "decided-passed";
-          events.push({
-            date: group.decided_date,
-            category: "item",
-            raw_label: decidedLabel,
-            label: decidedLabel + "（" + numberLabel + "）",
-            sort_order: 6,
-            css_class: decidedCss,
-            detail_text: decidedLabel + "（" + numberLabel + "）"
-          });
-        }
-
-        if (group.continued_date) {
-          events.push({
-            date: group.continued_date,
-            category: "item",
-            raw_label: "継続審査",
-            label: "継続審査（" + numberLabel + "）",
-            sort_order: 5,
-            css_class: "continued",
-            detail_text: "継続審査（" + numberLabel + "）"
-          });
-        }
-
-        return;
-      }
-
-      if (group.proposed_date) {
-        events.push({
-          date: group.proposed_date,
-          category: "item",
-          raw_label: "提案",
-          label: "提案（" + numberLabel + "）",
-          sort_order: 3,
-          css_class: "proposed",
-          detail_text: "提案（" + numberLabel + "）"
-        });
-      }
-
-      if (group.referred_date) {
-        events.push({
-          date: group.referred_date,
-          category: "item",
-          raw_label: "付託",
-          label: "付託（" + numberLabel + "）",
-          sort_order: 4,
-          css_class: "referred",
-          detail_text: "付託（" + numberLabel + "）"
-        });
-      }
-
-      if (group.continued_date) {
-        events.push({
-          date: group.continued_date,
-          category: "item",
-          raw_label: "継続審査",
-          label: "継続審査（" + numberLabel + "）",
-          sort_order: 5,
-          css_class: "continued",
-          detail_text: "継続審査（" + numberLabel + "）"
-        });
-      }
-
-      if (group.decided_date) {
-        const decidedLabel = group.decided_result_label || "議決";
-        const decidedCss = ["否決", "不採択"].includes(decidedLabel) ? "decided-rejected" : "decided-passed";
-
-        events.push({
-          date: group.decided_date,
-          category: "item",
-          raw_label: decidedLabel,
-          label: decidedLabel + "（" + numberLabel + "）",
-          sort_order: 6,
-          css_class: decidedCss,
-          detail_text: decidedLabel + "（" + numberLabel + "）"
-        });
-      }
-
-      if (group.withdrawn_date) {
-        events.push({
-          date: group.withdrawn_date,
-          category: "item",
-          raw_label: "取下げ",
-          label: "取下げ（" + numberLabel + "）",
-          sort_order: 7,
-          css_class: "withdrawn",
-          detail_text: "取下げ（" + numberLabel + "）"
-        });
-      }
-    });
-
-    return compressItemCalendarEvents(events);
-  }
-
-  function compressItemCalendarEvents(events) {
-    const grouped = {};
-
-    events.forEach(function (event) {
-      const match = String(event.label || "").match(/^(.+?)（(.+)）$/);
-      const numberLabel = match ? match[2] : "";
-      const key = [
-        event.date || "",
-        event.raw_label || "",
-        event.css_class || "",
-        event.sort_order || 0
-      ].join("|");
-
-      if (!grouped[key]) {
-        grouped[key] = {
-          date: event.date || "",
-          category: "item",
-          raw_label: event.raw_label || "",
-          sort_order: event.sort_order || 0,
-          css_class: event.css_class || "",
-          detail_texts: [],
-          items: []
-        };
-      }
-
-      grouped[key].detail_texts.push(event.detail_text || event.label || "");
-      if (numberLabel) {
-        grouped[key].items = grouped[key].items.concat(extractNumberUnits(numberLabel));
-      }
-    });
-
-    return Object.values(grouped).map(function (group) {
-      const compressed = buildCompressedNumberText(group.items);
-      return {
-        date: group.date,
-        category: "item",
-        label: compressed ? (group.raw_label + "（" + compressed + "）") : group.raw_label,
-        sort_order: group.sort_order,
-        css_class: group.css_class,
-        detail_text: group.detail_texts.join("\n")
-      };
-    });
-  }
-
-  function extractNumberUnits(numberLabel) {
-    return String(numberLabel || "")
-      .split("、")
-      .map(function (text) {
-        return text.trim();
-      })
-      .filter(Boolean);
-  }
-
-  function buildCompressedNumberText(items) {
-    if (!items.length) return "";
-
-    const billItems = [];
-    const proposalItems = [];
-    const otherItems = [];
-
-    items.forEach(function (text) {
-      const billMatch = text.match(/^議案第(\d+)号$/);
-      const proposalMatch = text.match(/^発議案第(\d+)号$/);
-
-      if (billMatch) {
-        billItems.push(Number(billMatch[1]));
-      } else if (proposalMatch) {
-        proposalItems.push(Number(proposalMatch[1]));
-      } else {
-        otherItems.push(text);
-      }
-    });
-
-    const result = [];
-
-    if (billItems.length) {
-      result.push(compressNumbersWithPrefix(billItems, "議案第", "号"));
-    }
-    if (proposalItems.length) {
-      result.push(compressNumbersWithPrefix(proposalItems, "発議案第", "号"));
-    }
-    if (otherItems.length) {
-      result.push(otherItems.join("、"));
-    }
-
-    return result.join("、");
-  }
-
-  function compressNumbersWithPrefix(nums, prefix, suffix) {
-    const sorted = nums.slice().sort(function (a, b) { return a - b; });
-    const ranges = [];
-    let start = sorted[0];
-    let prev = sorted[0];
-
-    for (let i = 1; i < sorted.length; i += 1) {
-      if (sorted[i] === prev + 1) {
-        prev = sorted[i];
-      } else {
-        ranges.push([start, prev]);
-        start = sorted[i];
-        prev = sorted[i];
-      }
-    }
-    ranges.push([start, prev]);
-
-    return ranges.map(function (range) {
-      return range[0] === range[1]
-        ? prefix + range[0] + suffix
-        : prefix + range[0] + suffix + "〜第" + range[1] + suffix;
-    }).join("、");
-  }
-
-  function buildIntegratedCalendarEvents(meetingEvents, questionEvents, itemEvents) {
-    return meetingEvents.concat(questionEvents).concat(itemEvents).sort(function (a, b) {
+  function buildIntegratedCalendarEvents(meetingEvents, questionEvents) {
+    return meetingEvents.concat(questionEvents).sort(function (a, b) {
       if (a.date !== b.date) return a.date < b.date ? -1 : 1;
       if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
       return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
@@ -808,8 +258,10 @@ window.MEETING_DETAIL_VIEW = (function () {
 
   function buildCalendarMonths(startDate, endDate) {
     if (!startDate || !endDate) return [];
+
     const start = new Date(startDate + "T00:00:00");
     const end = new Date(endDate + "T00:00:00");
+
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [];
 
     const months = [];
@@ -825,6 +277,7 @@ window.MEETING_DETAIL_VIEW = (function () {
         y += 1;
       }
     }
+
     return months;
   }
 
@@ -833,34 +286,103 @@ window.MEETING_DETAIL_VIEW = (function () {
     return dateStr >= startDate && dateStr <= endDate;
   }
 
+  function buildSpecialCommittees(rows) {
+    const map = {};
+
+    rows.forEach(function (row) {
+      const code = String(row.meeting_type_code || "");
+      const name = String(row.meeting_name || "");
+      const date = String(row.held_date || "");
+
+      if (SPECIAL_CODES.indexOf(code) < 0 || !name || !date) return;
+
+      if (!map[name]) {
+        map[name] = {
+          special_committee_name: name,
+          first_date: date,
+          last_date: date,
+          count: 0
+        };
+      }
+
+      map[name].count += 1;
+      if (date < map[name].first_date) map[name].first_date = date;
+      if (date > map[name].last_date) map[name].last_date = date;
+    });
+
+    return Object.keys(map).sort().map(function (key) {
+      return map[key];
+    });
+  }
+
+  function buildDetail(meetingId) {
+    const meetingRows = getMeetingRowsByMeetingId(meetingId);
+    if (!meetingRows.length) return null;
+
+    const first = meetingRows[0];
+    const questionRows = getQuestionsByMeetingId(meetingId);
+
+    const startDate = meetingRows.reduce(function (min, row) {
+      const d = String(row.held_date || "");
+      if (!d) return min;
+      if (!min || d < min) return d;
+      return min;
+    }, "");
+
+    const endDate = meetingRows.reduce(function (max, row) {
+      const d = String(row.held_date || "");
+      if (!d) return max;
+      if (!max || d > max) return d;
+      return max;
+    }, "");
+
+    const meetingEvents = buildMeetingCalendarEvents(meetingRows);
+    const questionEvents = buildQuestionCalendarEvents(questionRows);
+    const integrated = buildIntegratedCalendarEvents(meetingEvents, questionEvents);
+    const specialCommittees = buildSpecialCommittees(meetingRows);
+
+    return {
+      meeting_id: String(meetingId || ""),
+      session_name: buildSessionName(first),
+      session_type_code: String(first.session_type_code || ""),
+      session_type_label: String(first.session_type_label || ""),
+      start_date: startDate,
+      end_date: endDate,
+      term_days: calcInclusiveDays(startDate, endDate),
+      steering_dates: getSteeringDates(meetingRows),
+      meeting_rows: meetingRows,
+      question_rows: questionRows,
+      calendar_events_integrated: integrated,
+      special_committees: specialCommittees
+    };
+  }
+
   function renderSummary(detail) {
     const summaryArea = document.getElementById("summaryArea");
-    const steeringDates = detail.steering_dates.length
-      ? detail.steering_dates.map(toWareki).join("、")
-      : "なし";
+    if (!summaryArea) return;
 
-    const scheduleHtml = detail.schedule_file_path
-      ? '<a href="' + escapeHtml(detail.schedule_file_path) + '" target="_blank" rel="noopener noreferrer">日程表</a>'
+    const steeringDates = detail.steering_dates.length
+      ? detail.steering_dates.map(formatDateJa).join("、")
       : "なし";
 
     summaryArea.innerHTML =
       '<div class="summary-item summary-item-wide">' +
         '<span class="summary-label">会期</span>' +
-        escapeHtml(toWareki(detail.start_date)) + " ～ " + escapeHtml(toWareki(detail.end_date)) +
+        escapeHtml(formatDateJa(detail.start_date)) +
+        " ～ " +
+        escapeHtml(formatDateJa(detail.end_date)) +
         (detail.term_days ? "（" + escapeHtml(String(detail.term_days)) + "日）" : "") +
       "</div>" +
       '<div class="summary-item summary-item-wide">' +
         '<span class="summary-label">議会運営委員会 開催日</span>' +
         escapeHtml(steeringDates) +
-      "</div>" +
-      '<div class="summary-item summary-item-wide link-line">' +
-        '<span class="summary-label">日程表</span>' +
-        scheduleHtml +
       "</div>";
   }
 
   function renderCalendar(detail) {
     const calendarArea = document.getElementById("calendarArea");
+    if (!calendarArea) return;
+
     const months = buildCalendarMonths(detail.start_date, detail.end_date);
     const eventMap = buildDateEventMap(detail.calendar_events_integrated);
     const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
@@ -900,7 +422,7 @@ window.MEETING_DETAIL_VIEW = (function () {
         }).join("");
 
         const moreHtml = hiddenCount > 0
-          ? '<div class="calendar-more">+' + escapeHtml(String(hiddenCount)) + "件</div>'
+          ? '<div class="calendar-more">+' + escapeHtml(String(hiddenCount)) + "件</div>"
           : "";
 
         const inTermClass = isInTerm(dateStr, detail.start_date, detail.end_date) ? " in-term" : "";
@@ -921,7 +443,9 @@ window.MEETING_DETAIL_VIEW = (function () {
 
       return (
         '<div class="calendar-month">' +
-          '<div class="calendar-title">' + escapeHtml(String(monthInfo.year)) + "年" + escapeHtml(String(monthInfo.monthIndex + 1)) + "月</div>" +
+          '<div class="calendar-title">' +
+            escapeHtml(String(monthInfo.year)) + "年" + escapeHtml(String(monthInfo.monthIndex + 1)) + "月" +
+          "</div>" +
           '<div class="calendar-grid">' +
             weekdayLabels.map(function (label) {
               return '<div class="weekday-head">' + escapeHtml(label) + "</div>";
@@ -937,6 +461,7 @@ window.MEETING_DETAIL_VIEW = (function () {
 
   function renderSpecialCommittees(detail) {
     const area = document.getElementById("specialCommitteeArea");
+    if (!area) return;
 
     if (!detail.special_committees.length) {
       area.innerHTML = '<div class="empty">特別委員会データがありません。</div>';
@@ -944,238 +469,21 @@ window.MEETING_DETAIL_VIEW = (function () {
     }
 
     area.innerHTML = detail.special_committees.map(function (sc) {
-      const rosterHtml = sc.roster_file_path
-        ? '<div class="link-line"><a href="' + escapeHtml(sc.roster_file_path) + '" target="_blank" rel="noopener noreferrer">名簿</a></div>'
-        : '<div class="link-line">名簿: なし</div>';
-
-      const meetingDatesHtml = sc.meeting_dates.length
-        ? sc.meeting_dates.map(function (row) {
-            const text = row.note
-              ? toWareki(row.meeting_date) + " / " + row.note
-              : toWareki(row.meeting_date);
-            return '<div class="history-row">' + escapeHtml(text) + "</div>";
-          }).join("")
-        : '<div class="empty-small">データなし</div>';
-
-      const membersHtml = sc.members.length
-        ? sc.members.map(function (row) {
-            const text = row.role_name
-              ? row.member_name + "（" + row.role_name + "）"
-              : row.member_name;
-            return '<div class="history-row">' + escapeHtml(text) + "</div>";
-          }).join("")
-        : '<div class="empty-small">データなし</div>';
-
       return (
         '<div class="detail-subcard">' +
           "<h3>" + escapeHtml(sc.special_committee_name) + "</h3>" +
-          '<div class="history-row">設置日: ' + escapeHtml(toWareki(sc.established_date)) + "</div>" +
-          '<div class="history-row">終了日: ' + escapeHtml(sc.end_date ? toWareki(sc.end_date) : "継続中") + "</div>" +
-          rosterHtml +
-          (sc.note ? '<div class="history-row">備考: ' + escapeHtml(sc.note) + "</div>" : "") +
-          '<div class="detail-grid" style="margin-top:12px;">' +
-            '<div class="detail-subcard">' +
-              "<h3>会議日</h3>" +
-              meetingDatesHtml +
-            "</div>" +
-            '<div class="detail-subcard">' +
-              "<h3>委員名簿</h3>" +
-              membersHtml +
-            "</div>" +
-          "</div>" +
+          '<div class="history-row"><span class="summary-label">初回開催日</span>' + escapeHtml(formatDateJa(sc.first_date)) + "</div>" +
+          '<div class="history-row"><span class="summary-label">最終開催日</span>' + escapeHtml(formatDateJa(sc.last_date)) + "</div>" +
+          '<div class="history-row"><span class="summary-label">開催回数</span>' + escapeHtml(String(sc.count)) + "回</div>" +
         "</div>"
       );
     }).join("");
   }
 
-  function renderPatternBlock(title, groups, blockId) {
-    if (!groups.length) return "";
-
-    const contentHtml = groups.map(function (group) {
-      const lines = buildPatternLines(group);
-      const numberLabel = buildNumberRangeLabel(group.items);
-
-      return (
-        '<div class="pattern-item">' +
-          '<div class="pattern-item-title">' + escapeHtml(numberLabel) + ":</div>" +
-          lines.map(function (line) {
-            return (
-              '<div class="history-row">' +
-                '<span class="summary-label">' + escapeHtml(line.label) + "</span>" +
-                escapeHtml(toWareki(line.value)) +
-              "</div>"
-            );
-          }).join("") +
-        "</div>"
-      );
-    }).join("");
-
-    const shouldCollapse = groups.length >= 3 || contentHtml.length > 500;
-
-    return (
-      '<div class="pattern-block" data-block-id="' + escapeHtml(blockId) + '">' +
-        '<div class="pattern-title">' + escapeHtml(title) + "</div>" +
-        '<div class="pattern-content' + (shouldCollapse ? ' is-collapsed' : '') + '">' +
-          contentHtml +
-        "</div>" +
-        (shouldCollapse
-          ? '<div class="pattern-toggle-wrap"><button type="button" class="pattern-toggle-btn">もっと見る</button></div>'
-          : "") +
-      "</div>"
-    );
-  }
-
-  function bindPatternToggleButtons() {
-    document.querySelectorAll(".pattern-block .pattern-toggle-btn").forEach(function (button) {
-      button.addEventListener("click", function () {
-        const block = button.closest(".pattern-block");
-        if (!block) return;
-
-        const content = block.querySelector(".pattern-content");
-        if (!content) return;
-
-        const collapsed = content.classList.contains("is-collapsed");
-        if (collapsed) {
-          content.classList.remove("is-collapsed");
-          button.textContent = "閉じる";
-        } else {
-          content.classList.add("is-collapsed");
-          button.textContent = "もっと見る";
-        }
-      });
-    });
-  }
-
-  function renderItems(detail) {
+  function renderItems() {
     const area = document.getElementById("itemsArea");
-    const grouped = detail.item_patterns;
-
-    if (!grouped.length) {
-      area.innerHTML = '<div class="empty">案件データがありません。</div>';
-      return;
-    }
-
-    const basicBillGroups = grouped.filter(function (row) { return row.pattern_type === "basic_bill"; });
-    const petitionRequestGroups = grouped.filter(function (row) { return row.pattern_type === "petition_request"; });
-    const proposalGroups = grouped.filter(function (row) { return row.pattern_type === "proposal"; });
-
-    const exceptionGroups = grouped.filter(function (row) {
-      return ["fasttrack", "additional", "additional_fasttrack", "additional_continued", "withdrawn", "other"].includes(row.pattern_type);
-    });
-
-    let html = "";
-    html += renderPatternBlock("基本形（議案）", basicBillGroups, "basic-bill");
-    html += renderPatternBlock("請願・陳情", petitionRequestGroups, "petition-request");
-    html += renderPatternBlock("発議案", proposalGroups, "proposal");
-
-    if (exceptionGroups.length) {
-      let exceptionHtml = "";
-
-      ["fasttrack", "additional", "additional_fasttrack", "additional_continued", "withdrawn", "other"].forEach(function (type) {
-        const rows = exceptionGroups.filter(function (row) {
-          return row.pattern_type === type;
-        });
-        if (!rows.length) return;
-
-        exceptionHtml += '<div class="pattern-item">';
-        exceptionHtml += '<div class="pattern-item-title">▼ ' + escapeHtml(getPatternLabel(type)) + "</div>";
-
-        rows.forEach(function (group) {
-          const lines = buildPatternLines(group);
-          const numberLabel = buildNumberRangeLabel(group.items);
-
-          exceptionHtml += '<div class="pattern-item">';
-          exceptionHtml += '<div class="pattern-item-title">' + escapeHtml(numberLabel) + ":</div>";
-          exceptionHtml += lines.map(function (line) {
-            return (
-              '<div class="history-row">' +
-                '<span class="summary-label">' + escapeHtml(line.label) + "</span>" +
-                escapeHtml(toWareki(line.value)) +
-              "</div>"
-            );
-          }).join("");
-          exceptionHtml += "</div>";
-        });
-
-        exceptionHtml += "</div>";
-      });
-
-      const shouldCollapse = exceptionGroups.length >= 3 || exceptionHtml.length > 500;
-
-      html += (
-        '<div class="pattern-block" data-block-id="exception">' +
-          '<div class="pattern-title">例外</div>' +
-          '<div class="pattern-content' + (shouldCollapse ? ' is-collapsed' : '') + '">' +
-            exceptionHtml +
-          '</div>' +
-          (shouldCollapse
-            ? '<div class="pattern-toggle-wrap"><button type="button" class="pattern-toggle-btn">もっと見る</button></div>'
-            : '') +
-        '</div>'
-      );
-    }
-
-    area.innerHTML = html || '<div class="empty">表示対象がありません。</div>';
-    bindPatternToggleButtons();
-  }
-
-  function buildDetail(meetingId) {
-    const meeting = getMeetingById(meetingId);
-    if (!meeting) return null;
-
-    const steeringDates = getEventsByMeetingId(meetingId)
-      .filter(function (row) {
-        return row.event_type_id === "STEERING_COMMITTEE";
-      })
-      .map(function (row) {
-        return row.event_date || "";
-      });
-
-    const specialCommittees = getSpecialCommitteeInstancesByMeetingId(meetingId).map(function (instance) {
-      const scMaster = getSpecialCommitteeById(instance.special_committee_id);
-      return {
-        special_committee_name: scMaster ? scMaster.special_committee_name : "特別委員会",
-        established_date: instance.established_date || "",
-        end_date: instance.end_date || "",
-        note: instance.note || "",
-        roster_file_path: instance.roster_file_path || "",
-        meeting_dates: getSpecialCommitteeMeetingsByInstanceId(instance.special_committee_instance_id).map(function (row) {
-          return {
-            meeting_date: row.meeting_date || "",
-            note: row.note || ""
-          };
-        }),
-        members: getSpecialCommitteeMembersByInstanceId(instance.special_committee_instance_id).map(function (row) {
-          const member = getMemberById(row.member_id);
-          return {
-            member_name: member ? member.member_name : row.member_id,
-            role_name: row.role_name || ""
-          };
-        })
-      };
-    });
-
-    const meetingEvents = buildMeetingEvents(meetingId);
-    const itemUnits = buildMeetingItemUnits(meetingId);
-    const standardProposedDate = getStandardProposedDate(itemUnits);
-    const itemPatterns = groupMeetingItemPatterns(itemUnits, standardProposedDate);
-    const itemCalendarEvents = buildItemCalendarEvents(itemPatterns);
-    const questionEvents = buildQuestionEvents(meetingId);
-    const integratedCalendarEvents = buildIntegratedCalendarEvents(meetingEvents, questionEvents, itemCalendarEvents);
-
-    return {
-      meeting_id: meeting.meeting_id || "",
-      session_name: meeting.session_name || "",
-      session_type: meeting.session_type || "",
-      start_date: meeting.start_date || "",
-      end_date: meeting.end_date || "",
-      term_days: calcInclusiveDays(meeting.start_date, meeting.end_date),
-      schedule_file_path: meeting.schedule_file_path || "",
-      steering_dates: steeringDates,
-      special_committees: specialCommittees,
-      item_patterns: itemPatterns,
-      calendar_events_integrated: integratedCalendarEvents
-    };
+    if (!area) return;
+    area.innerHTML = "";
   }
 
   function openDayModal(dateStr) {
@@ -1189,7 +497,9 @@ window.MEETING_DETAIL_VIEW = (function () {
     const title = document.getElementById("dayModalTitle");
     const body = document.getElementById("dayModalBody");
 
-    title.textContent = toWareki(dateStr) + " の詳細";
+    if (!backdrop || !title || !body) return;
+
+    title.textContent = formatDateJa(dateStr) + " の詳細";
 
     if (!items.length) {
       body.innerHTML = '<div class="empty">この日のイベントはありません。</div>';
@@ -1208,7 +518,10 @@ window.MEETING_DETAIL_VIEW = (function () {
   }
 
   function closeDayModal() {
-    document.getElementById("dayModalBackdrop").classList.remove("show");
+    const backdrop = document.getElementById("dayModalBackdrop");
+    if (backdrop) {
+      backdrop.classList.remove("show");
+    }
   }
 
   function bindCalendarDayClicks() {
@@ -1223,13 +536,17 @@ window.MEETING_DETAIL_VIEW = (function () {
     const backdrop = document.getElementById("dayModalBackdrop");
     const closeBtn = document.getElementById("dayModalClose");
 
-    closeBtn.addEventListener("click", closeDayModal);
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeDayModal);
+    }
 
-    backdrop.addEventListener("click", function (e) {
-      if (e.target === backdrop) {
-        closeDayModal();
-      }
-    });
+    if (backdrop) {
+      backdrop.addEventListener("click", function (e) {
+        if (e.target === backdrop) {
+          closeDayModal();
+        }
+      });
+    }
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
@@ -1242,8 +559,12 @@ window.MEETING_DETAIL_VIEW = (function () {
     const pageTitle = document.getElementById("pageTitle");
     const pageDesc = document.getElementById("pageDesc");
 
-    pageTitle.textContent = detail.session_name;
-    pageDesc.textContent = sessionTypeLabel(detail.session_type) + " の詳細を表示しています。";
+    if (pageTitle) {
+      pageTitle.textContent = detail.session_name;
+    }
+    if (pageDesc) {
+      pageDesc.textContent = detail.session_type_label + " の詳細を表示しています。";
+    }
 
     renderSummary(detail);
     renderCalendar(detail);
@@ -1252,7 +573,22 @@ window.MEETING_DETAIL_VIEW = (function () {
   }
 
   function renderStatus(text) {
-    document.getElementById("statusBox").textContent = text;
+    const box = document.getElementById("statusBox");
+    if (box) {
+      box.textContent = text;
+    }
+  }
+
+  function renderEmptyState(message) {
+    const summaryArea = document.getElementById("summaryArea");
+    const calendarArea = document.getElementById("calendarArea");
+    const specialCommitteeArea = document.getElementById("specialCommitteeArea");
+    const itemsArea = document.getElementById("itemsArea");
+
+    if (summaryArea) summaryArea.innerHTML = '<div class="empty">' + escapeHtml(message) + "</div>";
+    if (calendarArea) calendarArea.innerHTML = '<div class="empty">表示対象がありません。</div>';
+    if (specialCommitteeArea) specialCommitteeArea.innerHTML = '<div class="empty">表示対象がありません。</div>';
+    if (itemsArea) itemsArea.innerHTML = "";
   }
 
   function init() {
@@ -1262,10 +598,7 @@ window.MEETING_DETAIL_VIEW = (function () {
 
     if (!meetingId) {
       renderStatus("meeting_id が指定されていません。");
-      document.getElementById("summaryArea").innerHTML = '<div class="empty">meeting_id がありません。</div>';
-      document.getElementById("calendarArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
-      document.getElementById("specialCommitteeArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
-      document.getElementById("itemsArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
+      renderEmptyState("meeting_id がありません。");
       return;
     }
 
@@ -1273,10 +606,7 @@ window.MEETING_DETAIL_VIEW = (function () {
 
     if (!detail) {
       renderStatus("該当する会議回が見つかりません。");
-      document.getElementById("summaryArea").innerHTML = '<div class="empty">該当する会議回がありません。</div>';
-      document.getElementById("calendarArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
-      document.getElementById("specialCommitteeArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
-      document.getElementById("itemsArea").innerHTML = '<div class="empty">表示対象がありません。</div>';
+      renderEmptyState("該当する会議回がありません。");
       return;
     }
 
@@ -1285,9 +615,10 @@ window.MEETING_DETAIL_VIEW = (function () {
     renderStatus([
       "meeting_detail.html 読み込み成功",
       "meeting_id: " + detail.meeting_id,
+      "meeting_rows: " + detail.meeting_rows.length + "件",
+      "question_rows: " + detail.question_rows.length + "件",
       "calendar_events_integrated: " + detail.calendar_events_integrated.length + "件",
-      "special_committees: " + detail.special_committees.length + "件",
-      "item_patterns: " + detail.item_patterns.length + "件"
+      "special_committees: " + detail.special_committees.length + "件"
     ].join("\n"));
 
     render(detail);
@@ -1301,3 +632,4 @@ window.MEETING_DETAIL_VIEW = (function () {
 document.addEventListener("DOMContentLoaded", function () {
   window.MEETING_DETAIL_VIEW.init();
 });
+
