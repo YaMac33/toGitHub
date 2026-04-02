@@ -1,5 +1,3 @@
-app\js\questions\view_questions.js
-
 window.QUESTIONS_VIEW = (function () {
   "use strict";
 
