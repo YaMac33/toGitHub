@@ -1,7 +1,11 @@
+app\js\questions\view_questions.js
+
 window.QUESTIONS_VIEW = (function () {
   "use strict";
 
-  const escapeHtml = window.APP_UTILS.escapeHtml;
+  const escapeHtml = window.APP_UTILS && typeof window.APP_UTILS.escapeHtml === "function"
+    ? window.APP_UTILS.escapeHtml
+    : function (value) { return String(value == null ? "" : value); };
 
   const state = {
     keyword: "",
@@ -22,10 +26,68 @@ window.QUESTIONS_VIEW = (function () {
     resultsArea: document.getElementById("resultsArea")
   };
 
-  function getRecords() {
-    if (Array.isArray(window.RECORDS)) return window.RECORDS;
-    if (window.APP_DATA && Array.isArray(window.APP_DATA.questions)) return window.APP_DATA.questions;
+  function getHeaderRecords() {
+    if (window.APP_DATA && Array.isArray(window.APP_DATA.questions)) {
+      return window.APP_DATA.questions;
+    }
     return [];
+  }
+
+  function getDetailRecords() {
+    if (window.APP_DATA && Array.isArray(window.APP_DATA.question_details)) {
+      return window.APP_DATA.question_details;
+    }
+    return [];
+  }
+
+  function getRecords() {
+    if (Array.isArray(window.RECORDS)) {
+      return window.RECORDS.slice();
+    }
+
+    const headers = getHeaderRecords();
+    const details = getDetailRecords();
+
+    if (!headers.length || !details.length) {
+      return headers.slice();
+    }
+
+    const headerMap = {};
+    headers.forEach(function (header) {
+      headerMap[header.question_id] = header;
+    });
+
+    return details
+      .map(function (detail) {
+        const header = headerMap[detail.question_id];
+        if (!header) return null;
+
+        return {
+          question_id: header.question_id || "",
+          detail_id: detail.detail_id || "",
+          meeting_id: header.meeting_id || "",
+          question_date: header.question_date || "",
+          fiscal_year: header.fiscal_year || "",
+          number: header.number || "",
+          year: header.year || "",
+          session: header.session || "",
+          notice_no: header.notice_no || "",
+          member_id: header.member_id || "",
+          member_name: header.member_name || "",
+          group: header.group || header.group_name || "",
+          group_name: header.group_name || header.group || "",
+          allotted_minutes: header.allotted_minutes || "",
+          note: header.note || "",
+          sort_order: detail.sort_order || header.sort_order || "",
+          major_no: detail.major_no || "",
+          middle_no: detail.middle_no || "",
+          minor_no: detail.minor_no || "",
+          content: detail.content || "",
+          created_at: detail.created_at || header.created_at || "",
+          updated_at: detail.updated_at || header.updated_at || ""
+        };
+      })
+      .filter(Boolean);
   }
 
   function normalizeText(v) {
@@ -127,7 +189,7 @@ window.QUESTIONS_VIEW = (function () {
       if (!map[member]) {
         map[member] = {
           member: member,
-          group: r.group,
+          group: r.group || r.group_name || "",
           ys: {}
         };
       }
@@ -172,10 +234,10 @@ window.QUESTIONS_VIEW = (function () {
         map[sessionKey].notices[notice] = {};
       }
 
-      const member = r.member_name;
+      const member = r.member_name || "不明";
       if (!map[sessionKey].notices[notice][member]) {
         map[sessionKey].notices[notice][member] = {
-          group: r.group,
+          group: r.group || r.group_name || "",
           records: []
         };
       }

@@ -4,6 +4,7 @@ Option Explicit
 ' 一般質問検索システム用
 ' Excelシート → app/data/questions/*.js 出力VBA
 ' question_date 対応版
+' major_no / middle_no / minor_no は文字列出力版
 ' =========================================================
 
 ' -----------------------------
@@ -184,8 +185,7 @@ End Function
 
 Private Function IsNumericField(ByVal headerName As String) As Boolean
     Select Case headerName
-        Case "fiscal_year", "year", "notice_no", "allotted_minutes", _
-             "sort_order", "major_no", "middle_no", "minor_no"
+        Case "fiscal_year", "year", "notice_no", "allotted_minutes", "sort_order"
             IsNumericField = True
         Case Else
             IsNumericField = False

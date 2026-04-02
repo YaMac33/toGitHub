@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>通告内容検索</title>
+  <title>議会通告検索システム</title>
 
   <link rel="stylesheet" href="../../css/common.css" />
 
@@ -23,6 +23,7 @@
 
     .page {
       max-width: 1100px;
+      margin: 0 auto;
       padding: 24px 16px 40px;
     }
 
@@ -429,7 +430,7 @@
 <body>
   <div class="page">
     <header class="page-header">
-      <h1>一般質問通告内容検索</h1>
+      <h1>議会通告検索システム</h1>
       <p>議員名・内容・通告Noなどで検索し、整理された形式で閲覧できます。</p>
     </header>
 
@@ -473,10 +474,13 @@
     <main id="resultsArea"></main>
   </div>
 
-  <script src="../../data/questions/questions.js"></script>
-
   <script src="../../js/core/common.js"></script>
   <script src="../../js/core/utils.js"></script>
+  <script src="../../js/core/formatters.js"></script>
+
+  <script src="../../data/questions/questions.js"></script>
+  <script src="../../data/questions/question_details.js"></script>
+
   <script src="../../js/questions/view_questions.js"></script>
 </body>
 </html>

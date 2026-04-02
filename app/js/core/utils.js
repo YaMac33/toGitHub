@@ -62,3 +62,4 @@
   window.APP_UTILS.getById = getById;
   window.APP_UTILS.openInNewTab = openInNewTab;
 })();
+

@@ -76,47 +76,48 @@
   }
 
   function itemClassLabel(value) {
-    if (value === "BILL") return "議案";
-    if (value === "PROPOSAL") return "発議案";
-    if (value === "PETITION") return "請願";
-    if (value === "REQUEST") return "陳情";
-    return value || "";
+    const map = {
+      GIAN: "議案",
+      SEGN: "請願",
+      CHNJ: "陳情",
+      HTGN: "発議案"
+    };
+    return map[value] || value || "";
   }
 
   function itemSubclassLabel(value) {
     const map = {
-      ORDINANCE: "条例",
-      BUDGET: "予算",
-      SETTLEMENT: "決算",
-      CONTRACT: "契約",
-      PERSONNEL: "人事",
-      PROPERTY: "財産",
-      SPECIAL_DECISION: "専決処分",
-      OPINION: "意見書",
-      RESOLUTION: "決議",
-      GENERAL: "一般",
-      OTHER: "その他"
+      JORE: "条例",
+      YSAN: "予算",
+      KSAN: "決算",
+      KYKU: "契約",
+      ZSAN: "財産",
+      JINJ: "人事",
+      SNKT: "専決処分",
+      OTHER: "その他",
+      HGJR: "発議条例",
+      IKEN: "意見書",
+      KTGI: "決議",
+      GNRL: "ほか"
     };
     return map[value] || value || "";
   }
 
   function actionTypeLabel(value) {
     const map = {
-      PROPOSED: "提案",
-      REFERRED: "付託",
-      REPORTED: "報告",
-      CONTINUED: "継続審査",
-      WITHDRAWN: "取下げ",
-      DECIDED: "最終結果"
+      TEAN: "提案",
+      FTAK: "付託",
+      GKTU: "議決",
+      KZOK: "継続審査",
+      TRSG: "取下げ"
     };
     return map[value] || value || "";
   }
 
   function resultLabel(value) {
     const map = {
-      NONE: "結果なし",
-      PASSED: "通った",
-      REJECTED: "通らなかった"
+      PASSED: "可(通った)",
+      REJECTED: "否(通らなかった)"
     };
     return map[value] || value || "";
   }
