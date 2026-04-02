@@ -34,8 +34,18 @@ window.MEETING_DETAIL_VIEW = (function () {
       .sort(compareMeetingRows);
   }
 
+  function getQuestionRowsSource() {
+    if (Array.isArray(window.APP_DATA && window.APP_DATA.questions)) {
+      return window.APP_DATA.questions;
+    }
+    if (Array.isArray(window.RECORDS)) {
+      return window.RECORDS;
+    }
+    return [];
+  }
+
   function getQuestionsByMeetingId(meetingId) {
-    return getArray("questions")
+    return getQuestionRowsSource()
       .filter(function (row) {
         return String(row.meeting_id || "") === String(meetingId || "");
       })
@@ -59,8 +69,8 @@ window.MEETING_DETAIL_VIEW = (function () {
     const bd = String(b.held_date || "");
     if (ad !== bd) return ad < bd ? -1 : 1;
 
-    const as = Number(a.day_sequence || 0);
-    const bs = Number(b.day_sequence || 0);
+    const as = Number(a.day_sequence || a["同日回"] || 0);
+    const bs = Number(b.day_sequence || b["同日回"] || 0);
     if (as !== bs) return as - bs;
 
     const ar = String(a.row_id || "");
@@ -86,13 +96,6 @@ window.MEETING_DETAIL_VIEW = (function () {
       "回" +
       String(row.session_type_label || "")
     );
-  }
-
-  function sessionTypeLabel(value) {
-    const v = String(value || "").trim();
-    if (v === "TEI") return "定例会";
-    if (v === "RIN") return "臨時会";
-    return v;
   }
 
   function formatDateJa(dateStr) {
@@ -199,6 +202,10 @@ window.MEETING_DETAIL_VIEW = (function () {
     return parts.join(" / ");
   }
 
+  function getQuestionGroupName(row) {
+    return String(row.group_name || row.group || "").trim();
+  }
+
   function buildQuestionCalendarEvents(questionRows) {
     const grouped = {};
 
@@ -206,30 +213,59 @@ window.MEETING_DETAIL_VIEW = (function () {
       const dateKey = String(row.question_date || "");
       if (!dateKey) return;
 
+      const noticeNo = String(row.notice_no || "");
+      const memberName = String(row.member_name || "");
+      const groupName = getQuestionGroupName(row);
+      const minutes = formatDurationMinutes(row.allotted_minutes);
+
+      const detailLine = [
+        "通告No" + noticeNo,
+        memberName + (groupName ? "（" + groupName + "）" : ""),
+        minutes
+      ].filter(Boolean).join(" ");
+
+      const uniqueKey = [
+        dateKey,
+        noticeNo,
+        memberName,
+        groupName
+      ].join("|");
+
       if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
+        grouped[dateKey] = {
+          date: dateKey,
+          category: "question",
+          sort_order: 2,
+          css_class: "question",
+          items: [],
+          seen: {}
+        };
       }
-      grouped[dateKey].push(row);
+
+      if (!grouped[dateKey].seen[uniqueKey]) {
+        grouped[dateKey].seen[uniqueKey] = true;
+        grouped[dateKey].items.push({
+          notice_no: Number(row.notice_no || 0),
+          detail_text: detailLine
+        });
+      }
     });
 
     return Object.keys(grouped).sort().map(function (dateKey) {
-      const rows = grouped[dateKey];
+      const group = grouped[dateKey];
+
+      group.items.sort(function (a, b) {
+        return a.notice_no - b.notice_no;
+      });
+
       return {
-        date: dateKey,
+        date: group.date,
         category: "question",
-        label: "一般質問（" + rows.length + "件）",
-        sort_order: 2,
-        css_class: "question",
-        detail_text: rows.map(function (row) {
-          const parts = [];
-          parts.push("通告No" + String(row.notice_no || ""));
-          parts.push(String(row.member_name || ""));
-          if (row.group_name) {
-            parts[parts.length - 1] += "（" + String(row.group_name) + "）";
-          }
-          const minutes = formatDurationMinutes(row.allotted_minutes);
-          if (minutes) parts.push(minutes);
-          return parts.join(" ");
+        label: "一般質問（" + group.items.length + "件）",
+        sort_order: group.sort_order,
+        css_class: group.css_class,
+        detail_text: group.items.map(function (item) {
+          return item.detail_text;
         }).join("\n")
       };
     });
@@ -631,4 +667,3 @@ window.MEETING_DETAIL_VIEW = (function () {
 document.addEventListener("DOMContentLoaded", function () {
   window.MEETING_DETAIL_VIEW.init();
 });
-
