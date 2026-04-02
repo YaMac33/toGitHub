@@ -64,6 +64,19 @@ window.MEETING_DETAIL_VIEW = (function () {
       });
   }
 
+  function getMemberById(memberId) {
+    return getArray("members").find(function (row) {
+      return String(row.member_id || "") === String(memberId || "");
+    }) || null;
+  }
+
+  function getSpecialCommitteeMembersByMeetingId(meetingId) {
+    return getArray("special_committee_members")
+      .filter(function (row) {
+        return String(row.meeting_id || "") === String(meetingId || "");
+      });
+  }
+
   function compareMeetingRows(a, b) {
     const ad = String(a.held_date || "");
     const bd = String(b.held_date || "");
@@ -321,7 +334,16 @@ window.MEETING_DETAIL_VIEW = (function () {
     return dateStr >= startDate && dateStr <= endDate;
   }
 
-  function buildSpecialCommittees(rows) {
+  function roleOrder(roleName) {
+    const role = String(roleName || "").trim();
+    if (role === "委員長") return 1;
+    if (role === "副委員長") return 2;
+    if (role === "理事") return 3;
+    if (role === "委員") return 4;
+    return 9;
+  }
+
+  function buildSpecialCommittees(rows, specialCommitteeMembers) {
     const map = {};
 
     rows.forEach(function (row) {
@@ -331,22 +353,49 @@ window.MEETING_DETAIL_VIEW = (function () {
 
       if (SPECIAL_CODES.indexOf(code) < 0 || !name || !date) return;
 
-      if (!map[name]) {
-        map[name] = {
+      if (!map[code]) {
+        map[code] = {
+          committee_id: code,
           special_committee_name: name,
           first_date: date,
           last_date: date,
-          count: 0
+          count: 0,
+          members: []
         };
       }
 
-      map[name].count += 1;
-      if (date < map[name].first_date) map[name].first_date = date;
-      if (date > map[name].last_date) map[name].last_date = date;
+      map[code].count += 1;
+      if (date < map[code].first_date) map[code].first_date = date;
+      if (date > map[code].last_date) map[code].last_date = date;
+    });
+
+    specialCommitteeMembers.forEach(function (row) {
+      const committeeId = String(row.committee_id || "");
+      if (!map[committeeId]) return;
+
+      const member = getMemberById(row.member_id);
+
+      map[committeeId].members.push({
+        member_id: String(row.member_id || ""),
+        member_name: member ? String(member.member_name || row.member_id || "") : String(row.member_id || ""),
+        role: String(row.role || ""),
+        start_date: String(row.start_date || ""),
+        end_date: String(row.end_date || "")
+      });
     });
 
     return Object.keys(map).sort().map(function (key) {
-      return map[key];
+      const group = map[key];
+      group.members.sort(function (a, b) {
+        const ra = roleOrder(a.role);
+        const rb = roleOrder(b.role);
+        if (ra !== rb) return ra - rb;
+
+        const an = String(a.member_name || "");
+        const bn = String(b.member_name || "");
+        return an < bn ? -1 : an > bn ? 1 : 0;
+      });
+      return group;
     });
   }
 
@@ -356,6 +405,7 @@ window.MEETING_DETAIL_VIEW = (function () {
 
     const first = meetingRows[0];
     const questionRows = getQuestionsByMeetingId(meetingId);
+    const specialCommitteeMembers = getSpecialCommitteeMembersByMeetingId(meetingId);
 
     const startDate = meetingRows.reduce(function (min, row) {
       const d = String(row.held_date || "");
@@ -374,7 +424,7 @@ window.MEETING_DETAIL_VIEW = (function () {
     const meetingEvents = buildMeetingCalendarEvents(meetingRows);
     const questionEvents = buildQuestionCalendarEvents(questionRows);
     const integrated = buildIntegratedCalendarEvents(meetingEvents, questionEvents);
-    const specialCommittees = buildSpecialCommittees(meetingRows);
+    const specialCommittees = buildSpecialCommittees(meetingRows, specialCommitteeMembers);
 
     return {
       meeting_id: String(meetingId || ""),
@@ -504,12 +554,25 @@ window.MEETING_DETAIL_VIEW = (function () {
     }
 
     area.innerHTML = detail.special_committees.map(function (sc) {
+      const membersHtml = sc.members.length
+        ? sc.members.map(function (row) {
+            const text = row.role
+              ? row.role + "　" + row.member_name
+              : row.member_name;
+            return '<div class="history-row">' + escapeHtml(text) + "</div>";
+          }).join("")
+        : '<div class="empty-small">委員データがありません。</div>';
+
       return (
         '<div class="detail-subcard">' +
           "<h3>" + escapeHtml(sc.special_committee_name) + "</h3>" +
           '<div class="history-row"><span class="summary-label">初回開催日</span>' + escapeHtml(formatDateJa(sc.first_date)) + "</div>" +
           '<div class="history-row"><span class="summary-label">最終開催日</span>' + escapeHtml(formatDateJa(sc.last_date)) + "</div>" +
           '<div class="history-row"><span class="summary-label">開催回数</span>' + escapeHtml(String(sc.count)) + "回</div>" +
+          '<div class="detail-subcard" style="margin-top:12px;">' +
+            "<h3>委員一覧</h3>" +
+            membersHtml +
+          "</div>" +
         "</div>"
       );
     }).join("");
