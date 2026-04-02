@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>システム説明書</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 1.5em;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 8px;
+            color: #0056b3;
+            margin-top: 40px;
+        }
+        h1:first-of-type {
+            margin-top: 0;
+        }
+        h2 {
+            font-size: 1.2em;
+            background-color: #f4f6f9;
+            padding: 10px 15px;
+            border-left: 5px solid #0056b3;
+            margin-top: 30px;
+        }
+        ul {
+            padding-left: 25px;
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        .note {
+            font-size: 0.9em;
+            color: #666;
+            background-color: #fcfcfc;
+            padding: 10px;
+            border: 1px dashed #ccc;
+        }
+        .procedure {
+            background-color: #e9f5ff;
+            padding: 15px 20px;
+            border-radius: 6px;
+            border: 1px solid #cce5ff;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>システム概要</h1>
+    <p>本システムは、ブラウザ上で動作するWebアプリケーション（所属内の権限がある方のみ閲覧可能）です。画面の表示には、以下の3つの要素を使用しています。</p>
+    <ul>
+        <li><strong>HTML:</strong> 画面の構造や文章を定義するベースとなるファイルです。</li>
+        <li><strong>CSS:</strong> 文字の大きさや色など、画面の見た目を整えます。</li>
+        <li><strong>JavaScript (JS):</strong> 画面に動きや便利な機能を追加します。</li>
+    </ul>
+    <p class="note">※CSSとJSはHTML内に直接書くこともできますが、本システムではそれぞれ別のファイルとして保存し、HTMLから読み込んで連携させています。</p>
+
+    <h2>ファイルの取り扱いに関する注意点</h2>
+    <ul>
+        <li><strong>ファイルの直接編集について</strong><br>
+        Webページのような見た目ですが、実態はテキストファイルです。「右クリック → プログラムから開く → メモ帳」などで開けば、コードの閲覧や編集も可能です。ただし、誤って書き換えるとシステムが壊れるリスクがあるためご注意ください。</li>
+        <li><strong>移動時の注意（フォルダごと移動）</strong><br>
+        本システムは、複数のファイルが特定のフォルダ階層（位置関係）を保つことで動作しています。システムを別の場所に移動させる際は、ファイル単体ではなく「フォルダごと」移動してください。</li>
+    </ul>
+
+    <h2>データの更新手順</h2>
+    <p>システムの元データは、既存のExcelファイルです。入力項目が無駄に増えたり複雑になったりしないよう工夫しつつ、以下の加工を加えています。</p>
+    <ul>
+        <li>アプリ更新用の列の追加</li>
+        <li>Excelのデータを抽出し、システム表示用のデータ（jsファイル）を自動作成するVBA（マクロ）の追加</li>
+    </ul>
+    
+    <div class="procedure">
+        <strong>＜更新方法＞</strong><br>
+        <p style="margin-top: 5px; margin-bottom: 0;">Excelファイルを更新した後、<strong>「開発」タブ ＞ 「マクロ」 ＞ 「（該当のマクロ名）」</strong>を選択して実行してください。<br>これにより、表示用のデータ（jsファイル）が丸ごと最新の状態に上書きされます。</p>
+    </div>
+
+    <h2>本システムを作成した目的</h2>
+    <p>従来のExcel管理では難しかった<strong>「複数の項目の関連性を体系的に見る」</strong>ことを実現するためです。</p>
+    <p>また、「編集するファイル（Excel）」と「閲覧するファイル（ブラウザ）」を完全に分離したことで、検索性が向上するだけでなく、閲覧者が誤ってデータを壊してしまうリスクを低減し、安全かつ見やすいデータベースとして利用できるようになっています。</p>
+
+</body>
+</html>
