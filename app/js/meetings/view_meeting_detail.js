@@ -1,4 +1,3 @@
-app/js/meetings/view_meeting_detail.js を、以下に差し替えてください。
 window.APP_DATA = window.APP_DATA || {};
 
 window.MEETING_DETAIL_VIEW = (function () {
