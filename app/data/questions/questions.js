@@ -1,0 +1,57 @@
+window.APP_DATA = window.APP_DATA || {};
+window.APP_DATA.questions = [
+  {
+    question_id: "TEIR080101",
+    question_date: "2026-02-26",
+    meeting_id: "TEIR0801",
+    fiscal_year: 0,
+    number: "R",
+    year: 8,
+    session: "1",
+    notice_no: 1,
+    member_id: "M010",
+    member_name: "山田太郎",
+    group_name: "○○会",
+    allotted_minutes: 4.16666666666667E-02,
+    note: "",
+    sort_order: 10,
+    created_at: "2026-03-31 00:00:00",
+    updated_at: "2026-03-31 00:00:00"
+  },
+  {
+    question_id: "TEIR080102",
+    question_date: "2026-02-26",
+    meeting_id: "TEIR0801",
+    fiscal_year: 0,
+    number: "R",
+    year: 8,
+    session: "1",
+    notice_no: 2,
+    member_id: "M011",
+    member_name: "佐藤花子",
+    group_name: "未来クラブ",
+    allotted_minutes: 0.05,
+    note: "",
+    sort_order: 20,
+    created_at: "2026-03-31 00:00:00",
+    updated_at: "2026-03-31 00:00:00"
+  },
+  {
+    question_id: "TEIR080103",
+    question_date: "2026-02-27",
+    meeting_id: "TEIR0801",
+    fiscal_year: 0,
+    number: "R",
+    year: 8,
+    session: "2",
+    notice_no: 3,
+    member_id: "M012",
+    member_name: "鈴木一郎",
+    group_name: "市民連合",
+    allotted_minutes: 0.06,
+    note: "",
+    sort_order: 30,
+    created_at: "2026-03-31 00:00:00",
+    updated_at: "2026-03-31 00:00:00"
+  }
+];
