@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>議会通告検索システム</title>
+
+  <link rel="stylesheet" href="../../css/common.css" />
+
+  <style>
+    html, body {
+      background: #ffffff;
+      color: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .page-header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .page-header h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .page-header p {
+      margin: 0;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .panel {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      margin-bottom: 24px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .control-row + .control-row {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .search-box {
+      flex: 1 1 320px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-box input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      background: #ffffff;
+      color: #374151;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #f9fafb;
+    }
+
+    .btn-primary {
+      background: #111827;
+      border-color: #111827;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #1f2937;
+    }
+
+    .mode-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .mode-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #6b7280;
+      white-space: nowrap;
+    }
+
+    .mode-switch {
+      display: flex;
+      gap: 6px;
+      padding: 4px;
+      background: #f3f4f6;
+      border-radius: 12px;
+    }
+
+    .mode-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: #4b5563;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .mode-btn.active {
+      background: #ffffff;
+      color: #1d4ed8;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e5e7eb;
+    }
+
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 24px;
+      margin-bottom: 20px;
+      padding: 0 4px;
+      font-size: 14px;
+    }
+
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #4b5563;
+    }
+
+    .summary-label {
+      font-weight: 700;
+    }
+
+    .summary-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #f3f4f6;
+      border-radius: 999px;
+      color: #111827;
+      font-weight: 600;
+    }
+
+    .summary-count {
+      color: #2563eb;
+      font-weight: 700;
+    }
+
+    .cards {
+      display: grid;
+      gap: 20px;
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      padding: 20px;
+    }
+
+    .card-header {
+      display: block;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1.4;
+    }
+
+    .section-block {
+      margin-bottom: 18px;
+    }
+
+    .section-block:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1d4ed8;
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      border-radius: 10px;
+    }
+
+    .notice-block {
+      margin-left: 10px;
+      margin-bottom: 14px;
+      padding-left: 14px;
+      border-left: 2px solid #eef2f7;
+    }
+
+    .notice-block:last-child {
+      margin-bottom: 0;
+    }
+
+    .notice-title {
+      margin-bottom: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    .member-title {
+      margin-bottom: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    .muted {
+      color: #6b7280;
+    }
+
+    .collapsible {
+      overflow: hidden;
+      transition: max-height 0.2s ease;
+    }
+
+    .collapsible.member-collapsed,
+    .collapsible.session-member-collapsed {
+      max-height: 220px;
+    }
+
+    .collapsible.expanded {
+      max-height: 9999px;
+    }
+
+    .tree-block {
+      display: grid;
+      gap: 6px;
+    }
+
+    .tree-row {
+      position: relative;
+      padding: 10px 0 10px 24px;
+      border-bottom: 1px dashed #f1f5f9;
+    }
+
+    .tree-row:last-child {
+      border-bottom: none;
+    }
+
+    .tree-row::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 6px;
+      width: 2px;
+      background: #e5e7eb;
+    }
+
+    .tree-row::after {
+      content: "";
+      position: absolute;
+      top: 22px;
+      left: 6px;
+      width: 12px;
+      height: 2px;
+      background: #e5e7eb;
+    }
+
+    .depth-0 {
+      margin-left: 0;
+    }
+
+    .depth-1 {
+      margin-left: 24px;
+    }
+
+    .depth-2 {
+      margin-left: 48px;
+    }
+
+    .tree-inner {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .tree-label-badge {
+      display: inline-block;
+      min-width: 52px;
+      text-align: center;
+      padding: 2px 8px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      font-family: monospace;
+      flex: 0 0 auto;
+      margin-top: 2px;
+    }
+
+    .tree-content {
+      flex: 1 1 auto;
+      line-height: 1.8;
+      color: #374151;
+      word-break: break-word;
+    }
+
+    .more-wrap {
+      margin-top: 10px;
+      padding-left: 6px;
+    }
+
+    .more-btn {
+      padding: 7px 14px;
+      background: #f9fafb;
+      border: 1px solid #d1d5db;
+      border-radius: 999px;
+      color: #4b5563;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .more-btn:hover {
+      background: #f3f4f6;
+    }
+
+    .empty-box {
+      padding: 32px 20px;
+      text-align: center;
+      color: #6b7280;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      background: #ffffff;
+    }
+
+    @media (max-width: 768px) {
+      .page {
+        padding: 16px 12px 24px;
+      }
+
+      .page-header h1 {
+        font-size: 24px;
+      }
+
+      .card-title {
+        font-size: 18px;
+      }
+
+      .control-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .mode-group {
+        width: 100%;
+      }
+
+      .mode-switch {
+        flex-wrap: wrap;
+      }
+
+      .tree-inner {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .depth-1 {
+        margin-left: 12px;
+      }
+
+      .depth-2 {
+        margin-left: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <h1>議会通告検索システム</h1>
+      <p>議員名・内容・通告Noなどで検索し、整理された形式で閲覧できます。</p>
+    </header>
+
+    <section class="panel">
+      <div class="control-row">
+        <div class="search-box">
+          <input id="keywordInput" type="text" placeholder="議員名・内容・通告Noなどで検索..." />
+        </div>
+        <div class="button-row">
+          <button id="searchBtn" type="button" class="btn btn-primary">検索</button>
+          <button id="clearBtn" type="button" class="btn">クリア</button>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="mode-group">
+          <span class="mode-label">表示形式</span>
+          <div class="mode-switch">
+            <button id="viewListBtn" type="button" class="mode-btn">一覧</button>
+            <button id="viewSessionBtn" type="button" class="mode-btn">回ごと</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary">
+      <div class="summary-item">
+        <span class="summary-label">検索語:</span>
+        <span id="summaryKeyword" class="summary-chip">なし</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">検索結果:</span>
+        <span id="summaryCount" class="summary-count">0件</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">現在の表示:</span>
+        <span id="summaryView">一覧</span>
+      </div>
+    </section>
+
+    <main id="resultsArea"></main>
+  </div>
+
+  <script src="../../js/core/common.js"></script>
+  <script src="../../js/core/utils.js"></script>
+  <script src="../../js/core/formatters.js"></script>
+
+  <script src="../../data/questions/questions.js"></script>
+  <script src="../../data/questions/question_details.js"></script>
+
+  <script src="../../js/questions/view_questions.js"></script>
+</body>
+</html>
