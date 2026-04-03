@@ -1,0 +1,400 @@
+Option Explicit
+
+Public Sub ExportMeetingsJs()
+
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim r As Long
+    
+    Dim cFiscalYear As Long
+    Dim cEraCode As Long
+    Dim cSession As Long
+    Dim cSessionTypeRaw As Long
+    Dim cPeriodType As Long
+    Dim cWarekiYear As Long
+    Dim cMonth As Long
+    Dim cDay As Long
+    Dim cDaySeq As Long
+    Dim cMeetingName As Long
+    Dim cDuration As Long
+    Dim cMeetingId As Long
+    Dim cRowId As Long
+    Dim cSessionTypeCode As Long
+    Dim cSessionTypeLabel As Long
+    Dim cMeetingTypeCode As Long
+    Dim cHeldDate As Long
+    
+    Dim body As String
+    Dim js As String
+    Dim outputPath As String
+    
+    On Error GoTo EH
+    
+    Set ws = ThisWorkbook.Worksheets("meetings")
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    If lastRow < 2 Then
+        MsgBox "meetingsシートにデータがありません。", vbExclamation
+        Exit Sub
+    End If
+    
+    cFiscalYear = FindHeaderColumn(ws, "年度")
+    cEraCode = FindHeaderColumn(ws, "era_code")
+    cSession = FindHeaderColumn(ws, "回")
+    cSessionTypeRaw = FindHeaderColumn(ws, "定・臨")
+    cPeriodType = FindHeaderColumn(ws, "会期")
+    cWarekiYear = FindHeaderColumn(ws, "wareki_year")
+    cMonth = FindHeaderColumn(ws, "月")
+    cDay = FindHeaderColumn(ws, "日")
+    cDaySeq = FindHeaderColumn(ws, "同日回")
+    cMeetingName = FindHeaderColumn(ws, "会議名称")
+    cDuration = FindHeaderColumn(ws, "実時間数")
+    cMeetingId = FindHeaderColumn(ws, "meeting_id")
+    cRowId = FindHeaderColumn(ws, "row_id")
+    cSessionTypeCode = FindHeaderColumn(ws, "session_type_code")
+    cSessionTypeLabel = FindHeaderColumn(ws, "session_type_label")
+    cMeetingTypeCode = FindHeaderColumn(ws, "meeting_type_code")
+    cHeldDate = FindHeaderColumn(ws, "held_date")
+    
+    ValidateRequiredColumn cFiscalYear, "年度"
+    ValidateRequiredColumn cEraCode, "era_code"
+    ValidateRequiredColumn cSession, "回"
+    ValidateRequiredColumn cSessionTypeRaw, "定・臨"
+    ValidateRequiredColumn cPeriodType, "会期"
+    ValidateRequiredColumn cWarekiYear, "wareki_year"
+    ValidateRequiredColumn cMonth, "月"
+    ValidateRequiredColumn cDay, "日"
+    ValidateRequiredColumn cDaySeq, "同日回"
+    ValidateRequiredColumn cMeetingName, "会議名称"
+    ValidateRequiredColumn cDuration, "実時間数"
+    ValidateRequiredColumn cMeetingId, "meeting_id"
+    ValidateRequiredColumn cRowId, "row_id"
+    ValidateRequiredColumn cSessionTypeCode, "session_type_code"
+    ValidateRequiredColumn cSessionTypeLabel, "session_type_label"
+    ValidateRequiredColumn cMeetingTypeCode, "meeting_type_code"
+    ValidateRequiredColumn cHeldDate, "held_date"
+    
+    body = ""
+    
+    For r = 2 To lastRow
+        If HasMeetingRow(ws, r, cMeetingName, cHeldDate) Then
+            If body <> "" Then body = body & "," & vbCrLf
+            body = body & BuildMeetingObject( _
+                ws, r, lastRow, _
+                cFiscalYear, cEraCode, cSession, cSessionTypeRaw, cPeriodType, _
+                cWarekiYear, cMonth, cDay, cDaySeq, cMeetingName, cDuration, _
+                cMeetingId, cRowId, cSessionTypeCode, cSessionTypeLabel, cMeetingTypeCode, cHeldDate _
+            )
+        End If
+    Next r
+    
+    js = ""
+    js = js & "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
+    js = js & "window.APP_DATA.meetings = [" & vbCrLf
+    js = js & body & vbCrLf
+    js = js & "];" & vbCrLf
+    
+    EnsureFolder ThisWorkbook.Path & "\app"
+    EnsureFolder ThisWorkbook.Path & "\app\data"
+    EnsureFolder ThisWorkbook.Path & "\app\data\meetings"
+    
+    outputPath = ThisWorkbook.Path & "\app\data\meetings\meetings.js"
+    WriteTextFileUtf8 outputPath, js
+    
+    MsgBox "meetings.js を出力しました。" & vbCrLf & outputPath, vbInformation
+    Exit Sub
+    
+EH:
+    MsgBox "エラー: " & Err.Description, vbCritical
+
+End Sub
+
+Private Function BuildMeetingObject( _
+    ByVal ws As Worksheet, _
+    ByVal rowIndex As Long, _
+    ByVal lastRow As Long, _
+    ByVal cFiscalYear As Long, _
+    ByVal cEraCode As Long, _
+    ByVal cSession As Long, _
+    ByVal cSessionTypeRaw As Long, _
+    ByVal cPeriodType As Long, _
+    ByVal cWarekiYear As Long, _
+    ByVal cMonth As Long, _
+    ByVal cDay As Long, _
+    ByVal cDaySeq As Long, _
+    ByVal cMeetingName As Long, _
+    ByVal cDuration As Long, _
+    ByVal cMeetingId As Long, _
+    ByVal cRowId As Long, _
+    ByVal cSessionTypeCode As Long, _
+    ByVal cSessionTypeLabel As Long, _
+    ByVal cMeetingTypeCode As Long, _
+    ByVal cHeldDate As Long _
+) As String
+
+    Dim fiscalYear As String
+    Dim eraCode As String
+    Dim sessionNo As String
+    Dim sessionTypeRaw As String
+    Dim periodType As String
+    Dim warekiYear As String
+    Dim monthText As String
+    Dim dayText As String
+    Dim daySeq As String
+    Dim meetingName As String
+    Dim durationText As String
+    Dim meetingId As String
+    Dim rowId As String
+    Dim sessionTypeCode As String
+    Dim sessionTypeLabel As String
+    Dim meetingTypeCode As String
+    Dim heldDate As String
+    Dim specialStart As String
+    Dim specialEnd As String
+    
+    fiscalYear = CellText(ws.Cells(rowIndex, cFiscalYear).value)
+    eraCode = CellText(ws.Cells(rowIndex, cEraCode).value)
+    sessionNo = CellText(ws.Cells(rowIndex, cSession).value)
+    sessionTypeRaw = CellText(ws.Cells(rowIndex, cSessionTypeRaw).value)
+    periodType = CellText(ws.Cells(rowIndex, cPeriodType).value)
+    warekiYear = CellText(ws.Cells(rowIndex, cWarekiYear).value)
+    monthText = CellText(ws.Cells(rowIndex, cMonth).value)
+    dayText = CellText(ws.Cells(rowIndex, cDay).value)
+    daySeq = CellText(ws.Cells(rowIndex, cDaySeq).value)
+    meetingName = CellText(ws.Cells(rowIndex, cMeetingName).value)
+    durationText = NormalizeDurationMinutesText(ws.Cells(rowIndex, cDuration).value)
+    meetingId = CellText(ws.Cells(rowIndex, cMeetingId).value)
+    rowId = CellText(ws.Cells(rowIndex, cRowId).value)
+    sessionTypeCode = CellText(ws.Cells(rowIndex, cSessionTypeCode).value)
+    sessionTypeLabel = CellText(ws.Cells(rowIndex, cSessionTypeLabel).value)
+    meetingTypeCode = CellText(ws.Cells(rowIndex, cMeetingTypeCode).value)
+    heldDate = CellText(ws.Cells(rowIndex, cHeldDate).value)
+    
+    If IsSpecialCommitteeCode(meetingTypeCode) And periodType = "内" Then
+        specialStart = FindSpecialTermStartDate(ws, rowIndex, lastRow, cMeetingId, cPeriodType, cHeldDate)
+        specialEnd = FindSpecialTermEndDate(ws, rowIndex, lastRow, cMeetingId, cPeriodType, cHeldDate, cMeetingTypeCode)
+    Else
+        specialStart = ""
+        specialEnd = ""
+    End If
+    
+    Dim s As String
+    s = ""
+    s = s & "  {" & vbCrLf
+    s = s & "    meeting_id: """ & EscapeJs(meetingId) & """," & vbCrLf
+    s = s & "    row_id: """ & EscapeJs(rowId) & """," & vbCrLf
+    s = s & "    fiscal_year: " & ToJsNumberOrNullText(DigitsOnly(fiscalYear)) & "," & vbCrLf
+    s = s & "    era_code: """ & EscapeJs(eraCode) & """," & vbCrLf
+    s = s & "    wareki_year: " & ToJsNumberOrNullText(DigitsOnly(warekiYear)) & "," & vbCrLf
+    s = s & "    session: " & ToJsNumberOrNullText(DigitsOnly(sessionNo)) & "," & vbCrLf
+    s = s & "    session_type_code: """ & EscapeJs(sessionTypeCode) & """," & vbCrLf
+    s = s & "    session_type_label: """ & EscapeJs(sessionTypeLabel) & """," & vbCrLf
+    s = s & "    period_type: """ & EscapeJs(periodType) & """," & vbCrLf
+    s = s & "    month: " & ToJsNumberOrNullText(DigitsOnly(monthText)) & "," & vbCrLf
+    s = s & "    day: " & ToJsNumberOrNullText(DigitsOnly(dayText)) & "," & vbCrLf
+    s = s & "    day_sequence: " & ToJsNumberOrNullText(DigitsOnly(daySeq)) & "," & vbCrLf
+    s = s & "    meeting_name: """ & EscapeJs(meetingName) & """," & vbCrLf
+    s = s & "    meeting_type_code: """ & EscapeJs(meetingTypeCode) & """," & vbCrLf
+    s = s & "    duration_minutes: " & ToJsNumberOrNullText(durationText) & "," & vbCrLf
+    s = s & "    held_date: """ & EscapeJs(heldDate) & """," & vbCrLf
+    s = s & "    special_term_start_date: """ & EscapeJs(specialStart) & """," & vbCrLf
+    s = s & "    special_term_end_date: """ & EscapeJs(specialEnd) & """" & vbCrLf
+    s = s & "  }"
+    
+    BuildMeetingObject = s
+
+End Function
+
+Private Function FindSpecialTermStartDate( _
+    ByVal ws As Worksheet, _
+    ByVal rowIndex As Long, _
+    ByVal lastRow As Long, _
+    ByVal cMeetingId As Long, _
+    ByVal cPeriodType As Long, _
+    ByVal cHeldDate As Long _
+) As String
+
+    Dim baseMeetingId As String
+    Dim i As Long
+    Dim d As String
+    Dim minDate As String
+    
+    baseMeetingId = CellText(ws.Cells(rowIndex, cMeetingId).value)
+    minDate = ""
+    
+    For i = 2 To lastRow
+        If CellText(ws.Cells(i, cMeetingId).value) = baseMeetingId _
+           And CellText(ws.Cells(i, cPeriodType).value) = "内" Then
+           
+            d = CellText(ws.Cells(i, cHeldDate).value)
+            If d <> "" Then
+                If minDate = "" Or d < minDate Then
+                    minDate = d
+                End If
+            End If
+        End If
+    Next i
+    
+    FindSpecialTermStartDate = minDate
+
+End Function
+
+Private Function FindSpecialTermEndDate( _
+    ByVal ws As Worksheet, _
+    ByVal rowIndex As Long, _
+    ByVal lastRow As Long, _
+    ByVal cMeetingId As Long, _
+    ByVal cPeriodType As Long, _
+    ByVal cHeldDate As Long, _
+    ByVal cMeetingTypeCode As Long _
+) As String
+
+    Dim baseMeetingId As String
+    Dim i As Long
+    Dim d As String
+    Dim maxDate As String
+    
+    baseMeetingId = CellText(ws.Cells(rowIndex, cMeetingId).value)
+    maxDate = ""
+    
+    For i = 2 To lastRow
+        If CellText(ws.Cells(i, cMeetingId).value) = baseMeetingId _
+           And CellText(ws.Cells(i, cPeriodType).value) = "内" _
+           And CellText(ws.Cells(i, cMeetingTypeCode).value) = "HNKG" Then
+           
+            d = CellText(ws.Cells(i, cHeldDate).value)
+            If d <> "" Then
+                If maxDate = "" Or d > maxDate Then
+                    maxDate = d
+                End If
+            End If
+        End If
+    Next i
+    
+    FindSpecialTermEndDate = maxDate
+
+End Function
+
+Private Function HasMeetingRow( _
+    ByVal ws As Worksheet, _
+    ByVal rowIndex As Long, _
+    ByVal cMeetingName As Long, _
+    ByVal cHeldDate As Long _
+) As Boolean
+
+    If CellText(ws.Cells(rowIndex, cMeetingName).value) = "" Then Exit Function
+    If CellText(ws.Cells(rowIndex, cHeldDate).value) = "" Then Exit Function
+    
+    HasMeetingRow = True
+
+End Function
+
+Private Function IsSpecialCommitteeCode(ByVal code As String) As Boolean
+    Select Case Trim$(code)
+        Case "IKY", "TKY", "IKK", "TKK"
+            IsSpecialCommitteeCode = True
+        Case Else
+            IsSpecialCommitteeCode = False
+    End Select
+End Function
+
+Private Function NormalizeDurationMinutesText(ByVal value As Variant) As String
+    If IsError(value) Then
+        NormalizeDurationMinutesText = ""
+        Exit Function
+    End If
+    
+    If Trim$(CStr(value)) = "" Then
+        NormalizeDurationMinutesText = ""
+    ElseIf IsNumeric(value) Then
+        If CDbl(value) > 0 And CDbl(value) < 1 Then
+            NormalizeDurationMinutesText = CStr(Round(CDbl(value) * 1440, 0))
+        Else
+            NormalizeDurationMinutesText = CStr(Round(CDbl(value), 0))
+        End If
+    Else
+        NormalizeDurationMinutesText = DigitsOnly(CStr(value))
+    End If
+End Function
+
+Private Function CellText(ByVal v As Variant) As String
+    If IsError(v) Then
+        CellText = ""
+    Else
+        CellText = Trim$(CStr(v))
+    End If
+End Function
+
+Private Function DigitsOnly(ByVal s As String) As String
+    Dim i As Long
+    Dim ch As String
+    Dim r As String
+    
+    For i = 1 To Len(s)
+        ch = Mid$(s, i, 1)
+        If ch Like "#" Then r = r & ch
+    Next i
+    
+    DigitsOnly = r
+End Function
+
+Private Function ToJsNumberOrNullText(ByVal s As String) As String
+    If s = "" Then
+        ToJsNumberOrNullText = "null"
+    ElseIf IsNumeric(s) Then
+        ToJsNumberOrNullText = s
+    Else
+        ToJsNumberOrNullText = "null"
+    End If
+End Function
+
+Private Function EscapeJs(ByVal s As String) As String
+    s = Replace(s, "\", "\\")
+    s = Replace(s, """", "\""")
+    s = Replace(s, vbCrLf, "\n")
+    s = Replace(s, vbCr, "\n")
+    s = Replace(s, vbLf, "\n")
+    EscapeJs = s
+End Function
+
+Private Function FindHeaderColumn(ByVal ws As Worksheet, ByVal headerName As String) As Long
+
+    Dim lastCol As Long
+    Dim c As Long
+    
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    
+    For c = 1 To lastCol
+        If Trim$(CStr(ws.Cells(1, c).value)) = headerName Then
+            FindHeaderColumn = c
+            Exit Function
+        End If
+    Next c
+    
+    FindHeaderColumn = 0
+
+End Function
+
+Private Sub ValidateRequiredColumn(ByVal colIndex As Long, ByVal headerName As String)
+    If colIndex = 0 Then
+        Err.Raise vbObjectError + 1000, , "ヘッダが見つかりません: " & headerName
+    End If
+End Sub
+
+Private Sub EnsureFolder(ByVal folderPath As String)
+    If Dir(folderPath, vbDirectory) = "" Then MkDir folderPath
+End Sub
+
+Private Sub WriteTextFileUtf8(ByVal filePath As String, ByVal textData As String)
+    Dim stm As Object
+    Set stm = CreateObject("ADODB.Stream")
+    
+    stm.Type = 2
+    stm.Charset = "UTF-8"
+    stm.Open
+    stm.WriteText textData
+    stm.SaveToFile filePath, 2
+    stm.Close
+    
+    Set stm = Nothing
+End Sub
