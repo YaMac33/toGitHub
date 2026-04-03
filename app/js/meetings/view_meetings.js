@@ -53,15 +53,9 @@ window.MEETINGS_VIEW = (function () {
           meeting_id: meetingId,
           session_name: buildSessionName(row),
           session_type_code: String(row.session_type_code || "").trim(),
-          session_type_label: String(row.session_type_label || "").trim(),
-          era_code: String(row.era_code || "").trim(),
-          wareki_year: Number(row.wareki_year || 0),
-          session_no: Number(row.session || 0),
           start_date: String(row.held_date || "").trim(),
           end_date: String(row.held_date || "").trim(),
-          meeting_count: 0,
           special_committee_names: [],
-          rows: [],
           detail_url: "./meeting_detail.html?meeting_id=" + encodeURIComponent(meetingId)
         };
       }
@@ -70,9 +64,6 @@ window.MEETINGS_VIEW = (function () {
       const heldDate = String(row.held_date || "").trim();
       const meetingName = String(row.meeting_name || "").trim();
       const meetingTypeCode = String(row.meeting_type_code || "").trim();
-
-      group.rows.push(row);
-      group.meeting_count += 1;
 
       if (heldDate) {
         if (!group.start_date || heldDate < group.start_date) {
@@ -94,7 +85,6 @@ window.MEETINGS_VIEW = (function () {
 
     const groups = Object.keys(map).map(function (key) {
       const group = map[key];
-      group.rows.sort(compareMeetingRows);
       group.special_committee_names.sort();
       return group;
     });
@@ -127,40 +117,14 @@ window.MEETINGS_VIEW = (function () {
     return value;
   }
 
-  function compareMeetingRows(a, b) {
-    const ad = String(a.held_date || "");
-    const bd = String(b.held_date || "");
-    if (ad !== bd) return ad < bd ? -1 : 1;
-
-    const as = Number(a.day_sequence || a["同日回"] || 0);
-    const bs = Number(b.day_sequence || b["同日回"] || 0);
-    if (as !== bs) return as - bs;
-
-    const ar = String(a.row_id || "");
-    const br = String(b.row_id || "");
-    if (ar !== br) return ar < br ? -1 : 1;
-
-    return 0;
-  }
-
   function compareMeetingGroups(a, b) {
     const ad = String(a.start_date || "");
     const bd = String(b.start_date || "");
     if (ad !== bd) return ad > bd ? -1 : 1;
 
-    const aw = Number(a.wareki_year || 0);
-    const bw = Number(b.wareki_year || 0);
-    if (aw !== bw) return bw - aw;
-
-    const as = Number(a.session_no || 0);
-    const bs = Number(b.session_no || 0);
-    if (as !== bs) return bs - as;
-
-    const at = String(a.session_type_code || "");
-    const bt = String(b.session_type_code || "");
-    if (at !== bt) return at < bt ? -1 : 1;
-
-    return 0;
+    const aid = String(a.meeting_id || "");
+    const bid = String(b.meeting_id || "");
+    return aid < bid ? -1 : aid > bid ? 1 : 0;
   }
 
   function fillSpecialCommitteeOptions(groups) {
@@ -232,74 +196,49 @@ window.MEETINGS_VIEW = (function () {
       ? group.special_committee_names.join("、")
       : "なし";
 
-    const rowsHtml = group.rows.map(function (row) {
-      const dateText = formatDateJa(row.held_date || "");
-      const meetingName = String(row.meeting_name || "").trim();
-      const duration = formatDurationMinutes(row.duration_minutes);
-
-      return (
-        '<div class="history-row">' +
-          escapeHtml(dateText) +
-          " ／ " +
-          escapeHtml(meetingName) +
-          (duration ? " ／ " + escapeHtml(duration) : "") +
-        "</div>"
-      );
-    }).join("");
-
     return (
-      '<article class="detail-subcard" style="margin-bottom:12px;">' +
-        '<div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:10px;">' +
-          '<div>' +
-            '<h3 style="margin:0 0 6px; font-size:18px;">' + escapeHtml(group.session_name) + "</h3>" +
-          "</div>" +
-          '<div>' +
-            '<a class="button" href="' + escapeHtml(group.detail_url) + '">詳細へ</a>' +
-          "</div>' +
-        '</div>' +
+      '<a href="' + escapeHtml(group.detail_url) + '" ' +
+        'class="detail-subcard" ' +
+        'style="display:block; margin-bottom:12px; text-decoration:none; color:inherit;">' +
 
-        '<div class="history-row"><span class="summary-label">期間</span>' +
+        '<div style="font-size:18px; font-weight:bold; margin-bottom:10px;">' +
+          escapeHtml(group.session_name) +
+        "</div>" +
+
+        '<div class="history-row">' +
+          '<span class="summary-label">期間</span>' +
           escapeHtml(buildPeriodText(group.start_date, group.end_date)) +
         "</div>" +
 
-        '<div class="history-row"><span class="summary-label">特別委員会</span>' +
+        '<div class="history-row">' +
+          '<span class="summary-label">特別委員会</span>' +
           escapeHtml(specialCommittees) +
         "</div>" +
 
-        '<div class="history-row"><span class="summary-label">会議数</span>' +
-          escapeHtml(String(group.meeting_count)) + "件" +
-        "</div>" +
-
-        '<div style="margin-top:10px;">' + rowsHtml + "</div>" +
-      "</article>"
+      "</a>"
     );
   }
 
   function buildPeriodText(startDate, endDate) {
     if (!startDate && !endDate) return "";
     if (startDate && endDate && startDate === endDate) {
-      return formatDateJa(startDate);
+      return formatDateSlash(startDate);
     }
-    return formatDateJa(startDate) + " ～ " + formatDateJa(endDate);
+    return formatDateSlash(startDate) + " ～ " + formatDateSlash(endDate);
   }
 
-  function formatDateJa(dateStr) {
+  function formatDateSlash(dateStr) {
     const value = String(dateStr || "").trim();
     if (!value) return "";
 
     const parts = value.split("-");
     if (parts.length !== 3) return value;
 
-    return Number(parts[0]) + "年" + Number(parts[1]) + "月" + Number(parts[2]) + "日";
-  }
-
-  function formatDurationMinutes(value) {
-    if (value === null || value === undefined || value === "") return "";
-
-    const num = Number(value);
-    if (!Number.isFinite(num) || num <= 0) return "";
-
-    return num + "分";
+    return (
+      parts[0] + "/" +
+      String(Number(parts[1])).padStart(2, "0") + "/" +
+      String(Number(parts[2])).padStart(2, "0")
+    );
   }
 
   function getValue(id) {
