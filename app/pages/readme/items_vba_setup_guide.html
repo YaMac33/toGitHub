@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>items.js 生成VBA 作成手順説明書</title>
+  <style>
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --line:#dbe3ee;
+      --accent:#2563eb;
+      --accent-bg:#eff6ff;
+      --ok:#065f46;
+      --ok-bg:#ecfdf5;
+      --warn:#92400e;
+      --warn-bg:#fffbeb;
+      --code-bg:#0f172a;
+      --code-text:#e5e7eb;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Meiryo,sans-serif;
+      color:var(--text);
+      background:var(--bg);
+      line-height:1.7;
+    }
+    .wrap{
+      max-width:1080px;
+      margin:0 auto;
+      padding:32px 20px 80px;
+    }
+    h1,h2,h3{line-height:1.4;margin:0 0 12px}
+    h1{font-size:2rem;margin-bottom:16px}
+    h2{
+      margin-top:36px;
+      padding-bottom:8px;
+      border-bottom:2px solid var(--line);
+      font-size:1.35rem;
+    }
+    h3{margin-top:24px;font-size:1.05rem}
+    p{margin:8px 0 14px}
+    .lead{
+      font-size:1.05rem;
+      color:var(--muted);
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:18px 18px;
+      margin:16px 0;
+      box-shadow:0 2px 8px rgba(15,23,42,.04);
+    }
+    .note{
+      background:var(--accent-bg);
+      border-left:5px solid var(--accent);
+      padding:14px 16px;
+      border-radius:10px;
+      margin:14px 0;
+    }
+    .ok{
+      background:var(--ok-bg);
+      border-left:5px solid var(--ok);
+      padding:14px 16px;
+      border-radius:10px;
+      margin:14px 0;
+    }
+    .warn{
+      background:var(--warn-bg);
+      border-left:5px solid var(--warn);
+      padding:14px 16px;
+      border-radius:10px;
+      margin:14px 0;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      margin:14px 0 18px;
+      font-size:.96rem;
+    }
+    th,td{
+      border:1px solid var(--line);
+      padding:10px 12px;
+      vertical-align:top;
+      text-align:left;
+    }
+    th{background:#f8fafc}
+    code, pre{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    }
+    pre{
+      background:var(--code-bg);
+      color:var(--code-text);
+      padding:16px;
+      border-radius:12px;
+      overflow:auto;
+      font-size:.92rem;
+      line-height:1.6;
+      margin:12px 0 16px;
+    }
+    .small{color:var(--muted);font-size:.92rem}
+    .path{
+      display:inline-block;
+      background:#eef2ff;
+      border:1px solid #c7d2fe;
+      color:#3730a3;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:.92rem;
+      margin:4px 0;
+      word-break:break-all;
+    }
+    .checklist p{
+      margin:6px 0;
+    }
+    .mono{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      background:#f3f4f6;
+      padding:1px 6px;
+      border-radius:6px;
+    }
+    .footer{
+      margin-top:48px;
+      font-size:.92rem;
+      color:var(--muted);
+      text-align:center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>items.js 生成VBA 作成手順説明書</h1>
+    <p class="lead">
+      この説明書は、<strong>items シートを元に app/data/items/items.js を生成する VBA を作る前段階</strong>として、
+      現時点で決まっていること、まだ決める必要があること、作成までの順番を詳しく整理したものです。
+    </p>
+
+    <div class="card">
+      <h2 style="margin-top:0;border-bottom:none;padding-bottom:0;">この説明書の対象</h2>
+      <p>対象は、案件データの Excel 正本から <span class="mono">items.js</span> を吐き出す仕組みです。</p>
+      <p>現時点での前提は次のとおりです。</p>
+      <table>
+        <tr><th>項目</th><th>現時点の前提</th></tr>
+        <tr><td>シート名</td><td><span class="mono">items</span></td></tr>
+        <tr><td>出力対象</td><td><span class="mono">app/data/items/items.js</span></td></tr>
+        <tr><td>用途</td><td>Webアプリで案件一覧・詳細表示に使う</td></tr>
+        <tr><td>設計方針</td><td>代表値は案件マスタに持ち、途中経過や例外は履歴テーブルで補う</td></tr>
+        <tr><td>表示方針</td><td>該当しない列があってもアプリで表示できなくてよい</td></tr>
+      </table>
+    </div>
+
+    <h2>1. いま決まっていること</h2>
+    <div class="ok">
+      <p><strong>1-1. シート名は items にする。</strong></p>
+      <p><strong>1-2. 列名は、直前に確定した items 用の列名を使う。</strong></p>
+      <p><strong>1-3. 該当しない列があっても、アプリで表示しなくてよい。</strong></p>
+      <p><strong>1-4. 案件マスタには「一覧で見たい代表値」を持たせる。</strong></p>
+    </div>
+
+    <div class="card">
+      <h3>現時点で採用する列名</h3>
+      <pre>item_id
+session_name
+meeting_id
+term_id
+fiscal_year
+fiscal_year_wareki
+year
+year_wareki
+month
+day
+item_class
+item_subclass
+item_no
+item_no_numeric
+numbering_scope
+title
+summary
+department
+is_budget
+proposed_date
+first_referred_date
+final_referred_committee_id
+final_referred_committee_name
+final_vote_date
+final_result
+additional_submission_date
+priority_handling_date
+has_amendment_flag
+has_history_flag
+note
+sort_order
+created_at
+updated_at</pre>
+      <p class="small">
+        ここでいう列名は、基本的に Excel の 1 行目見出しとして使う前提です。
+      </p>
+    </div>
+
+    <h2>2. この設計での考え方</h2>
+    <div class="card">
+      <h3>2-1. items シートは「案件の代表値」を持つ</h3>
+      <p>
+        <span class="mono">proposed_date</span>、
+        <span class="mono">first_referred_date</span>、
+        <span class="mono">final_vote_date</span>、
+        <span class="mono">final_result</span> など、
+        一覧で見たい情報を 1 行にまとめて持たせます。
+      </p>
+
+      <h3>2-2. 例外的な経過は履歴テーブルで持つ</h3>
+      <p>
+        再付託、継続審査、差戻し、複数回の議決など、
+        1 案件 1 行に収まりにくいものは別の履歴テーブルで管理する想定です。
+      </p>
+
+      <h3>2-3. Webアプリは items.js の全部を表示しなくてもよい</h3>
+      <p>
+        Excel では管理用として列を持っていても、アプリ側で全部使う必要はありません。
+        まずは正本として必要な情報を確保し、画面表示はあとで必要な分だけ使えば大丈夫です。
+      </p>
+    </div>
+
+    <h2>3. VBA 作成前に最低限確認が必要なこと</h2>
+    <div class="warn">
+      <p>
+        ここが未確定だと、VBA は書けても後で修正が出やすくなります。
+        先にこの項目を決めておくと、作り直しがかなり減ります。
+      </p>
+    </div>
+
+    <div class="card checklist">
+      <h3>3-1. item_id の作り方</h3>
+      <p>最重要です。<span class="mono">item_id</span> をどのルールで作るかを確定します。</p>
+      <table>
+        <tr><th>確認したいこと</th><th>例</th></tr>
+        <tr><td>手入力にするか</td><td>Excelで item_id を直接入力する</td></tr>
+        <tr><td>自動生成にするか</td><td>meeting_id + item_class + item_no_numeric など</td></tr>
+        <tr><td>同一案件の一意性を何で担保するか</td><td>回＋分類＋番号 など</td></tr>
+      </table>
+
+      <h3>3-2. 出力元は items シートそのものか</h3>
+      <p>
+        いまの理解では <span class="mono">items</span> シートをそのまま出力元にする前提です。
+        もし「入力用シート」から転記して items を作るなら、VBAの構成が変わります。
+      </p>
+
+      <h3>3-3. 出力先パス</h3>
+      <p>
+        VBA でどこに書き出すかを決めます。たとえば次のような構成です。
+      </p>
+      <pre>project/
+├─ source/
+│  └─ source_items.xlsm
+└─ app/
+   └─ data/
+      └─ items/
+         └─ items.js</pre>
+      <p>この場合、Excelファイルの配置場所と出力先の相対位置を合わせておく必要があります。</p>
+
+      <h3>3-4. 日付の出力形式</h3>
+      <p>
+        たとえば <span class="mono">2026-04-03</span> のように統一するのか、
+        空欄は <span class="mono">""</span> にするのかを決めます。
+      </p>
+
+      <h3>3-5. フラグ列の値</h3>
+      <p>
+        <span class="mono">is_budget</span>、
+        <span class="mono">has_amendment_flag</span>、
+        <span class="mono">has_history_flag</span> を
+        <span class="mono">0/1</span> にするのか、
+        <span class="mono">TRUE/FALSE</span> にするのかを決めます。
+      </p>
+
+      <h3>3-6. 空行・未入力行の扱い</h3>
+      <p>
+        どの条件で出力対象から除外するかを決めます。
+        実務では、<span class="mono">item_id</span> が空の行は出力しない、のようなルールが一般的です。
+      </p>
+    </div>
+
+    <h2>4. 実際に作成するまでのおすすめ手順</h2>
+    <div class="card">
+      <h3>手順1：items シートを完成させる</h3>
+      <p>
+        まずは Excel の <span class="mono">items</span> シートに、確定した列名を 1 行目に並べます。
+        並び順もこの段階で固定するのがおすすめです。
+      </p>
+      <p>理由は、VBA 側で「見出し名で列を探す」方式にもできますが、最初に並びを固めた方が管理しやすいからです。</p>
+
+      <h3>手順2：1〜3行だけダミーデータを入れる</h3>
+      <p>
+        実データを大量に入れる前に、少数のサンプル行で確認します。
+      </p>
+      <table>
+        <tr><th>確認したいこと</th><th>内容</th></tr>
+        <tr><td>日付の入力例</td><td>空欄・通常の日付・特殊な日付を試す</td></tr>
+        <tr><td>フラグの入力例</td><td>0 と 1 を試す</td></tr>
+        <tr><td>文字列の入力例</td><td>件名、概要、メモに長文や改行を含める</td></tr>
+      </table>
+
+      <h3>手順3：item_id ルールを確定する</h3>
+      <p>
+        後から item_id のルールを変えると、既存データや画面側の紐付けも影響を受けやすくなります。
+        ここは VBA 作成前に固めるのが安全です。
+      </p>
+
+      <h3>手順4：ファイル配置を決める</h3>
+      <p>
+        Excel と app フォルダの位置関係を決めます。
+        たとえば、Excel は <span class="mono">source</span> フォルダ、
+        出力先は <span class="mono">app/data/items</span> にすると整理しやすいです。
+      </p>
+
+      <h3>手順5：出力形式を固定する</h3>
+      <p>JS は通常、次の形式を想定します。</p>
+      <pre>window.APP_DATA = window.APP_DATA || {};
+window.APP_DATA.items = [
+  {
+    item_id: "....",
+    title: "...."
+  }
+];</pre>
+      <p>
+        この形式でよければ、その前提で VBA を作れます。
+      </p>
+
+      <h3>手順6：VBA を作成する</h3>
+      <p>
+        上の条件が決まったら、Excel から rows を順に読み、
+        JS 文字列として整形して <span class="mono">items.js</span> に書き出す VBA を作成します。
+      </p>
+
+      <h3>手順7：Webアプリ側で読み込み確認する</h3>
+      <p>
+        生成した <span class="mono">items.js</span> をブラウザで読み込み、
+        エラーが出ないかを確認します。
+      </p>
+    </div>
+
+    <h2>5. items シート作成時のおすすめルール</h2>
+    <div class="card">
+      <h3>5-1. 見出し名は完全一致にする</h3>
+      <p>
+        VBA 側で見出し名をもとに列を取得するなら、
+        大文字・小文字やアンダースコアを含めて統一しておくのが安全です。
+      </p>
+
+      <h3>5-2. 日付列は日付として入力する</h3>
+      <p>
+        文字列でばらつくよりも、Excel の日付セルとして入力した方が、
+        <span class="mono">YYYY-MM-DD</span> 形式への変換が安定します。
+      </p>
+
+      <h3>5-3. フラグ列は 0 / 1 に統一する</h3>
+      <p>
+        Web側で扱いやすく、Excelでもわかりやすいので、
+        TRUE/FALSE より <span class="mono">0/1</span> の方が実務では安定しやすいです。
+      </p>
+
+      <h3>5-4. 空欄は空欄のまま持つ</h3>
+      <p>
+        該当しない情報まで無理に埋めず、空欄にしておく方があとで扱いやすいです。
+      </p>
+    </div>
+
+    <h2>6. いまの段階で「これだけ決めれば VBA を書き始めやすい」項目</h2>
+    <div class="card">
+      <table>
+        <tr><th>優先度</th><th>項目</th><th>理由</th></tr>
+        <tr><td>最優先</td><td>item_id の生成ルール</td><td>一意性の基準になるため</td></tr>
+        <tr><td>最優先</td><td>Excelファイルの配置場所</td><td>相対パス計算に必要なため</td></tr>
+        <tr><td>高</td><td>items シートの列順</td><td>VBA の安定性が上がるため</td></tr>
+        <tr><td>高</td><td>出力先ファイル名</td><td>書き出し処理で固定するため</td></tr>
+        <tr><td>中</td><td>フラグ値の形式</td><td>後から直す手間を減らすため</td></tr>
+        <tr><td>中</td><td>空行の判定ルール</td><td>不要行を出力しないため</td></tr>
+      </table>
+    </div>
+
+    <h2>7. 現時点でおすすめするファイル名と配置</h2>
+    <div class="card">
+      <p>この説明書自体は、次のような名前で保存しておくのがおすすめです。</p>
+      <p class="path">project/app/pages/readme/items_vba_setup_guide.html</p>
+      <p>Excel 正本の例：</p>
+      <p class="path">project/source/source_items.xlsm</p>
+      <p>JS 出力先の例：</p>
+      <p class="path">project/app/data/items/items.js</p>
+      <p class="small">
+        まだ最終構成が固まっていない場合でも、上のように役割ごとに分けておくと後で混乱しにくいです。
+      </p>
+    </div>
+
+    <h2>8. 次にやること</h2>
+    <div class="note">
+      <p>次の順で進めるとスムーズです。</p>
+      <table>
+        <tr><th>順番</th><th>やること</th></tr>
+        <tr><td>1</td><td><span class="mono">items</span> シートに列見出しを作る</td></tr>
+        <tr><td>2</td><td>2〜3行のダミーデータを入れる</td></tr>
+        <tr><td>3</td><td><span class="mono">item_id</span> ルールを確定する</td></tr>
+        <tr><td>4</td><td>Excel の保存場所と出力先パスを確定する</td></tr>
+        <tr><td>5</td><td>その条件で VBA を作成する</td></tr>
+      </table>
+    </div>
+
+    <div class="footer">
+      items.js 生成VBA 作成手順説明書
+    </div>
+  </div>
+</body>
+</html>
