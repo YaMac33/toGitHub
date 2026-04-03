@@ -26,6 +26,66 @@ window.MEETING_DETAIL_VIEW = (function () {
           .replace(/'/g, "&#39;");
   }
 
+  function normalizeDate(dateValue) {
+    const value = String(dateValue || "").trim();
+    if (!value) return "";
+
+    const normalized = value.replace(/\./g, "/").replace(/-/g, "/");
+    const parts = normalized.split("/");
+
+    if (parts.length !== 3) return "";
+
+    const y = String(parts[0]).trim();
+    const m = String(parts[1]).trim();
+    const d = String(parts[2]).trim();
+
+    if (!/^\d+$/.test(y) || !/^\d+$/.test(m) || !/^\d+$/.test(d)) return "";
+
+    return y.padStart(4, "0") + "-" + m.padStart(2, "0") + "-" + d.padStart(2, "0");
+  }
+
+  function toDateObject(dateStr) {
+    const normalized = normalizeDate(dateStr);
+    if (!normalized) return null;
+
+    const parts = normalized.split("-");
+    if (parts.length !== 3) return null;
+
+    const y = Number(parts[0]);
+    const m = Number(parts[1]);
+    const d = Number(parts[2]);
+
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
+
+    const dt = new Date(y, m - 1, d);
+    if (Number.isNaN(dt.getTime())) return null;
+
+    return dt;
+  }
+
+  function formatDateJa(dateStr) {
+    const normalized = normalizeDate(dateStr);
+    if (!normalized) return "";
+
+    const parts = normalized.split("-");
+    if (parts.length !== 3) return "";
+
+    return Number(parts[0]) + "年" + Number(parts[1]) + "月" + Number(parts[2]) + "日";
+  }
+
+  function isInsidePeriodType(value) {
+    return String(value || "").trim() === "内";
+  }
+
+  function isOutsidePeriodType(value) {
+    return String(value || "").trim() === "外";
+  }
+
+  function isDisplayTargetPeriodType(value) {
+    const v = String(value || "").trim();
+    return v === "内" || v === "外";
+  }
+
   function getMeetingRowsByMeetingId(meetingId) {
     return getArray("meetings")
       .filter(function (row) {
@@ -35,7 +95,7 @@ window.MEETING_DETAIL_VIEW = (function () {
   }
 
   function getQuestionRowsSource() {
-    if (Array.isArray(window.APP_DATA && window.APP_DATA.questions)) {
+    if (window.APP_DATA && Array.isArray(window.APP_DATA.questions)) {
       return window.APP_DATA.questions;
     }
     if (Array.isArray(window.RECORDS)) {
@@ -50,8 +110,8 @@ window.MEETING_DETAIL_VIEW = (function () {
         return String(row.meeting_id || "") === String(meetingId || "");
       })
       .sort(function (a, b) {
-        const ad = String(a.question_date || "");
-        const bd = String(b.question_date || "");
+        const ad = normalizeDate(a.question_date);
+        const bd = normalizeDate(b.question_date);
         if (ad !== bd) return ad < bd ? -1 : 1;
 
         const an = Number(a.notice_no || 0);
@@ -78,13 +138,17 @@ window.MEETING_DETAIL_VIEW = (function () {
   }
 
   function compareMeetingRows(a, b) {
-    const ad = String(a.held_date || "");
-    const bd = String(b.held_date || "");
+    const ad = normalizeDate(a.held_date);
+    const bd = normalizeDate(b.held_date);
     if (ad !== bd) return ad < bd ? -1 : 1;
 
-    const as = Number(a.day_sequence || a["同日回"] || 0);
-    const bs = Number(b.day_sequence || b["同日回"] || 0);
+    const as = Number(a.day_sequence || 0);
+    const bs = Number(b.day_sequence || 0);
     if (as !== bs) return as - bs;
+
+    const ac = String(a.meeting_type_code || "");
+    const bc = String(b.meeting_type_code || "");
+    if (ac !== bc) return ac < bc ? -1 : 1;
 
     const ar = String(a.row_id || "");
     const br = String(b.row_id || "");
@@ -109,14 +173,6 @@ window.MEETING_DETAIL_VIEW = (function () {
       "回" +
       String(row.session_type_label || "")
     );
-  }
-
-  function formatDateJa(dateStr) {
-    const value = String(dateStr || "").trim();
-    if (!value) return "";
-    const parts = value.split("-");
-    if (parts.length !== 3) return value;
-    return Number(parts[0]) + "年" + Number(parts[1]) + "月" + Number(parts[2]) + "日";
   }
 
   function formatDurationMinutes(value) {
@@ -145,10 +201,10 @@ window.MEETING_DETAIL_VIEW = (function () {
   }
 
   function calcInclusiveDays(startDate, endDate) {
-    if (!startDate || !endDate) return "";
-    const start = new Date(startDate + "T00:00:00");
-    const end = new Date(endDate + "T00:00:00");
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "";
+    const start = toDateObject(startDate);
+    const end = toDateObject(endDate);
+    if (!start || !end) return "";
+
     const diff = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
     return diff > 0 ? diff : "";
   }
@@ -156,31 +212,16 @@ window.MEETING_DETAIL_VIEW = (function () {
   function getSteeringDates(rows) {
     return rows
       .filter(function (row) {
-        return String(row.meeting_type_code || "") === "GIUN" && row.held_date;
+        return String(row.meeting_type_code || "") === "GIUN" && normalizeDate(row.held_date);
       })
       .map(function (row) {
-        return String(row.held_date || "");
+        return normalizeDate(row.held_date);
       })
       .filter(Boolean)
       .filter(function (date, index, arr) {
         return arr.indexOf(date) === index;
       })
       .sort();
-  }
-
-  function buildMeetingCalendarEvents(rows) {
-    return rows.map(function (row) {
-      return {
-        date: String(row.held_date || ""),
-        category: "meeting",
-        label: String(row.meeting_name || ""),
-        sort_order: 1,
-        css_class: getMeetingCssClass(row.meeting_type_code),
-        detail_text: buildMeetingDetailText(row)
-      };
-    }).filter(function (row) {
-      return row.date && row.label;
-    });
   }
 
   function getMeetingCssClass(meetingTypeCode) {
@@ -208,11 +249,28 @@ window.MEETING_DETAIL_VIEW = (function () {
     const parts = [];
     const name = String(row.meeting_name || "").trim();
     const duration = formatDurationMinutes(row.duration_minutes);
+    const periodType = String(row.period_type || "").trim();
 
     if (name) parts.push(name);
     if (duration) parts.push("実時間: " + duration);
+    if (periodType === "外") parts.push("会期外");
 
     return parts.join(" / ");
+  }
+
+  function buildMeetingCalendarEvents(rows) {
+    return rows.map(function (row) {
+      return {
+        date: normalizeDate(row.held_date),
+        category: "meeting",
+        label: String(row.meeting_name || ""),
+        sort_order: 1,
+        css_class: getMeetingCssClass(row.meeting_type_code),
+        detail_text: buildMeetingDetailText(row)
+      };
+    }).filter(function (row) {
+      return row.date && row.label;
+    });
   }
 
   function getQuestionGroupName(row) {
@@ -223,7 +281,7 @@ window.MEETING_DETAIL_VIEW = (function () {
     const grouped = {};
 
     questionRows.forEach(function (row) {
-      const dateKey = String(row.question_date || "");
+      const dateKey = normalizeDate(row.question_date);
       if (!dateKey) return;
 
       const noticeNo = String(row.notice_no || "");
@@ -237,12 +295,7 @@ window.MEETING_DETAIL_VIEW = (function () {
         minutes
       ].filter(Boolean).join(" ");
 
-      const uniqueKey = [
-        dateKey,
-        noticeNo,
-        memberName,
-        groupName
-      ].join("|");
+      const uniqueKey = [dateKey, noticeNo, memberName, groupName].join("|");
 
       if (!grouped[dateKey]) {
         grouped[dateKey] = {
@@ -305,12 +358,10 @@ window.MEETING_DETAIL_VIEW = (function () {
   }
 
   function buildCalendarMonths(startDate, endDate) {
-    if (!startDate || !endDate) return [];
+    const start = toDateObject(startDate);
+    const end = toDateObject(endDate);
 
-    const start = new Date(startDate + "T00:00:00");
-    const end = new Date(endDate + "T00:00:00");
-
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [];
+    if (!start || !end) return [];
 
     const months = [];
     let y = start.getFullYear();
@@ -330,8 +381,11 @@ window.MEETING_DETAIL_VIEW = (function () {
   }
 
   function isInTerm(dateStr, startDate, endDate) {
-    if (!dateStr || !startDate || !endDate) return false;
-    return dateStr >= startDate && dateStr <= endDate;
+    const d = normalizeDate(dateStr);
+    const s = normalizeDate(startDate);
+    const e = normalizeDate(endDate);
+    if (!d || !s || !e) return false;
+    return d >= s && d <= e;
   }
 
   function roleOrder(roleName) {
@@ -349,7 +403,7 @@ window.MEETING_DETAIL_VIEW = (function () {
     rows.forEach(function (row) {
       const code = String(row.meeting_type_code || "");
       const name = String(row.meeting_name || "");
-      const date = String(row.held_date || "");
+      const date = normalizeDate(row.held_date);
 
       if (SPECIAL_CODES.indexOf(code) < 0 || !name || !date) return;
 
@@ -378,17 +432,17 @@ window.MEETING_DETAIL_VIEW = (function () {
       map[committeeId].members.push({
         member_id: String(row.member_id || ""),
         member_name: member ? String(member.member_name || row.member_id || "") : String(row.member_id || ""),
-        role: String(row.role || ""),
-        start_date: String(row.start_date || ""),
-        end_date: String(row.end_date || "")
+        role_name: String(row.role_name || ""),
+        start_date: normalizeDate(row.start_date),
+        end_date: normalizeDate(row.end_date)
       });
     });
 
     return Object.keys(map).sort().map(function (key) {
       const group = map[key];
       group.members.sort(function (a, b) {
-        const ra = roleOrder(a.role);
-        const rb = roleOrder(b.role);
+        const ra = roleOrder(a.role_name);
+        const rb = roleOrder(b.role_name);
         if (ra !== rb) return ra - rb;
 
         const an = String(a.member_name || "");
@@ -399,6 +453,24 @@ window.MEETING_DETAIL_VIEW = (function () {
     });
   }
 
+  function pickMinDate(rows) {
+    return rows.reduce(function (min, row) {
+      const d = normalizeDate(row.held_date);
+      if (!d) return min;
+      if (!min || d < min) return d;
+      return min;
+    }, "");
+  }
+
+  function pickMaxDate(rows) {
+    return rows.reduce(function (max, row) {
+      const d = normalizeDate(row.held_date);
+      if (!d) return max;
+      if (!max || d > max) return d;
+      return max;
+    }, "");
+  }
+
   function buildDetail(meetingId) {
     const meetingRows = getMeetingRowsByMeetingId(meetingId);
     if (!meetingRows.length) return null;
@@ -407,21 +479,24 @@ window.MEETING_DETAIL_VIEW = (function () {
     const questionRows = getQuestionsByMeetingId(meetingId);
     const specialCommitteeMembers = getSpecialCommitteeMembersByMeetingId(meetingId);
 
-    const startDate = meetingRows.reduce(function (min, row) {
-      const d = String(row.held_date || "");
-      if (!d) return min;
-      if (!min || d < min) return d;
-      return min;
-    }, "");
+    const inTermRows = meetingRows.filter(function (row) {
+      return isInsidePeriodType(row.period_type);
+    });
 
-    const endDate = meetingRows.reduce(function (max, row) {
-      const d = String(row.held_date || "");
-      if (!d) return max;
-      if (!max || d > max) return d;
-      return max;
-    }, "");
+    const displayTargetRows = meetingRows.filter(function (row) {
+      return isDisplayTargetPeriodType(row.period_type);
+    });
 
-    const meetingEvents = buildMeetingCalendarEvents(meetingRows);
+    const termBaseRows = inTermRows.length ? inTermRows : meetingRows;
+    const calendarBaseRows = displayTargetRows.length ? displayTargetRows : meetingRows;
+
+    const startDate = pickMinDate(termBaseRows);
+    const endDate = pickMaxDate(termBaseRows);
+
+    const calendarStartDate = pickMinDate(calendarBaseRows);
+    const calendarEndDate = pickMaxDate(calendarBaseRows);
+
+    const meetingEvents = buildMeetingCalendarEvents(calendarBaseRows);
     const questionEvents = buildQuestionCalendarEvents(questionRows);
     const integrated = buildIntegratedCalendarEvents(meetingEvents, questionEvents);
     const specialCommittees = buildSpecialCommittees(meetingRows, specialCommitteeMembers);
@@ -434,8 +509,12 @@ window.MEETING_DETAIL_VIEW = (function () {
       start_date: startDate,
       end_date: endDate,
       term_days: calcInclusiveDays(startDate, endDate),
+      calendar_start_date: calendarStartDate,
+      calendar_end_date: calendarEndDate,
       steering_dates: getSteeringDates(meetingRows),
       meeting_rows: meetingRows,
+      meeting_rows_in_term: inTermRows,
+      meeting_rows_calendar_target: calendarBaseRows,
       question_rows: questionRows,
       calendar_events_integrated: integrated,
       special_committees: specialCommittees
@@ -468,7 +547,7 @@ window.MEETING_DETAIL_VIEW = (function () {
     const calendarArea = document.getElementById("calendarArea");
     if (!calendarArea) return;
 
-    const months = buildCalendarMonths(detail.start_date, detail.end_date);
+    const months = buildCalendarMonths(detail.calendar_start_date, detail.calendar_end_date);
     const eventMap = buildDateEventMap(detail.calendar_events_integrated);
     const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -556,8 +635,8 @@ window.MEETING_DETAIL_VIEW = (function () {
     area.innerHTML = detail.special_committees.map(function (sc) {
       const membersHtml = sc.members.length
         ? sc.members.map(function (row) {
-            const text = row.role
-              ? row.role + "　" + row.member_name
+            const text = row.role_name
+              ? row.role_name + "　" + row.member_name
               : row.member_name;
             return '<div class="history-row">' + escapeHtml(text) + "</div>";
           }).join("")
@@ -587,8 +666,9 @@ window.MEETING_DETAIL_VIEW = (function () {
   function openDayModal(dateStr) {
     if (!currentDetail) return;
 
+    const normalized = normalizeDate(dateStr);
     const items = currentDetail.calendar_events_integrated.filter(function (row) {
-      return row.date === dateStr;
+      return row.date === normalized;
     });
 
     const backdrop = document.getElementById("dayModalBackdrop");
@@ -597,7 +677,7 @@ window.MEETING_DETAIL_VIEW = (function () {
 
     if (!backdrop || !title || !body) return;
 
-    title.textContent = formatDateJa(dateStr) + " の詳細";
+    title.textContent = formatDateJa(normalized) + " の詳細";
 
     if (!items.length) {
       body.innerHTML = '<div class="empty">この日のイベントはありません。</div>';
@@ -714,6 +794,8 @@ window.MEETING_DETAIL_VIEW = (function () {
       "meeting_detail.html 読み込み成功",
       "meeting_id: " + detail.meeting_id,
       "meeting_rows: " + detail.meeting_rows.length + "件",
+      "meeting_rows_in_term: " + detail.meeting_rows_in_term.length + "件",
+      "meeting_rows_calendar_target: " + detail.meeting_rows_calendar_target.length + "件",
       "question_rows: " + detail.question_rows.length + "件",
       "calendar_events_integrated: " + detail.calendar_events_integrated.length + "件",
       "special_committees: " + detail.special_committees.length + "件"
