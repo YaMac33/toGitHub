@@ -1,0 +1,424 @@
+Option Explicit
+
+' =========================================================
+' source_members.xlms 用
+' 全体出力 / アクティブシート出力
+' app/data/members, app/data/committees, app/data/councils 配下へ JS 出力
+' =========================================================
+
+Public Sub ExportAllMemberData()
+    Dim configs As Variant
+    Dim i As Long
+
+    On Error GoTo ErrHandler
+
+    EnsureMemberOutputFoldersExist
+    configs = GetAllMemberSheetConfigs()
+
+    For i = LBound(configs) To UBound(configs)
+        ExportMemberSheetData CStr(configs(i)(0))
+    Next i
+
+    MsgBox "member系データの出力が完了しました。", vbInformation
+    Exit Sub
+
+ErrHandler:
+    MsgBox "ExportAllMemberData エラー: " & Err.Description, vbCritical
+End Sub
+
+Public Sub ExportActiveMemberSheetData()
+    On Error GoTo ErrHandler
+
+    EnsureMemberOutputFoldersExist
+    ExportMemberSheetData ActiveSheet.Name
+
+    MsgBox "アクティブシートの出力が完了しました。", vbInformation
+    Exit Sub
+
+ErrHandler:
+    MsgBox "ExportActiveMemberSheetData エラー: " & Err.Description, vbCritical
+End Sub
+
+Private Sub ExportMemberSheetData(ByVal sheetName As String)
+    Dim ws As Worksheet
+    Dim config As Variant
+    Dim jsText As String
+    Dim outputPath As String
+
+    On Error GoTo ErrHandler
+
+    Set ws = ThisWorkbook.Worksheets(sheetName)
+    config = GetMemberSheetConfig(sheetName)
+
+    jsText = BuildJsFromSheet(ws, CStr(config(2)))
+    outputPath = ThisWorkbook.Path & "\" & CStr(config(1))
+
+    EnsureParentFolderExists outputPath
+    WriteTextFileUtf8 outputPath, jsText
+
+    Debug.Print "Exported: " & sheetName & " -> " & outputPath
+    Exit Sub
+
+ErrHandler:
+    MsgBox "ExportMemberSheetData エラー [" & sheetName & "]: " & Err.Description, vbCritical
+End Sub
+
+Private Function BuildJsFromSheet(ByVal ws As Worksheet, ByVal dataKey As String) As String
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim r As Long
+    Dim c As Long
+    Dim headers() As String
+    Dim sb As String
+    Dim rowText As String
+    Dim headerName As String
+    Dim v As Variant
+
+    lastRow = GetLastDataRow(ws)
+    lastCol = GetLastHeaderCol(ws)
+
+    If lastCol = 0 Then
+        Err.Raise vbObjectError + 6001, , "1行目にヘッダが見つかりません。"
+    End If
+
+    ReDim headers(1 To lastCol)
+
+    For c = 1 To lastCol
+        headers(c) = Trim$(CStr(ws.Cells(1, c).Value))
+        If headers(c) = "" Then
+            Err.Raise vbObjectError + 6002, , "1行目に空ヘッダがあります。列=" & c
+        End If
+    Next c
+
+    sb = ""
+    sb = sb & "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
+    sb = sb & "window.APP_DATA." & dataKey & " = [" & vbCrLf
+
+    If lastRow >= 2 Then
+        For r = 2 To lastRow
+            If Not IsEntireRowEmpty(ws, r, lastCol) Then
+                rowText = "  {" & vbCrLf
+
+                For c = 1 To lastCol
+                    headerName = headers(c)
+                    v = ws.Cells(r, c).Value
+
+                    rowText = rowText & "    " & headerName & ": " & ConvertCellToJsValue(v, headerName)
+
+                    If c < lastCol Then
+                        rowText = rowText & ","
+                    End If
+
+                    rowText = rowText & vbCrLf
+                Next c
+
+                rowText = rowText & "  }"
+
+                If HasNextNonEmptyRow(ws, r, lastRow, lastCol) Then
+                    rowText = rowText & ","
+                End If
+
+                rowText = rowText & vbCrLf
+                sb = sb & rowText
+            End If
+        Next r
+    End If
+
+    sb = sb & "];" & vbCrLf
+    BuildJsFromSheet = sb
+End Function
+
+Private Function ConvertCellToJsValue(ByVal v As Variant, ByVal headerName As String) As String
+    If IsError(v) Then
+        ConvertCellToJsValue = """"""
+        Exit Function
+    End If
+
+    If IsEmpty(v) Then
+        ConvertCellToJsValue = """"""
+        Exit Function
+    End If
+
+    If Trim$(CStr(v)) = "" Then
+        ConvertCellToJsValue = """"""
+        Exit Function
+    End If
+
+    If IsBooleanField(headerName) Then
+        ConvertCellToJsValue = NormalizeBooleanLike(v)
+        Exit Function
+    End If
+
+    If IsNumericField(headerName) Then
+        ConvertCellToJsValue = NormalizeNumericLike(v)
+        Exit Function
+    End If
+
+    If IsDateField(headerName) Then
+        ConvertCellToJsValue = """" & EscapeJsString(FormatDateForJs(v)) & """"
+        Exit Function
+    End If
+
+    ConvertCellToJsValue = """" & EscapeJsString(CStr(v)) & """"
+End Function
+
+Private Function IsBooleanField(ByVal headerName As String) As Boolean
+    Select Case LCase$(headerName)
+        Case "active_flag"
+            IsBooleanField = True
+        Case Else
+            IsBooleanField = False
+    End Select
+End Function
+
+Private Function IsNumericField(ByVal headerName As String) As Boolean
+    Select Case LCase$(headerName)
+        Case "member_no", "age", "sort_order", "elected_count"
+            IsNumericField = True
+        Case Else
+            IsNumericField = False
+    End Select
+End Function
+
+Private Function IsDateField(ByVal headerName As String) As Boolean
+    Dim s As String
+    s = LCase$(headerName)
+
+    If Right$(s, 5) = "_date" Then
+        IsDateField = True
+        Exit Function
+    End If
+
+    If Right$(s, 3) = "_at" Then
+        IsDateField = True
+        Exit Function
+    End If
+
+    IsDateField = False
+End Function
+
+Private Function NormalizeBooleanLike(ByVal v As Variant) As String
+    Dim s As String
+    s = LCase$(Trim$(CStr(v)))
+
+    Select Case s
+        Case "1", "true", "yes", "y"
+            NormalizeBooleanLike = "1"
+        Case "0", "false", "no", "n"
+            NormalizeBooleanLike = "0"
+        Case Else
+            If IsNumeric(v) Then
+                If CLng(v) <> 0 Then
+                    NormalizeBooleanLike = "1"
+                Else
+                    NormalizeBooleanLike = "0"
+                End If
+            Else
+                NormalizeBooleanLike = "0"
+            End If
+    End Select
+End Function
+
+Private Function NormalizeNumericLike(ByVal v As Variant) As String
+    If IsNumeric(v) Then
+        If CDbl(v) = Int(CDbl(v)) Then
+            NormalizeNumericLike = CStr(CLng(v))
+        Else
+            NormalizeNumericLike = Replace(CStr(CDbl(v)), ",", "")
+        End If
+    Else
+        NormalizeNumericLike = "0"
+    End If
+End Function
+
+Private Function FormatDateForJs(ByVal v As Variant) As String
+    If IsDate(v) Then
+        FormatDateForJs = Format$(CDate(v), "yyyy-mm-dd")
+    Else
+        FormatDateForJs = Trim$(CStr(v))
+    End If
+End Function
+
+Private Function EscapeJsString(ByVal s As String) As String
+    Dim t As String
+    t = s
+    t = Replace(t, "\", "\\")
+    t = Replace(t, """", "\""")
+    t = Replace(t, vbCrLf, "\n")
+    t = Replace(t, vbCr, "\n")
+    t = Replace(t, vbLf, "\n")
+    EscapeJsString = t
+End Function
+
+Private Function GetAllMemberSheetConfigs() As Variant
+    GetAllMemberSheetConfigs = Array( _
+        Array("議員マスタ", "app\data\members\members.js", "members"), _
+        Array("議員在任履歴", "app\data\members\office_terms.js", "office_terms"), _
+        Array("会派マスタ", "app\data\members\parties.js", "parties"), _
+        Array("議員_会派履歴", "app\data\members\member_parties.js", "member_parties"), _
+        Array("委員会マスタ", "app\data\committees\committees.js", "committees"), _
+        Array("議員_委員会所属履歴", "app\data\committees\member_committees.js", "member_committees"), _
+        Array("審議会マスタ", "app\data\councils\councils.js", "councils"), _
+        Array("議員_審議会所属履歴", "app\data\councils\member_councils.js", "member_councils"), _
+        Array("議員連絡先履歴", "app\data\members\contacts.js", "contacts") _
+    )
+End Function
+
+Private Function GetMemberSheetConfig(ByVal sheetName As String) As Variant
+    Dim configs As Variant
+    Dim i As Long
+
+    configs = GetAllMemberSheetConfigs()
+
+    For i = LBound(configs) To UBound(configs)
+        If CStr(configs(i)(0)) = sheetName Then
+            GetMemberSheetConfig = configs(i)
+            Exit Function
+        End If
+    Next i
+
+    Err.Raise vbObjectError + 6101, , "シート設定が見つかりません: " & sheetName
+End Function
+
+Private Sub EnsureMemberOutputFoldersExist()
+    Dim rootPath As String
+    Dim appPath As String
+    Dim dataPath As String
+    Dim membersPath As String
+    Dim committeesPath As String
+    Dim councilsPath As String
+    Dim fso As Object
+
+    rootPath = ThisWorkbook.Path
+    appPath = rootPath & "\app"
+    dataPath = rootPath & "\app\data"
+    membersPath = rootPath & "\app\data\members"
+    committeesPath = rootPath & "\app\data\committees"
+    councilsPath = rootPath & "\app\data\councils"
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+
+    If Not fso.FolderExists(appPath) Then
+        Err.Raise vbObjectError + 6201, , "app フォルダがありません: " & appPath
+    End If
+
+    If Not fso.FolderExists(dataPath) Then
+        fso.CreateFolder dataPath
+    End If
+
+    If Not fso.FolderExists(membersPath) Then
+        fso.CreateFolder membersPath
+    End If
+
+    If Not fso.FolderExists(committeesPath) Then
+        fso.CreateFolder committeesPath
+    End If
+
+    If Not fso.FolderExists(councilsPath) Then
+        fso.CreateFolder councilsPath
+    End If
+End Sub
+
+Private Sub EnsureParentFolderExists(ByVal filePath As String)
+    Dim fso As Object
+    Dim parentPath As String
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    parentPath = fso.GetParentFolderName(filePath)
+
+    If parentPath <> "" Then
+        CreateFoldersRecursive parentPath
+    End If
+End Sub
+
+Private Sub CreateFoldersRecursive(ByVal folderPath As String)
+    Dim fso As Object
+    Dim parentPath As String
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+
+    If fso.FolderExists(folderPath) Then Exit Sub
+
+    parentPath = fso.GetParentFolderName(folderPath)
+    If parentPath <> "" And Not fso.FolderExists(parentPath) Then
+        CreateFoldersRecursive parentPath
+    End If
+
+    If Not fso.FolderExists(folderPath) Then
+        fso.CreateFolder folderPath
+    End If
+End Sub
+
+Private Sub WriteTextFileUtf8(ByVal filePath As String, ByVal textContent As String)
+    Dim stm As Object
+
+    Set stm = CreateObject("ADODB.Stream")
+    stm.Type = 2
+    stm.Charset = "utf-8"
+    stm.Open
+    stm.WriteText textContent
+    stm.SaveToFile filePath, 2
+    stm.Close
+End Sub
+
+Private Function GetLastDataRow(ByVal ws As Worksheet) As Long
+    Dim lastCell As Range
+
+    On Error Resume Next
+    Set lastCell = ws.Cells.Find(What:="*", After:=ws.Cells(1, 1), LookIn:=xlFormulas, _
+                                 LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+    On Error GoTo 0
+
+    If lastCell Is Nothing Then
+        GetLastDataRow = 0
+    Else
+        GetLastDataRow = lastCell.Row
+    End If
+End Function
+
+Private Function GetLastHeaderCol(ByVal ws As Worksheet) As Long
+    Dim c As Long
+    Dim lastCol As Long
+
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+
+    If Trim$(CStr(ws.Cells(1, lastCol).Value)) = "" Then
+        GetLastHeaderCol = 0
+        Exit Function
+    End If
+
+    For c = lastCol To 1 Step -1
+        If Trim$(CStr(ws.Cells(1, c).Value)) <> "" Then
+            GetLastHeaderCol = c
+            Exit Function
+        End If
+    Next c
+
+    GetLastHeaderCol = 0
+End Function
+
+Private Function IsEntireRowEmpty(ByVal ws As Worksheet, ByVal rowNum As Long, ByVal lastCol As Long) As Boolean
+    Dim c As Long
+
+    For c = 1 To lastCol
+        If Trim$(CStr(ws.Cells(rowNum, c).Value)) <> "" Then
+            IsEntireRowEmpty = False
+            Exit Function
+        End If
+    Next c
+
+    IsEntireRowEmpty = True
+End Function
+
+Private Function HasNextNonEmptyRow(ByVal ws As Worksheet, ByVal currentRow As Long, ByVal lastRow As Long, ByVal lastCol As Long) As Boolean
+    Dim r As Long
+
+    For r = currentRow + 1 To lastRow
+        If Not IsEntireRowEmpty(ws, r, lastCol) Then
+            HasNextNonEmptyRow = True
+            Exit Function
+        End If
+    Next r
+
+    HasNextNonEmptyRow = False
+End Function
