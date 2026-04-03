@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>会議一覧</title>
+
+  <link rel="stylesheet" href="../../css/common.css" />
+
+  <style>
+    html, body {
+      height: 100%;
+    }
+
+    .search-row {
+      grid-template-columns: 240px 320px;
+    }
+
+    @media (max-width: 700px) {
+      .search-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <h1 class="page-title">会議一覧</h1>
+      <p class="page-desc">会議回一覧から詳細ページへ遷移する画面です。</p>
+    </header>
+
+    <details class="status-details">
+      <summary>動作確認</summary>
+      <div class="status-body">
+        <div id="statusBox" class="status-line">読み込み中...</div>
+      </div>
+    </details>
+
+    <section class="card">
+      <h2>検索条件</h2>
+      <div class="search-row">
+        <div class="field">
+          <label for="searchSessionType">会議種別</label>
+          <select id="searchSessionType">
+            <option value="">すべて</option>
+            <option value="REGULAR">定例会</option>
+            <option value="EXTRA">臨時会</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="searchSpecialCommittee">特別委員会</label>
+          <select id="searchSpecialCommittee"></select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>会議回一覧</h2>
+      <div id="resultMeta" class="result-meta">0件</div>
+      <div id="resultArea"></div>
+    </section>
+  </div>
+
+  <script src="../../data/meetings/meetings.js"></script>
+  <script src="../../data/meetings/event_types.js"></script>
+  <script src="../../data/meetings/events.js"></script>
+  <script src="../../data/committees/committees.js"></script>
+  <script src="../../data/committees/special_committees.js"></script>
+  <script src="../../data/committees/special_committee_instances.js"></script>
+
+  <script src="../../js/core/common.js"></script>
+  <script src="../../js/core/utils.js"></script>
+  <script src="../../js/core/formatters.js"></script>
+  <script src="../../js/core/app.js"></script>
+  <script src="../../js/meetings/view_meetings.js"></script>
+</body>
+</html>
