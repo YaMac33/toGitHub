@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>議員一覧</title>
+
+  <link rel="stylesheet" href="../../css/common.css" />
+
+  <style>
+    .search-row {
+      grid-template-columns: 160px 240px 280px 1fr;
+    }
+
+    @media (max-width: 980px) {
+      .search-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .search-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <h1 class="page-title">議員一覧</h1>
+      <p class="page-desc">現職議員の一覧と詳細を確認する画面です。</p>
+    </header>
+
+    <details class="status-details">
+      <summary>動作確認</summary>
+      <div class="status-body">
+        <div id="statusBox" class="status-line">読み込み中...</div>
+      </div>
+    </details>
+
+    <section class="card">
+      <h2>検索条件</h2>
+      <div class="search-row">
+        <div class="field">
+          <label>表示条件</label>
+          <label class="checkbox-row">
+            <input id="showCurrentOnly" type="checkbox" checked />
+            現職のみ
+          </label>
+        </div>
+
+        <div class="field">
+          <label for="searchParty">会派</label>
+          <select id="searchParty"></select>
+        </div>
+
+        <div class="field">
+          <label for="searchCommittee">現在委員会</label>
+          <select id="searchCommittee"></select>
+        </div>
+
+        <div class="field">
+          <label for="searchName">氏名検索</label>
+          <input id="searchName" type="text" placeholder="例: 山田" />
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>議員一覧</h2>
+      <div id="resultMeta" class="result-meta">0件</div>
+      <div id="resultArea"></div>
+    </section>
+  </div>
+
+  <script src="../../data/members/members.js"></script>
+  <script src="../../data/members/office_terms.js"></script>
+  <script src="../../data/members/parties.js"></script>
+  <script src="../../data/members/member_parties.js"></script>
+  <script src="../../data/committees/committees.js"></script>
+  <script src="../../data/committees/member_committees.js"></script>
+  <script src="../../data/councils/councils.js"></script>
+  <script src="../../data/councils/member_councils.js"></script>
+  <script src="../../data/members/contacts.js"></script>
+  <script src="../../data/meetings/meetings.js"></script>
+  <script src="../../data/committees/special_committees.js"></script>
+  <script src="../../data/committees/special_committee_instances.js"></script>
+  <script src="../../data/committees/special_committee_members.js"></script>
+
+  <script src="../../js/core/common.js"></script>
+  <script src="../../js/core/utils.js"></script>
+  <script src="../../js/core/formatters.js"></script>
+  <script src="../../js/core/app.js"></script>
+  <script src="../../js/members/view_members.js"></script>
+</body>
+</html>
