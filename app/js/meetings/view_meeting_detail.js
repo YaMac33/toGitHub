@@ -124,17 +124,30 @@ window.MEETING_DETAIL_VIEW = (function () {
       });
   }
 
-  function getMemberById(memberId) {
-    return getArray("members").find(function (row) {
-      return String(row.member_id || "") === String(memberId || "");
-    }) || null;
-  }
-
   function getSpecialCommitteeMembersByMeetingId(meetingId) {
     return getArray("special_committee_members")
       .filter(function (row) {
         return String(row.meeting_id || "") === String(meetingId || "");
-      });
+      })
+      .sort(compareSpecialCommitteeMemberRows);
+  }
+
+  function compareSpecialCommitteeMemberRows(a, b) {
+    const ai = String(a.special_committee_instance_id || a.committee_instance_id || "");
+    const bi = String(b.special_committee_instance_id || b.committee_instance_id || "");
+    if (ai !== bi) return ai < bi ? -1 : 1;
+
+    const aso = Number(a.sort_order || 0);
+    const bso = Number(b.sort_order || 0);
+    if (aso !== bso) return aso - bso;
+
+    const ar = roleOrder(a.role_name || a.role);
+    const br = roleOrder(b.role_name || b.role);
+    if (ar !== br) return ar - br;
+
+    const an = String(a.member_name || a.member_id || "");
+    const bn = String(b.member_name || b.member_id || "");
+    return an < bn ? -1 : an > bn ? 1 : 0;
   }
 
   function compareMeetingRows(a, b) {
@@ -409,8 +422,9 @@ window.MEETING_DETAIL_VIEW = (function () {
 
       if (!map[code]) {
         map[code] = {
-          committee_id: code,
+          special_committee_id: code,
           special_committee_name: name,
+          special_committee_instance_id: "",
           first_date: date,
           last_date: date,
           count: 0,
@@ -424,23 +438,57 @@ window.MEETING_DETAIL_VIEW = (function () {
     });
 
     specialCommitteeMembers.forEach(function (row) {
-      const committeeId = String(row.committee_id || "");
-      if (!map[committeeId]) return;
+      const committeeId = String(row.special_committee_id || row.committee_id || "");
+      const instanceId = String(row.special_committee_instance_id || row.committee_instance_id || "");
+      const committeeName = String(row.special_committee_name || "");
 
-      const member = getMemberById(row.member_id);
+      if (!map[committeeId]) {
+        map[committeeId] = {
+          special_committee_id: committeeId,
+          special_committee_name: committeeName,
+          special_committee_instance_id: instanceId,
+          first_date: normalizeDate(row.start_date),
+          last_date: normalizeDate(row.end_date),
+          count: 0,
+          members: []
+        };
+      }
+
+      if (!map[committeeId].special_committee_instance_id && instanceId) {
+        map[committeeId].special_committee_instance_id = instanceId;
+      }
+      if (!map[committeeId].special_committee_name && committeeName) {
+        map[committeeId].special_committee_name = committeeName;
+      }
+
+      const startDate = normalizeDate(row.start_date);
+      const endDate = normalizeDate(row.end_date);
+
+      if (startDate && (!map[committeeId].first_date || startDate < map[committeeId].first_date)) {
+        map[committeeId].first_date = startDate;
+      }
+      if (endDate && (!map[committeeId].last_date || endDate > map[committeeId].last_date)) {
+        map[committeeId].last_date = endDate;
+      }
 
       map[committeeId].members.push({
+        special_committee_member_id: String(row.special_committee_member_id || ""),
         member_id: String(row.member_id || ""),
-        member_name: member ? String(member.member_name || row.member_id || "") : String(row.member_id || ""),
-        role_name: String(row.role_name || ""),
-        start_date: normalizeDate(row.start_date),
-        end_date: normalizeDate(row.end_date)
+        member_name: String(row.member_name || row.member_id || ""),
+        role_name: String(row.role_name || row.role || ""),
+        sort_order: Number(row.sort_order || 0),
+        start_date: startDate,
+        end_date: endDate
       });
     });
 
     return Object.keys(map).sort().map(function (key) {
       const group = map[key];
       group.members.sort(function (a, b) {
+        const aso = Number(a.sort_order || 0);
+        const bso = Number(b.sort_order || 0);
+        if (aso !== bso) return aso - bso;
+
         const ra = roleOrder(a.role_name);
         const rb = roleOrder(b.role_name);
         if (ra !== rb) return ra - rb;
