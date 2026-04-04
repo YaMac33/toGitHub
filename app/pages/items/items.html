@@ -1,0 +1,133 @@
+<body>
+  <div class="page">
+
+    <header class="page-header">
+      <h1>案件一覧</h1>
+      <p>回を切り替えて、その定例会・臨時会で扱われた案件を確認できます。</p>
+    </header>
+
+
+    <section class="filter-card">
+      <div class="filter-card__title">表示条件</div>
+
+      <div class="filter-row">
+        <div class="filter-item filter-item--wide">
+          <label>回</label>
+          <select>
+            <option>令和8年第1回定例会</option>
+          </select>
+        </div>
+
+        <div class="filter-item filter-item--button">
+          <button>前の回</button>
+        </div>
+
+        <div class="filter-item filter-item--button">
+          <button>次の回</button>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-item">
+          <label><input type="checkbox" checked> 通常</label>
+        </div>
+
+        <div class="filter-item">
+          <label><input type="checkbox" checked> 例外</label>
+        </div>
+
+        <div class="filter-item">
+          <label><input type="checkbox"> 例外のみ表示</label>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-item filter-item--grow">
+          <label>キーワード</label>
+          <input type="text" placeholder="件名・番号で検索">
+        </div>
+
+        <div class="filter-item filter-item--button">
+          <button>解除</button>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="session-summary-card">
+      <div class="session-summary-card__row">
+        <span class="label">表示中</span>
+        <span class="value">令和8年第1回定例会</span>
+      </div>
+
+      <div class="session-summary-card__row">
+        <span class="label">会期</span>
+        <span class="value">2026年2月25日 ～ 2026年3月28日</span>
+      </div>
+
+      <div class="session-summary-card__row session-summary-card__row--link">
+        <a href="#">会議詳細ページへ</a>
+      </div>
+    </section>
+
+
+    <section class="items-block items-block--normal">
+      <div class="items-block__title">通常</div>
+
+      <div class="items-row">
+        <div class="items-row__label">議案</div>
+        <div class="items-row__value">議案第1号〜第6号</div>
+      </div>
+
+      <div class="items-row">
+        <div class="items-row__label">請願</div>
+        <div class="items-row__value">受理番号第1号</div>
+      </div>
+
+      <div class="items-row">
+        <div class="items-row__label">陳情</div>
+        <div class="items-row__value">受理番号第2号</div>
+      </div>
+
+      <div class="items-row">
+        <div class="items-row__label">発議案</div>
+        <div class="items-row__value">発議案第1号〜第2号</div>
+      </div>
+    </section>
+
+
+    <section class="items-block items-block--exception">
+      <div class="items-block__title">例外</div>
+
+      <div class="items-row">
+        <div class="items-row__label">追加議案</div>
+        <div class="items-row__value">議案第3号、議案第5号</div>
+      </div>
+
+      <div class="items-row">
+        <div class="items-row__label">先議</div>
+        <div class="items-row__value">議案第3号</div>
+      </div>
+
+      <div class="items-row">
+        <div class="items-row__label">修正案あり</div>
+        <div class="items-row__value">発議案第1号</div>
+      </div>
+
+      <div class="items-row">
+        <div class="items-row__label">履歴あり</div>
+        <div class="items-row__value">議案第2号</div>
+      </div>
+    </section>
+
+
+    <section class="note-card">
+      <div class="note-card__title">補足</div>
+      <ul>
+        <li>通常は、その回の標準的な流れで扱われた案件です。</li>
+        <li>例外は、追加議案・先議・修正案あり・履歴あり等を示します。</li>
+      </ul>
+    </section>
+
+  </div>
+</body>
