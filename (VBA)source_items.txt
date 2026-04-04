@@ -1,0 +1,152 @@
+Option Explicit
+
+' =========================================================
+' items → items.js 出力（ルート配置版）
+' =========================================================
+
+Public Sub ExportItemsJs()
+
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim r As Long
+    Dim outputPath As String
+    Dim folderPath As String
+    Dim json As String
+    Dim firstItem As Boolean
+    
+    Set ws = ThisWorkbook.Worksheets("items")
+    
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    If lastRow < 2 Then
+        MsgBox "items シートにデータがありません。", vbExclamation
+        Exit Sub
+    End If
+    
+    outputPath = BuildOutputPath()
+    folderPath = Left(outputPath, InStrRev(outputPath, "\") - 1)
+    EnsureFolderExists folderPath
+    
+    json = "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
+    json = json & "window.APP_DATA.items = [" & vbCrLf
+    
+    firstItem = True
+    
+    For r = 2 To lastRow
+        
+        If Trim(GetCellByHeader(ws, r, "item_id")) <> "" Then
+            
+            If Not firstItem Then json = json & "," & vbCrLf
+            
+            json = json & "  {" & vbCrLf
+            
+            json = json & BuildJsLine("item_id", GetCellByHeader(ws, r, "item_id"), 4, False, True)
+            json = json & BuildJsLine("meeting_name", GetCellByHeader(ws, r, "meeting_name"), 4, False, True)
+            json = json & BuildJsLine("meeting_id", GetCellByHeader(ws, r, "meeting_id"), 4, False, True)
+            json = json & BuildJsLine("item_class", GetCellByHeader(ws, r, "item_class"), 4, False, True)
+            json = json & BuildJsLine("item_subclass", GetCellByHeader(ws, r, "item_subclass"), 4, False, True)
+            json = json & BuildJsLine("item_no_numeric", GetCellByHeader(ws, r, "item_no_numeric"), 4, False, True)
+            json = json & BuildJsLine("committee_id", GetCellByHeader(ws, r, "committee_id"), 4, False, True)
+            json = json & BuildJsLine("result_code", GetCellByHeader(ws, r, "result_code"), 4, False, True)
+            
+            json = json & BuildJsLine("fiscal_year_label", GetCellByHeader(ws, r, "年度"), 4, False, True)
+            json = json & BuildJsLine("number_code", GetCellByHeader(ws, r, "号"), 4, False, True)
+            json = json & BuildJsLine("year", GetCellByHeader(ws, r, "年"), 4, True, True)
+            json = json & BuildJsLine("session", GetCellByHeader(ws, r, "回"), 4, True, True)
+            json = json & BuildJsLine("session_type", GetCellByHeader(ws, r, "区分"), 4, False, True)
+            json = json & BuildJsLine("item_class_label", GetCellByHeader(ws, r, "大分類"), 4, False, True)
+            json = json & BuildJsLine("item_subclass_label", GetCellByHeader(ws, r, "中分類"), 4, False, True)
+            json = json & BuildJsLine("item_no", GetCellByHeader(ws, r, "番号"), 4, False, True)
+            json = json & BuildJsLine("title", GetCellByHeader(ws, r, "件名"), 4, False, True)
+            json = json & BuildJsLine("committee_name", GetCellByHeader(ws, r, "付託委員会"), 4, False, True)
+            json = json & BuildJsLine("proposed_date", GetCellByHeader(ws, r, "提案日"), 4, False, True)
+            json = json & BuildJsLine("referred_date", GetCellByHeader(ws, r, "付託日"), 4, False, True)
+            json = json & BuildJsLine("vote_date", GetCellByHeader(ws, r, "議決日"), 4, False, True)
+            json = json & BuildJsLine("result_label", GetCellByHeader(ws, r, "議決結果"), 4, False, True)
+            
+            json = json & BuildJsLine("sort_order", GetCellByHeader(ws, r, "sort_order"), 4, True, True)
+            json = json & BuildJsLine("created_at", GetCellByHeader(ws, r, "created_at"), 4, False, True)
+            json = json & BuildJsLine("updated_at", GetCellByHeader(ws, r, "updated_at"), 4, False, True)
+            json = json & BuildJsLine("note", GetCellByHeader(ws, r, "note"), 4, False, False)
+            
+            json = json & "  }"
+            
+            firstItem = False
+        End If
+        
+    Next r
+    
+    json = json & vbCrLf & "];"
+    
+    WriteTextFile outputPath, json
+    
+    MsgBox "出力完了：" & vbCrLf & outputPath, vbInformation
+
+End Sub
+
+' =========================================================
+' 出力パス（ルート配置）
+' =========================================================
+Private Function BuildOutputPath() As String
+    BuildOutputPath = ThisWorkbook.Path & "\app\data\items\items.js"
+End Function
+
+' =========================================================
+' ファイル書き込み
+' =========================================================
+Private Sub WriteTextFile(ByVal filePath As String, ByVal content As String)
+    Dim fso As Object
+    Dim ts As Object
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set ts = fso.CreateTextFile(filePath, True, False)
+    
+    ts.Write content
+    ts.Close
+End Sub
+
+' =========================================================
+' フォルダ作成
+' =========================================================
+Private Sub EnsureFolderExists(ByVal folderPath As String)
+    If Dir(folderPath, vbDirectory) = "" Then MkDir folderPath
+End Sub
+
+' =========================================================
+' ヘッダ検索
+' =========================================================
+Private Function GetCellByHeader(ws As Worksheet, rowNum As Long, header As String) As String
+    
+    Dim c As Long
+    Dim lastCol As Long
+    
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    
+    For c = 1 To lastCol
+        If ws.Cells(1, c).Value = header Then
+            GetCellByHeader = ws.Cells(rowNum, c).Value
+            Exit Function
+        End If
+    Next
+    
+    GetCellByHeader = ""
+    
+End Function
+
+' =========================================================
+' JS1行生成
+' =========================================================
+Private Function BuildJsLine(key As String, val As String, indent As Long, isNum As Boolean, comma As Boolean) As String
+    
+    Dim sp As String: sp = Space(indent)
+    Dim v As String
+    
+    If isNum Then
+        If val = "" Then val = "0"
+        v = val
+    Else
+        v = """" & Replace(val, """", "\""") & """"
+    End If
+    
+    BuildJsLine = sp & key & ": " & v & IIf(comma, ",", "") & vbCrLf
+    
+End Function
