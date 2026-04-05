@@ -3,76 +3,238 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>会議情報詳細</title>
-
+  <title>会議詳細</title>
   <link rel="stylesheet" href="../../css/common.css" />
 
   <style>
-    .page {
-      max-width: 1400px;
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --line: #d1d5db;
+      --text: #111827;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --warn-soft: #fff7ed;
+      --radius: 14px;
+      --shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
     }
 
-    .page-title {
-      font-size: 28px;
+    * {
+      box-sizing: border-box;
     }
 
-    .link-line a {
-      color: #1457b8;
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      line-height: 1.6;
+    }
+
+    a {
+      color: var(--accent);
       text-decoration: none;
     }
 
-    .link-line a:hover {
+    a:hover {
       text-decoration: underline;
     }
 
-    .calendar-month {
-      margin-bottom: 20px;
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 24px auto 40px;
     }
 
-    .calendar-month:last-child {
-      margin-bottom: 0;
+    .page-header {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 22px;
+      margin-bottom: 16px;
+    }
+
+    .page-title {
+      margin: 0 0 6px;
+      font-size: 28px;
+      line-height: 1.3;
+    }
+
+    .page-desc {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-details {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin: 0 0 16px;
+      overflow: hidden;
+    }
+
+    .status-details summary {
+      cursor: pointer;
+      padding: 14px 18px;
+      font-weight: 600;
+      user-select: none;
+      list-style: none;
+    }
+
+    .status-details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .status-details summary::before {
+      content: "▶";
+      display: inline-block;
+      margin-right: 8px;
+      transition: transform 0.15s ease;
+    }
+
+    .status-details[open] summary::before {
+      transform: rotate(90deg);
+    }
+
+    .status-body {
+      padding: 0 18px 18px;
+      background: #fff;
+    }
+
+    .status-line {
+      white-space: pre-wrap;
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12px;
+      overflow-x: auto;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      margin: 0 0 14px;
+      font-size: 18px;
+      line-height: 1.4;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .summary-item {
+      padding: 12px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .summary-item-wide {
+      width: 100%;
+    }
+
+    .summary-label {
+      display: inline-block;
+      min-width: 96px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-right: 8px;
+      vertical-align: top;
+    }
+
+    .section-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 4px 0;
+    }
+
+    .empty-small {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 4px 0;
+    }
+
+    .detail-subcard {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+      padding: 14px 16px;
+    }
+
+    .detail-subcard + .detail-subcard {
+      margin-top: 12px;
+    }
+
+    .detail-subcard h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    .history-row {
+      margin: 8px 0;
+      word-break: break-word;
+    }
+
+    .calendar-month + .calendar-month {
+      margin-top: 18px;
     }
 
     .calendar-title {
-      font-size: 18px;
-      font-weight: bold;
+      font-weight: 700;
+      font-size: 16px;
       margin-bottom: 10px;
     }
 
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 6px;
+      gap: 8px;
     }
 
     .weekday-head {
       text-align: center;
-      font-size: 13px;
-      font-weight: bold;
-      color: #555;
-      padding: 6px 0;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 4px 0;
     }
 
     .calendar-cell {
-      min-height: 120px;
-      border: 1px solid #dfe5ec;
-      border-radius: 10px;
+      min-height: 110px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
       background: #fff;
       padding: 8px;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      position: relative;
     }
 
     .calendar-cell.outside {
-      background: #f3f5f7;
-      color: #999;
+      background: #f9fafb;
+      border-style: dashed;
+      min-height: 60px;
     }
 
     .calendar-cell.in-term {
-      border-color: #b9d0f3;
-      background: #f8fbff;
+      box-shadow: inset 0 0 0 1px #bfdbfe;
     }
 
     .calendar-cell.has-events {
@@ -80,321 +242,239 @@
     }
 
     .calendar-cell.has-events:hover {
-      background: #eef6ff;
-      border-color: #8fb4ea;
+      border-color: #93c5fd;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
     }
 
     .calendar-day {
-      font-size: 13px;
-      font-weight: bold;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 6px;
     }
 
     .calendar-items {
-      display: flex;
-      flex-direction: column;
+      display: grid;
       gap: 4px;
     }
 
     .calendar-item {
-      font-size: 12px;
-      line-height: 1.4;
       border-radius: 8px;
       padding: 4px 6px;
+      font-size: 11px;
+      line-height: 1.35;
       word-break: break-word;
     }
 
     .calendar-item.plenary {
-      background: #e8f3ff;
+      background: #dbeafe;
     }
 
     .calendar-item.steering {
-      background: #fff4dd;
+      background: #ede9fe;
     }
 
     .calendar-item.leaders {
-      background: #f4eefe;
-    }
-
-    .calendar-item.standing {
-      background: #eef8ea;
+      background: #fae8ff;
     }
 
     .calendar-item.special {
-      background: #fdeef0;
+      background: #dcfce7;
+    }
+
+    .calendar-item.standing {
+      background: #f3f4f6;
     }
 
     .calendar-item.question {
-      background: #eef8ea;
-    }
-
-    .calendar-item.proposed {
-      background: #e8f3ff;
-    }
-
-    .calendar-item.referred {
-      background: #fff4dd;
-    }
-
-    .calendar-item.continued {
-      background: #f4eefe;
-    }
-
-    .calendar-item.decided-passed {
-      background: #eef8ea;
-    }
-
-    .calendar-item.decided-rejected {
-      background: #fdeef0;
-    }
-
-    .calendar-item.withdrawn {
-      background: #fdeef0;
+      background: #fff7ed;
     }
 
     .calendar-more {
-      font-size: 12px;
-      color: #555;
-      padding: 2px 4px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
     }
 
-    .modal-backdrop {
+    .linked-items-details {
+      margin-top: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .linked-items-details summary {
+      cursor: pointer;
+      user-select: none;
+      font-weight: 600;
+      list-style: none;
+      padding: 14px 16px;
+    }
+
+    .linked-items-details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .linked-items-details summary::before {
+      content: "▶";
+      display: inline-block;
+      margin-right: 8px;
+      transition: transform 0.15s ease;
+    }
+
+    .linked-items-details[open] summary::before {
+      transform: rotate(90deg);
+    }
+
+    .linked-items-body {
+      padding: 0 16px 16px;
+    }
+
+    .linked-items-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .linked-item-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px 14px;
+    }
+
+    .linked-item-main {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .linked-item-meta {
+      display: grid;
+      gap: 4px;
+      font-size: 14px;
+    }
+
+    .linked-item-meta-line {
+      word-break: break-word;
+    }
+
+    .day-modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.35);
+      background: rgba(15, 23, 42, 0.42);
       display: none;
       align-items: center;
       justify-content: center;
       padding: 20px;
-      box-sizing: border-box;
       z-index: 999;
     }
 
-    .modal-backdrop.show {
+    .day-modal-backdrop.show {
       display: flex;
     }
 
-    .modal {
+    .day-modal {
       width: min(720px, 100%);
-      max-height: 80vh;
-      overflow-y: auto;
+      max-height: min(80vh, 900px);
+      overflow: auto;
       background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      border: 1px solid #d6dde7;
+      border-radius: 16px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+      border: 1px solid #e5e7eb;
     }
 
-    .modal-header {
+    .day-modal-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 14px 16px;
-      border-bottom: 1px solid #e7edf4;
-      position: sticky;
-      top: 0;
-      background: #fff;
-      z-index: 1;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #e5e7eb;
     }
 
-    .modal-title {
+    .day-modal-title {
+      margin: 0;
       font-size: 18px;
-      font-weight: bold;
+      line-height: 1.4;
     }
 
-    .modal-close {
-      border: 1px solid #cbd6e2;
+    .day-modal-close {
+      border: 1px solid #d1d5db;
       background: #fff;
-      border-radius: 8px;
-      padding: 6px 10px;
+      color: var(--text);
+      border-radius: 10px;
+      min-width: 40px;
+      min-height: 40px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 18px;
+      line-height: 1;
     }
 
-    .modal-close:hover {
-      background: #f5f8fb;
+    .day-modal-body {
+      padding: 16px 18px 18px;
     }
 
-    .modal-body {
-      padding: 16px;
+    .modal-item + .modal-item {
+      margin-top: 12px;
     }
 
     .modal-item {
-      border: 1px solid #e5e9ef;
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      background: #fbfcfd;
-    }
-
-    .modal-item:last-child {
-      margin-bottom: 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fff;
     }
 
     .modal-item-title {
-      font-weight: bold;
-      margin-bottom: 4px;
+      font-weight: 700;
+      margin-bottom: 6px;
     }
 
     .modal-item-note {
-      color: #555;
-      font-size: 13px;
-      line-height: 1.5;
       white-space: pre-wrap;
-    }
-
-    .detail-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    .pattern-block {
-      border: 1px solid #e5e9ef;
-      border-radius: 10px;
-      padding: 12px;
-      background: #fff;
-      margin-bottom: 12px;
-      overflow: hidden;
-    }
-
-    .pattern-block:last-child {
-      margin-bottom: 0;
-    }
-
-    .pattern-title {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    .pattern-content.is-collapsed {
-      max-height: 200px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .pattern-content.is-collapsed::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 40px;
-      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
-      pointer-events: none;
-    }
-
-    .pattern-toggle-wrap {
-      margin-top: 10px;
-    }
-
-    .pattern-toggle-btn {
-      border: 1px solid #cbd6e2;
-      background: #fff;
-      border-radius: 8px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-size: 13px;
-    }
-
-    .pattern-toggle-btn:hover {
-      background: #f5f8fb;
-    }
-
-    .pattern-item {
-      border-top: 1px solid #edf1f5;
-      padding-top: 10px;
-      margin-top: 10px;
-    }
-
-    .pattern-item:first-child {
-      border-top: 0;
-      padding-top: 0;
-      margin-top: 0;
-    }
-
-    .pattern-item-title {
-      font-weight: bold;
-      margin-bottom: 6px;
-      line-height: 1.5;
-    }
-
-    .detail-subcard {
-      border: 1px solid #e5e9ef;
-      border-radius: 10px;
-      padding: 12px;
-      background: #fff;
-    }
-
-    .detail-subcard h3 {
-      margin: 0 0 10px;
-      font-size: 16px;
-    }
-
-    .history-row {
-      padding: 8px 0;
-      border-bottom: 1px solid #edf1f5;
+      color: var(--muted);
       font-size: 14px;
-      line-height: 1.5;
-      word-break: break-word;
-    }
-
-    .history-row:last-child {
-      border-bottom: 0;
-    }
-
-    .empty {
-      padding: 18px;
-      text-align: center;
-      color: #666;
-      border: 1px dashed #ccd5df;
-      border-radius: 10px;
-      background: #fafbfc;
-    }
-
-    .empty-small {
-      color: #666;
-      font-size: 14px;
-      padding: 4px 0;
-    }
-
-    @media (max-width: 1100px) {
-      .calendar-cell {
-        min-height: 100px;
-      }
     }
 
     @media (max-width: 900px) {
-      .summary-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .calendar-grid {
-        grid-template-columns: repeat(7, minmax(90px, 1fr));
-        overflow-x: auto;
+      .calendar-cell {
+        min-height: 96px;
       }
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 720px) {
       .page {
-        padding: 14px;
+        width: min(100% - 20px, 1120px);
+        margin-top: 12px;
+      }
+
+      .page-title {
+        font-size: 24px;
+      }
+
+      .summary-label {
+        min-width: 80px;
+      }
+
+      .calendar-grid {
+        gap: 6px;
       }
 
       .calendar-cell {
-        min-height: 90px;
+        min-height: 88px;
         padding: 6px;
       }
 
       .calendar-item {
-        font-size: 11px;
+        font-size: 10px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="page">
+  <main class="page">
     <header class="page-header">
-      <h1 id="pageTitle" class="page-title">会議情報詳細</h1>
-      <p id="pageDesc" class="page-desc">会議回の詳細を表示します。</p>
+      <h1 id="pageTitle" class="page-title">会議詳細</h1>
+      <p id="pageDesc" class="page-desc">会議回の詳細を表示しています。</p>
     </header>
 
     <details class="status-details">
@@ -404,60 +484,50 @@
       </div>
     </details>
 
-    <section class="card">
-      <h2>会議回概要</h2>
-      <div id="summaryArea" class="summary-grid"></div>
-    </section>
-
-    <section class="card">
-      <h2>月間カレンダー</h2>
-      <div id="calendarArea"></div>
-    </section>
-
-    <section class="card">
-      <h2>特別委員会</h2>
-      <div id="specialCommitteeArea" class="detail-grid"></div>
-    </section>
-
-    <section class="card">
-      <h2>案件</h2>
-      <div id="itemsArea" class="detail-grid"></div>
-    </section>
-  </div>
-
-  <div id="dayModalBackdrop" class="modal-backdrop">
-    <div class="modal">
-      <div class="modal-header">
-        <div id="dayModalTitle" class="modal-title">日別詳細</div>
-        <button id="dayModalClose" class="modal-close" type="button">閉じる</button>
+    <section class="card" aria-labelledby="summaryTitle">
+      <h2 id="summaryTitle" class="card-title">概要</h2>
+      <div id="summaryArea" class="summary-grid">
+        <div class="empty">表示対象がありません。</div>
       </div>
-      <div id="dayModalBody" class="modal-body"></div>
+    </section>
+
+    <section class="card" aria-labelledby="calendarTitle">
+      <h2 id="calendarTitle" class="card-title">会期カレンダー</h2>
+      <div id="calendarArea">
+        <div class="empty">表示対象がありません。</div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="specialCommitteeTitle">
+      <h2 id="specialCommitteeTitle" class="card-title">特別委員会</h2>
+      <div id="specialCommitteeArea">
+        <div class="empty">表示対象がありません。</div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="itemsTitle">
+      <h2 id="itemsTitle" class="card-title">案件</h2>
+      <div id="itemsArea">
+        <div class="empty">表示対象がありません。</div>
+      </div>
+    </section>
+  </main>
+
+  <div id="dayModalBackdrop" class="day-modal-backdrop" aria-hidden="true">
+    <div class="day-modal" role="dialog" aria-modal="true" aria-labelledby="dayModalTitle">
+      <div class="day-modal-header">
+        <h2 id="dayModalTitle" class="day-modal-title">日付詳細</h2>
+        <button id="dayModalClose" class="day-modal-close" type="button" aria-label="閉じる">×</button>
+      </div>
+      <div id="dayModalBody" class="day-modal-body"></div>
     </div>
   </div>
 
-  <script src="../../js/core/common.js"></script>
-  <script src="../../js/core/utils.js"></script>
-  <script src="../../js/core/formatters.js"></script>
-
-  <script src="../../data/members/members.js"></script>
-
   <script src="../../data/meetings/meetings.js"></script>
-  <script src="../../data/meetings/event_types.js"></script>
-  <script src="../../data/meetings/events.js"></script>
-
-  <script src="../../data/committees/committees.js"></script>
-  <script src="../../data/committees/member_committees.js"></script>
-  <script src="../../data/committees/special_committees.js"></script>
-  <script src="../../data/committees/special_committee_instances.js"></script>
-  <script src="../../data/committees/special_committee_meetings.js"></script>
-  <script src="../../data/committees/special_committee_members.js"></script>
-
-  <script src="../../data/items/items.js"></script>
-  <script src="../../data/items/item_actions.js"></script>
-  <script src="../../data/items/council_terms.js"></script>
-
   <script src="../../data/questions/questions.js"></script>
-
+  <script src="../../data/items/items.js"></script>
+  <script src="../../data/committees/special_committee_members.js"></script>
+  <script src="../../js/common.js"></script>
   <script src="../../js/meetings/view_meeting_detail.js"></script>
 </body>
 </html>
