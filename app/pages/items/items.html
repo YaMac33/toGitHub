@@ -143,12 +143,7 @@
       min-width: 0;
     }
 
-    .field--grow {
-      grid-column: 1 / -1;
-    }
-
-    .field label,
-    .check-row label {
+    .field label {
       font-size: 13px;
       color: var(--muted);
     }
@@ -235,28 +230,11 @@
       gap: 12px;
     }
 
-    .result-card-link {
-      display: block;
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .result-card-link:hover {
-      text-decoration: none;
-    }
-
     .result-card {
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       background: #fff;
       padding: 14px 16px;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-    }
-
-    .result-card-link:hover .result-card {
-      border-color: #93c5fd;
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08);
-      transform: translateY(-1px);
     }
 
     .result-number {
@@ -420,6 +398,8 @@
   </main>
 
   <script src="../../data/items/items.js"></script>
+  <script src="../../data/meetings/meetings.js"></script>
+  <script src="../../data/questions/questions.js"></script>
   <script src="../../js/common.js"></script>
   <script>
     (function () {
@@ -437,8 +417,20 @@
           .replace(/'/g, "&#39;");
       }
 
+      function getArray(name) {
+        return Array.isArray(window.APP_DATA[name]) ? window.APP_DATA[name] : [];
+      }
+
       function getItems() {
-        return Array.isArray(window.APP_DATA.items) ? window.APP_DATA.items : [];
+        return getArray("items");
+      }
+
+      function getMeetings() {
+        return getArray("meetings");
+      }
+
+      function getQuestions() {
+        return getArray("questions");
       }
 
       function toNumber(value) {
@@ -538,22 +530,99 @@
         return 9;
       }
 
+      function getQuestionLastDate(meetingId) {
+        return getQuestions()
+          .filter(function (row) {
+            return String(row.meeting_id || "") === String(meetingId || "");
+          })
+          .map(function (row) {
+            return normalizeDate(row.question_date);
+          })
+          .filter(Boolean)
+          .sort()
+          .slice(-1)[0] || "";
+      }
+
+      function getPlenaryDates(meetingId) {
+        const dates = getMeetings()
+          .filter(function (row) {
+            return String(row.meeting_id || "") === String(meetingId || "") &&
+              String(row.meeting_type_code || "") === "HNKG";
+          })
+          .map(function (row) {
+            return normalizeDate(row.held_date);
+          })
+          .filter(Boolean)
+          .sort();
+
+        return dates.filter(function (date, index, arr) {
+          return arr.indexOf(date) === index;
+        });
+      }
+
+      function getReferenceDates(meetingId) {
+        const plenaryDates = getPlenaryDates(meetingId);
+        const questionLastDate = getQuestionLastDate(meetingId);
+
+        const petitionCandidates = plenaryDates.filter(function (date) {
+          return questionLastDate && date <= questionLastDate;
+        });
+
+        return {
+          plenary_first_date: plenaryDates[0] || "",
+          plenary_second_date: plenaryDates[1] || "",
+          plenary_last_date: plenaryDates.length ? plenaryDates[plenaryDates.length - 1] : "",
+          petition_standard_date: petitionCandidates.length ? petitionCandidates[petitionCandidates.length - 1] : ""
+        };
+      }
+
       function getExceptionTags(row) {
         const tags = [];
+        const refs = getReferenceDates(String(row.meeting_id || ""));
 
-        if (String(row.exception_type || "").trim()) {
-          tags.push(String(row.exception_type).trim());
+        const teian = normalizeDate(row.teian_date || row["提案日"]);
+        const futaku = normalizeDate(row.futaku_date || row["付託日"]);
+        const giketsu = normalizeDate(row.giketsu_date || row["議決日"]);
+        const syuseian = String(row.syuseian_flag || "").trim() === "1";
+        const rireki = String(row.rireki_flag || "").trim() === "1";
+
+        if (row.item_class === "GI") {
+          if (teian && refs.plenary_first_date && teian !== refs.plenary_first_date) {
+            tags.push("追加議案");
+          }
+          if (giketsu && refs.plenary_last_date && giketsu < refs.plenary_last_date) {
+            tags.push("先議");
+          }
         }
 
-        if (String(row.syuseian_flag || "").trim() === "1") {
-          if (tags.indexOf("修正案あり") < 0) tags.push("修正案あり");
+        if (row.item_class === "SG" || row.item_class === "CJ") {
+          if (futaku && refs.petition_standard_date && futaku !== refs.petition_standard_date) {
+            tags.push("通常外付託");
+          }
+          if (giketsu && refs.plenary_last_date && giketsu < refs.plenary_last_date) {
+            tags.push("先議");
+          }
         }
 
-        if (String(row.rireki_flag || "").trim() === "1") {
-          if (tags.indexOf("履歴あり") < 0) tags.push("履歴あり");
+        if (row.item_class === "HG") {
+          if (teian && refs.plenary_last_date && teian !== refs.plenary_last_date) {
+            tags.push("追加議案");
+          }
+          if (giketsu && refs.plenary_last_date && giketsu < refs.plenary_last_date) {
+            tags.push("先議");
+          }
         }
 
-        return tags;
+        if (syuseian) {
+          tags.push("修正案あり");
+        }
+        if (rireki) {
+          tags.push("履歴あり");
+        }
+
+        return tags.filter(function (tag, index, arr) {
+          return arr.indexOf(tag) === index;
+        });
       }
 
       function buildMeetingOptions(items, eraCode) {
@@ -734,34 +803,39 @@
 
         resultArea.innerHTML = groups.map(function (group) {
           const cardsHtml = group.items.map(function (row) {
-            const itemHref = "../items/item_detail.html?item_id=" + encodeURIComponent(row.item_id || "");
             const tags = getExceptionTags(row);
             const tagHtml = tags.length
               ? '<div class="tag-list">' + tags.map(function (tag) {
                   return '<span class="tag">' + escapeHtml(tag) + '</span>';
                 }).join("") + '</div>'
-              : '<div class="tag-list"><span class="tag">なし</span></div>';
+              : '';
 
             return (
-              '<a class="result-card-link" href="' + escapeHtml(itemHref) + '" target="_blank" rel="noopener noreferrer">' +
-                '<div class="result-card">' +
-                  '<div class="result-number">' + escapeHtml(getDisplayLabel(row)) + "</div>" +
-                  '<div class="result-title">' + escapeHtml(String(row.title || "")) + "</div>" +
-                  '<div class="result-grid">' +
-                    '<div class="result-label">回</div>' +
-                    '<div>' + escapeHtml(String(row.meeting_name || "")) + "</div>" +
+              '<div class="result-card">' +
+                '<div class="result-number">' + escapeHtml(getDisplayLabel(row)) + "</div>" +
+                '<div class="result-title">' + escapeHtml(String(row.title || "")) + "</div>" +
+                '<div class="result-grid">' +
+                  '<div class="result-label">付託委員会</div>' +
+                  '<div>' + escapeHtml(String(row.committee_name || "—")) + "</div>" +
 
-                    '<div class="result-label">委員会</div>' +
-                    '<div>' + escapeHtml(String(row.committee_name || "")) + "</div>" +
+                  '<div class="result-label">提案日</div>' +
+                  '<div>' + escapeHtml(formatDateJa(row.teian_date || row["提案日"])) + "</div>" +
 
-                    '<div class="result-label">結果</div>' +
-                    '<div>' + escapeHtml(getResultLabel(row)) + "</div>" +
+                  '<div class="result-label">付託日</div>' +
+                  '<div>' + escapeHtml(formatDateJa(row.futaku_date || row["付託日"])) + "</div>" +
 
-                    '<div class="result-label">例外</div>' +
-                    '<div>' + tagHtml + "</div>" +
-                  "</div>" +
+                  '<div class="result-label">議決結果</div>' +
+                  '<div>' + escapeHtml(getResultLabel(row)) + "</div>" +
+
+                  '<div class="result-label">議決日</div>' +
+                  '<div>' + escapeHtml(formatDateJa(row.giketsu_date || row["議決日"])) + "</div>" +
+
+                  (tags.length
+                    ? '<div class="result-label">例外情報</div><div>' + tagHtml + '</div>'
+                    : ''
+                  ) +
                 "</div>" +
-              "</a>"
+              "</div>"
             );
           }).join("");
 
@@ -817,6 +891,8 @@
         box.textContent = [
           "items.html 読み込み成功",
           "items: " + getItems().length + "件",
+          "meetings: " + getMeetings().length + "件",
+          "questions: " + getQuestions().length + "件",
           "selected_era: " + (info.eraCode || "(未選択)"),
           "base_items: " + info.baseCount + "件",
           "filtered_items: " + info.filteredCount + "件",
