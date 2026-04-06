@@ -251,7 +251,7 @@ window.APP = (function () {
 
         return {
           meeting_id: instance.meeting_id || "",
-          meeting_name: meeting ? (meeting.session_name || "") : "",
+          meeting_name: meeting ? (meeting.meeting_name || "") : "",
           meeting_start_date: meeting ? (meeting.start_date || "") : "",
           special_committee_id: instance.special_committee_id || "",
           special_committee_name: specialCommittee ? (specialCommittee.special_committee_name || "") : "",
