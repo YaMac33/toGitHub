@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>items系 説明書</title>
+    <style>
+        /* ベーススタイル */
+        body {
+            font-family: "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic", sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f2f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        /* タイトル・見出し */
+        h1 {
+            text-align: center;
+            color: #16a085;
+            font-size: 2.2em;
+            padding-bottom: 15px;
+            border-bottom: 4px solid #16a085;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        h2 {
+            font-size: 1.5em;
+            color: #ffffff;
+            background-color: #1abc9c;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h3 {
+            font-size: 1.25em;
+            color: #16a085;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 5px solid #1abc9c;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h4 {
+            font-size: 1.1em;
+            color: #d35400;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        /* インライン要素 */
+        code {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #f1f2f6;
+            color: #c0392b;
+            padding: 3px 6px;
+            border-radius: 4px;
+            border: 1px solid #dfe4ea;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+        .key-text {
+            font-weight: bold;
+            color: #c0392b;
+            background: #fcf3f2;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* セクション・カードデザイン */
+        .section-box { margin-bottom: 30px; }
+        .info-card {
+            background-color: #e8f8f5;
+            border-left: 5px solid #1abc9c;
+            padding: 15px 20px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 20px;
+        }
+        .warning-card {
+            background-color: #fef9e7;
+            border-left: 5px solid #f1c40f;
+            padding: 15px 20px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 20px;
+        }
+        .alert-card {
+            background-color: #fdedec;
+            border-left: 5px solid #e74c3c;
+            padding: 15px 20px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 20px;
+        }
+
+        /* 各列の役割用カード（Flexboxで崩れ防止） */
+        .col-card {
+            border: 1px solid #dcdde1;
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .col-title {
+            font-size: 1.15em;
+            font-weight: bold;
+            color: #2c3e50;
+            border-bottom: 2px dashed #bdc3c7;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .col-prop {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .col-prop:last-child {
+            margin-bottom: 0;
+        }
+        .col-prop strong {
+            width: 70px;
+            flex-shrink: 0;
+            color: #7f8c8d;
+        }
+
+        /* テーブル */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            background-color: #ffffff;
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            font-weight: bold;
+            text-align: center;
+        }
+        tr:nth-child(even) { background-color: #f9fbfc; }
+
+        /* リスト */
+        ul, ol { padding-left: 25px; margin-bottom: 15px; }
+        li { margin-bottom: 8px; }
+        
+        .flex-box {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .flex-item {
+            flex: 1;
+            min-width: 280px;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 6px;
+        }
+
+        /* サマリボックス */
+        .summary-box {
+            background-color: #fdfefe;
+            border: 3px dashed #16a085;
+            padding: 30px;
+            border-radius: 8px;
+            margin-top: 50px;
+        }
+        .summary-box h2 {
+            background-color: transparent;
+            color: #16a085;
+            margin-top: 0;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>items系 説明書</h1>
+    <div class="subtitle">開発者向け・未来の自分向け：「Excel列 → 出力JS → 画面での役割」整理</div>
+
+    <div class="section-box">
+        <h2>1. この仕組みの全体像</h2>
+        <p>items系は、Excelの <code>items</code> シート を元にして、VBAで <code>app/data/items/items.js</code> を出力し、それを <code>app/pages/items/items.html</code> で読み込んで表示する仕組みです。</p>
+        
+        <p>この系統は単なる一覧表示ではなく、実際には次のことをしています。</p>
+        <div class="flex-box">
+            <ul class="flex-item" style="margin-bottom: 0;">
+                <li>元号で絞り込み</li>
+                <li>会議回で絞り込み</li>
+                <li>例外パターンで絞り込み</li>
+                <li>番号検索 / 件名検索</li>
+            </ul>
+            <ul class="flex-item" style="margin-bottom: 0;">
+                <li>議案 / 請願・陳情 / 発議案の並び替え</li>
+                <li><strong>meetings.js と questions.js を使った「例外判定」</strong></li>
+            </ul>
+        </div>
+        <div class="info-card">
+            <strong>💡 つまり：</strong> items系は、案件データを表示するだけでなく、<strong>会議日程と一般質問日程を参照して、その案件が通常処理か例外処理かを判定する検索画面</strong>です。
+        </div>
+    </div>
+
+    <div class="section-box">
+        <h2>2 & 3. 出力先と基本的な考え方</h2>
+        <table>
+            <tbody>
+                <tr><th style="width: 25%;">元データ</th><td>Excelシート: <strong>items</strong></td></tr>
+                <tr><th>出力先</th><td><code>app/data/items/items.js</code>（配列名: <code>window.APP_DATA.items</code>）</td></tr>
+            </tbody>
+        </table>
+        
+        <div class="alert-card" style="border-left-color: #1abc9c;">
+            <h4>「1案件 = 1行」のテーブル</h4>
+            <p>会議の開催行を持つ meetings系とは違い、items系は案件単位（議案1件、請願1件など）のテーブルです。ただし、各案件は <code>meeting_id</code> で会議回と結びついています。</p>
+            <ul>
+                <li>単体で検索対象になる</li>
+                <li><code>meeting_id</code> を通じて meetings系と結びつく</li>
+                <li>questions系の一般質問日も参照して例外判定する</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section-box">
+        <h2>4. Excel列 → items.js の対応</h2>
+        <table>
+            <thead>
+                <tr><th>Excel列</th><th>items.jsの要素</th><th>意味</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>item_id</td><td><code>item_id</code></td><td>案件ID</td></tr>
+                <tr><td>meeting_id</td><td><code>meeting_id</code></td><td>会議回ID</td></tr>
+                <tr><td>meeting_name</td><td><code>meeting_name</code></td><td>会議回名</td></tr>
+                <tr><td>号</td><td><code>number_code</code></td><td>元号コード</td></tr>
+                <tr><td>年</td><td><code>year</code></td><td>和暦年</td></tr>
+                <tr><td>回</td><td><code>session</code></td><td>回数</td></tr>
+                <tr><td>item_class</td><td><code>item_class</code></td><td>大分類コード</td></tr>
+                <tr><td>item_subclass</td><td><code>item_subclass</code></td><td>中分類コード</td></tr>
+                <tr><td>item_no_numeric</td><td><code>item_no_numeric</code></td><td>番号数値（3桁ゼロ埋め）</td></tr>
+                <tr><td>番号</td><td><code>item_no</code></td><td>表示用番号</td></tr>
+                <tr><td>件名</td><td><code>title</code></td><td>件名</td></tr>
+                <tr><td>committee_id</td><td><code>committee_id</code></td><td>付託委員会ID</td></tr>
+                <tr><td>付託委員会</td><td><code>committee_name</code></td><td>付託委員会名</td></tr>
+                <tr><td>提案日</td><td><code>teian_date</code></td><td>提案日</td></tr>
+                <tr><td>付託日</td><td><code>futaku_date</code></td><td>付託日</td></tr>
+                <tr><td>議決日</td><td><code>giketsu_date</code></td><td>議決日</td></tr>
+                <tr><td>result_code</td><td><code>result_code</code></td><td>議決結果コード</td></tr>
+                <tr><td>議決結果</td><td><code>result_label</code></td><td>議決結果表示名</td></tr>
+                <tr><td>syuseian_flag</td><td><code>syuseian_flag</code></td><td>修正案ありフラグ</td></tr>
+                <tr><td>rireki_flag</td><td><code>rireki_flag</code></td><td>履歴ありフラグ</td></tr>
+                <tr><td>sort_order</td><td><code>sort_order</code></td><td>並び順</td></tr>
+                <tr><td>created_at</td><td><code>created_at</code></td><td>作成日時</td></tr>
+                <tr><td>updated_at</td><td><code>updated_at</code></td><td>更新日時</td></tr>
+                <tr><td>note</td><td><code>note</code></td><td>備考</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-box">
+        <h2>5. 各列の役割</h2>
+        
+        <div class="col-card">
+            <div class="col-title">5-1. item_id</div>
+            <div class="col-prop"><strong>役割</strong><div>案件1件ごとの一意キーです。（例：<code>TEIR0801GIJO001</code>）</div></div>
+            <div class="col-prop"><strong>意味</strong><div>一般的には <code>meeting_id</code> + <code>item_class</code> + <code>item_subclass</code> + <code>item_no_numeric</code> を組み合わせたIDです。</div></div>
+        </div>
+
+        <div class="col-card" style="border-left: 5px solid #e74c3c; background-color: #fdedec;">
+            <div class="col-title" style="color: #c0392b;">5-2. meeting_id 【最重要結合キー】</div>
+            <div class="col-prop"><strong>役割</strong><div>その案件がどの会議回に属するかを示すキーです。（例：<code>TEIR0801</code>）</div></div>
+            <div class="col-prop"><strong>用途</strong><div>meetings系との結合、items画面での会議回グループ表示、例外判定の基準日取得に使います。</div></div>
+        </div>
+
+        <div class="col-card">
+            <div class="col-title">5-3〜5-6. 会議回情報 (meeting_name, number_code, year, session)</div>
+            <div class="col-prop"><strong style="width: 120px;">meeting_name</strong><div>所属する会議回の表示名。検索結果をグループ化するときの見出しとして表示。</div></div>
+            <div class="col-prop"><strong style="width: 120px;">number_code</strong><div>元号コード（R, H等）。最初の元号選択で使用。</div></div>
+            <div class="col-prop"><strong style="width: 120px;">year / session</strong><div>和暦年 / 回数。検索結果の並び順や、会議回選択肢の並び替えに使用。</div></div>
+        </div>
+
+        <div class="col-card" style="border-left: 5px solid #2980b9;">
+            <div class="col-title" style="color: #2980b9;">5-7. item_class 【大分類】</div>
+            <div class="col-prop"><strong>役割</strong><div>案件の大分類コードです。値：<code>GI</code>(議案), <code>SG</code>(請願), <code>CJ</code>(陳情), <code>HG</code>(発議案)</div></div>
+            <div class="col-prop"><strong>用途</strong><div>表示ラベル生成、並び順制御、例外判定分岐。<strong>items系ではかなり重要な列です。</strong></div></div>
+        </div>
+
+        <div class="col-card">
+            <div class="col-title">5-8〜5-11. 案件詳細 (item_subclass, item_no_numeric, item_no, title)</div>
+            <div class="col-prop"><strong style="width: 180px;">item_subclass</strong><div>中分類コード（JO=条例、YS=予算等）。ID構成要素などに使用。</div></div>
+            <div class="col-prop"><strong style="width: 180px;">item_no_numeric</strong><div>番号数値（3桁ゼロ埋め）。表示番号生成や並び順に使用。※VBAでゼロ埋めされます。</div></div>
+            <div class="col-prop"><strong style="width: 180px;">item_no</strong><div>もとの表示用番号（例：議案第1号）。※画面側では分類コードから再構成表示もしています。</div></div>
+            <div class="col-prop"><strong style="width: 180px;">title</strong><div>案件の件名。カード本文表示や件名検索に使用。</div></div>
+        </div>
+
+        <div class="col-card">
+            <div class="col-title">5-12. committee_id / 5-13. committee_name</div>
+            <div class="col-prop"><strong>役割</strong><div>付託先委員会のID（SOMJ等）および表示名（総務常任委員会等）。</div></div>
+            <div class="col-prop"><strong>用途</strong><div>IDは将来のロジック拡張向け。表示名はそのままカード表示されます。</div></div>
+        </div>
+
+        <div class="col-card" style="border-left: 5px solid #d35400; background-color: #fff9f5;">
+            <div class="col-title" style="color: #d35400;">5-14〜5-16. 日付群 【例外判定の中心】</div>
+            <div class="col-prop"><strong style="width: 130px;">teian_date</strong><div>提案日。議案・発議案で<strong>「追加議案」</strong>判定に使われます。</div></div>
+            <div class="col-prop"><strong style="width: 130px;">futaku_date</strong><div>付託日。請願・陳情で<strong>「通常外付託」</strong>判定に使われます。</div></div>
+            <div class="col-prop"><strong style="width: 130px;">giketsu_date</strong><div>議決日。本会議最終日より前なら<strong>「先議」</strong>判定に使われます。</div></div>
+        </div>
+
+        <div class="col-card">
+            <div class="col-title">5-17〜5-23. その他フラグ・管理項目</div>
+            <div class="col-prop"><strong style="width: 150px;">result_code / label</strong><div>議決結果。画面側は主に <code>result_code</code> を元にラベルを作っています。</div></div>
+            <div class="col-prop"><strong style="width: 150px;">syuseian_flag</strong><div>1のとき、例外タグ「修正案あり」が付きます。</div></div>
+            <div class="col-prop"><strong style="width: 150px;">rireki_flag</strong><div>1のとき、例外タグ「履歴あり」が付きます。</div></div>
+            <div class="col-prop"><strong style="width: 150px;">sort_order 等</strong><div>並び順補助、作成日(created_at)・更新日(updated_at)、備考(note)など管理用。</div></div>
+        </div>
+    </div>
+
+    <div class="section-box">
+        <h2>6 & 7. VBA変換ルールと実例</h2>
+        <ul>
+            <li><strong>出力対象：</strong> <code>item_id</code> が空でない行だけを出力します。</li>
+            <li><strong>数値変換：</strong> <code>year</code>, <code>session</code>, <code>syuseian_flag</code>, <code>rireki_flag</code>, <code>sort_order</code> は数値として出力されます。</li>
+            <li><strong>ゼロ埋め維持：</strong> <code>item_no_numeric</code> はゼロ埋め維持のため文字列として出力されます。</li>
+            <li><strong>正規化：</strong> 日付は <code>yyyy-mm-dd</code> に、フラグは <code>1 / 0</code> にVBA内で正規化されます。</li>
+        </ul>
+        <div class="info-card">
+            <h4>ダミーデータでの並びの実例</h4>
+            <p>議案（第1,2,3号） → 請願・陳情（請願1,陳情2号） → 発議案（第1,2号） の順に保持・表示されます。</p>
+        </div>
+    </div>
+
+    <div class="section-box">
+        <h2>8〜10. 画面側(items.html)での使われ方と並び順</h2>
+        <div class="alert-card">
+            <strong>⚠️ items.js 単体では動いていません</strong><br>
+            <code>items.js</code>, <code>meetings.js</code>, <code>questions.js</code> の3つを読み込んで動作します。
+        </div>
+        <p><strong>画面で行っている処理：</strong> 元号選択 → 会議回候補作成 → 検索条件絞り込み → 例外タグ計算 → 会議回ごとにカード表示</p>
+        <p><strong>表示ラベルの生成：</strong> <code>item_no</code> をそのまま使うより、<code>item_class</code> と <code>item_no_numeric</code> から「議案第n号」「受理番号第n号」等と再構成しています。</p>
+        <p><strong>並び順：</strong> 1. 年(降) → 2. 回(降) → 3. 議案/請願陳情/発議案 → 4. 番号(昇) → 5. item_id</p>
+    </div>
+
+    <div class="section-box">
+        <h2>11 & 12. 例外判定ロジックと判定条件</h2>
+        <p>items系の最大の特徴です。<code>meeting_id</code> を使って基準日を取得し、各案件の日付と比較して例外を判定します。</p>
+        
+        <h4>取得する基準日 (meetings/questions由来)</h4>
+        <ul style="background: #fdfefe; padding: 10px 10px 10px 30px; border: 1px solid #ddd; border-radius: 4px;">
+            <li><code>plenary_first_date</code> = 最初の本会議日</li>
+            <li><code>plenary_second_date</code> = 2回目の本会議日</li>
+            <li><code>plenary_last_date</code> = 最終の本会議日</li>
+            <li><code>petition_standard_date</code> = 一般質問最終日以前の最後の本会議日</li>
+        </ul>
+
+        <h4>例外タグの判定条件</h4>
+        <table>
+            <tbody>
+                <tr>
+                    <th style="width: 25%;">議案 (GI)</th>
+                    <td>提案日が最初の本会議日と違う → <strong>追加議案</strong><br>
+                        議決日が最終本会議日より前 → <strong>先議</strong></td>
+                </tr>
+                <tr>
+                    <th>請願・陳情 (SG, CJ)</th>
+                    <td>付託日が標準付託日と違う → <strong>通常外付託</strong><br>
+                        議決日が最終本会議日より前 → <strong>先議</strong></td>
+                </tr>
+                <tr>
+                    <th>発議案 (HG)</th>
+                    <td>提案日が最終本会議日と違う → <strong>追加議案</strong><br>
+                        議決日が最終本会議日より前 → <strong>先議</strong></td>
+                </tr>
+                <tr>
+                    <th>フラグ由来</th>
+                    <td><code>syuseian_flag = 1</code> → <strong>修正案あり</strong><br>
+                        <code>rireki_flag = 1</code> → <strong>履歴あり</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-box">
+        <h2>16. 開発上の注意点</h2>
+        <div class="flex-box" style="gap: 15px;">
+            <div class="flex-item" style="padding: 15px;">
+                <h4 style="margin-top: 0;">依存ファイル必須</h4>
+                <p><code>meetings.js</code> と <code>questions.js</code> が不足すると例外表示は正しく出ません。</p>
+            </div>
+            <div class="flex-item" style="padding: 15px;">
+                <h4 style="margin-top: 0;">item_no_numeric</h4>
+                <p>ゼロ埋め維持のため文字列です。比較時には数値化して使っています。</p>
+            </div>
+            <div class="flex-item" style="padding: 15px;">
+                <h4 style="margin-top: 0;">元号判定のフォールバック</h4>
+                <p>画面側は <code>number_code</code> が無くても、年度・会議名から元号を推測する作りになっています。</p>
+            </div>
+            <div class="flex-item" style="padding: 15px;">
+                <h4 style="margin-top: 0; color: #e74c3c;">出力先フォルダ</h4>
+                <p>このVBAは <code>app/data/items</code> フォルダを自動作成しません。事前に手動作成が必要です。</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-box">
+        <h2>17. 未来の自分向けの一文サマリ</h2>
+        <p style="text-align:center; font-size:1.1em; font-weight:bold; color:#2c3e50;">
+            items系は、Excelの <code>items</code> シートを「1案件1行」でJS化し、<br>
+            <code>meeting_id</code> で会議回と結合しながら、<code>meetings.js</code> と <code>questions.js</code> を参照して<br>通常案件 / 例外案件を判定し、検索画面にカード表示する仕組み です。
+        </p>
+        <ul style="margin-top:20px; font-size:1.05em; color:#34495e;">
+            <li><code>item_id</code> が案件の主キー、<code>meeting_id</code> が会議回との結合キー</li>
+            <li><code>item_class</code> で議案 / 請願・陳情 / 発議案を判定する</li>
+            <li><code>teian_date</code>, <code>futaku_date</code>, <code>giketsu_date</code> が例外判定の中心</li>
+            <li><code>syuseian_flag</code>, <code>rireki_flag</code> も例外タグになる</li>
+            <li><code>items.html</code> は <code>meetings.js</code> / <code>questions.js</code> も読む前提</li>
+        </ul>
+    </div>
+
+</div>
+
+</body>
+</html>
