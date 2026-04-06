@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マニュアル生成のポイント</title>
+    <style>
+        /* ベーススタイル */
+        body {
+            font-family: "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic", sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        /* メインタイトル */
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            font-size: 1.8em;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #0056b3;
+            margin-bottom: 30px;
+        }
+
+        /* セクション見出し */
+        h2 {
+            font-size: 1.3em;
+            color: #2c3e50;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* バッジ（超重要・最重要など） */
+        .badge {
+            display: inline-block;
+            background-color: #dc3545;
+            color: #ffffff;
+            font-size: 0.7em;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+            vertical-align: middle;
+            font-weight: normal;
+        }
+
+        /* セクションごとの枠 */
+        .section-box {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        /* リストスタイル */
+        ul, ol {
+            margin-top: 5px;
+            margin-bottom: 15px;
+            padding-left: 25px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+
+        /* 指示ポイント（👉）のスタイル */
+        .point-text {
+            font-weight: bold;
+            color: #0056b3;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        /* コピペ用プロンプト枠 */
+        .prompt-box {
+            background-color: #e8f4fd;
+            border-left: 5px solid #0056b3;
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #004085;
+            margin: 10px 0;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* 出力フォーマットのテンプレート枠 */
+        .template-box {
+            background-color: #f8f9fa;
+            border: 2px dashed #adb5bd;
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .template-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid #ced4da;
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #343a40;
+        }
+        .template-item {
+            margin-bottom: 20px;
+        }
+        .template-item:last-child {
+            margin-bottom: 0;
+        }
+        .template-item-title {
+            font-weight: bold;
+            color: #495057;
+            background-color: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+        .template-item-desc {
+            padding-left: 15px;
+            color: #495057;
+        }
+        .template-item-desc ul {
+            margin-top: 5px;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>■ ポイント（ここだけ守ればOK）</h1>
+
+    <div class="section-box">
+        <h2>① 入力順を固定する</h2>
+        
+        <div class="point-text">👉 この順に渡す</div>
+        <ol>
+            <li>列一覧＋ダミー</li>
+            <li>JS全文</li>
+            <li>HTML全文</li>
+        </ol>
+
+        <div class="point-text">👉 理由：</div>
+        <p style="margin-top: 5px; padding-left: 10px;">データ構造 → ロジック → 表示の順で理解させるため</p>
+    </div>
+
+    <div class="section-box">
+        <h2>② ChatGPTへの指示を固定する <span class="badge">超重要</span></h2>
+        
+        <p>毎回これを言う👇</p>
+        <div class="prompt-box">
+            「コードの説明ではなく、<br>
+            “壊れたときに復旧できる説明書”を書いてください」
+        </div>
+    </div>
+
+    <div class="section-box" style="border: none; box-shadow: none; padding: 0;">
+        <h2>③ 出力フォーマットを固定する</h2>
+        <p>👇</p>
+        
+        <div class="template-box">
+            <div class="template-title">【〇〇ページ（復旧用）】</div>
+
+            <div class="template-item">
+                <div class="template-item-title">1. 役割</div>
+                <div class="template-item-desc">→ このページが何をしているか</div>
+            </div>
+
+            <div class="template-item">
+                <div class="template-item-title">2. データ構造</div>
+                <div class="template-item-desc">→ どの配列を使っているか（APP_DATA）</div>
+            </div>
+
+            <div class="template-item">
+                <div class="template-item-title">3. JSの役割</div>
+                <div class="template-item-desc">→ 何をしているか（処理の流れ）</div>
+            </div>
+
+            <div class="template-item">
+                <div class="template-item-title">4. HTMLの役割</div>
+                <div class="template-item-desc">→ どこに何を表示しているか</div>
+            </div>
+
+            <div class="template-item">
+                <div class="template-item-title">5. 依存関係</div>
+                <div class="template-item-desc">→ 読み込んでいるJS・CSS・データ</div>
+            </div>
+
+            <div class="template-item">
+                <div class="template-item-title">6. 壊れたときの確認ポイント <span class="badge">最重要</span></div>
+                <div class="template-item-desc">
+                    <div class="point-text" style="margin-top: 5px;">👉 ここがメイン</div>
+                    <ul>
+                        <li>データがない → JS未読込</li>
+                        <li>表示されない → DOM or idミス</li>
+                        <li>一部だけ → フィルタ条件ミス</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="template-item">
+                <div class="template-item-title">7. よくある壊れ方</div>
+                <div class="template-item-desc">
+                    <ul>
+                        <li>JS読み込み順ミス</li>
+                        <li>APP_DATA未定義</li>
+                        <li>パス違い</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
