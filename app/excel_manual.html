@@ -5,116 +5,160 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Excel更新手順</title>
     <style>
+        /* ベーススタイル */
         body {
             font-family: "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic", sans-serif;
             line-height: 1.6;
             color: #333333;
-            background-color: #f4f7f6;
+            background-color: #f0f4f8;
             margin: 0;
             padding: 20px;
         }
         .container {
-            max-width: 800px;
+            max-width: 850px;
             margin: 0 auto;
             background-color: #ffffff;
-            padding: 30px;
+            padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
+        
+        /* 見出しスタイル */
         h1 {
             text-align: center;
-            color: #0056b3;
-            border-bottom: 2px solid #0056b3;
-            padding-bottom: 10px;
-            margin-bottom: 30px;
+            color: #004085;
+            font-size: 2em;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #004085;
+            margin-bottom: 40px;
         }
         h2 {
-            font-size: 1.3em;
-            color: #444444;
-            margin-top: 30px;
-            margin-bottom: 15px;
-            padding-left: 10px;
-            border-left: 5px solid #0056b3;
+            font-size: 1.4em;
+            color: #2c3e50;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background-color: #e9ecef;
+            border-left: 6px solid #004085;
+            border-radius: 4px;
         }
-        .step-box {
-            background-color: #f8fcfd;
-            border: 1px solid #d1e7ef;
+        h3 {
+            font-size: 1.2em;
+            color: #0056b3;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #cccccc;
+            padding-bottom: 5px;
+        }
+
+        /* 汎用カードスタイル */
+        .card {
+            padding: 20px;
             border-radius: 6px;
-            padding: 15px 20px;
             margin-bottom: 20px;
         }
-        .step-title {
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #0056b3;
-            margin-top: 0;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
+        .card p {
+            margin: 0 0 10px 0;
         }
-        .step-number {
-            display: inline-block;
-            background-color: #0056b3;
-            color: #ffffff;
-            width: 24px;
-            height: 24px;
-            text-align: center;
-            border-radius: 50%;
-            margin-right: 10px;
-            line-height: 24px;
-            font-size: 0.9em;
+        .card p:last-child {
+            margin-bottom: 0;
         }
-        ul {
+        .card ul {
             margin: 0;
             padding-left: 20px;
         }
-        li {
-            margin-bottom: 8px;
+        .card li {
+            margin-bottom: 6px;
         }
-        .alert-box {
-            background-color: #fff3cd;
-            border-left: 6px solid #ffc107;
-            padding: 15px 20px;
-            margin-bottom: 20px;
+
+        /* 役割・補足（インフォメーション） */
+        .info-card {
+            background-color: #e2eef9;
+            border: 1px solid #b8daff;
+            color: #004085;
+        }
+        .info-card .note {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 15px;
+            background: #fff;
+            padding: 10px;
             border-radius: 4px;
         }
-        .alert-box h2 {
-            border-left: none;
-            padding-left: 0;
-            margin-top: 0;
+
+        /* 更新の流れ（ステップフロー） */
+        .flow-list {
+            display: flex;
+            justify-content: space-between;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            list-style: none;
+            margin: 0 0 30px 0;
+        }
+        .flow-list li {
+            position: relative;
+            flex: 1;
+            text-align: center;
+            font-weight: bold;
+            color: #495057;
+        }
+        .flow-list li:not(:last-child)::after {
+            content: "▶";
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #adb5bd;
+        }
+
+        /* 操作手順の詳細 */
+        .step-container {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        /* 注意事項（ワーニング） */
+        .warning-card {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
             color: #856404;
         }
-        .trouble-box {
-            background-color: #f8d7da;
-            border-left: 6px solid #dc3545;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            border-radius: 4px;
+
+        /* 確認ポイント（サクセス） */
+        .check-card {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
         }
-        .trouble-box h2 {
-            border-left: none;
-            padding-left: 0;
-            margin-top: 0;
-            color: #721c24;
-        }
-        .trouble-list {
-            margin: 0;
-        }
-        .trouble-list dt {
+
+        /* よくあるトラブル（FAQ） */
+        .faq-list dt {
             font-weight: bold;
             color: #dc3545;
-            margin-top: 10px;
+            background-color: #f8d7da;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            margin-bottom: 10px;
         }
-        .trouble-list dt::before {
-            content: "Q. ";
+        .faq-list dt::before {
+            content: "Ｑ．";
         }
-        .trouble-list dd {
+        .faq-list dd {
             margin-left: 0;
-            margin-bottom: 15px;
-            padding-left: 20px;
+            padding-left: 15px;
+            padding-bottom: 15px;
+            border-left: 3px solid #dc3545;
+            color: #333333;
         }
-        .trouble-list dd::before {
-            content: "A. ";
+        .faq-list dd::before {
+            content: "Ａ．";
             font-weight: bold;
             color: #333;
         }
@@ -125,61 +169,107 @@
 <div class="container">
     <h1>Excel更新手順</h1>
 
-    <h2>更新のステップ</h2>
-
-    <div class="step-box">
-        <div class="step-title"><span class="step-number">1</span>必要な情報を入力します</div>
-        <ul>
-            <li>対象のシートに入力してください</li>
-            <li>入力対象の列に入力すれば、システム用の列に自動入力される仕様です</li>
-            <li>既存の行をコピーして追加すると安全です</li>
-        </ul>
+    <h2>1. このExcelの役割</h2>
+    <div class="card info-card">
+        <p>このExcelは、システムに表示する情報を管理するための元データです。<br>
+        画面に表示される内容は、このExcelに入力された情報をもとに更新されます。</p>
+        <div class="note">
+            <strong>※注意：</strong>Excelを編集しただけでは画面には反映されません。<br>
+            マクロを実行することで、表示用データが更新されます。
+        </div>
     </div>
 
-    <div class="step-box">
-        <div class="step-title"><span class="step-number">2</span>マクロを実行します</div>
+    <h2>2. 更新の流れ</h2>
+    <ul class="flow-list">
+        <li>1. 情報を入力</li>
+        <li>2. マクロを実行</li>
+        <li>3. 画面で結果を確認</li>
+    </ul>
+
+    <h2>3. 操作手順</h2>
+    <div class="step-container">
+        <h3>手順① 必要な情報を入力する</h3>
+        <p>対象のシートに、必要な情報を入力してください。</p>
         <ul>
-            <li>Excel上部の「開発」タブ → 「マクロ」</li>
-            <li>「〇〇」を選択して「実行」をクリック</li>
+            <li>既存の行を参考に、同じ形式で入力してください</li>
+            <li>システムのために自動で更新される列があります。関数は編集しないでください</li>
+            <li>新しく追加する場合は、既存行をコピーして入力すると安全です</li>
         </ul>
+
+        <h3>手順② マクロを実行する</h3>
+        <p>Excel上部の「開発」タブを開きます。</p>
+        <p>「開発」→「マクロ」をクリックし、<br>
+        一覧から「〇〇」を選択して「実行」をクリックしてください。</p>
+
+        <h3>手順③ 更新完了を確認する</h3>
+        <p>エラーが表示されずに処理が終了すれば、更新は完了です。</p>
+        <p>この操作により、システムが読み込むデータが更新されます。</p>
+
+        <h3>手順④ 画面で確認する</h3>
+        <p>対象のHTMLファイルを開き、<br>
+        入力した内容が画面に反映されているか確認してください。</p>
     </div>
 
-    <div class="step-box">
-        <div class="step-title"><span class="step-number">3</span>更新完了を確認します</div>
+    <h2>4. 入力時の注意事項</h2>
+    <div class="card warning-card">
+        <p><strong>以下は必ず守ってください。</strong></p>
         <ul>
-            <li>エラーが出なければ完了です</li>
-            <li>指定フォルダ内のデータが更新されます</li>
-        </ul>
-    </div>
-
-    <div class="step-box">
-        <div class="step-title"><span class="step-number">4</span>画面に反映されているか確認します</div>
-        <ul>
-            <li>対象のHTMLファイルを開いて確認してください</li>
-        </ul>
-    </div>
-
-    <div class="alert-box">
-        <h2>⚠️ 注意事項</h2>
-        <ul>
-            <li>列の順番や列名は変更しないでください</li>
-            <li>不要なシートは削除しないでください</li>
+            <li>列名、列の順番は変更しないでください</li>
+            <li>シート名は変更しないでください</li>
+            <li>不要な行や列を削除しないでください</li>
+            <li>入力形式は既存データに合わせてください</li>
+            <li>日付や番号は表記ゆれがないように入力してください</li>
             <li>マクロ実行中はExcelを閉じないでください</li>
         </ul>
     </div>
 
-    <div class="trouble-box">
-        <h2>💡 トラブル時</h2>
-        <dl class="trouble-list">
-            <dt>マクロが表示されない</dt>
-            <dd>「開発」タブを有効化してください</dd>
+    <h2>5. 更新後の確認ポイント</h2>
+    <div class="card check-card">
+        <p><strong>更新後は、次の点を確認してください。</strong></p>
+        <ul>
+            <li>追加した内容が表示されているか</li>
+            <li>修正した内容が正しく反映されているか</li>
+            <li>画面の表示が崩れていないか</li>
+            <li>一覧画面・詳細画面の両方に問題がないか</li>
+        </ul>
+    </div>
 
-            <dt>エラーが出た</dt>
-            <dd>入力内容を見直してください（特に日付・空欄）</dd>
+    <h2>6. よくあるトラブル</h2>
+    <dl class="faq-list">
+        <dt>マクロが表示されない</dt>
+        <dd>
+            「開発」タブ → 「マクロ」を開き、対象のマクロがあるか確認してください。
+        </dd>
 
-            <dt>反映されない</dt>
-            <dd>HTMLを再読み込みしてください</dd>
-        </dl>
+        <dt>エラーが表示される</dt>
+        <dd>
+            入力内容に誤りがある可能性があります。<br>
+            特に以下を確認してください。
+            <ul>
+                <li>空欄になっている項目</li>
+                <li>日付の形式</li>
+                <li>列のずれ</li>
+                <li>不要な記号や全角／半角の違い</li>
+            </ul>
+        </dd>
+
+        <dt>画面に反映されない</dt>
+        <dd>
+            マクロ実行後に、HTMLファイルを開き直してください。<br>
+            必要に応じてブラウザの再読み込みを行ってください。
+        </dd>
+
+        <dt>表示が崩れた</dt>
+        <dd>
+            直前に追加・修正した行の内容を確認してください。<br>
+            想定外の値が入っている可能性があります。
+        </dd>
+    </dl>
+
+    <h2>7. 補足（仕組みの説明）</h2>
+    <div class="card info-card">
+        <p>このExcelに入力された内容は、マクロによりシステムが読み込むデータファイルとして自動生成されます。</p>
+        <p>そのデータをもとに、画面に情報が表示されます。</p>
     </div>
 
 </div>
