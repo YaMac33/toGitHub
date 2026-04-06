@@ -54,6 +54,34 @@
             border: 1px solid #cce5ff;
             margin-top: 15px;
         }
+
+        /* マニュアルリンク用のスタイル */
+        .manual-links {
+            list-style: none;
+            padding-left: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .manual-links a {
+            display: block;
+            text-decoration: none;
+            color: #0056b3;
+            background-color: #ffffff;
+            border: 1px solid #cce5ff;
+            padding: 15px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+        .manual-links a:hover {
+            background-color: #e9f5ff;
+            transform: translateX(5px);
+        }
+        .manual-links a::before {
+            content: "📄 ";
+        }
     </style>
 </head>
 <body>
@@ -66,6 +94,16 @@
         <li><strong>JavaScript (JS):</strong> 画面に動きや便利な機能を追加します。</li>
     </ul>
     <p class="note">※CSSとJSはHTML内に直接書くこともできますが、本システムではそれぞれ別のファイルとして保存し、HTMLから読み込んで連携させています。</p>
+
+    <h2>各種マニュアル・仕様書</h2>
+    <p>詳細な操作手順やシステム内部の仕様については、以下のリンクから各説明書をご参照ください。</p>
+    <ul class="manual-links">
+        <li><a href="excel_manual.html">Excel更新手順（運用者向け）</a></li>
+        <li><a href="meetings_readme.html">meetings系 説明書（開発・仕様）</a></li>
+        <li><a href="members_readme.html">members系 説明書（開発・仕様）</a></li>
+        <li><a href="questions_readme.html">questions系 説明書（開発・仕様）</a></li>
+        <li><a href="items_readme.html">items系 説明書（開発・仕様）</a></li>
+    </ul>
 
     <h2>ファイルの取り扱いに関する注意点</h2>
     <ul>
