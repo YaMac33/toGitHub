@@ -1,7 +1,17 @@
 Option Explicit
 
 ' =========================================================
-' items → items.js 出力（ルート配置版）
+' items シート → app/data/items/items.js 出力（最終版）
+' 前提:
+'   project/
+'   ├─ source_items.xlsm   ← このブック
+'   └─ app/
+'      └─ data/
+'         └─ items/
+'            └─ items.js
+'
+' ※ app\data\items フォルダは事前に手動で作成しておくこと
+' ※ このVBAはフォルダ作成を行わない
 ' =========================================================
 
 Public Sub ExportItemsJs()
@@ -23,8 +33,14 @@ Public Sub ExportItemsJs()
     End If
     
     outputPath = BuildOutputPath()
-    folderPath = Left(outputPath, InStrRev(outputPath, "\") - 1)
-    EnsureFolderExists folderPath
+    folderPath = GetParentFolderPath(outputPath)
+    
+    If Dir(folderPath, vbDirectory) = "" Then
+        MsgBox "出力先フォルダが存在しません。" & vbCrLf & _
+               "先に手動で作成してください。" & vbCrLf & vbCrLf & _
+               folderPath, vbExclamation
+        Exit Sub
+    End If
     
     json = "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
     json = json & "window.APP_DATA.items = [" & vbCrLf
@@ -32,121 +48,295 @@ Public Sub ExportItemsJs()
     firstItem = True
     
     For r = 2 To lastRow
-        
+    
         If Trim(GetCellByHeader(ws, r, "item_id")) <> "" Then
-            
-            If Not firstItem Then json = json & "," & vbCrLf
+        
+            If Not firstItem Then
+                json = json & "," & vbCrLf
+            End If
             
             json = json & "  {" & vbCrLf
             
             json = json & BuildJsLine("item_id", GetCellByHeader(ws, r, "item_id"), 4, False, True)
-            json = json & BuildJsLine("meeting_name", GetCellByHeader(ws, r, "meeting_name"), 4, False, True)
             json = json & BuildJsLine("meeting_id", GetCellByHeader(ws, r, "meeting_id"), 4, False, True)
+            json = json & BuildJsLine("meeting_name", GetCellByHeader(ws, r, "meeting_name"), 4, False, True)
+            
+            json = json & BuildJsLine("number_code", GetCellByHeader(ws, r, "号"), 4, False, True)
+            json = json & BuildJsLine("year", NormalizeNumber(GetCellByHeader(ws, r, "年")), 4, True, True)
+            json = json & BuildJsLine("session", NormalizeNumber(GetCellByHeader(ws, r, "回")), 4, True, True)
+            
             json = json & BuildJsLine("item_class", GetCellByHeader(ws, r, "item_class"), 4, False, True)
             json = json & BuildJsLine("item_subclass", GetCellByHeader(ws, r, "item_subclass"), 4, False, True)
-            json = json & BuildJsLine("item_no_numeric", GetCellByHeader(ws, r, "item_no_numeric"), 4, False, True)
-            json = json & BuildJsLine("committee_id", GetCellByHeader(ws, r, "committee_id"), 4, False, True)
-            json = json & BuildJsLine("result_code", GetCellByHeader(ws, r, "result_code"), 4, False, True)
-            
-            json = json & BuildJsLine("fiscal_year_label", GetCellByHeader(ws, r, "年度"), 4, False, True)
-            json = json & BuildJsLine("number_code", GetCellByHeader(ws, r, "号"), 4, False, True)
-            json = json & BuildJsLine("year", GetCellByHeader(ws, r, "年"), 4, True, True)
-            json = json & BuildJsLine("session", GetCellByHeader(ws, r, "回"), 4, True, True)
-            json = json & BuildJsLine("session_type", GetCellByHeader(ws, r, "区分"), 4, False, True)
-            json = json & BuildJsLine("item_class_label", GetCellByHeader(ws, r, "大分類"), 4, False, True)
-            json = json & BuildJsLine("item_subclass_label", GetCellByHeader(ws, r, "中分類"), 4, False, True)
+            json = json & BuildJsLine("item_no_numeric", PadItemNoNumeric(GetCellByHeader(ws, r, "item_no_numeric")), 4, False, True)
             json = json & BuildJsLine("item_no", GetCellByHeader(ws, r, "番号"), 4, False, True)
+            
             json = json & BuildJsLine("title", GetCellByHeader(ws, r, "件名"), 4, False, True)
+            json = json & BuildJsLine("committee_id", GetCellByHeader(ws, r, "committee_id"), 4, False, True)
             json = json & BuildJsLine("committee_name", GetCellByHeader(ws, r, "付託委員会"), 4, False, True)
-            json = json & BuildJsLine("proposed_date", GetCellByHeader(ws, r, "提案日"), 4, False, True)
-            json = json & BuildJsLine("referred_date", GetCellByHeader(ws, r, "付託日"), 4, False, True)
-            json = json & BuildJsLine("vote_date", GetCellByHeader(ws, r, "議決日"), 4, False, True)
+            
+            json = json & BuildJsLine("teian_date", NormalizeDateString(GetCellByHeader(ws, r, "提案日")), 4, False, True)
+            json = json & BuildJsLine("futaku_date", NormalizeDateString(GetCellByHeader(ws, r, "付託日")), 4, False, True)
+            json = json & BuildJsLine("giketsu_date", NormalizeDateString(GetCellByHeader(ws, r, "議決日")), 4, False, True)
+            
+            json = json & BuildJsLine("result_code", GetCellByHeader(ws, r, "result_code"), 4, False, True)
             json = json & BuildJsLine("result_label", GetCellByHeader(ws, r, "議決結果"), 4, False, True)
             
-            json = json & BuildJsLine("sort_order", GetCellByHeader(ws, r, "sort_order"), 4, True, True)
-            json = json & BuildJsLine("created_at", GetCellByHeader(ws, r, "created_at"), 4, False, True)
-            json = json & BuildJsLine("updated_at", GetCellByHeader(ws, r, "updated_at"), 4, False, True)
+            json = json & BuildJsLine("syuseian_flag", NormalizeFlag(GetCellByHeader(ws, r, "syuseian_flag")), 4, True, True)
+            json = json & BuildJsLine("rireki_flag", NormalizeFlag(GetCellByHeader(ws, r, "rireki_flag")), 4, True, True)
+            
+            json = json & BuildJsLine("sort_order", NormalizeNumber(GetCellByHeader(ws, r, "sort_order")), 4, True, True)
+            json = json & BuildJsLine("created_at", NormalizeDateTimeString(GetCellByHeader(ws, r, "created_at")), 4, False, True)
+            json = json & BuildJsLine("updated_at", NormalizeDateTimeString(GetCellByHeader(ws, r, "updated_at")), 4, False, True)
             json = json & BuildJsLine("note", GetCellByHeader(ws, r, "note"), 4, False, False)
             
             json = json & "  }"
-            
             firstItem = False
         End If
-        
     Next r
     
-    json = json & vbCrLf & "];"
+    json = json & vbCrLf & "];" & vbCrLf
     
-    WriteTextFile outputPath, json
+    WriteUtf8TextFile outputPath, json
     
-    MsgBox "出力完了：" & vbCrLf & outputPath, vbInformation
+    MsgBox "items.js を出力しました。" & vbCrLf & outputPath, vbInformation
 
 End Sub
 
 ' =========================================================
-' 出力パス（ルート配置）
+' 出力先パス
+' Excel が project 直下にある前提
 ' =========================================================
 Private Function BuildOutputPath() As String
     BuildOutputPath = ThisWorkbook.Path & "\app\data\items\items.js"
 End Function
 
 ' =========================================================
-' ファイル書き込み
+' 親フォルダ取得
 ' =========================================================
-Private Sub WriteTextFile(ByVal filePath As String, ByVal content As String)
-    Dim fso As Object
-    Dim ts As Object
+Private Function GetParentFolderPath(ByVal filePath As String) As String
+    Dim pos As Long
+    pos = InStrRev(filePath, "\")
     
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    Set ts = fso.CreateTextFile(filePath, True, False)
-    
-    ts.Write content
-    ts.Close
-End Sub
+    If pos > 0 Then
+        GetParentFolderPath = Left$(filePath, pos - 1)
+    Else
+        GetParentFolderPath = ""
+    End If
+End Function
 
 ' =========================================================
-' フォルダ作成
+' 見出し名からセル値取得
 ' =========================================================
-Private Sub EnsureFolderExists(ByVal folderPath As String)
-    If Dir(folderPath, vbDirectory) = "" Then MkDir folderPath
-End Sub
+Private Function GetCellByHeader(ByVal ws As Worksheet, ByVal dataRow As Long, ByVal headerName As String) As String
 
-' =========================================================
-' ヘッダ検索
-' =========================================================
-Private Function GetCellByHeader(ws As Worksheet, rowNum As Long, header As String) As String
-    
-    Dim c As Long
     Dim lastCol As Long
+    Dim c As Long
+    Dim headerText As String
     
     lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
     
     For c = 1 To lastCol
-        If ws.Cells(1, c).Value = header Then
-            GetCellByHeader = ws.Cells(rowNum, c).Value
+        headerText = Trim(CStr(ws.Cells(1, c).Value))
+        If headerText = headerName Then
+            GetCellByHeader = Trim(CStr(ws.Cells(dataRow, c).Value))
             Exit Function
         End If
-    Next
+    Next c
     
     GetCellByHeader = ""
-    
+
 End Function
 
 ' =========================================================
-' JS1行生成
+' JS 1行生成
+' isNumericValue = True のとき数値として出力
 ' =========================================================
-Private Function BuildJsLine(key As String, val As String, indent As Long, isNum As Boolean, comma As Boolean) As String
+Private Function BuildJsLine(ByVal keyName As String, _
+                             ByVal rawValue As String, _
+                             ByVal indentSize As Long, _
+                             ByVal isNumericValue As Boolean, _
+                             ByVal hasComma As Boolean) As String
+                             
+    Dim indentText As String
+    Dim valueText As String
+    Dim commaText As String
     
-    Dim sp As String: sp = Space(indent)
-    Dim v As String
+    indentText = Space(indentSize)
+    commaText = IIf(hasComma, ",", "")
     
-    If isNum Then
-        If val = "" Then val = "0"
-        v = val
+    If isNumericValue Then
+        If Trim(rawValue) = "" Then
+            valueText = "0"
+        ElseIf IsNumeric(rawValue) Then
+            valueText = CStr(CLng(Val(rawValue)))
+        Else
+            valueText = "0"
+        End If
     Else
-        v = """" & Replace(val, """", "\""") & """"
+        valueText = """" & EscapeJsString(rawValue) & """"
     End If
     
-    BuildJsLine = sp & key & ": " & v & IIf(comma, ",", "") & vbCrLf
-    
+    BuildJsLine = indentText & keyName & ": " & valueText & commaText & vbCrLf
 End Function
+
+' =========================================================
+' JS文字列エスケープ
+' =========================================================
+Private Function EscapeJsString(ByVal s As String) As String
+    s = Replace(s, "\", "\\")
+    s = Replace(s, """", "\""")
+    s = Replace(s, vbCrLf, "\n")
+    s = Replace(s, vbCr, "\n")
+    s = Replace(s, vbLf, "\n")
+    EscapeJsString = s
+End Function
+
+' =========================================================
+' 日付正規化 YYYY-MM-DD
+' =========================================================
+Private Function NormalizeDateString(ByVal v As Variant) As String
+
+    On Error GoTo EH
+    
+    If IsEmpty(v) Or Trim(CStr(v)) = "" Then
+        NormalizeDateString = ""
+        Exit Function
+    End If
+    
+    If IsDate(v) Then
+        NormalizeDateString = Format(CDate(v), "yyyy-mm-dd")
+        Exit Function
+    End If
+    
+    Dim s As String
+    s = Trim(CStr(v))
+    s = Replace(s, ".", "/")
+    s = Replace(s, "-", "/")
+    
+    If IsDate(s) Then
+        NormalizeDateString = Format(CDate(s), "yyyy-mm-dd")
+    Else
+        NormalizeDateString = ""
+    End If
+    Exit Function
+    
+EH:
+    NormalizeDateString = ""
+
+End Function
+
+' =========================================================
+' 日時正規化
+' =========================================================
+Private Function NormalizeDateTimeString(ByVal v As Variant) As String
+
+    On Error GoTo EH
+    
+    If IsEmpty(v) Or Trim(CStr(v)) = "" Then
+        NormalizeDateTimeString = ""
+        Exit Function
+    End If
+    
+    If IsDate(v) Then
+        If InStr(1, CStr(v), ":") > 0 Then
+            NormalizeDateTimeString = Format(CDate(v), "yyyy-mm-dd hh:nn:ss")
+        Else
+            NormalizeDateTimeString = Format(CDate(v), "yyyy-mm-dd")
+        End If
+        Exit Function
+    End If
+    
+    Dim s As String
+    s = Trim(CStr(v))
+    s = Replace(s, ".", "/")
+    
+    If IsDate(s) Then
+        If InStr(1, s, ":") > 0 Then
+            NormalizeDateTimeString = Format(CDate(s), "yyyy-mm-dd hh:nn:ss")
+        Else
+            NormalizeDateTimeString = Format(CDate(s), "yyyy-mm-dd")
+        End If
+    Else
+        NormalizeDateTimeString = s
+    End If
+    Exit Function
+    
+EH:
+    NormalizeDateTimeString = Trim(CStr(v))
+
+End Function
+
+' =========================================================
+' フラグ正規化
+' =========================================================
+Private Function NormalizeFlag(ByVal v As Variant) As String
+
+    Dim s As String
+    s = LCase$(Trim$(CStr(v)))
+    
+    If s = "" Or s = "0" Or s = "false" Or s = "f" Or s = "no" Then
+        NormalizeFlag = "0"
+    ElseIf s = "1" Or s = "true" Or s = "t" Or s = "yes" Then
+        NormalizeFlag = "1"
+    ElseIf IsNumeric(s) Then
+        If CLng(Val(s)) <> 0 Then
+            NormalizeFlag = "1"
+        Else
+            NormalizeFlag = "0"
+        End If
+    Else
+        NormalizeFlag = "0"
+    End If
+
+End Function
+
+' =========================================================
+' 数値正規化
+' =========================================================
+Private Function NormalizeNumber(ByVal v As Variant) As String
+    Dim s As String
+    s = Trim(CStr(v))
+    
+    If s = "" Then
+        NormalizeNumber = "0"
+    ElseIf IsNumeric(s) Then
+        NormalizeNumber = CStr(CLng(Val(s)))
+    Else
+        NormalizeNumber = "0"
+    End If
+End Function
+
+' =========================================================
+' item_no_numeric を 3桁ゼロ埋め
+' =========================================================
+Private Function PadItemNoNumeric(ByVal v As Variant) As String
+    Dim s As String
+    s = Trim(CStr(v))
+    
+    If s = "" Then
+        PadItemNoNumeric = ""
+    ElseIf IsNumeric(s) Then
+        PadItemNoNumeric = Format(CLng(Val(s)), "000")
+    Else
+        PadItemNoNumeric = s
+    End If
+End Function
+
+' =========================================================
+' UTF-8 でテキスト書き込み
+' =========================================================
+Private Sub WriteUtf8TextFile(ByVal filePath As String, ByVal content As String)
+
+    Dim stm As Object
+    Set stm = CreateObject("ADODB.Stream")
+    
+    stm.Type = 2
+    stm.Charset = "UTF-8"
+    stm.Open
+    stm.WriteText content
+    stm.SaveToFile filePath, 2
+    stm.Close
+    
+    Set stm = Nothing
+
+End Sub
