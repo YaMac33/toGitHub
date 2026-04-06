@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>questions系 説明書</title>
+    <style>
+        /* ベーススタイル */
+        body {
+            font-family: "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic", sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* 見出しスタイル */
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 2em;
+            padding-bottom: 15px;
+            border-bottom: 3px double #34495e;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+        h2 {
+            font-size: 1.4em;
+            color: #ffffff;
+            background-color: #2c3e50;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+        h3 {
+            font-size: 1.2em;
+            color: #2980b9;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h4 {
+            font-size: 1.1em;
+            color: #d35400;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        /* コード・ファイル名等のスタイル */
+        code, .code-text {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #f8f9fa;
+            color: #c0392b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            font-size: 0.95em;
+        }
+
+        /* セクション・カード */
+        .section-box {
+            background-color: #ffffff;
+            margin-bottom: 25px;
+        }
+        .info-card {
+            background-color: #e8f4fd;
+            border-left: 5px solid #3498db;
+            padding: 15px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 20px;
+        }
+        .warning-card {
+            background-color: #fff3cd;
+            border-left: 5px solid #f1c40f;
+            padding: 15px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 20px;
+        }
+
+        /* テーブルスタイル */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: #ffffff;
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            font-weight: bold;
+            text-align: center;
+        }
+        tr:nth-child(even) {
+            background-color: #f9fbfc;
+        }
+
+        /* リストスタイル */
+        ul, ol {
+            padding-left: 25px;
+            margin-bottom: 15px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+
+        /* 矢印フロー */
+        .flow-arrow {
+            display: inline-block;
+            margin: 0 10px;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+
+        /* サマリ用ハイライト */
+        .summary-box {
+            background-color: #fdfefe;
+            border: 2px dashed #27ae60;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .summary-box h2 {
+            background-color: transparent;
+            color: #27ae60;
+            margin-top: 0;
+            padding: 0;
+            border: none;
+            text-align: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>questions系 説明書</h1>
+    <div class="subtitle">開発者向け・未来の自分向け：「Excel列 → 出力JS → 画面での役割」整理</div>
+
+    <div class="section-box">
+        <h2>1. この仕組みの全体像</h2>
+        <p>この <code>questions</code> 系は、Excelの2シートを元にして、VBAで2つのテキストJSへ書き出す構成です。</p>
+        
+        <div class="info-card">
+            <ul>
+                <li><strong>通告ヘッダ</strong> シート <span class="flow-arrow">→</span> <code>app/data/questions/questions.js</code> <span class="flow-arrow">→</span> <code>window.APP_DATA.questions</code></li>
+                <li><strong>通告明細</strong> シート <span class="flow-arrow">→</span> <code>app/data/questions/question_details.js</code> <span class="flow-arrow">→</span> <code>window.APP_DATA.question_details</code></li>
+            </ul>
+        </div>
+        <p>VBAでは、シート名ごとに出力先ファイル名と <code>window.APP_DATA</code> のキー名を対応づけています。</p>
+    </div>
+
+    <div class="section-box">
+        <h2>2. 出力先の対応表</h2>
+        <p>この対応はVBAの <code>GetAllQuestionSheetConfigs()</code> で定義されています。</p>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 20%;">Excelシート名</th>
+                    <th style="width: 40%;">出力ファイル</th>
+                    <th style="width: 40%;">JS内の配列名</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>通告ヘッダ</td>
+                    <td><code>app/data/questions/questions.js</code></td>
+                    <td><code>window.APP_DATA.questions</code></td>
+                </tr>
+                <tr>
+                    <td>通告明細</td>
+                    <td><code>app/data/questions/question_details.js</code></td>
+                    <td><code>window.APP_DATA.question_details</code></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-box">
+        <h2>3. 変換の基本ルール</h2>
+        <p>VBAの <code>BuildJsFromSheet</code> は、Excelの1行目をそのままJSオブジェクトのキー名として使う作りです。<br>
+        つまり、<strong>Excelの列名を変えると、そのまま出力JSのプロパティ名も変わります。</strong></p>
+        
+        <h3>処理の流れ</h3>
+        <ol>
+            <li>1行目のヘッダ名を読む</li>
+            <li>2行目以降を1行ずつ読む</li>
+            <li>空行でなければ <code>{ key: value }</code> 形式のJSオブジェクトにする</li>
+            <li>それを配列として <code>window.APP_DATA.questions</code> などに格納する</li>
+        </ol>
+    </div>
+
+    <div class="section-box">
+        <h2>4. 通告ヘッダシートの役割</h2>
+        <p><strong>通告ヘッダ</strong> は、「1人の議員の、1回の通告」につき1行持つ基本テーブルです。<br>
+        ここには主に次のような情報を持たせます。</p>
+        <ul>
+            <li>どの通告か</li>
+            <li>どの会議回か</li>
+            <li>いつの質問日か</li>
+            <li>誰の通告か</li>
+            <li>会派は何か</li>
+            <li>通告番号はいくつか</li>
+            <li>持ち時間は何分相当か</li>
+        </ul>
+
+        <h3>通告ヘッダ → questions.js の列対応</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Excel列名</th>
+                    <th>questions.js の要素</th>
+                    <th>意味</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>question_id</td><td><code>question_id</code></td><td>通告の主キー</td></tr>
+                <tr><td>question_date</td><td><code>question_date</code></td><td>質問日</td></tr>
+                <tr><td>meeting_id</td><td><code>meeting_id</code></td><td>どの定例会・臨時会に属するか</td></tr>
+                <tr><td>fiscal_year</td><td><code>fiscal_year</code></td><td>年度</td></tr>
+                <tr><td>number</td><td><code>number</code></td><td>元号コード</td></tr>
+                <tr><td>year</td><td><code>year</code></td><td>和暦年</td></tr>
+                <tr><td>session</td><td><code>session</code></td><td>回数</td></tr>
+                <tr><td>notice_no</td><td><code>notice_no</code></td><td>通告番号</td></tr>
+                <tr><td>member_id</td><td><code>member_id</code></td><td>議員ID</td></tr>
+                <tr><td>member_name</td><td><code>member_name</code></td><td>議員名</td></tr>
+                <tr><td>group_name</td><td><code>group_name</code></td><td>会派名</td></tr>
+                <tr><td>allotted_minutes</td><td><code>allotted_minutes</code></td><td>持ち時間</td></tr>
+                <tr><td>note</td><td><code>note</code></td><td>備考</td></tr>
+                <tr><td>sort_order</td><td><code>sort_order</code></td><td>並び順</td></tr>
+                <tr><td>created_at</td><td><code>created_at</code></td><td>作成日時</td></tr>
+                <tr><td>updated_at</td><td><code>updated_at</code></td><td>更新日時</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-box">
+        <h2>5. 通告明細シートの役割</h2>
+        <p><strong>通告明細</strong> は、「その通告の中で、何を質問するか」を明細行で持つテーブルです。</p>
+        <div class="info-card">
+            ヘッダ = <strong>通告そのもの</strong><br>
+            明細 = <strong>通告の中身</strong><br>
+            ※ <code>question_id</code> でヘッダと明細を結びます。
+        </div>
+
+        <h3>本来の考え方</h3>
+        <p>今の設計意図としては、通告明細はできるだけシンプルにして、以下の列くらいに絞るのがきれいです。</p>
+        <code>detail_id</code>, <code>question_id</code>, <code>major_no</code>, <code>middle_no</code>, <code>minor_no</code>, <code>content</code>, <code>sort_order</code>, <code>created_at</code>, <code>updated_at</code>
+
+        <h3>現在の実データ</h3>
+        <p>今回貼ってもらった <code>question_details.js</code> には、上記以外にも次の列が残っています。</p>
+        <code>fiscal_year</code>, <code>meeting_id</code>, <code>number</code>, <code>year</code>, <code>session</code>, <code>notice_no</code>, <code>member_name</code>, <code>group</code>
+        
+        <div class="warning-card">
+            <strong>現在の実ファイルは「簡略化前の列も含んでいる状態」</strong>です。<br>
+            ここは「今後整理する候補」として覚えておいてください。
+        </div>
+
+        <h3>通告明細 → question_details.js の列対応（現在の実データ基準）</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Excel列名</th>
+                    <th>question_details.js の要素</th>
+                    <th>意味</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>fiscal_year</td><td><code>fiscal_year</code></td><td>年度</td></tr>
+                <tr><td>detail_id</td><td><code>detail_id</code></td><td>明細ID</td></tr>
+                <tr><td>meeting_id</td><td><code>meeting_id</code></td><td>会議回ID</td></tr>
+                <tr><td>question_id</td><td><code>question_id</code></td><td>どの通告に属するか</td></tr>
+                <tr><td>number</td><td><code>number</code></td><td>元号コード</td></tr>
+                <tr><td>year</td><td><code>year</code></td><td>和暦年</td></tr>
+                <tr><td>session</td><td><code>session</code></td><td>回数</td></tr>
+                <tr><td>notice_no</td><td><code>notice_no</code></td><td>通告番号</td></tr>
+                <tr><td>member_name</td><td><code>member_name</code></td><td>議員名</td></tr>
+                <tr><td>group</td><td><code>group</code></td><td>会派名</td></tr>
+                <tr><td>major_no</td><td><code>major_no</code></td><td>大項目番号</td></tr>
+                <tr><td>middle_no</td><td><code>middle_no</code></td><td>中項目番号</td></tr>
+                <tr><td>minor_no</td><td><code>minor_no</code></td><td>小項目番号</td></tr>
+                <tr><td>content</td><td><code>content</code></td><td>質問内容本文</td></tr>
+                <tr><td>sort_order</td><td><code>sort_order</code></td><td>並び順</td></tr>
+                <tr><td>created_at</td><td><code>created_at</code></td><td>作成日時</td></tr>
+                <tr><td>updated_at</td><td><code>updated_at</code></td><td>更新日時</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-box">
+        <h2>6. 画面側ではどう使うか</h2>
+        <p>画面（<code>questions.html</code> など）では、次の2ファイルを読み込んでいます。</p>
+        <ul>
+            <li><code>../../data/questions/questions.js</code></li>
+            <li><code>../../data/questions/question_details.js</code></li>
+        </ul>
+        <p>つまり画面側は、<strong>ヘッダ配列</strong> <code>questions</code> と <strong>明細配列</strong> <code>question_details</code> の両方を使う前提です。実際の表示ロジックとしては、基本的にこう考えると整理しやすいです。</p>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6;">
+                <h4 style="margin-top: 0;">ヘッダで持つもの</h4>
+                <ul>
+                    <li>誰の通告か</li>
+                    <li>何回の定例会か</li>
+                    <li>通告番号</li>
+                    <li>質問日</li>
+                    <li>会派</li>
+                    <li>持ち時間</li>
+                </ul>
+            </div>
+            <div style="flex: 1; min-width: 250px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6;">
+                <h4 style="margin-top: 0;">明細で持つもの</h4>
+                <ul>
+                    <li>その通告の質問本文</li>
+                    <li>階層構造（大・中・小）</li>
+                </ul>
+            </div>
+        </div>
+        <p style="text-align: center; font-weight: bold; margin-top: 15px;">
+            結合キー：<code>question_id</code>
+        </p>
+    </div>
+
+    <div class="section-box">
+        <h2>7. VBAの型変換ルール</h2>
+        <p>この説明はかなり重要です。将来「なんでこの値こう出るの？」となったときの原因になります。</p>
+
+        <h4>数値として出力される列</h4>
+        <p>VBAでは次の列名だけ数値扱いです。これらは文字列ではなく、数値としてJSに出力されます。</p>
+        <code>fiscal_year</code>, <code>year</code>, <code>notice_no</code>, <code>allotted_minutes</code>, <code>sort_order</code>
+
+        <h4>日付として出力される列</h4>
+        <ul>
+            <li><code>question_date</code></li>
+            <li>名前が <code>_date</code> で終わる列</li>
+            <li>名前が <code>_at</code> で終わる列</li>
+        </ul>
+        <p>これらは日付扱いです。さらに、<br>
+        <code>_at</code> は <code>yyyy-mm-dd hh:nn:ss</code><br>
+        それ以外の日付は <code>yyyy-mm-dd</code><br>
+        で出力されます。</p>
+
+        <h4>文字列として出力される列</h4>
+        <p>上記以外は基本的に文字列として <code>"..."</code> で出力されます。そのため、<br>
+        <code>major_no</code>, <code>middle_no</code>, <code>minor_no</code> は文字列のまま出力されます。VBAコメントにも「文字列出力版」と明記されています。</p>
+    </div>
+
+    <div class="section-box">
+        <h2>8. 空欄の扱い</h2>
+        <p>VBAでは、次の値はすべて <code>""</code> として出力されます。</p>
+        <ul>
+            <li>エラー値</li>
+            <li>Empty</li>
+            <li>空文字</li>
+            <li>空白だけの値</li>
+        </ul>
+        <p>つまり、空欄セルはJSでは基本的に空文字になります。<br>
+        このため、たとえば <code>sort_order</code> を空欄にすると、出力JSでは <code>""</code> ではなく数値変換対象なら場合によって <code>"0"</code> に寄る動きが気になることがあります。<br>
+        特に数値列は NormalizeNumericLike の対象なので、運用上は <strong>数値列はできるだけ空欄にしない</strong> 方が安全です。</p>
+    </div>
+
+    <div class="section-box">
+        <h2>9. 文字列エスケープのルール</h2>
+        <p>文字列中の以下はVBA側でエスケープされます。</p>
+        <ul>
+            <li><code>\</code> <span class="flow-arrow">→</span> <code>\\</code></li>
+            <li><code>"</code> <span class="flow-arrow">→</span> <code>\"</code></li>
+            <li>改行 <span class="flow-arrow">→</span> <code>\n</code></li>
+        </ul>
+        <p>つまり、Excelセル内に改行があっても、JSファイルとして壊れにくいように変換されています。</p>
+    </div>
+
+    <div class="section-box">
+        <h2>10. 開発者向けに覚えておくべきポイント</h2>
+        
+        <h4>① Excelの列名を変えるとJSのキー名も変わる</h4>
+        <p>このVBAは「列名固定の変換表」でなく、1行目のヘッダをそのまま使う方式です。<br>
+        なので列名変更は画面JSにも影響します。</p>
+
+        <h4>② 通告ヘッダと通告明細は question_id で結合する</h4>
+        <p>ここが<strong>最重要</strong>です。<br>
+        画面ロジックはこの前提で作るのが自然です。</p>
+
+        <h4>③ 通告明細は今後さらに簡略化できる</h4>
+        <p>今の実ファイルにはヘッダと重複する列が残っています。<br>
+        ただ、設計としては「ヘッダに基本情報、明細に本文と階層だけ」という分離の方が分かりやすいです。</p>
+
+        <h4>④ allotted_minutes はExcelの時間値由来の可能性が高い</h4>
+        <p>サンプルでは <code>0.05</code> や <code>4.16666666666667E-02</code> のような値になっています。<br>
+        これは見た目の分数・小数で保存されているので、画面表示時に「分」に変換する処理が必要です。保存値そのものは「表示用の分」ではない、と考えておいた方が安全です。</p>
+    </div>
+
+    <div class="summary-box">
+        <h2>11. 未来の自分向けの一文サマリ</h2>
+        <p>この <code>questions</code> 系は、<br>
+        <strong>Excelの「通告ヘッダ」「通告明細」を、そのまま列名ベースでJS化して、<code>question_id</code> で結合して画面表示する仕組み</strong>です。</p>
+        <ul>
+            <li>基本情報は <code>questions.js</code></li>
+            <li>本文の階層構造は <code>question_details.js</code></li>
+            <li>VBAは列名をそのままJSキーにする</li>
+            <li>数値列・日付列だけ特別ルールで変換する</li>
+            <li>将来的には <code>question_details.js</code> の重複列を減らせる</li>
+        </ul>
+    </div>
+
+</div>
+
+</body>
+</html>
