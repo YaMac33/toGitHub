@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>members系 説明書</title>
+    <style>
+        /* ベーススタイル */
+        body {
+            font-family: "Meiryo", "Hiragino Kaku Gothic ProN", "MS PGothic", sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        /* タイトル・見出し */
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 2.2em;
+            padding-bottom: 15px;
+            border-bottom: 4px solid #34495e;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        h2 {
+            font-size: 1.5em;
+            color: #ffffff;
+            background-color: #34495e;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h3 {
+            font-size: 1.25em;
+            color: #2980b9;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 5px solid #3498db;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h4 {
+            font-size: 1.1em;
+            color: #e67e22;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        /* コード・インライン要素 */
+        code {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #f1f2f6;
+            color: #c0392b;
+            padding: 3px 6px;
+            border-radius: 4px;
+            border: 1px solid #dfe4ea;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+        .key-text {
+            font-weight: bold;
+            color: #c0392b;
+            background: #fcf3f2;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* セクション・カードデザイン */
+        .section-box {
+            margin-bottom: 30px;
+        }
+        .info-card {
+            background-color: #eaf2f8;
+            border-left: 5px solid #3498db;
+            padding: 15px 20px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 20px;
+        }
+        .warning-card {
+            background-color: #fef9e7;
+            border-left: 5px solid #f1c40f;
+            padding: 15px 20px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 20px;
+        }
+        .alert-card {
+            background-color: #fdedec;
+            border-left: 5px solid #e74c3c;
+            padding: 15px 20px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 20px;
+        }
+        
+        /* シート別カード（6章用） */
+        .sheet-card {
+            border: 1px solid #dcdde1;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 25px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .sheet-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: #2c3e50;
+            padding: 10px 15px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 6px 6px 0 0;
+        }
+
+        /* テーブル */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            background-color: #ffffff;
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            font-weight: bold;
+            text-align: center;
+        }
+        tr:nth-child(even) {
+            background-color: #f9fbfc;
+        }
+
+        /* リスト */
+        ul, ol {
+            padding-left: 25px;
+            margin-bottom: 15px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .column-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 0;
+            list-style: none;
+            margin-bottom: 15px;
+        }
+        .column-list li {
+            background: #f1f2f6;
+            border: 1px solid #dfe4ea;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 0.9em;
+            color: #2c3e50;
+            margin-bottom: 0;
+        }
+
+        /* サマリボックス */
+        .summary-box {
+            background-color: #fdfefe;
+            border: 3px dashed #27ae60;
+            padding: 30px;
+            border-radius: 8px;
+            margin-top: 50px;
+        }
+        .summary-box h2 {
+            background-color: transparent;
+            color: #27ae60;
+            margin-top: 0;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+            text-align: center;
+        }
+        .summary-box p {
+            font-size: 1.1em;
+            font-weight: bold;
+            text-align: center;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>members系 説明書</h1>
+    <div class="subtitle">開発者向け・未来の自分向け：「Excel列 → 出力JS → 画面での役割」整理</div>
+
+    <div class="section-box">
+        <h2>1. この仕組みの全体像</h2>
+        <p>members系は、Excelの複数シートをVBAでテキストJSに書き出し、それを <code>members.html</code> と <code>member_detail.html</code> で読み込んで表示する構成です。<br>
+        VBAでは、各シート名ごとに <strong>出力先ファイル</strong> と <strong>window.APP_DATA のキー名</strong> が対応づけられています。</p>
+        
+        <p>この系統は、単なる「議員一覧」ではなく、実際には次の複数データを束ねています。</p>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <ul style="flex: 1; min-width: 200px; background: #fff; border: 1px solid #ddd; padding: 15px 15px 15px 35px; border-radius: 4px;">
+                <li>議員基本情報</li>
+                <li>在任履歴</li>
+                <li>会派履歴</li>
+                <li>委員会履歴</li>
+            </ul>
+            <ul style="flex: 1; min-width: 200px; background: #fff; border: 1px solid #ddd; padding: 15px 15px 15px 35px; border-radius: 4px;">
+                <li>審議会履歴</li>
+                <li>連絡先履歴</li>
+                <li>特別委員会関連データ</li>
+                <li>会議データとの関連</li>
+            </ul>
+        </div>
+        <div class="info-card" style="margin-top: 15px;">
+            <strong>📌 結論：</strong> members系は<strong>「議員1人を中心に、各履歴テーブルを結合して表示する仕組み」</strong>です。
+        </div>
+    </div>
+
+    <div class="section-box">
+        <h2>2. 出力先の対応表</h2>
+        <p>VBAの <code>GetAllMemberSheetConfigs()</code> では、Excelシートと出力先が次のように定義されています。</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Excelシート名</th>
+                    <th>出力ファイル</th>
+                    <th>JS内の配列名</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>議員マスタ</td><td><code>app/data/members/members.js</code></td><td><code>window.APP_DATA.members</code></td></tr>
+                <tr><td>議員在任履歴</td><td><code>app/data/members/office_terms.js</code></td><td><code>window.APP_DATA.office_terms</code></td></tr>
+                <tr><td>会派マスタ</td><td><code>app/data/members/parties.js</code></td><td><code>window.APP_DATA.parties</code></td></tr>
+                <tr><td>議員_会派履歴</td><td><code>app/data/members/member_parties.js</code></td><td><code>window.APP_DATA.member_parties</code></td></tr>
+                <tr><td>委員会マスタ</td><td><code>app/data/committees/committees.js</code></td><td><code>window.APP_DATA.committees</code></td></tr>
+                <tr><td>議員_委員会所属履歴</td><td><code>app/data/committees/member_committees.js</code></td><td><code>window.APP_DATA.member_committees</code></td></tr>
+                <tr><td>審議会マスタ</td><td><code>app/data/councils/councils.js</code></td><td><code>window.APP_DATA.councils</code></td></tr>
+                <tr><td>議員_審議会所属履歴</td><td><code>app/data/councils/member_councils.js</code></td><td><code>window.APP_DATA.member_councils</code></td></tr>
+                <tr><td>議員連絡先履歴</td><td><code>app/data/members/contacts.js</code></td><td><code>window.APP_DATA.contacts</code></td></tr>
+            </tbody>
+        </table>
+        <div class="warning-card">
+            ここが重要で、以前の列整理よりも実際のVBAでは <strong>「議員_審議会所属履歴」「議員連絡先履歴」も正式に出力対象</strong> になっています。
+        </div>
+    </div>
+
+    <div class="section-box">
+        <h2>3. 変換の基本ルール</h2>
+        <p>questions系と同じく、members系のVBAも <strong>Excelの1行目のヘッダをそのままJSオブジェクトのキー名にする方式</strong> です。つまり、Excelの列名を変えると、そのまま出力JSのプロパティ名も変わります。</p>
+        <ol>
+            <li>1行目のヘッダを読む</li>
+            <li>2行目以降を1行ずつ読む</li>
+            <li>空行でなければ <code>{ key: value }</code> の形にする</li>
+            <li>それを <code>window.APP_DATA.xxx = [...]</code> として出力する</li>
+        </ol>
+        <p>💡 <strong>この方式なので、列名の変更はVBA側ではなく画面JS側に効く、という意識が大切です。</strong></p>
+    </div>
+
+    <div class="section-box">
+        <h2>4. 型変換ルール</h2>
+        <p>members系VBAでは、列名によって値の型が変換されます。将来トラブル時に効く部分です。</p>
+
+        <h3>4-1. 真偽値扱いの列</h3>
+        <p><code>active_flag</code> は特別扱いで、boolean風に正規化されます。ただしJSでは <code>true / false</code> ではなく、<strong><code>1</code> または <code>0</code></strong> として出力されます。</p>
+        <ul>
+            <li><code>"1"</code>, <code>"true"</code>, <code>"yes"</code>, <code>"y"</code> → <strong>1</strong></li>
+            <li><code>"0"</code>, <code>"false"</code>, <code>"no"</code>, <code>"n"</code> → <strong>0</strong></li>
+            <li>数値なら 0 以外 → <strong>1</strong></li>
+            <li>それ以外 → <strong>0</strong></li>
+        </ul>
+
+        <h3>4-2. 数値扱いの列</h3>
+        <p>次の列は数値として出力されます。</p>
+        <ul class="column-list">
+            <li>member_no</li><li>age</li><li>sort_order</li><li>elected_count</li>
+        </ul>
+
+        <h3>4-3. 日付扱いの列</h3>
+        <p>列名が次に当てはまるものは日付として扱われます。</p>
+        <ul>
+            <li><code>_date</code> で終わる列</li>
+            <li><code>_at</code> で終わる列</li>
+        </ul>
+        <div class="alert-card">
+            出力形式は members系では一律で <code>yyyy-mm-dd</code> です。<br>
+            <strong>questions系のように <code>_at</code> を日時まで出す仕様ではありません。</strong> ここは両者の違いです。
+        </div>
+
+        <h3>4-4. 文字列扱いの列</h3>
+        <p>上記以外はすべて文字列として <code>"..."</code> で出力されます。空欄・Empty・エラー値は <code>""</code> になります。</p>
+    </div>
+
+    <div class="section-box">
+        <h2>5. 文字列エスケープのルール</h2>
+        <p>文字列中の以下はVBA側でエスケープされます。Excelセル内に改行や記号があっても、JSファイルとして壊れにくい設計になっています。</p>
+        <ul>
+            <li><code>\</code> → <code>\\</code></li>
+            <li><code>"</code> → <code>\"</code></li>
+            <li>改行 → <code>\n</code></li>
+        </ul>
+    </div>
+
+    <div class="section-box">
+        <h2>6. 各シートの役割</h2>
+        <p>members系は「議員1人に関する情報を分割保持している」ので、各シートの意味を未来の自分がすぐ思い出せるように整理します。</p>
+
+        <div class="sheet-card">
+            <div class="sheet-title">6-1. 議員マスタ → members.js</div>
+            <h4>■ 役割</h4>
+            <p>議員そのものの基本情報を持つ中心テーブルです。1議員につき1行を基本とし、他テーブルはここにぶら下がります。</p>
+            <h4>■ 主な列</h4>
+            <ul class="column-list">
+                <li>member_id</li><li>member_no</li><li>member_name</li><li>member_kana</li>
+                <li>member_name_short</li><li>birth_date</li><li>age</li><li>gender</li>
+                <li>sort_order</li><li>note</li><li>active_flag</li><li>created_at</li><li>updated_at</li>
+            </ul>
+            <h4>■ 画面での主な使われ方</h4>
+            <p><code>member_detail.html</code> では、基本情報欄に次の値が表示されます。<br>
+            番号 / 在任状態 / 氏名かな / 性別 / 生年月日 / 年齢 / 備考</p>
+            <p>このうち <code>member_no</code>, <code>member_kana</code>, <code>gender</code>, <code>birth_date</code>, <code>age</code>, <code>note</code> は議員マスタ由来と考えてよいです。一方、在任状態 (<code>current_status</code>) は議員マスタ単独ではなく、履歴やAPP側の組み立て結果です。</p>
+            <h4>■ 開発上の注意</h4>
+            <p><strong><span class="key-text">member_id</span> が議員の主キーです。</strong>一覧、詳細、履歴結合の中心になります。</p>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-title">6-2. 議員在任履歴 → office_terms.js</div>
+            <h4>■ 役割</h4>
+            <p>議員がいつからいつまで在任していたかを持つ履歴テーブルです。「現職かどうか」や「在任履歴一覧」の判定材料になります。</p>
+            <h4>■ 主な列</h4>
+            <ul class="column-list">
+                <li>office_term_id</li><li>member_id</li><li>term_start_date</li><li>term_end_date</li>
+                <li>election_label</li><li>elected_count</li><li>end_reason_code</li><li>note</li>
+                <li>created_at</li><li>updated_at</li>
+            </ul>
+            <h4>■ 画面での主な使われ方</h4>
+            <p><code>member_detail.html</code> の「在任履歴」で、各行は次のように組み立てられます。<br>
+            在任期間 / 選挙名など (<code>election_label</code>) / 任期終了理由 (<code>end_reason_code</code>) / 備考 (<code>note</code>)</p>
+            <p>また、一覧画面の「現職のみ」フィルタや、詳細画面の <code>current_status</code> も、この履歴の情報をもとにAPP側で算出している可能性が高いです。</p>
+            <h4>■ 結合キー</h4>
+            <p><span class="key-text">member_id</span></p>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-title">6-3. 会派マスタ → parties.js</div>
+            <h4>■ 役割</h4>
+            <p>会派そのものの名称マスタです。議員ごとの所属履歴とは分離されており、名称・略称などをここで持ちます。</p>
+            <h4>■ 主な列</h4>
+            <ul class="column-list">
+                <li>party_id</li><li>party_name</li><li>party_name_short</li><li>sort_order</li>
+                <li>active_flag</li><li>note</li><li>created_at</li><li>updated_at</li>
+            </ul>
+            <h4>■ 画面での主な使われ方</h4>
+            <p>一覧画面では会派プルダウンの選択肢生成に使われます。<code>view_members.js</code> では <code>window.APP.getPartyOptions()</code> の結果を選択肢化しており、その元データには <code>parties.js</code> が使われています。<br>
+            また、一覧表の「現在会派」表示や詳細の「現在会派」「会派履歴」表示にも使われます。</p>
+            <h4>■ 結合キー</h4>
+            <p><span class="key-text">party_id</span></p>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-title">6-4. 議員_会派履歴 → member_parties.js</div>
+            <h4>■ 役割</h4>
+            <p>議員がどの会派に、いつ所属していたかを持つ履歴テーブルです。</p>
+            <h4>■ 主な列</h4>
+            <ul class="column-list">
+                <li>member_party_id</li><li>member_id</li><li>party_id</li><li>role_name</li>
+                <li>start_date</li><li>end_date</li><li>note</li><li>created_at</li><li>updated_at</li>
+            </ul>
+            <h4>■ 画面での主な使われ方</h4>
+            <p>一覧画面では <strong>現在所属の会派名</strong> を作るために使われます。<br>
+            詳細画面では「現在会派」と「会派履歴」の両方に使われます。履歴表示では次のような文字列に整形されます。<br>
+            所属期間 / 会派名 / 役職名 (<code>role_name</code>) / 備考 (<code>note</code>)</p>
+            <h4>■ 結合キー</h4>
+            <p><span class="key-text">member_id</span>, <span class="key-text">party_id</span></p>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-title">6-5. 委員会マスタ → committees.js</div>
+            <h4>■ 役割</h4>
+            <p>常設委員会などの委員会名称マスタです。</p>
+            <h4>■ 主な列</h4>
+            <ul class="column-list">
+                <li>committee_id</li><li>committee_name</li><li>committee_name_short</li>
+                <li>committee_type_code</li><li>parent_event_id</li><li>sort_order</li>
+                <li>active_flag</li><li>note</li><li>created_at</li><li>updated_at</li>
+            </ul>
+            <h4>■ 画面での主な使われ方</h4>
+            <p>一覧画面の「現在委員会」フィルタの選択肢や、一覧表の現在委員会表示に使われます。<br>
+            詳細画面では「現在委員会」「委員会履歴（常設委員会側）」に使われます。</p>
+            <h4>■ 注意</h4>
+            <p>特別委員会は別データ系統も混ざるため、このマスタだけで委員会全体を表しているわけではない点に注意です。</p>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-title">6-6. 議員_委員会所属履歴 → member_committees.js</div>
+            <h4>■ 役割</h4>
+            <p>議員がどの委員会にいつ所属していたかの履歴です。常設委員会側の履歴テーブルと考えると分かりやすいです。</p>
+            <h4>■ 主な列</h4>
+            <ul class="column-list">
+                <li>member_committee_id</li><li>member_id</li><li>committee_id</li><li>role_name</li>
+                <li>start_date</li><li>end_date</li><li>note</li><li>created_at</li><li>updated_at</li>
+            </ul>
+            <h4>■ 画面での主な使われ方</h4>
+            <p>一覧画面では、現在所属している委員会を計算して一覧表示します。<br>
+            詳細画面では「現在委員会」と「委員会履歴（常設委員会）」に使われ、表示文字列は次の構成です。<br>
+            所属期間 / 委員会名 / 役職名 / 備考</p>
+            <h4>■ 結合キー</h4>
+            <p><span class="key-text">member_id</span>, <span class="key-text">committee_id</span></p>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-title">6-7. 審議会マスタ → councils.js</div>
+            <h4>■ 役割</h4>
+            <p>審議会の名称マスタです。</p>
+            <h4>■ 主な列</h4>
+            <ul class="column-list">
+                <li>council_id</li><li>council_name</li><li>council_name_short</li>
+                <li>council_category_code</li><li>sort_order</li><li>active_flag</li>
+                <li>note</li><li>created_at</li><li>updated_at</li>
+            </ul>
+            <h4>■ 画面での主な使われ方</h4>
+            <p>詳細画面の「現在審議会」「審議会履歴」の表示名に使われます。</p>
+            <h4>■ 結合キー</h4>
+            <p><span class="key-text">council_id</span></p>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-title">6-8. 議員_審議会所属履歴 → member_councils.js</div>
+            <h4>■ 役割</h4>
+            <p>議員がどの審議会にいつ所属していたかの履歴テーブルです。</p>
+            <h4>■ 主な列（想定）</h4>
+            <ul class="column-list">
+                <li>member_council_id 等</li><li>member_id</li><li>council_id</li>
+                <li>role_name</li><li>start_date</li><li>end_date</li><li>note</li>
+                <li>created_at</li><li>updated_at</li>
+            </ul>
+            <p style="font-size:0.9em; color:#666;">※ 実際の列名ダミーは未提示なので、ここはVBAの出力対象名と画面JSの利用形からの整理です。<br>
+            ただし、詳細画面の描画で <code>council_name</code>, <code>role_name</code>, <code>start_date</code>, <code>end_date</code>, <code>note</code> が使われているため、APP側で結合後にそれらが参照されることは確実です。</p>
+            <h4>■ 画面での主な使われ方</h4>
+            <p>詳細画面の「現在審議会」「審議会履歴」に使われます。</p>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-title">6-9. 議員連絡先履歴 → contacts.js</div>
+            <h4>■ 役割</h4>
+            <p>議員の住所・電話・メールなどの連絡先履歴を持つテーブルです。</p>
+            <h4>■ 想定される主な列</h4>
+            <p><code>view_member_detail.js</code> の使用箇所から、少なくとも次の項目が組み立て後データに含まれます。</p>
+            <ul class="column-list">
+                <li>address</li><li>address_visibility</li><li>phone_home</li>
+                <li>phone_home_visibility</li><li>phone_mobile</li><li>phone_mobile_visibility</li>
+                <li>email</li><li>email_visibility</li><li>contact_note</li>
+                <li>start_date</li><li>end_date</li>
+            </ul>
+            <p style="font-size:0.9em; color:#666;">※ 元Excelの正確な列一覧は今回未提示ですが、少なくともAPP側最終データには必要です。</p>
+            <h4>■ 画面での主な使われ方</h4>
+            <p>詳細画面では「現在連絡先」と「連絡先履歴」の2か所に使われます。公開範囲は <code>visibilityLabel()</code> で人間向け表記に変換されて表示されます。</p>
+        </div>
+    </div>
+
+    <div class="section-box" style="display:flex; flex-wrap:wrap; gap:20px;">
+        <div style="flex:1; min-width:300px; background:#fff; border:1px solid #ddd; padding:20px; border-radius:6px;">
+            <h3>7. members.html で何をしているか</h3>
+            <p>一覧画面 <code>members.html</code> は、単純な <code>members.js</code> だけでなく各履歴や特別委員会関係まで読み込んでいます。これは、一覧時点で「現在所属」や検索条件を組み立てる必要があるからです。</p>
+            <p><code>view_members.js</code> では主に次を行っています。</p>
+            <ul>
+                <li>読み込み件数の表示</li>
+                <li>会派/委員会選択肢の生成</li>
+                <li>議員一覧の生成</li>
+                <li>フィルタ処理（現職のみ / 会派 / 現在委員会 / 氏名検索）</li>
+                <li>行クリックで詳細画面を開く</li>
+            </ul>
+            <p><strong>つまり一覧画面は、議員マスタをベースにしつつ、現在所属情報を履歴から再構成した結果一覧です。</strong></p>
+        </div>
+
+        <div style="flex:1; min-width:300px; background:#fff; border:1px solid #ddd; padding:20px; border-radius:6px;">
+            <h3>8. member_detail.html で何をしているか</h3>
+            <p>詳細画面 <code>member_detail.html</code> は、URLの <code>member_id</code> を受け取り、その議員1人分の統合データを <code>window.APP.buildMemberDetail(memberId)</code> で組み立てて表示します。</p>
+            <p>逆算すると、APP側では少なくとも次のような統合オブジェクトを作っていると分かります。</p>
+            <ul>
+                <li><strong>基本属性:</strong> <code>member_id</code>, <code>member_name</code>, <code>member_no</code>, <code>age</code>, <code>current_status</code> 等</li>
+                <li><strong>現在所属:</strong> <code>current_party_name</code>, <code>current_committees_regular</code>, <code>current_councils</code> 等</li>
+                <li><strong>履歴:</strong> <code>party_history</code>, <code>committee_history_regular</code>, <code>office_terms</code> 等</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section-box">
+        <h2>9. 特別委員会データとの関係</h2>
+        <p>members系の画面では、通常の委員会データに加えて、次も読み込んでいます。</p>
+        <ul class="column-list">
+            <li>special_committees.js</li>
+            <li>special_committee_instances.js</li>
+            <li>special_committee_members.js</li>
+            <li>meetings.js</li>
+        </ul>
+        <p>詳細画面の <code>renderCommitteeHistory()</code> では、常設委員会履歴と特別委員会履歴を分けて表示しています。<br>
+        つまり、<strong>特別委員会は通常の <code>member_committees.js</code> とは別の構造で管理されており、会議回との関係まで含めて1つの履歴として表示</strong>していることになります。</p>
+    </div>
+
+    <div class="section-box">
+        <h2>10. 主要な結合キー</h2>
+        <p>members系の肝は結合です。未来の自分向けには、ここを明記しておくのがかなり大事です。</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>中心キー</th>
+                    <th>つながる先</th>
+                    <th>用途</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background-color: #fff4f2;">
+                    <td><strong>member_id</strong></td>
+                    <td>ほぼ全履歴</td>
+                    <td><strong>議員中心の統合（最重要）</strong></td>
+                </tr>
+                <tr>
+                    <td><code>party_id</code></td>
+                    <td>会派マスタ</td>
+                    <td>会派名取得</td>
+                </tr>
+                <tr>
+                    <td><code>committee_id</code></td>
+                    <td>委員会マスタ</td>
+                    <td>委員会名取得</td>
+                </tr>
+                <tr>
+                    <td><code>council_id</code></td>
+                    <td>審議会マスタ</td>
+                    <td>審議会名取得</td>
+                </tr>
+                <tr>
+                    <td>特別委員会側のID群</td>
+                    <td>特別委員会マスタ・履歴</td>
+                    <td>特別委員会履歴取得</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>最重要は <span class="key-text">member_id</span> です。members系は、議員1人を軸にすべてをぶら下げる構造です。</p>
+    </div>
+
+    <div class="section-box">
+        <h2>11. 開発上の注意点</h2>
+
+        <div style="background:#fff; padding:15px; border-left:4px solid #e74c3c; margin-bottom:15px;">
+            <h4>11-1. 列名変更の影響が大きい</h4>
+            <p>このVBAは列名をそのままJSキー名にするので、Excelの列名変更はAPP側ロジック破壊に直結します。</p>
+        </div>
+
+        <div style="background:#fff; padding:15px; border-left:4px solid #f39c12; margin-bottom:15px;">
+            <h4>11-2. active_flag は 1/0 出力</h4>
+            <p>真偽値っぽく見えても実際は <code>1</code> / <code>0</code> です。比較時に <code>"1"</code> なのか <code>1</code> なのかを混同しない方が安全です。</p>
+        </div>
+
+        <div style="background:#fff; padding:15px; border-left:4px solid #f39c12; margin-bottom:15px;">
+            <h4>11-3. _at も日時ではなく日付出力</h4>
+            <p>questions系と違い、members系では <code>_at</code> も <code>yyyy-mm-dd</code> です。作成日時・更新日時を時刻付きで保持したいなら、このVBA仕様を変える必要があります。</p>
+        </div>
+
+        <div style="background:#fff; padding:15px; border-left:4px solid #3498db; margin-bottom:15px;">
+            <h4>11-4. 画面表示の多くは「元データそのまま」ではなく「APPで統合後」</h4>
+            <p><code>view_members.js</code> と <code>view_member_detail.js</code> は、直接各配列を生で描画しているというより、<code>window.APP.buildMemberList()</code> や <code>window.APP.buildMemberDetail()</code> の結果を描画しています。<br>
+            つまり、本当の表示仕様は <strong>APP層の組み立てロジックも見ないと完全確定しない</strong> です。</p>
+        </div>
+    </div>
+
+    <div class="summary-box">
+        <h2>12. 未来の自分向けの一文サマリ</h2>
+        <p>members系は、<br>
+        「議員マスタを中心に、在任・会派・委員会・審議会・連絡先・特別委員会の各履歴を <code>member_id</code> などで結合し、一覧画面と詳細画面に再構成して表示する仕組み」です。</p>
+        <ul style="font-size: 1.05em; margin-top: 20px;">
+            <li>Excelの列名はそのままJSキーになる</li>
+            <li>VBAで複数の <code>app/data/.../*.js</code> を出力する</li>
+            <li>一覧画面は「現在所属」を再構成して表示する</li>
+            <li>詳細画面は「1議員ぶんの統合オブジェクト」を表示する</li>
+            <li>特別委員会は通常委員会とは別系統で扱う</li>
+        </ul>
+    </div>
+
+</div>
+
+</body>
+</html>
