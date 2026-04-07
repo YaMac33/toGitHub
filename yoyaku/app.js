@@ -1,481 +1,463 @@
-(function () {
-  "use strict";
-
-  const ROOM_NAMES = ["委員会室", "小委員会室", "部課長控室", "小会議室"];
-  const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
-
-  const state = {
-    currentYear: 0,
-    currentMonth: 0,
-    statusFilter: "承認済"
-  };
-
-  const bodyEl = document.getElementById("reservation-body");
-  const emptyMessageEl = document.getElementById("empty-message");
-  const monthLabelEl = document.getElementById("month-label");
-  const statusFilterEl = document.getElementById("status-filter");
-
-  const modalOverlayEl = document.getElementById("modal-overlay");
-  const modalTitleEl = document.getElementById("modal-title");
-  const modalSubtitleEl = document.getElementById("modal-subtitle");
-  const modalBodyEl = document.getElementById("modal-body");
-
-  const allReservations = Array.isArray(window.APP_DATA && window.APP_DATA.reservations)
-    ? window.APP_DATA.reservations.slice()
-    : [];
-
-  init();
-
-  function init() {
-    const initialDate = getInitialMonthDate();
-    state.currentYear = initialDate.getFullYear();
-    state.currentMonth = initialDate.getMonth();
-
-    document.getElementById("prev-month-btn").addEventListener("click", handlePrevMonth);
-    document.getElementById("next-month-btn").addEventListener("click", handleNextMonth);
-    document.getElementById("today-btn").addEventListener("click", handleTodayMonth);
-
-    statusFilterEl.addEventListener("change", function () {
-      state.statusFilter = statusFilterEl.value;
-      render();
-    });
-
-    document.getElementById("modal-close-btn").addEventListener("click", closeModal);
-    document.getElementById("modal-close-footer-btn").addEventListener("click", closeModal);
-
-    modalOverlayEl.addEventListener("click", function (event) {
-      if (event.target === modalOverlayEl) {
-        closeModal();
-      }
-    });
-
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && modalOverlayEl.classList.contains("is-open")) {
-        closeModal();
-      }
-    });
-
-    render();
-  }
-
-  function getInitialMonthDate() {
-    const firstValid = allReservations.find(function (item) {
-      return isValidDateString(item.start_date);
-    });
-
-    if (firstValid) {
-      return parseDateString(firstValid.start_date);
-    }
-
-    return new Date();
-  }
-
-  function handlePrevMonth() {
-    state.currentMonth -= 1;
-    normalizeCurrentMonth();
-    render();
-  }
-
-  function handleNextMonth() {
-    state.currentMonth += 1;
-    normalizeCurrentMonth();
-    render();
-  }
-
-  function handleTodayMonth() {
-    const now = new Date();
-    state.currentYear = now.getFullYear();
-    state.currentMonth = now.getMonth();
-    render();
-  }
-
-  function normalizeCurrentMonth() {
-    while (state.currentMonth < 0) {
-      state.currentMonth += 12;
-      state.currentYear -= 1;
-    }
-    while (state.currentMonth > 11) {
-      state.currentMonth -= 12;
-      state.currentYear += 1;
-    }
-  }
-
-  function render() {
-    const wareki = getWareki(state.currentYear);
-    monthLabelEl.textContent = wareki + "(" + state.currentYear + "年)" + (state.currentMonth + 1) + "月";
-
-    bodyEl.innerHTML = "";
-
-    const days = getDaysInMonth(state.currentYear, state.currentMonth);
-    const reservationsForView = filterReservationsForCurrentView();
-
-    for (let day = 1; day <= days; day += 1) {
-      const dateObj = new Date(state.currentYear, state.currentMonth, day);
-      const dateStr = toDateString(dateObj);
-      bodyEl.appendChild(buildRow(dateObj, dateStr, reservationsForView));
-    }
-
-    emptyMessageEl.hidden = reservationsForView.length > 0;
-  }
-
-  function filterReservationsForCurrentView() {
-    const firstDay = new Date(state.currentYear, state.currentMonth, 1);
-    const lastDay = new Date(state.currentYear, state.currentMonth + 1, 0);
-
-    const firstStr = normalizeDate(toDateString(firstDay));
-    const lastStr = normalizeDate(toDateString(lastDay));
-
-    return allReservations.filter(function (item) {
-      if (!isValidDateString(item.start_date) || !isValidDateString(item.end_date)) {
-        return false;
-      }
-
-      if (state.statusFilter !== "all" && String(item.status || "") !== state.statusFilter) {
-        return false;
-      }
-
-      const start = normalizeDate(item.start_date);
-      const end = normalizeDate(item.end_date);
-
-      return !(end < firstStr || start > lastStr);
-    });
-  }
-
-  function buildRow(dateObj, dateStr, reservations) {
-    const tr = document.createElement("tr");
-
-    if (dateObj.getDay() === 6) {
-      tr.classList.add("is-saturday");
-    } else if (dateObj.getDay() === 0) {
-      tr.classList.add("is-sunday");
-    }
-
-    const dateTd = document.createElement("td");
-    dateTd.className = "date-cell";
-    dateTd.innerHTML =
-      '<div class="date-main">' +
-      escapeHtml((dateObj.getMonth() + 1) + "/" + dateObj.getDate() + "（" + WEEKDAY_LABELS[dateObj.getDay()] + "）") +
-      "</div>" +
-      '<div class="date-sub">' + escapeHtml(dateStr) + "</div>";
-    tr.appendChild(dateTd);
-
-    ROOM_NAMES.forEach(function (roomName) {
-      const td = document.createElement("td");
-      td.className = "room-cell";
-
-      const roomReservations = reservations
-        .filter(function (item) {
-          return String(item.room_name || "") === roomName && isReservationActiveOnDate(item, dateStr);
-        })
-        .map(function (item) {
-          return buildDisplayReservation(item, dateStr);
-        });
-
-      td.appendChild(buildRoomCellButton(dateStr, roomName, roomReservations));
-      tr.appendChild(td);
-    });
-
-    return tr;
-  }
-
-  function buildRoomCellButton(dateStr, roomName, roomReservations) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "room-click";
-    button.addEventListener("click", function () {
-      openModal(dateStr, roomName, roomReservations);
-    });
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "room-stack";
-
-    if (roomReservations.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "slot-empty";
-      empty.textContent = "（なし）";
-      wrapper.appendChild(empty);
-    } else {
-      sortDisplayReservations(roomReservations).forEach(function (item) {
-        wrapper.appendChild(buildRoomItem(item));
-      });
-    }
-
-    button.appendChild(wrapper);
-    return button;
-  }
-
-  function buildRoomItem(item) {
-    const card = document.createElement("div");
-    card.className = "room-item";
-
-    const head = document.createElement("div");
-    head.className = "room-item-head";
-
-    const kindBadge = document.createElement("span");
-    kindBadge.className = "kind-badge " + getKindClass(item.displayKind);
-    kindBadge.textContent = getKindLabel(item.displayKind);
-    head.appendChild(kindBadge);
-
-    if (state.statusFilter === "all") {
-      const statusBadge = document.createElement("span");
-      statusBadge.className = "status-badge " + getStatusClass(item.status);
-      statusBadge.textContent = item.status || "";
-      head.appendChild(statusBadge);
-    }
-
-    card.appendChild(head);
-
-    const title = document.createElement("div");
-    title.className = "room-item-title";
-    title.textContent = item.purpose || "";
-    card.appendChild(title);
-
-    const sub = document.createElement("div");
-    sub.className = "room-item-sub";
-    sub.textContent = item.displayTimeText;
-    card.appendChild(sub);
-
-    if (item.note) {
-      const note = document.createElement("div");
-      note.className = "room-item-note";
-      note.textContent = "※" + item.note;
-      card.appendChild(note);
-    }
-
-    return card;
-  }
-
-  function openModal(dateStr, roomName, roomReservations) {
-    const sorted = sortDisplayReservations(roomReservations);
-
-    modalTitleEl.textContent = roomName;
-    modalSubtitleEl.textContent = dateStr;
-    modalBodyEl.innerHTML = "";
-
-    if (sorted.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "modal-empty";
-      empty.textContent = "予約はありません。";
-      modalBodyEl.appendChild(empty);
-    } else {
-      sorted.forEach(function (item) {
-        modalBodyEl.appendChild(buildDetailCard(item));
-      });
-    }
-
-    modalOverlayEl.classList.add("is-open");
-    modalOverlayEl.setAttribute("aria-hidden", "false");
-  }
-
-  function closeModal() {
-    modalOverlayEl.classList.remove("is-open");
-    modalOverlayEl.setAttribute("aria-hidden", "true");
-  }
-
-  function buildDetailCard(item) {
-    const card = document.createElement("div");
-    card.className = "detail-card";
-
-    const head = document.createElement("div");
-    head.className = "detail-head";
-
-    const kindBadge = document.createElement("span");
-    kindBadge.className = "kind-badge " + getKindClass(item.displayKind);
-    kindBadge.textContent = getKindLabel(item.displayKind);
-    head.appendChild(kindBadge);
-
-    const statusBadge = document.createElement("span");
-    statusBadge.className = "status-badge " + getStatusClass(item.status);
-    statusBadge.textContent = item.status || "";
-    head.appendChild(statusBadge);
-
-    card.appendChild(head);
-
-    const title = document.createElement("h3");
-    title.className = "detail-title";
-    title.textContent = item.purpose || "";
-    card.appendChild(title);
-
-    const meta = document.createElement("div");
-    meta.className = "detail-meta";
-    meta.innerHTML =
-      '<div><strong>表示:</strong> ' + escapeHtml(item.displayTimeText) + "</div>" +
-      '<div><strong>期間:</strong> ' + escapeHtml(item.start_date + " ～ " + item.end_date) + "</div>" +
-      '<div><strong>終日:</strong> ' + escapeHtml(String(item.is_all_day) === "1" ? "終日" : "時間指定") + "</div>" +
-      '<div><strong>部署:</strong> ' + escapeHtml(String(item.department_name || "")) + "</div>" +
-      '<div><strong>担当者:</strong> ' + escapeHtml(String(item.person_in_charge || "")) + "</div>" +
-      '<div><strong>入力者:</strong> ' + escapeHtml(String(item.entered_by || "")) + "</div>" +
-      '<div><strong>表示順:</strong> ' + escapeHtml(String(item.display_order || "")) + "</div>" +
-      '<div><strong>備考:</strong> ' + escapeHtml(String(item.note || "なし")) + "</div>" +
-      '<div><strong>作成日:</strong> ' + escapeHtml(String(item.created_at || "")) + "</div>" +
-      '<div><strong>更新日:</strong> ' + escapeHtml(String(item.updated_at || "")) + "</div>";
-    card.appendChild(meta);
-
-    return card;
-  }
-
-  function isReservationActiveOnDate(item, dateStr) {
-    const start = normalizeDate(item.start_date);
-    const end = normalizeDate(item.end_date);
-    const target = normalizeDate(dateStr);
-
-    return start <= target && target <= end;
-  }
-
-  function buildDisplayReservation(item, dateStr) {
-    const start = normalizeDate(item.start_date);
-    const end = normalizeDate(item.end_date);
-    const target = normalizeDate(dateStr);
-
-    let displayKind = "single";
-    if (start === end) {
-      displayKind = "single";
-    } else if (target === start) {
-      displayKind = "start";
-    } else if (target === end) {
-      displayKind = "end";
-    } else {
-      displayKind = "continue";
-    }
-
-    return Object.assign({}, item, {
-      displayKind: displayKind,
-      displayTimeText: buildDisplayTimeText(item, displayKind)
-    });
-  }
-
-  function buildDisplayTimeText(item, displayKind) {
-    const startTime = String(item.start_time || "").trim();
-    const endTime = String(item.end_time || "").trim();
-    const isAllDay = Number(item.is_all_day) === 1;
-    const sameDay = normalizeDate(item.start_date) === normalizeDate(item.end_date);
-
-    if (sameDay) {
-      if (isAllDay) return "終日";
-      if (startTime && endTime) return startTime + "-" + endTime;
-      if (startTime) return startTime + "開始";
-      if (endTime) return endTime + "終了";
-      return "時間指定";
-    }
-
-    if (isAllDay) {
-      if (displayKind === "start") return "開始日";
-      if (displayKind === "continue") return "継続中";
-      if (displayKind === "end") return "終了日";
-      return "終日";
-    }
-
-    if (displayKind === "start") {
-      return startTime ? startTime + "開始" : "開始日";
-    }
-    if (displayKind === "continue") {
-      return "終日";
-    }
-    if (displayKind === "end") {
-      return endTime ? endTime + "終了" : "終了日";
-    }
-
-    if (startTime && endTime) return startTime + "-" + endTime;
-    return "時間指定";
-  }
-
-  function sortDisplayReservations(items) {
-    return items.slice().sort(function (a, b) {
-      const orderA = toNumber(a.display_order, 9999);
-      const orderB = toNumber(b.display_order, 9999);
-      if (orderA !== orderB) return orderA - orderB;
-
-      const kindA = kindSortValue(a.displayKind);
-      const kindB = kindSortValue(b.displayKind);
-      if (kindA !== kindB) return kindA - kindB;
-
-      const purposeA = String(a.purpose || "");
-      const purposeB = String(b.purpose || "");
-      return purposeA.localeCompare(purposeB, "ja");
-    });
-  }
-
-  function kindSortValue(kind) {
-    if (kind === "start") return 1;
-    if (kind === "continue") return 2;
-    if (kind === "end") return 3;
-    return 0;
-  }
-
-  function getKindLabel(kind) {
-    if (kind === "start") return "開始";
-    if (kind === "continue") return "継続";
-    if (kind === "end") return "終了";
-    return "当日";
-  }
-
-  function getKindClass(kind) {
-    if (kind === "start") return "kind-start";
-    if (kind === "continue") return "kind-continue";
-    if (kind === "end") return "kind-end";
-    return "kind-single";
-  }
-
-  function getStatusClass(status) {
-    if (status === "承認済") return "status-approved";
-    if (status === "申請中") return "status-pending";
-    if (status === "却下") return "status-rejected";
-    if (status === "キャンセル") return "status-cancelled";
-    return "";
-  }
-
-  function getDaysInMonth(year, monthIndex) {
-    return new Date(year, monthIndex + 1, 0).getDate();
-  }
-
-  function toDateString(dateObj) {
-    const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-    const day = String(dateObj.getDate()).padStart(2, "0");
-    return year + "-" + month + "-" + day;
-  }
-
-  function normalizeDate(value) {
-    return String(value || "").replace(/\//g, "-");
-  }
-
-  function isValidDateString(value) {
-    return /^\d{4}[-\/]\d{2}[-\/]\d{2}$/.test(String(value || ""));
-  }
-
-  function parseDateString(value) {
-    const normalized = normalizeDate(value);
-    const parts = normalized.split("-");
-    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-  }
-
-  function toNumber(value, fallback) {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : fallback;
-  }
-
-  function getWareki(year) {
-    if (year >= 2019) {
-      const w = year - 2018;
-      return w === 1 ? "令和元年" : "令和" + w + "年";
-    }
-    if (year >= 1989) {
-      const w = year - 1988;
-      return w === 1 ? "平成元年" : "平成" + w + "年";
-    }
-    if (year >= 1926) {
-      const w = year - 1925;
-      return w === 1 ? "昭和元年" : "昭和" + w + "年";
-    }
-    return year + "年";
-  }
-
-  function escapeHtml(value) {
-    return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-})();
+Option Explicit
+
+' =========================================================
+' reservations シート → yoyaku/reservations.js 出力
+' 前提
+' ・1行目 = 列名
+' ・2行目 = 説明
+' ・3行目以降 = データ
+' ・完全空白行は自動スキップ
+' ・このブックを yoyaku フォルダ直下に置いて実行する想定
+'
+' 例:
+' yoyaku/
+' ├─ source_reservations.xlsm
+' └─ reservations.js
+'
+' 列構成
+' reservation_id
+' room_name
+' start_date
+' end_date
+' is_all_day
+' start_time
+' end_time
+' purpose
+' department_name
+' person_in_charge
+' entered_by
+' status
+' display_order
+' note
+' created_at
+' updated_at
+' =========================================================
+
+Public Sub ExportReservationsJs()
+    On Error GoTo ErrHandler
+
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim rowIndex As Long
+    Dim colIndex As Long
+
+    Dim baseFolder As String
+    Dim outputPath As String
+    Dim fileNo As Integer
+
+    Dim headers() As String
+    Dim lineText As String
+    Dim valueText As String
+    Dim headerName As String
+
+    Dim validationMessage As String
+    Dim dataRowCount As Long
+    Dim exportedCount As Long
+
+    Set ws = ThisWorkbook.Worksheets("reservations")
+
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+
+    If lastRow < 3 Then
+        MsgBox "データ行がありません。3行目以降にデータを入れてください。", vbExclamation
+        Exit Sub
+    End If
+
+    ReDim headers(1 To lastCol)
+
+    ' 1行目: 列名
+    For colIndex = 1 To lastCol
+        headers(colIndex) = Trim(CStr(ws.Cells(1, colIndex).Value))
+        If headers(colIndex) = "" Then
+            MsgBox "1行目の列名に空欄があります。列 " & colIndex & " を確認してください。", vbExclamation
+            Exit Sub
+        End If
+    Next colIndex
+
+    ValidateRequiredHeaders headers
+
+    ' 3行目以降のみ検証（2行目は説明行なので無視）
+    ' 完全空白行は自動スキップ
+    validationMessage = ValidateRows(ws, headers, lastRow, lastCol)
+    If validationMessage <> "" Then
+        MsgBox validationMessage, vbExclamation
+        Exit Sub
+    End If
+
+    dataRowCount = CountDataRows(ws, lastRow, lastCol)
+    If dataRowCount = 0 Then
+        MsgBox "出力対象のデータ行がありません。完全空白行しかない可能性があります。", vbExclamation
+        Exit Sub
+    End If
+
+    baseFolder = ThisWorkbook.Path
+    outputPath = baseFolder & Application.PathSeparator & "reservations.js"
+
+    fileNo = FreeFile
+    Open outputPath For Output As #fileNo
+
+    Print #fileNo, "window.APP_DATA = window.APP_DATA || {};"
+    Print #fileNo, "window.APP_DATA.reservations = ["
+
+    exportedCount = 0
+
+    For rowIndex = 3 To lastRow
+        If Not IsRowEmpty(ws, rowIndex, lastCol) Then
+            exportedCount = exportedCount + 1
+
+            Print #fileNo, "  {"
+
+            For colIndex = 1 To lastCol
+                headerName = headers(colIndex)
+                valueText = ToJsValue(headerName, ws.Cells(rowIndex, colIndex).Value)
+
+                lineText = "    " & headerName & ": " & valueText
+                If colIndex < lastCol Then
+                    lineText = lineText & ","
+                End If
+
+                Print #fileNo, lineText
+            Next colIndex
+
+            If exportedCount < dataRowCount Then
+                Print #fileNo, "  },"
+            Else
+                Print #fileNo, "  }"
+            End If
+        End If
+    Next rowIndex
+
+    Print #fileNo, "];"
+
+    Close #fileNo
+
+    MsgBox "出力完了: " & outputPath, vbInformation
+    Exit Sub
+
+ErrHandler:
+    On Error Resume Next
+    If fileNo <> 0 Then Close #fileNo
+    MsgBox "エラーが発生しました: " & Err.Description, vbCritical
+End Sub
+
+Private Sub ValidateRequiredHeaders(ByRef headers() As String)
+    Dim requiredHeaders As Variant
+    Dim i As Long
+    Dim found As Boolean
+    Dim j As Long
+
+    requiredHeaders = Array( _
+        "reservation_id", _
+        "room_name", _
+        "start_date", _
+        "end_date", _
+        "is_all_day", _
+        "purpose", _
+        "department_name", _
+        "person_in_charge", _
+        "entered_by", _
+        "status", _
+        "display_order" _
+    )
+
+    For i = LBound(requiredHeaders) To UBound(requiredHeaders)
+        found = False
+
+        For j = LBound(headers) To UBound(headers)
+            If headers(j) = requiredHeaders(i) Then
+                found = True
+                Exit For
+            End If
+        Next j
+
+        If Not found Then
+            Err.Raise vbObjectError + 1000, , "必須列が見つかりません: " & requiredHeaders(i)
+        End If
+    Next i
+End Sub
+
+Private Function ValidateRows(ByVal ws As Worksheet, ByRef headers() As String, ByVal lastRow As Long, ByVal lastCol As Long) As String
+    Dim rowIndex As Long
+    Dim msg As String
+
+    msg = ""
+
+    For rowIndex = 3 To lastRow
+        If Not IsRowEmpty(ws, rowIndex, lastCol) Then
+            msg = msg & ValidateRequiredCellsForRow(ws, headers, rowIndex)
+            msg = msg & ValidateDateRulesForRow(ws, headers, rowIndex)
+            msg = msg & ValidateAllDayRulesForRow(ws, headers, rowIndex)
+            msg = msg & ValidateStatusForRow(ws, headers, rowIndex)
+            msg = msg & ValidateDisplayOrderForRow(ws, headers, rowIndex)
+        End If
+    Next rowIndex
+
+    ValidateRows = msg
+End Function
+
+Private Function ValidateRequiredCellsForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim requiredHeaders As Variant
+    Dim i As Long
+    Dim colIndex As Long
+    Dim cellValue As String
+    Dim msg As String
+
+    requiredHeaders = Array( _
+        "reservation_id", _
+        "room_name", _
+        "start_date", _
+        "end_date", _
+        "is_all_day", _
+        "purpose", _
+        "department_name", _
+        "person_in_charge", _
+        "entered_by", _
+        "status", _
+        "display_order" _
+    )
+
+    msg = ""
+
+    For i = LBound(requiredHeaders) To UBound(requiredHeaders)
+        colIndex = GetHeaderColumn(headers, CStr(requiredHeaders(i)))
+        cellValue = Trim(CStr(ws.Cells(rowIndex, colIndex).Value))
+
+        If cellValue = "" Then
+            msg = msg & "行 " & rowIndex & " : " & requiredHeaders(i) & " が空欄です。" & vbCrLf
+        End If
+    Next i
+
+    ValidateRequiredCellsForRow = msg
+End Function
+
+Private Function ValidateDateRulesForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim startDateText As String
+    Dim endDateText As String
+    Dim msg As String
+    Dim startDateValue As Date
+    Dim endDateValue As Date
+
+    msg = ""
+
+    startDateText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "start_date")).Value))
+    endDateText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "end_date")).Value))
+
+    If startDateText <> "" And Not IsDate(startDateText) Then
+        msg = msg & "行 " & rowIndex & " : start_date が日付として不正です。" & vbCrLf
+    End If
+
+    If endDateText <> "" And Not IsDate(endDateText) Then
+        msg = msg & "行 " & rowIndex & " : end_date が日付として不正です。" & vbCrLf
+    End If
+
+    If IsDate(startDateText) And IsDate(endDateText) Then
+        startDateValue = CDate(startDateText)
+        endDateValue = CDate(endDateText)
+
+        If endDateValue < startDateValue Then
+            msg = msg & "行 " & rowIndex & " : end_date が start_date より前です。" & vbCrLf
+        End If
+    End If
+
+    ValidateDateRulesForRow = msg
+End Function
+
+Private Function ValidateAllDayRulesForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim isAllDayText As String
+    Dim startTimeText As String
+    Dim endTimeText As String
+    Dim msg As String
+
+    msg = ""
+
+    isAllDayText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "is_all_day")).Value))
+    startTimeText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "start_time")).Value))
+    endTimeText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "end_time")).Value))
+
+    If isAllDayText <> "0" And isAllDayText <> "1" Then
+        msg = msg & "行 " & rowIndex & " : is_all_day は 0 または 1 を入力してください。" & vbCrLf
+        ValidateAllDayRulesForRow = msg
+        Exit Function
+    End If
+
+    If isAllDayText = "1" Then
+        If startTimeText <> "" Or endTimeText <> "" Then
+            msg = msg & "行 " & rowIndex & " : is_all_day = 1 の場合、start_time と end_time は空欄にしてください。" & vbCrLf
+        End If
+    ElseIf isAllDayText = "0" Then
+        If startTimeText = "" Then
+            msg = msg & "行 " & rowIndex & " : is_all_day = 0 の場合、start_time は必須です。" & vbCrLf
+        ElseIf Not IsValidTimeText(startTimeText) Then
+            msg = msg & "行 " & rowIndex & " : start_time は HH:MM 形式で入力してください。" & vbCrLf
+        End If
+
+        If endTimeText = "" Then
+            msg = msg & "行 " & rowIndex & " : is_all_day = 0 の場合、end_time は必須です。" & vbCrLf
+        ElseIf Not IsValidTimeText(endTimeText) Then
+            msg = msg & "行 " & rowIndex & " : end_time は HH:MM 形式で入力してください。" & vbCrLf
+        End If
+    End If
+
+    ValidateAllDayRulesForRow = msg
+End Function
+
+Private Function ValidateStatusForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim statusText As String
+    Dim msg As String
+
+    msg = ""
+    statusText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "status")).Value))
+
+    Select Case statusText
+        Case "承認済", "申請中", "却下", "キャンセル"
+            ' OK
+        Case Else
+            msg = msg & "行 " & rowIndex & " : status は 承認済 / 申請中 / 却下 / キャンセル のいずれかにしてください。" & vbCrLf
+    End Select
+
+    ValidateStatusForRow = msg
+End Function
+
+Private Function ValidateDisplayOrderForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim valueText As String
+    Dim msg As String
+
+    msg = ""
+    valueText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "display_order")).Value))
+
+    If valueText = "" Then
+        msg = msg & "行 " & rowIndex & " : display_order が空欄です。" & vbCrLf
+    ElseIf Not IsNumeric(valueText) Then
+        msg = msg & "行 " & rowIndex & " : display_order は数値で入力してください。" & vbCrLf
+    End If
+
+    ValidateDisplayOrderForRow = msg
+End Function
+
+Private Function GetHeaderColumn(ByRef headers() As String, ByVal targetHeader As String) As Long
+    Dim i As Long
+
+    For i = LBound(headers) To UBound(headers)
+        If headers(i) = targetHeader Then
+            GetHeaderColumn = i
+            Exit Function
+        End If
+    Next i
+
+    Err.Raise vbObjectError + 1001, , "列が見つかりません: " & targetHeader
+End Function
+
+Private Function CountDataRows(ByVal ws As Worksheet, ByVal lastRow As Long, ByVal lastCol As Long) As Long
+    Dim rowIndex As Long
+    Dim countValue As Long
+
+    countValue = 0
+
+    For rowIndex = 3 To lastRow
+        If Not IsRowEmpty(ws, rowIndex, lastCol) Then
+            countValue = countValue + 1
+        End If
+    Next rowIndex
+
+    CountDataRows = countValue
+End Function
+
+Private Function IsRowEmpty(ByVal ws As Worksheet, ByVal rowIndex As Long, ByVal lastCol As Long) As Boolean
+    Dim colIndex As Long
+    Dim cellText As String
+
+    IsRowEmpty = True
+
+    For colIndex = 1 To lastCol
+        cellText = Trim(CStr(ws.Cells(rowIndex, colIndex).Value))
+        If cellText <> "" Then
+            IsRowEmpty = False
+            Exit Function
+        End If
+    Next colIndex
+End Function
+
+Private Function ToJsValue(ByVal headerName As String, ByVal cellValue As Variant) As String
+    Dim textValue As String
+
+    textValue = Trim(CStr(cellValue))
+
+    Select Case headerName
+        Case "is_all_day", "display_order"
+            If textValue = "" Then
+                ToJsValue = "0"
+            ElseIf IsNumeric(textValue) Then
+                ToJsValue = CStr(CLng(textValue))
+            Else
+                ToJsValue = "0"
+            End If
+
+        Case "start_date", "end_date", "created_at", "updated_at"
+            If IsDate(cellValue) Then
+                ToJsValue = """" & Format(CDate(cellValue), "yyyy-mm-dd") & """"
+            Else
+                ToJsValue = """" & EscapeJsString(textValue) & """"
+            End If
+
+        Case Else
+            ToJsValue = """" & EscapeJsString(textValue) & """"
+    End Select
+End Function
+
+Private Function EscapeJsString(ByVal textValue As String) As String
+    Dim s As String
+
+    s = textValue
+    s = Replace(s, "\", "\\")
+    s = Replace(s, """", "\""")
+    s = Replace(s, vbCrLf, "\n")
+    s = Replace(s, vbCr, "\n")
+    s = Replace(s, vbLf, "\n")
+
+    EscapeJsString = s
+End Function
+
+Private Function IsValidTimeText(ByVal valueText As String) As Boolean
+    Dim s As String
+    Dim hh As Long
+    Dim mm As Long
+
+    s = Trim(valueText)
+
+    If Len(s) <> 5 Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    If Mid$(s, 3, 1) <> ":" Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    If Not IsNumeric(Left$(s, 2)) Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    If Not IsNumeric(Right$(s, 2)) Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    hh = CLng(Left$(s, 2))
+    mm = CLng(Right$(s, 2))
+
+    If hh < 0 Or hh > 23 Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    If mm < 0 Or mm > 59 Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    IsValidTimeText = True
+End Function
