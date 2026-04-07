@@ -1,0 +1,189 @@
+Option Explicit
+
+' =========================================================
+' reservations シート → yoyaku/reservations.js 出力
+' 前提
+' ・1行目 = 列名
+' ・2行目 = 説明
+' ・3行目以降 = データ
+' ・このブックを yoyaku フォルダ直下に置いて実行する想定
+'   例:
+'   yoyaku/
+'   ├─ source_reservations.xlsm
+'   └─ reservations.js
+' =========================================================
+
+Public Sub ExportReservationsJs()
+    On Error GoTo ErrHandler
+
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim rowIndex As Long
+    Dim colIndex As Long
+
+    Dim baseFolder As String
+    Dim outputPath As String
+    Dim fileNo As Integer
+
+    Dim headers() As String
+    Dim lineText As String
+    Dim valueText As String
+    Dim headerName As String
+
+    Set ws = ThisWorkbook.Worksheets("reservations")
+
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+
+    If lastRow < 3 Then
+        MsgBox "データ行がありません。3行目以降にデータを入れてください。", vbExclamation
+        Exit Sub
+    End If
+
+    ReDim headers(1 To lastCol)
+
+    ' 列名取得（1行目）
+    For colIndex = 1 To lastCol
+        headers(colIndex) = Trim(CStr(ws.Cells(1, colIndex).Value))
+        If headers(colIndex) = "" Then
+            MsgBox "1行目の列名に空欄があります。列 " & colIndex & " を確認してください。", vbExclamation
+            Exit Sub
+        End If
+    Next colIndex
+
+    ' 必須列チェック
+    ValidateRequiredHeaders headers
+
+    baseFolder = ThisWorkbook.Path
+    outputPath = baseFolder & Application.PathSeparator & "reservations.js"
+
+    fileNo = FreeFile
+    Open outputPath For Output As #fileNo
+
+    Print #fileNo, "window.APP_DATA = window.APP_DATA || {};"
+    Print #fileNo, "window.APP_DATA.reservations = ["
+
+    For rowIndex = 3 To lastRow
+        ' 完全空行はスキップ
+        If Not IsRowEmpty(ws, rowIndex, lastCol) Then
+            Print #fileNo, "  {"
+
+            For colIndex = 1 To lastCol
+                headerName = headers(colIndex)
+                valueText = ToJsValue(headerName, ws.Cells(rowIndex, colIndex).Value)
+
+                lineText = "    " & headerName & ": " & valueText
+
+                If colIndex < lastCol Then
+                    lineText = lineText & ","
+                End If
+
+                Print #fileNo, lineText
+            Next colIndex
+
+            If rowIndex < lastRow Then
+                Print #fileNo, "  },"
+            Else
+                Print #fileNo, "  }"
+            End If
+        End If
+    Next rowIndex
+
+    Print #fileNo, "];"
+
+    Close #fileNo
+
+    MsgBox "出力完了: " & outputPath, vbInformation
+    Exit Sub
+
+ErrHandler:
+    On Error Resume Next
+    If fileNo <> 0 Then Close #fileNo
+    MsgBox "エラーが発生しました: " & Err.Description, vbCritical
+End Sub
+
+Private Sub ValidateRequiredHeaders(ByRef headers() As String)
+    Dim requiredHeaders As Variant
+    Dim i As Long
+    Dim found As Boolean
+    Dim j As Long
+
+    requiredHeaders = Array( _
+        "reservation_id", _
+        "room_name", _
+        "reservation_date", _
+        "time_slot", _
+        "start_time", _
+        "end_time", _
+        "purpose", _
+        "department_name", _
+        "person_in_charge", _
+        "entered_by", _
+        "status", _
+        "display_order", _
+        "note", _
+        "created_at", _
+        "updated_at" _
+    )
+
+    For i = LBound(requiredHeaders) To UBound(requiredHeaders)
+        found = False
+
+        For j = LBound(headers) To UBound(headers)
+            If headers(j) = requiredHeaders(i) Then
+                found = True
+                Exit For
+            End If
+        Next j
+
+        If Not found Then
+            Err.Raise vbObjectError + 1000, , "必須列が見つかりません: " & requiredHeaders(i)
+        End If
+    Next i
+End Sub
+
+Private Function IsRowEmpty(ByVal ws As Worksheet, ByVal rowIndex As Long, ByVal lastCol As Long) As Boolean
+    Dim colIndex As Long
+
+    IsRowEmpty = True
+
+    For colIndex = 1 To lastCol
+        If Trim(CStr(ws.Cells(rowIndex, colIndex).Value)) <> "" Then
+            IsRowEmpty = False
+            Exit Function
+        End If
+    Next colIndex
+End Function
+
+Private Function ToJsValue(ByVal headerName As String, ByVal cellValue As Variant) As String
+    Dim textValue As String
+
+    textValue = Trim(CStr(cellValue))
+
+    If headerName = "display_order" Then
+        If textValue = "" Then
+            ToJsValue = "0"
+        ElseIf IsNumeric(cellValue) Then
+            ToJsValue = CStr(CLng(cellValue))
+        Else
+            ToJsValue = "0"
+        End If
+    Else
+        ToJsValue = """" & EscapeJsString(textValue) & """"
+    End If
+End Function
+
+Private Function EscapeJsString(ByVal textValue As String) As String
+    Dim s As String
+
+    s = textValue
+
+    s = Replace(s, "\", "\\")
+    s = Replace(s, """", "\""")
+    s = Replace(s, vbCrLf, "\n")
+    s = Replace(s, vbCr, "\n")
+    s = Replace(s, vbLf, "\n")
+
+    EscapeJsString = s
+End Function
