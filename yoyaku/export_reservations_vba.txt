@@ -11,6 +11,24 @@ Option Explicit
 '   yoyaku/
 '   ├─ source_reservations.xlsm
 '   └─ reservations.js
+'
+' 新列構成
+' reservation_id
+' room_name
+' start_date
+' end_date
+' is_all_day
+' start_time
+' end_time
+' purpose
+' department_name
+' person_in_charge
+' entered_by
+' status
+' display_order
+' note
+' created_at
+' updated_at
 ' =========================================================
 
 Public Sub ExportReservationsJs()
@@ -31,7 +49,7 @@ Public Sub ExportReservationsJs()
     Dim valueText As String
     Dim headerName As String
 
-    Dim requiredMessage As String
+    Dim validationMessage As String
     Dim dataRowCount As Long
     Dim exportedCount As Long
 
@@ -47,7 +65,7 @@ Public Sub ExportReservationsJs()
 
     ReDim headers(1 To lastCol)
 
-    ' 列名取得（1行目）
+    ' 1行目: 列名
     For colIndex = 1 To lastCol
         headers(colIndex) = Trim(CStr(ws.Cells(1, colIndex).Value))
         If headers(colIndex) = "" Then
@@ -56,13 +74,12 @@ Public Sub ExportReservationsJs()
         End If
     Next colIndex
 
-    ' 必須列の存在チェック
     ValidateRequiredHeaders headers
 
-    ' 必須列空欄チェック（3行目以降、完全空行は除外）
-    requiredMessage = ValidateRequiredCells(ws, headers, lastRow, lastCol)
-    If requiredMessage <> "" Then
-        MsgBox requiredMessage, vbExclamation
+    ' 3行目以降のみ検証（2行目は説明行なので無視）
+    validationMessage = ValidateRows(ws, headers, lastRow, lastCol)
+    If validationMessage <> "" Then
+        MsgBox validationMessage, vbExclamation
         Exit Sub
     End If
 
@@ -79,7 +96,6 @@ Public Sub ExportReservationsJs()
     dataRowCount = CountDataRows(ws, lastRow, lastCol)
 
     For rowIndex = 3 To lastRow
-        ' 2行目は自動で無視、3行目以降だけ対象
         If Not IsRowEmpty(ws, rowIndex, lastCol) Then
             exportedCount = exportedCount + 1
 
@@ -90,7 +106,6 @@ Public Sub ExportReservationsJs()
                 valueText = ToJsValue(headerName, ws.Cells(rowIndex, colIndex).Value)
 
                 lineText = "    " & headerName & ": " & valueText
-
                 If colIndex < lastCol Then
                     lineText = lineText & ","
                 End If
@@ -128,8 +143,9 @@ Private Sub ValidateRequiredHeaders(ByRef headers() As String)
     requiredHeaders = Array( _
         "reservation_id", _
         "room_name", _
-        "reservation_date", _
-        "time_slot", _
+        "start_date", _
+        "end_date", _
+        "is_all_day", _
         "purpose", _
         "department_name", _
         "person_in_charge", _
@@ -154,19 +170,38 @@ Private Sub ValidateRequiredHeaders(ByRef headers() As String)
     Next i
 End Sub
 
-Private Function ValidateRequiredCells(ByVal ws As Worksheet, ByRef headers() As String, ByVal lastRow As Long, ByVal lastCol As Long) As String
+Private Function ValidateRows(ByVal ws As Worksheet, ByRef headers() As String, ByVal lastRow As Long, ByVal lastCol As Long) As String
+    Dim rowIndex As Long
+    Dim msg As String
+
+    msg = ""
+
+    For rowIndex = 3 To lastRow
+        If Not IsRowEmpty(ws, rowIndex, lastCol) Then
+            msg = msg & ValidateRequiredCellsForRow(ws, headers, rowIndex)
+            msg = msg & ValidateDateRulesForRow(ws, headers, rowIndex)
+            msg = msg & ValidateAllDayRulesForRow(ws, headers, rowIndex)
+            msg = msg & ValidateStatusForRow(ws, headers, rowIndex)
+            msg = msg & ValidateDisplayOrderForRow(ws, headers, rowIndex)
+        End If
+    Next rowIndex
+
+    ValidateRows = msg
+End Function
+
+Private Function ValidateRequiredCellsForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
     Dim requiredHeaders As Variant
     Dim i As Long
-    Dim rowIndex As Long
     Dim colIndex As Long
-    Dim messageText As String
     Dim cellValue As String
+    Dim msg As String
 
     requiredHeaders = Array( _
         "reservation_id", _
         "room_name", _
-        "reservation_date", _
-        "time_slot", _
+        "start_date", _
+        "end_date", _
+        "is_all_day", _
         "purpose", _
         "department_name", _
         "person_in_charge", _
@@ -175,22 +210,122 @@ Private Function ValidateRequiredCells(ByVal ws As Worksheet, ByRef headers() As
         "display_order" _
     )
 
-    messageText = ""
+    msg = ""
 
-    For rowIndex = 3 To lastRow
-        If Not IsRowEmpty(ws, rowIndex, lastCol) Then
-            For i = LBound(requiredHeaders) To UBound(requiredHeaders)
-                colIndex = GetHeaderColumn(headers, CStr(requiredHeaders(i)))
-                cellValue = Trim(CStr(ws.Cells(rowIndex, colIndex).Value))
+    For i = LBound(requiredHeaders) To UBound(requiredHeaders)
+        colIndex = GetHeaderColumn(headers, CStr(requiredHeaders(i)))
+        cellValue = Trim(CStr(ws.Cells(rowIndex, colIndex).Value))
 
-                If cellValue = "" Then
-                    messageText = messageText & "行 " & rowIndex & " : " & requiredHeaders(i) & " が空欄です。" & vbCrLf
-                End If
-            Next i
+        If cellValue = "" Then
+            msg = msg & "行 " & rowIndex & " : " & requiredHeaders(i) & " が空欄です。" & vbCrLf
         End If
-    Next rowIndex
+    Next i
 
-    ValidateRequiredCells = messageText
+    ValidateRequiredCellsForRow = msg
+End Function
+
+Private Function ValidateDateRulesForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim startDateText As String
+    Dim endDateText As String
+    Dim msg As String
+    Dim startDateValue As Date
+    Dim endDateValue As Date
+
+    msg = ""
+
+    startDateText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "start_date")).Value))
+    endDateText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "end_date")).Value))
+
+    If startDateText <> "" And Not IsDate(startDateText) Then
+        msg = msg & "行 " & rowIndex & " : start_date が日付として不正です。" & vbCrLf
+    End If
+
+    If endDateText <> "" And Not IsDate(endDateText) Then
+        msg = msg & "行 " & rowIndex & " : end_date が日付として不正です。" & vbCrLf
+    End If
+
+    If IsDate(startDateText) And IsDate(endDateText) Then
+        startDateValue = CDate(startDateText)
+        endDateValue = CDate(endDateText)
+
+        If endDateValue < startDateValue Then
+            msg = msg & "行 " & rowIndex & " : end_date が start_date より前です。" & vbCrLf
+        End If
+    End If
+
+    ValidateDateRulesForRow = msg
+End Function
+
+Private Function ValidateAllDayRulesForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim isAllDayText As String
+    Dim startTimeText As String
+    Dim endTimeText As String
+    Dim msg As String
+
+    msg = ""
+
+    isAllDayText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "is_all_day")).Value))
+    startTimeText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "start_time")).Value))
+    endTimeText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "end_time")).Value))
+
+    If isAllDayText <> "0" And isAllDayText <> "1" Then
+        msg = msg & "行 " & rowIndex & " : is_all_day は 0 または 1 を入力してください。" & vbCrLf
+        ValidateAllDayRulesForRow = msg
+        Exit Function
+    End If
+
+    If isAllDayText = "1" Then
+        If startTimeText <> "" Or endTimeText <> "" Then
+            msg = msg & "行 " & rowIndex & " : is_all_day = 1 の場合、start_time と end_time は空欄にしてください。" & vbCrLf
+        End If
+    ElseIf isAllDayText = "0" Then
+        If startTimeText = "" Then
+            msg = msg & "行 " & rowIndex & " : is_all_day = 0 の場合、start_time は必須です。" & vbCrLf
+        ElseIf Not IsValidTimeText(startTimeText) Then
+            msg = msg & "行 " & rowIndex & " : start_time は HH:MM 形式で入力してください。" & vbCrLf
+        End If
+
+        If endTimeText = "" Then
+            msg = msg & "行 " & rowIndex & " : is_all_day = 0 の場合、end_time は必須です。" & vbCrLf
+        ElseIf Not IsValidTimeText(endTimeText) Then
+            msg = msg & "行 " & rowIndex & " : end_time は HH:MM 形式で入力してください。" & vbCrLf
+        End If
+    End If
+
+    ValidateAllDayRulesForRow = msg
+End Function
+
+Private Function ValidateStatusForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim statusText As String
+    Dim msg As String
+
+    msg = ""
+    statusText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "status")).Value))
+
+    Select Case statusText
+        Case "承認済", "申請中", "却下", "キャンセル"
+            ' OK
+        Case Else
+            msg = msg & "行 " & rowIndex & " : status は 承認済 / 申請中 / 却下 / キャンセル のいずれかにしてください。" & vbCrLf
+    End Select
+
+    ValidateStatusForRow = msg
+End Function
+
+Private Function ValidateDisplayOrderForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim valueText As String
+    Dim msg As String
+
+    msg = ""
+    valueText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "display_order")).Value))
+
+    If valueText = "" Then
+        msg = msg & "行 " & rowIndex & " : display_order が空欄です。" & vbCrLf
+    ElseIf Not IsNumeric(valueText) Then
+        msg = msg & "行 " & rowIndex & " : display_order は数値で入力してください。" & vbCrLf
+    End If
+
+    ValidateDisplayOrderForRow = msg
 End Function
 
 Private Function GetHeaderColumn(ByRef headers() As String, ByVal targetHeader As String) As Long
@@ -239,24 +374,32 @@ Private Function ToJsValue(ByVal headerName As String, ByVal cellValue As Varian
 
     textValue = Trim(CStr(cellValue))
 
-    If headerName = "display_order" Then
-        If textValue = "" Then
-            ToJsValue = "0"
-        ElseIf IsNumeric(cellValue) Then
-            ToJsValue = CStr(CLng(cellValue))
-        Else
-            ToJsValue = "0"
-        End If
-    Else
-        ToJsValue = """" & EscapeJsString(textValue) & """"
-    End If
+    Select Case headerName
+        Case "is_all_day", "display_order"
+            If textValue = "" Then
+                ToJsValue = "0"
+            ElseIf IsNumeric(textValue) Then
+                ToJsValue = CStr(CLng(textValue))
+            Else
+                ToJsValue = "0"
+            End If
+
+        Case "start_date", "end_date", "created_at", "updated_at"
+            If IsDate(cellValue) Then
+                ToJsValue = """" & Format(CDate(cellValue), "yyyy-mm-dd") & """"
+            Else
+                ToJsValue = """" & EscapeJsString(textValue) & """"
+            End If
+
+        Case Else
+            ToJsValue = """" & EscapeJsString(textValue) & """"
+    End Select
 End Function
 
 Private Function EscapeJsString(ByVal textValue As String) As String
     Dim s As String
 
     s = textValue
-
     s = Replace(s, "\", "\\")
     s = Replace(s, """", "\""")
     s = Replace(s, vbCrLf, "\n")
@@ -264,4 +407,47 @@ Private Function EscapeJsString(ByVal textValue As String) As String
     s = Replace(s, vbLf, "\n")
 
     EscapeJsString = s
+End Function
+
+Private Function IsValidTimeText(ByVal valueText As String) As Boolean
+    Dim s As String
+    Dim hh As Long
+    Dim mm As Long
+
+    s = Trim(valueText)
+
+    If Len(s) <> 5 Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    If Mid$(s, 3, 1) <> ":" Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    If Not IsNumeric(Left$(s, 2)) Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    If Not IsNumeric(Right$(s, 2)) Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    hh = CLng(Left$(s, 2))
+    mm = CLng(Right$(s, 2))
+
+    If hh < 0 Or hh > 23 Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    If mm < 0 Or mm > 59 Then
+        IsValidTimeText = False
+        Exit Function
+    End If
+
+    IsValidTimeText = True
 End Function
