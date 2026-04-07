@@ -8,7 +8,7 @@ window.CALENDAR_VIEW = (function () {
 
   const state = {
     currentView: "month",
-    currentDate: new Date(),
+    currentDate: null,
     selectedDate: null,
     events: []
   };
@@ -34,7 +34,11 @@ window.CALENDAR_VIEW = (function () {
     dom.monthViewButton = document.getElementById("monthViewButton");
     dom.weekViewButton = document.getElementById("weekViewButton");
     dom.currentLabel = document.getElementById("currentLabel");
+
+    dom.monthViewArea = document.getElementById("monthViewArea");
+    dom.weekViewArea = document.getElementById("weekViewArea");
     dom.calendarGrid = document.getElementById("calendarGrid");
+    dom.calendarWeekList = document.getElementById("calendarWeekList");
 
     dom.eventModal = document.getElementById("eventModal");
     dom.modalCloseButton = document.getElementById("modalCloseButton");
@@ -87,15 +91,13 @@ window.CALENDAR_VIEW = (function () {
   }
 
   function loadEvents() {
-    if (Array.isArray(window.APP_DATA.events)) {
-      state.events = window.APP_DATA.events
-        .map(normalizeEvent)
-        .filter(function (item) {
-          return !!item;
-        });
-    } else {
-      state.events = [];
-    }
+    const rawEvents = Array.isArray(window.APP_DATA.events) ? window.APP_DATA.events : [];
+
+    state.events = rawEvents
+      .map(normalizeEvent)
+      .filter(function (item) {
+        return !!item;
+      });
   }
 
   function normalizeEvent(item) {
@@ -119,7 +121,7 @@ window.CALENDAR_VIEW = (function () {
       start_time: normalizeTime(item.start_time),
       end_time: normalizeTime(item.end_time),
       is_all_day: toNumber(item.is_all_day) === 1 ? 1 : 0,
-      category: String(item.category || "OTHER").trim().toUpperCase() || "OTHER",
+      category: normalizeCategory(item.category),
       department_name: String(item.department_name || ""),
       location: String(item.location || ""),
       note: String(item.note || ""),
@@ -129,7 +131,13 @@ window.CALENDAR_VIEW = (function () {
 
   function render() {
     updateToolbar();
-    renderCalendar();
+    updateViewVisibility();
+
+    if (state.currentView === "week") {
+      renderWeekView();
+    } else {
+      renderMonthView();
+    }
   }
 
   function updateToolbar() {
@@ -148,58 +156,42 @@ window.CALENDAR_VIEW = (function () {
       dom.weekViewButton.classList.toggle("toolbar-button--active", isWeek);
       dom.weekViewButton.setAttribute("aria-pressed", String(isWeek));
     }
+  }
 
-    if (dom.calendarGrid) {
-      dom.calendarGrid.classList.toggle("calendar-grid--month", state.currentView === "month");
-      dom.calendarGrid.classList.toggle("calendar-grid--week", state.currentView === "week");
+  function updateViewVisibility() {
+    if (dom.monthViewArea) {
+      dom.monthViewArea.classList.toggle("is-hidden", state.currentView !== "month");
+    }
+
+    if (dom.weekViewArea) {
+      dom.weekViewArea.classList.toggle("is-hidden", state.currentView !== "week");
     }
   }
 
-  function renderCalendar() {
+  function renderMonthView() {
     if (!dom.calendarGrid) {
       return;
     }
 
     clearElement(dom.calendarGrid);
 
-    if (state.currentView === "week") {
-      renderWeekView();
-    } else {
-      renderMonthView();
-    }
-  }
-
-  function renderMonthView() {
     const baseDate = startOfDay(state.currentDate);
     const monthStart = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
     const gridStart = startOfWeek(monthStart);
 
     for (let i = 0; i < 42; i += 1) {
       const cellDate = addDays(gridStart, i);
-      const cell = createDateCell(cellDate, {
-        isOtherMonth: cellDate.getMonth() !== monthStart.getMonth()
-      });
+      const isOtherMonth = cellDate.getMonth() !== monthStart.getMonth();
+      const cell = createMonthCell(cellDate, isOtherMonth);
       dom.calendarGrid.appendChild(cell);
     }
   }
 
-  function renderWeekView() {
-    const weekStart = startOfWeek(state.currentDate);
-
-    for (let i = 0; i < 7; i += 1) {
-      const cellDate = addDays(weekStart, i);
-      const cell = createDateCell(cellDate, {
-        isOtherMonth: false
-      });
-      dom.calendarGrid.appendChild(cell);
-    }
-  }
-
-  function createDateCell(dateObj, options) {
+  function createMonthCell(dateObj, isOtherMonth) {
     const cell = document.createElement("div");
     cell.className = "calendar-cell";
 
-    if (options && options.isOtherMonth) {
+    if (isOtherMonth) {
       cell.classList.add("calendar-cell--other-month");
     }
 
@@ -231,8 +223,7 @@ window.CALENDAR_VIEW = (function () {
     const hiddenCount = Math.max(dayEvents.length - MAX_VISIBLE_EVENTS, 0);
 
     visibleEvents.forEach(function (eventItem) {
-      const chip = createEventChip(eventItem);
-      eventsWrap.appendChild(chip);
+      eventsWrap.appendChild(createEventChip(eventItem, true));
     });
 
     if (hiddenCount > 0) {
@@ -252,22 +243,119 @@ window.CALENDAR_VIEW = (function () {
     return cell;
   }
 
-  function createEventChip(eventItem) {
+  function renderWeekView() {
+    if (!dom.calendarWeekList) {
+      return;
+    }
+
+    clearElement(dom.calendarWeekList);
+
+    const weekStart = startOfWeek(state.currentDate);
+
+    for (let i = 0; i < 7; i += 1) {
+      const rowDate = addDays(weekStart, i);
+      const row = createWeekRow(rowDate);
+      dom.calendarWeekList.appendChild(row);
+    }
+  }
+
+  function createWeekRow(dateObj) {
+    const row = document.createElement("div");
+    row.className = "week-row";
+    row.dataset.date = formatDate(dateObj);
+
+    if (isSameDate(dateObj, new Date())) {
+      row.classList.add("week-row--today");
+    }
+
+    if (state.selectedDate && isSameDate(dateObj, state.selectedDate)) {
+      row.classList.add("week-row--selected");
+    }
+
+    const dateArea = document.createElement("div");
+    dateArea.className = "week-row__date";
+
+    const dateMain = document.createElement("div");
+    dateMain.className = "week-row__date-main";
+    dateMain.textContent = (dateObj.getMonth() + 1) + "月" + dateObj.getDate() + "日";
+
+    const dateSub = document.createElement("div");
+    dateSub.className = "week-row__date-sub";
+    dateSub.textContent = WEEKDAY_LABELS[dateObj.getDay()] + "曜日";
+
+    if (dateObj.getDay() === 0) {
+      dateSub.classList.add("week-row__date-sub--sun");
+    } else if (dateObj.getDay() === 6) {
+      dateSub.classList.add("week-row__date-sub--sat");
+    }
+
+    dateArea.appendChild(dateMain);
+    dateArea.appendChild(dateSub);
+
+    const contentArea = document.createElement("div");
+    contentArea.className = "week-row__content";
+
+    const eventsWrap = document.createElement("div");
+    eventsWrap.className = "week-row__events";
+
+    const dayEvents = getEventsForDate(dateObj);
+    const visibleEvents = dayEvents.slice(0, MAX_VISIBLE_EVENTS);
+    const hiddenCount = Math.max(dayEvents.length - MAX_VISIBLE_EVENTS, 0);
+
+    if (visibleEvents.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "week-row__empty";
+      empty.textContent = "";
+      eventsWrap.appendChild(empty);
+    } else {
+      visibleEvents.forEach(function (eventItem) {
+        eventsWrap.appendChild(createEventChip(eventItem, false));
+      });
+    }
+
+    if (hiddenCount > 0) {
+      eventsWrap.appendChild(createMoreChip(hiddenCount));
+    }
+
+    contentArea.appendChild(eventsWrap);
+
+    row.appendChild(dateArea);
+    row.appendChild(contentArea);
+
+    row.addEventListener("click", function (event) {
+      if (event.target.closest(".event-chip")) {
+        return;
+      }
+      state.selectedDate = startOfDay(dateObj);
+      render();
+    });
+
+    return row;
+  }
+
+  function createEventChip(eventItem, isMonthView) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "event-chip category-" + sanitizeCategory(eventItem.category);
     button.title = buildEventTooltip(eventItem);
 
-    const timeSpan = document.createElement("span");
-    timeSpan.className = "event-chip__time";
-    timeSpan.textContent = getEventTimeLabel(eventItem);
+    const timeLabel = getEventTimeLabel(eventItem);
+
+    if (timeLabel) {
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "event-chip__time";
+      timeSpan.textContent = timeLabel;
+      button.appendChild(timeSpan);
+    }
 
     const titleSpan = document.createElement("span");
     titleSpan.className = "event-chip__title";
     titleSpan.textContent = eventItem.title;
-
-    button.appendChild(timeSpan);
     button.appendChild(titleSpan);
+
+    if (!isMonthView && eventItem.location) {
+      button.title = buildEventTooltip(eventItem) + "\n場所: " + eventItem.location;
+    }
 
     button.addEventListener("click", function (event) {
       event.stopPropagation();
@@ -322,6 +410,7 @@ window.CALENDAR_VIEW = (function () {
         1
       );
     }
+
     syncSelectedDateToCurrentRange();
     render();
   }
@@ -336,6 +425,7 @@ window.CALENDAR_VIEW = (function () {
         1
       );
     }
+
     syncSelectedDateToCurrentRange();
     render();
   }
@@ -377,8 +467,8 @@ window.CALENDAR_VIEW = (function () {
       return;
     }
 
-    const month = state.currentDate.getMonth();
     const year = state.currentDate.getFullYear();
+    const month = state.currentDate.getMonth();
     if (
       state.selectedDate.getFullYear() !== year ||
       state.selectedDate.getMonth() !== month
@@ -389,25 +479,61 @@ window.CALENDAR_VIEW = (function () {
 
   function getCurrentLabel() {
     if (state.currentView === "week") {
-      const start = startOfWeek(state.currentDate);
-      const end = addDays(start, 6);
-      return (
-        start.getFullYear() +
-        "年" +
-        (start.getMonth() + 1) +
-        "月" +
-        start.getDate() +
-        "日 ～ " +
+      return buildWeekLabel(state.currentDate);
+    }
+    return buildMonthLabel(state.currentDate);
+  }
+
+  function buildMonthLabel(dateObj) {
+    const year = dateObj.getFullYear();
+    const wareki = toWarekiYearText(year);
+    return wareki + "年(" + year + "年)" + (dateObj.getMonth() + 1) + "月";
+  }
+
+  function buildWeekLabel(dateObj) {
+    const start = startOfWeek(dateObj);
+    const end = addDays(start, 6);
+    const year = start.getFullYear();
+    const wareki = toWarekiYearText(year);
+
+    let endText = (end.getMonth() + 1) + "月" + end.getDate() + "日";
+
+    if (start.getFullYear() !== end.getFullYear()) {
+      endText =
+        toWarekiYearText(end.getFullYear()) +
+        "年(" +
         end.getFullYear() +
-        "年" +
+        "年)" +
         (end.getMonth() + 1) +
         "月" +
         end.getDate() +
-        "日"
-      );
+        "日";
     }
 
-    return state.currentDate.getFullYear() + "年" + (state.currentDate.getMonth() + 1) + "月";
+    return (
+      wareki +
+      "年(" +
+      year +
+      "年)" +
+      (start.getMonth() + 1) +
+      "月" +
+      start.getDate() +
+      "日〜" +
+      endText
+    );
+  }
+
+  function toWarekiYearText(seirekiYear) {
+    if (seirekiYear >= 2019) {
+      return "令和" + (seirekiYear - 2018);
+    }
+    if (seirekiYear >= 1989) {
+      return "平成" + (seirekiYear - 1988);
+    }
+    if (seirekiYear >= 1926) {
+      return "昭和" + (seirekiYear - 1925);
+    }
+    return String(seirekiYear);
   }
 
   function openModal(eventItem) {
@@ -420,7 +546,7 @@ window.CALENDAR_VIEW = (function () {
     const detail = document.createElement("dl");
     detail.className = "modal-detail";
 
-    appendDetailRow(detail, "件名", eventItem.title);
+    appendDetailRow(detail, "件名", eventItem.title || "-");
     appendDetailRow(detail, "日付", buildDateLabel(eventItem));
     appendDetailRow(detail, "時間", buildTimeRangeLabel(eventItem));
     appendDetailRow(detail, "分類", eventItem.category || "-");
@@ -437,6 +563,7 @@ window.CALENDAR_VIEW = (function () {
     if (!dom.eventModal) {
       return;
     }
+
     dom.eventModal.classList.remove("is-open");
     dom.eventModal.setAttribute("aria-hidden", "true");
   }
@@ -460,7 +587,7 @@ window.CALENDAR_VIEW = (function () {
 
   function buildDateLabel(eventItem) {
     if (eventItem.date && eventItem.end_date && eventItem.date !== eventItem.end_date) {
-      return formatDateForDisplay(eventItem.date) + " ～ " + formatDateForDisplay(eventItem.end_date);
+      return formatDateForDisplay(eventItem.date) + "〜" + formatDateForDisplay(eventItem.end_date);
     }
     return formatDateForDisplay(eventItem.date);
   }
@@ -471,7 +598,7 @@ window.CALENDAR_VIEW = (function () {
     }
 
     if (eventItem.start_time && eventItem.end_time) {
-      return eventItem.start_time + " ～ " + eventItem.end_time;
+      return eventItem.start_time + "〜" + eventItem.end_time;
     }
 
     if (eventItem.start_time) {
@@ -482,20 +609,23 @@ window.CALENDAR_VIEW = (function () {
   }
 
   function buildEventTooltip(eventItem) {
-    const pieces = [];
-    pieces.push(eventItem.title);
+    const parts = [];
+
+    if (eventItem.title) {
+      parts.push(eventItem.title);
+    }
 
     const dateLabel = buildDateLabel(eventItem);
-    if (dateLabel) {
-      pieces.push(dateLabel);
+    if (dateLabel && dateLabel !== "-") {
+      parts.push(dateLabel);
     }
 
     const timeLabel = buildTimeRangeLabel(eventItem);
     if (timeLabel && timeLabel !== "-") {
-      pieces.push(timeLabel);
+      parts.push(timeLabel);
     }
 
-    return pieces.join("\n");
+    return parts.join("\n");
   }
 
   function getEventTimeLabel(eventItem) {
@@ -505,22 +635,41 @@ window.CALENDAR_VIEW = (function () {
     return eventItem.start_time || "";
   }
 
-  function sanitizeCategory(value) {
-    const safe = String(value || "OTHER").trim().toUpperCase();
-    return safe.replace(/[^A-Z0-9_-]/g, "") || "OTHER";
+  function formatDateForDisplay(value) {
+    const dateObj = typeof value === "string" ? parseDate(value) : value;
+    if (!dateObj) {
+      return "-";
+    }
+
+    return (
+      dateObj.getFullYear() +
+      "年" +
+      (dateObj.getMonth() + 1) +
+      "月" +
+      dateObj.getDate() +
+      "日" +
+      "（" +
+      WEEKDAY_LABELS[dateObj.getDay()] +
+      "）"
+    );
   }
 
   function parseDate(value) {
-    if (!value) return null;
+    if (!value) {
+      return null;
+    }
 
     const parts = String(value).split("-");
-    if (parts.length !== 3) return null;
+    if (parts.length !== 3) {
+      return null;
+    }
 
     const year = Number(parts[0]);
     const month = Number(parts[1]) - 1;
     const day = Number(parts[2]);
 
     const dateObj = new Date(year, month, day);
+
     if (
       dateObj.getFullYear() !== year ||
       dateObj.getMonth() !== month ||
@@ -533,26 +682,12 @@ window.CALENDAR_VIEW = (function () {
   }
 
   function formatDate(dateObj) {
-    const year = dateObj.getFullYear();
-    const month = pad2(dateObj.getMonth() + 1);
-    const day = pad2(dateObj.getDate());
-    return year + "-" + month + "-" + day;
-  }
-
-  function formatDateForDisplay(value) {
-    const dateObj = typeof value === "string" ? parseDate(value) : value;
-    if (!dateObj) return "-";
-
     return (
       dateObj.getFullYear() +
-      "年" +
-      (dateObj.getMonth() + 1) +
-      "月" +
-      dateObj.getDate() +
-      "日" +
-      "（" +
-      WEEKDAY_LABELS[dateObj.getDay()] +
-      "）"
+      "-" +
+      pad2(dateObj.getMonth() + 1) +
+      "-" +
+      pad2(dateObj.getDate())
     );
   }
 
@@ -573,8 +708,8 @@ window.CALENDAR_VIEW = (function () {
 
   function isSameDate(a, b) {
     return (
-      a &&
-      b &&
+      !!a &&
+      !!b &&
       a.getFullYear() === b.getFullYear() &&
       a.getMonth() === b.getMonth() &&
       a.getDate() === b.getDate()
@@ -587,6 +722,18 @@ window.CALENDAR_VIEW = (function () {
 
   function normalizeTime(value) {
     return String(value || "").trim();
+  }
+
+  function normalizeCategory(value) {
+    const safe = String(value || "OTHER").trim().toUpperCase();
+    return safe || "OTHER";
+  }
+
+  function sanitizeCategory(value) {
+    return String(value || "OTHER")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]/g, "") || "OTHER";
   }
 
   function toNumber(value) {
