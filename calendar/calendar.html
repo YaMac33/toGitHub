@@ -51,7 +51,7 @@
             class="calendar-toolbar__label"
             aria-live="polite"
           >
-            2026年4月
+            令和8年(2026年)4月
           </div>
 
           <div
@@ -78,23 +78,52 @@
           </div>
         </div>
 
-        <div class="calendar-board">
-          <div class="calendar-weekdays" aria-hidden="true">
-            <div class="calendar-weekdays__item calendar-weekdays__item--sun">日</div>
-            <div class="calendar-weekdays__item">月</div>
-            <div class="calendar-weekdays__item">火</div>
-            <div class="calendar-weekdays__item">水</div>
-            <div class="calendar-weekdays__item">木</div>
-            <div class="calendar-weekdays__item">金</div>
-            <div class="calendar-weekdays__item calendar-weekdays__item--sat">土</div>
-          </div>
+        <!-- 月表示エリア -->
+        <div
+          id="monthViewArea"
+          class="calendar-view calendar-view--month"
+          aria-label="月表示エリア"
+        >
+          <div class="calendar-board">
+            <div class="calendar-weekdays" aria-hidden="true">
+              <div class="calendar-weekdays__item calendar-weekdays__item--sun">日</div>
+              <div class="calendar-weekdays__item">月</div>
+              <div class="calendar-weekdays__item">火</div>
+              <div class="calendar-weekdays__item">水</div>
+              <div class="calendar-weekdays__item">木</div>
+              <div class="calendar-weekdays__item">金</div>
+              <div class="calendar-weekdays__item calendar-weekdays__item--sat">土</div>
+            </div>
 
-          <div
-            id="calendarGrid"
-            class="calendar-grid calendar-grid--month"
-            aria-label="カレンダー本体"
-          >
-            <!-- JSで描画 -->
+            <div
+              id="calendarGrid"
+              class="calendar-grid calendar-grid--month"
+              aria-label="月表示カレンダー本体"
+            >
+              <!-- JSで描画 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 週表示エリア -->
+        <div
+          id="weekViewArea"
+          class="calendar-view calendar-view--week is-hidden"
+          aria-label="週表示エリア"
+        >
+          <div class="week-board">
+            <div class="week-header" aria-hidden="true">
+              <div class="week-header__date">日付・曜日</div>
+              <div class="week-header__content">内容</div>
+            </div>
+
+            <div
+              id="calendarWeekList"
+              class="week-list"
+              aria-label="週表示一覧"
+            >
+              <!-- JSで描画 -->
+            </div>
           </div>
         </div>
       </section>
