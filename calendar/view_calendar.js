@@ -4,7 +4,8 @@ window.CALENDAR_VIEW = (function () {
   "use strict";
 
   const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
-  const MAX_VISIBLE_EVENTS = 3;
+  const MAX_VISIBLE_EVENTS_MONTH = 3;
+  const MAX_VISIBLE_EVENTS_WEEK = 5;
 
   const state = {
     currentView: "month",
@@ -43,6 +44,11 @@ window.CALENDAR_VIEW = (function () {
     dom.eventModal = document.getElementById("eventModal");
     dom.modalCloseButton = document.getElementById("modalCloseButton");
     dom.modalBody = document.getElementById("modalBody");
+
+    dom.dayListModal = document.getElementById("dayListModal");
+    dom.dayListModalTitle = document.getElementById("dayListModalTitle");
+    dom.dayListModalBody = document.getElementById("dayListModalBody");
+    dom.dayListModalCloseButton = document.getElementById("dayListModalCloseButton");
   }
 
   function bindEvents() {
@@ -83,9 +89,23 @@ window.CALENDAR_VIEW = (function () {
       });
     }
 
+    if (dom.dayListModalCloseButton) {
+      dom.dayListModalCloseButton.addEventListener("click", closeDayListModal);
+    }
+
+    if (dom.dayListModal) {
+      dom.dayListModal.addEventListener("click", function (event) {
+        const target = event.target;
+        if (target && target.getAttribute("data-close-day-list-modal") === "true") {
+          closeDayListModal();
+        }
+      });
+    }
+
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape") {
         closeModal();
+        closeDayListModal();
       }
     });
   }
@@ -219,15 +239,15 @@ window.CALENDAR_VIEW = (function () {
     eventsWrap.className = "calendar-cell__events";
 
     const dayEvents = getEventsForDate(dateObj);
-    const visibleEvents = dayEvents.slice(0, MAX_VISIBLE_EVENTS);
-    const hiddenCount = Math.max(dayEvents.length - MAX_VISIBLE_EVENTS, 0);
+    const visibleEvents = dayEvents.slice(0, MAX_VISIBLE_EVENTS_MONTH);
+    const hiddenCount = Math.max(dayEvents.length - MAX_VISIBLE_EVENTS_MONTH, 0);
 
     visibleEvents.forEach(function (eventItem) {
-      eventsWrap.appendChild(createEventChip(eventItem, true));
+      eventsWrap.appendChild(createEventChip(eventItem, "month"));
     });
 
     if (hiddenCount > 0) {
-      eventsWrap.appendChild(createMoreChip(hiddenCount));
+      eventsWrap.appendChild(createMoreChip(hiddenCount, dateObj));
     }
 
     cell.appendChild(eventsWrap);
@@ -299,8 +319,8 @@ window.CALENDAR_VIEW = (function () {
     eventsWrap.className = "week-row__events";
 
     const dayEvents = getEventsForDate(dateObj);
-    const visibleEvents = dayEvents.slice(0, MAX_VISIBLE_EVENTS);
-    const hiddenCount = Math.max(dayEvents.length - MAX_VISIBLE_EVENTS, 0);
+    const visibleEvents = dayEvents.slice(0, MAX_VISIBLE_EVENTS_WEEK);
+    const hiddenCount = Math.max(dayEvents.length - MAX_VISIBLE_EVENTS_WEEK, 0);
 
     if (visibleEvents.length === 0) {
       const empty = document.createElement("div");
@@ -309,12 +329,12 @@ window.CALENDAR_VIEW = (function () {
       eventsWrap.appendChild(empty);
     } else {
       visibleEvents.forEach(function (eventItem) {
-        eventsWrap.appendChild(createEventChip(eventItem, false));
+        eventsWrap.appendChild(createEventChip(eventItem, "week"));
       });
     }
 
     if (hiddenCount > 0) {
-      eventsWrap.appendChild(createMoreChip(hiddenCount));
+      eventsWrap.appendChild(createMoreChip(hiddenCount, dateObj));
     }
 
     contentArea.appendChild(eventsWrap);
@@ -333,12 +353,27 @@ window.CALENDAR_VIEW = (function () {
     return row;
   }
 
-  function createEventChip(eventItem, isMonthView) {
+  function createEventChip(eventItem, viewMode) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "event-chip category-" + sanitizeCategory(eventItem.category);
     button.title = buildEventTooltip(eventItem);
 
+    if (viewMode === "week") {
+      button.appendChild(createWeekEventContent(eventItem));
+    } else {
+      appendMonthEventContent(button, eventItem);
+    }
+
+    button.addEventListener("click", function (event) {
+      event.stopPropagation();
+      openModal(eventItem);
+    });
+
+    return button;
+  }
+
+  function appendMonthEventContent(button, eventItem) {
     const timeLabel = getEventTimeLabel(eventItem);
 
     if (timeLabel) {
@@ -352,24 +387,85 @@ window.CALENDAR_VIEW = (function () {
     titleSpan.className = "event-chip__title";
     titleSpan.textContent = eventItem.title;
     button.appendChild(titleSpan);
+  }
 
-    if (!isMonthView && eventItem.location) {
-      button.title = buildEventTooltip(eventItem) + "\n場所: " + eventItem.location;
+  function createWeekEventContent(eventItem) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "week-row__event-line";
+
+    const timeSpan = document.createElement("span");
+    timeSpan.className = "week-row__event-time";
+    timeSpan.textContent = buildWeekEventTime(eventItem);
+    wrapper.appendChild(timeSpan);
+
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "week-row__event-title";
+    titleSpan.textContent = eventItem.title;
+    wrapper.appendChild(titleSpan);
+
+    const metaText = buildWeekEventMeta(eventItem);
+    if (metaText) {
+      const metaSpan = document.createElement("span");
+      metaSpan.className = "week-row__event-meta";
+      metaSpan.textContent = " / " + metaText;
+      wrapper.appendChild(metaSpan);
     }
+
+    return wrapper;
+  }
+
+  function buildWeekEventTime(eventItem) {
+    if (eventItem.is_all_day === 1) {
+      return "終日";
+    }
+
+    if (eventItem.start_time && eventItem.end_time) {
+      return eventItem.start_time + "〜" + eventItem.end_time;
+    }
+
+    if (eventItem.start_time) {
+      return eventItem.start_time;
+    }
+
+    return "";
+  }
+
+  function buildWeekEventMeta(eventItem) {
+    const parts = [];
+
+    if (eventItem.location) {
+      parts.push(eventItem.location);
+    }
+
+    if (eventItem.department_name && shouldShowDepartmentName(eventItem)) {
+      parts.push(eventItem.department_name);
+    }
+
+    return parts.join(" / ");
+  }
+
+  function shouldShowDepartmentName(eventItem) {
+    if (!eventItem.department_name) {
+      return false;
+    }
+
+    const title = String(eventItem.title || "");
+    return title.indexOf(eventItem.department_name) === -1;
+  }
+
+  function createMoreChip(hiddenCount, dateObj) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "event-chip event-chip--more";
+    button.textContent = "他" + hiddenCount + "件";
+    button.title = formatDateForDisplay(dateObj) + " の残りの予定を見る";
 
     button.addEventListener("click", function (event) {
       event.stopPropagation();
-      openModal(eventItem);
+      openDayListModal(dateObj);
     });
 
     return button;
-  }
-
-  function createMoreChip(hiddenCount) {
-    const div = document.createElement("div");
-    div.className = "event-chip event-chip--more";
-    div.textContent = "他" + hiddenCount + "件";
-    return div;
   }
 
   function getEventsForDate(dateObj) {
@@ -568,6 +664,78 @@ window.CALENDAR_VIEW = (function () {
     dom.eventModal.setAttribute("aria-hidden", "true");
   }
 
+  function openDayListModal(dateObj) {
+    if (!dom.dayListModal || !dom.dayListModalTitle || !dom.dayListModalBody) {
+      return;
+    }
+
+    const dayEvents = getEventsForDate(dateObj);
+    clearElement(dom.dayListModalBody);
+
+    dom.dayListModalTitle.textContent = formatDateForDisplay(dateObj) + " の予定一覧";
+
+    const list = document.createElement("div");
+    list.className = "day-list";
+
+    if (dayEvents.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "day-list__empty";
+      empty.textContent = "予定はありません。";
+      list.appendChild(empty);
+    } else {
+      dayEvents.forEach(function (eventItem) {
+        list.appendChild(createDayListItem(eventItem));
+      });
+    }
+
+    dom.dayListModalBody.appendChild(list);
+    dom.dayListModal.classList.add("is-open");
+    dom.dayListModal.setAttribute("aria-hidden", "false");
+  }
+
+  function createDayListItem(eventItem) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "day-list__item";
+
+    const line1 = document.createElement("div");
+    line1.className = "day-list__item-line1";
+
+    const time = document.createElement("span");
+    time.className = "day-list__item-time";
+    time.textContent = buildWeekEventTime(eventItem) || "-";
+    line1.appendChild(time);
+
+    const title = document.createElement("span");
+    title.className = "day-list__item-title";
+    title.textContent = eventItem.title || "-";
+    line1.appendChild(title);
+
+    const metaText = buildWeekEventMeta(eventItem);
+    const line2 = document.createElement("div");
+    line2.className = "day-list__item-line2";
+    line2.textContent = metaText || "";
+
+    button.appendChild(line1);
+    button.appendChild(line2);
+
+    button.addEventListener("click", function () {
+      closeDayListModal();
+      openModal(eventItem);
+    });
+
+    return button;
+  }
+
+  function closeDayListModal() {
+    if (!dom.dayListModal) {
+      return;
+    }
+
+    dom.dayListModal.classList.remove("is-open");
+    dom.dayListModal.setAttribute("aria-hidden", "true");
+  }
+
   function appendDetailRow(container, label, value) {
     const row = document.createElement("div");
     row.className = "modal-detail__row";
@@ -623,6 +791,10 @@ window.CALENDAR_VIEW = (function () {
     const timeLabel = buildTimeRangeLabel(eventItem);
     if (timeLabel && timeLabel !== "-") {
       parts.push(timeLabel);
+    }
+
+    if (eventItem.location) {
+      parts.push("場所: " + eventItem.location);
     }
 
     return parts.join("\n");

@@ -154,6 +154,40 @@
         </button>
       </div>
 
+      <!-- 1) 既存の予定詳細モーダルの後ろに、以下を追加 -->
+
+  <!-- 日別一覧モーダル -->
+  <div
+    id="dayListModal"
+    class="modal"
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dayListModalTitle"
+  >
+    <div class="modal__backdrop" data-close-day-list-modal="true"></div>
+
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <h2 id="dayListModalTitle" class="modal__title">日別予定一覧</h2>
+        <button
+          type="button"
+          id="dayListModalCloseButton"
+          class="modal__close"
+          aria-label="閉じる"
+        >
+          ×
+        </button>
+      </div>
+
+      <div id="dayListModalBody" class="modal__body">
+        <div class="day-list">
+          <!-- JSで描画 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
       <div id="modalBody" class="modal__body">
         <dl class="modal-detail">
           <div class="modal-detail__row">

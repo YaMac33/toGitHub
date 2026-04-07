@@ -661,3 +661,110 @@ button {
     gap: 4px;
   }
 }
+
+/* 週表示のイベントを少し詳しく見せるための追加 */
+.week-row__event-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.week-row__event-time {
+  font-weight: 700;
+  color: #111827;
+}
+
+.week-row__event-title {
+  color: #111827;
+  word-break: break-word;
+}
+
+.week-row__event-meta {
+  color: #64748b;
+  font-size: 12px;
+  word-break: break-word;
+}
+
+/* 「他〇件」をクリック可能にする見た目 */
+.event-chip--more {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+}
+
+/* 日別一覧モーダル用 */
+.day-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.day-list__empty {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.day-list__item {
+  width: 100%;
+  appearance: none;
+  border: 1px solid #dbe3f0;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.day-list__item:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.day-list__item:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.day-list__item-line1 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.day-list__item-time {
+  font-weight: 700;
+  color: #111827;
+}
+
+.day-list__item-title {
+  color: #111827;
+  word-break: break-word;
+}
+
+.day-list__item-line2 {
+  font-size: 13px;
+  color: #64748b;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .day-list__item {
+    padding: 9px 10px;
+  }
+
+  .day-list__item-line1 {
+    gap: 6px;
+  }
+
+  .day-list__item-line2 {
+    font-size: 12px;
+  }
+}
