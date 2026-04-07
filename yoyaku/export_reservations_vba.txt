@@ -6,13 +6,15 @@ Option Explicit
 ' ・1行目 = 列名
 ' ・2行目 = 説明
 ' ・3行目以降 = データ
+' ・完全空白行は自動スキップ
 ' ・このブックを yoyaku フォルダ直下に置いて実行する想定
-'   例:
-'   yoyaku/
-'   ├─ source_reservations.xlsm
-'   └─ reservations.js
 '
-' 新列構成
+' 例:
+' yoyaku/
+' ├─ source_reservations.xlsm
+' └─ reservations.js
+'
+' 列構成
 ' reservation_id
 ' room_name
 ' start_date
@@ -77,9 +79,16 @@ Public Sub ExportReservationsJs()
     ValidateRequiredHeaders headers
 
     ' 3行目以降のみ検証（2行目は説明行なので無視）
+    ' 完全空白行は自動スキップ
     validationMessage = ValidateRows(ws, headers, lastRow, lastCol)
     If validationMessage <> "" Then
         MsgBox validationMessage, vbExclamation
+        Exit Sub
+    End If
+
+    dataRowCount = CountDataRows(ws, lastRow, lastCol)
+    If dataRowCount = 0 Then
+        MsgBox "出力対象のデータ行がありません。完全空白行しかない可能性があります。", vbExclamation
         Exit Sub
     End If
 
@@ -93,7 +102,6 @@ Public Sub ExportReservationsJs()
     Print #fileNo, "window.APP_DATA.reservations = ["
 
     exportedCount = 0
-    dataRowCount = CountDataRows(ws, lastRow, lastCol)
 
     For rowIndex = 3 To lastRow
         If Not IsRowEmpty(ws, rowIndex, lastCol) Then
@@ -358,11 +366,13 @@ End Function
 
 Private Function IsRowEmpty(ByVal ws As Worksheet, ByVal rowIndex As Long, ByVal lastCol As Long) As Boolean
     Dim colIndex As Long
+    Dim cellText As String
 
     IsRowEmpty = True
 
     For colIndex = 1 To lastCol
-        If Trim(CStr(ws.Cells(rowIndex, colIndex).Value)) <> "" Then
+        cellText = Trim(CStr(ws.Cells(rowIndex, colIndex).Value))
+        If cellText <> "" Then
             IsRowEmpty = False
             Exit Function
         End If
