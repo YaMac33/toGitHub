@@ -768,3 +768,48 @@ button {
     font-size: 12px;
   }
 }
+
+.category-WORK {
+  border-left-color: #64748b;
+  background: #f8fafc;
+}
+
+.category-MEETING {
+  border-left-color: #2563eb;
+  background: #eff6ff;
+}
+
+.category-TASK {
+  border-left-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.category-DEADLINE {
+  border-left-color: #dc2626;
+  background: #fef2f2;
+}
+
+.category-VISIT {
+  border-left-color: #ea580c;
+  background: #fff7ed;
+}
+
+.category-RESERVE {
+  border-left-color: #7c3aed;
+  background: #f5f3ff;
+}
+
+.category-HOLIDAY {
+  border-left-color: #db2777;
+  background: #fdf2f8;
+}
+
+.category-ABSENCE {
+  border-left-color: #0891b2;
+  background: #ecfeff;
+}
+
+.category-OTHER {
+  border-left-color: #64748b;
+  background: #f8fafc;
+}
