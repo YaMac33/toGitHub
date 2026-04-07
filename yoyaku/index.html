@@ -14,11 +14,34 @@
       --muted: #6b7280;
       --accent: #2563eb;
       --accent-soft: #eff6ff;
-      --am-bg: #f8fafc;
-      --pm-bg: #fff7ed;
-      --empty: #9ca3af;
+      --sat-bg: #eff6ff;
+      --sun-bg: #fef2f2;
       --danger: #b91c1c;
       --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+
+      --label-single-bg: #eef2ff;
+      --label-single-text: #3730a3;
+
+      --label-start-bg: #dcfce7;
+      --label-start-text: #166534;
+
+      --label-continue-bg: #f3f4f6;
+      --label-continue-text: #374151;
+
+      --label-end-bg: #fee2e2;
+      --label-end-text: #991b1b;
+
+      --status-approved-bg: #ecfdf5;
+      --status-approved-text: #166534;
+
+      --status-pending-bg: #fff7ed;
+      --status-pending-text: #9a3412;
+
+      --status-rejected-bg: #fef2f2;
+      --status-rejected-text: #991b1b;
+
+      --status-cancelled-bg: #f3f4f6;
+      --status-cancelled-text: #4b5563;
     }
 
     * {
@@ -84,7 +107,7 @@
     }
 
     .month-label {
-      min-width: 170px;
+      min-width: 220px;
       text-align: center;
       font-size: 20px;
       font-weight: 700;
@@ -114,8 +137,8 @@
     }
 
     .btn-primary:hover {
-      opacity: 0.92;
       color: #fff;
+      opacity: 0.92;
     }
 
     .field {
@@ -208,6 +231,16 @@
       color: var(--muted);
     }
 
+    .is-saturday .date-cell,
+    .is-saturday .room-cell {
+      background: var(--sat-bg);
+    }
+
+    .is-sunday .date-cell,
+    .is-sunday .room-cell {
+      background: var(--sun-bg);
+    }
+
     .room-cell {
       padding: 10px;
     }
@@ -224,87 +257,110 @@
       border-radius: 12px;
     }
 
-    .room-click:hover .slot-block {
+    .room-click:hover .room-stack {
       border-color: var(--accent);
     }
 
-    .slot-block {
+    .room-stack {
       border: 1px solid var(--line);
       border-radius: 12px;
       overflow: hidden;
-      background: #fff;
-    }
-
-    .slot-half {
+      background: rgba(255,255,255,0.88);
+      min-height: 168px;
       padding: 10px;
-      min-height: 108px;
-    }
-
-    .slot-half + .slot-half {
-      border-top: 1px dashed var(--line);
-    }
-
-    .slot-half.am {
-      background: var(--am-bg);
-    }
-
-    .slot-half.pm {
-      background: var(--pm-bg);
-    }
-
-    .slot-label {
-      display: inline-block;
-      margin-bottom: 8px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      background: #e5e7eb;
-      color: #374151;
-    }
-
-    .slot-item-list {
       display: grid;
-      gap: 6px;
+      gap: 8px;
     }
 
-    .slot-item {
-      font-size: 13px;
-      line-height: 1.5;
-      color: #111827;
-      padding-left: 0;
+    .room-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 10px 10px 9px;
+      background: #fff;
+      line-height: 1.45;
       word-break: break-word;
     }
 
-    .slot-item-time {
+    .room-item-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .kind-badge,
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
       font-weight: 700;
-      margin-right: 6px;
+      line-height: 1.4;
     }
 
-    .slot-empty {
+    .kind-single {
+      background: var(--label-single-bg);
+      color: var(--label-single-text);
+    }
+
+    .kind-start {
+      background: var(--label-start-bg);
+      color: var(--label-start-text);
+    }
+
+    .kind-continue {
+      background: var(--label-continue-bg);
+      color: var(--label-continue-text);
+    }
+
+    .kind-end {
+      background: var(--label-end-bg);
+      color: var(--label-end-text);
+    }
+
+    .status-approved {
+      background: var(--status-approved-bg);
+      color: var(--status-approved-text);
+    }
+
+    .status-pending {
+      background: var(--status-pending-bg);
+      color: var(--status-pending-text);
+    }
+
+    .status-rejected {
+      background: var(--status-rejected-bg);
+      color: var(--status-rejected-text);
+    }
+
+    .status-cancelled {
+      background: var(--status-cancelled-bg);
+      color: var(--status-cancelled-text);
+    }
+
+    .room-item-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .room-item-sub {
       font-size: 12px;
-      color: var(--empty);
-      line-height: 1.5;
+      color: #374151;
     }
 
-    .note-line {
-      display: block;
-      margin-top: 2px;
+    .room-item-note {
+      margin-top: 4px;
       font-size: 12px;
       color: var(--muted);
     }
 
-    .status-badge {
-      display: inline-block;
-      margin-left: 6px;
-      padding: 1px 6px;
-      border-radius: 999px;
-      font-size: 11px;
-      line-height: 1.4;
-      background: #eef2ff;
-      color: #3730a3;
-      vertical-align: middle;
+    .slot-empty {
+      font-size: 12px;
+      color: #9ca3af;
+      align-self: start;
     }
 
     .empty-message {
@@ -329,19 +385,33 @@
       gap: 8px;
     }
 
-    .legend-box {
+    .legend-pill {
+      display: inline-block;
+      min-width: 36px;
+      text-align: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #374151;
+    }
+
+    .legend-sat,
+    .legend-sun {
       width: 16px;
       height: 16px;
-      border: 1px solid var(--line);
       border-radius: 4px;
+      border: 1px solid var(--line);
     }
 
-    .legend-am {
-      background: var(--am-bg);
+    .legend-sat {
+      background: var(--sat-bg);
     }
 
-    .legend-pm {
-      background: var(--pm-bg);
+    .legend-sun {
+      background: var(--sun-bg);
     }
 
     .modal-overlay {
@@ -413,35 +483,24 @@
       gap: 16px;
     }
 
-    .modal-section {
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    .modal-section-head {
-      padding: 12px 14px;
-      font-weight: 700;
-      background: #f9fafb;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .modal-section-body {
-      padding: 14px;
-      display: grid;
-      gap: 12px;
-    }
-
     .detail-card {
       border: 1px solid #e5e7eb;
       border-radius: 12px;
-      padding: 12px;
+      padding: 14px;
       background: #fff;
     }
 
+    .detail-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
     .detail-title {
-      margin: 0 0 8px;
-      font-size: 16px;
+      margin: 0;
+      font-size: 17px;
       line-height: 1.4;
     }
 
@@ -489,8 +548,8 @@
         min-width: 210px;
       }
 
-      .slot-half {
-        min-height: 96px;
+      .room-stack {
+        min-height: 140px;
       }
     }
   </style>
@@ -527,12 +586,28 @@
 
       <div class="legend">
         <div class="legend-item">
-          <span class="legend-box legend-am"></span>
-          <span>AM</span>
+          <span class="legend-pill kind-start">開始</span>
+          <span>開始日</span>
         </div>
         <div class="legend-item">
-          <span class="legend-box legend-pm"></span>
-          <span>PM</span>
+          <span class="legend-pill kind-continue">継続</span>
+          <span>期間中</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-pill kind-end">終了</span>
+          <span>終了日</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-pill kind-single">当日</span>
+          <span>単日予約</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-sat"></span>
+          <span>土曜</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-sun"></span>
+          <span>日曜</span>
         </div>
         <div class="legend-item">
           <span>セルをクリックすると詳細を表示</span>
@@ -622,8 +697,11 @@
 
         document.getElementById("modal-close-btn").addEventListener("click", closeModal);
         document.getElementById("modal-close-footer-btn").addEventListener("click", closeModal);
+
         modalOverlayEl.addEventListener("click", function (event) {
-          if (event.target === modalOverlayEl) closeModal();
+          if (event.target === modalOverlayEl) {
+            closeModal();
+          }
         });
 
         document.addEventListener("keydown", function (event) {
@@ -636,14 +714,14 @@
       }
 
       function getInitialMonthDate() {
-        if (allReservations.length > 0) {
-          const firstValid = allReservations.find(function (item) {
-            return isValidDateString(item.reservation_date);
-          });
-          if (firstValid) {
-            return parseDateString(firstValid.reservation_date);
-          }
+        const firstValid = allReservations.find(function (item) {
+          return isValidDateString(item.start_date);
+        });
+
+        if (firstValid) {
+          return parseDateString(firstValid.start_date);
         }
+
         return new Date();
       }
 
@@ -679,42 +757,52 @@
 
       function render() {
         const wareki = getWareki(state.currentYear);
-monthLabelEl.textContent =
-  wareki + "(" + state.currentYear + "年)" + (state.currentMonth + 1) + "月";
+        monthLabelEl.textContent = wareki + "(" + state.currentYear + "年)" + (state.currentMonth + 1) + "月";
+
         bodyEl.innerHTML = "";
 
         const days = getDaysInMonth(state.currentYear, state.currentMonth);
-        const filteredReservations = filterReservationsForCurrentView();
+        const reservationsForView = filterReservationsForCurrentView();
 
         for (let day = 1; day <= days; day += 1) {
           const dateObj = new Date(state.currentYear, state.currentMonth, day);
           const dateStr = toDateString(dateObj);
-          const row = buildRow(dateObj, dateStr, filteredReservations);
-          bodyEl.appendChild(row);
+          bodyEl.appendChild(buildRow(dateObj, dateStr, reservationsForView));
         }
 
-        const hasAny = filteredReservations.length > 0;
-        emptyMessageEl.hidden = hasAny;
+        emptyMessageEl.hidden = reservationsForView.length > 0;
       }
 
       function filterReservationsForCurrentView() {
-        return allReservations.filter(function (item) {
-          if (!isValidDateString(item.reservation_date)) return false;
+        const firstDay = new Date(state.currentYear, state.currentMonth, 1);
+        const lastDay = new Date(state.currentYear, state.currentMonth + 1, 0);
+        const firstStr = toDateString(firstDay);
+        const lastStr = toDateString(lastDay);
 
-          const date = parseDateString(item.reservation_date);
-          if (date.getFullYear() !== state.currentYear) return false;
-          if (date.getMonth() !== state.currentMonth) return false;
+        return allReservations.filter(function (item) {
+          if (!isValidDateString(item.start_date) || !isValidDateString(item.end_date)) {
+            return false;
+          }
 
           if (state.statusFilter !== "all" && String(item.status || "") !== state.statusFilter) {
             return false;
           }
 
-          return true;
+          const start = String(item.start_date || "");
+          const end = String(item.end_date || "");
+
+          return !(end < firstStr || start > lastStr);
         });
       }
 
       function buildRow(dateObj, dateStr, reservations) {
         const tr = document.createElement("tr");
+
+        if (dateObj.getDay() === 6) {
+          tr.classList.add("is-saturday");
+        } else if (dateObj.getDay() === 0) {
+          tr.classList.add("is-sunday");
+        }
 
         const dateTd = document.createElement("td");
         dateTd.className = "date-cell";
@@ -727,9 +815,13 @@ monthLabelEl.textContent =
           const td = document.createElement("td");
           td.className = "room-cell";
 
-          const roomReservations = reservations.filter(function (item) {
-            return item.reservation_date === dateStr && String(item.room_name || "") === roomName;
-          });
+          const roomReservations = reservations
+            .filter(function (item) {
+              return String(item.room_name || "") === roomName && isReservationActiveOnDate(item, dateStr);
+            })
+            .map(function (item) {
+              return buildDisplayReservation(item, dateStr);
+            });
 
           td.appendChild(buildRoomCellButton(dateStr, roomName, roomReservations));
           tr.appendChild(td);
@@ -747,106 +839,81 @@ monthLabelEl.textContent =
         });
 
         const wrapper = document.createElement("div");
-        wrapper.className = "slot-block";
+        wrapper.className = "room-stack";
 
-        const amReservations = sortReservations(roomReservations.filter(function (item) {
-          return String(item.time_slot || "").toUpperCase() === "AM";
-        }));
-
-        const pmReservations = sortReservations(roomReservations.filter(function (item) {
-          return String(item.time_slot || "").toUpperCase() === "PM";
-        }));
-
-        wrapper.appendChild(buildHalfBlock("AM", "am", amReservations));
-        wrapper.appendChild(buildHalfBlock("PM", "pm", pmReservations));
+        if (roomReservations.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "slot-empty";
+          empty.textContent = "（なし）";
+          wrapper.appendChild(empty);
+        } else {
+          sortDisplayReservations(roomReservations).forEach(function (item) {
+            wrapper.appendChild(buildRoomItem(item));
+          });
+        }
 
         button.appendChild(wrapper);
         return button;
       }
 
-      function buildHalfBlock(label, className, items) {
-        const half = document.createElement("div");
-        half.className = "slot-half " + className;
+      function buildRoomItem(item) {
+        const card = document.createElement("div");
+        card.className = "room-item";
 
-        const labelEl = document.createElement("div");
-        labelEl.className = "slot-label";
-        labelEl.textContent = label;
-        half.appendChild(labelEl);
+        const head = document.createElement("div");
+        head.className = "room-item-head";
 
-        const list = document.createElement("div");
-        list.className = "slot-item-list";
+        const kindBadge = document.createElement("span");
+        kindBadge.className = "kind-badge " + getKindClass(item.displayKind);
+        kindBadge.textContent = getKindLabel(item.displayKind);
+        head.appendChild(kindBadge);
 
-        if (items.length === 0) {
-          const empty = document.createElement("div");
-          empty.className = "slot-empty";
-          empty.textContent = "（なし）";
-          list.appendChild(empty);
-        } else {
-          items.forEach(function (item) {
-            list.appendChild(buildSlotItem(item));
-          });
+        if (state.statusFilter === "all") {
+          const statusBadge = document.createElement("span");
+          statusBadge.className = "status-badge " + getStatusClass(item.status);
+          statusBadge.textContent = item.status || "";
+          head.appendChild(statusBadge);
         }
 
-        half.appendChild(list);
-        return half;
-      }
+        card.appendChild(head);
 
-      function buildSlotItem(item) {
-        const div = document.createElement("div");
-        div.className = "slot-item";
+        const title = document.createElement("div");
+        title.className = "room-item-title";
+        title.textContent = item.purpose || "";
+        card.appendChild(title);
 
-        const timeText = buildTimeText(item.start_time, item.end_time);
-        let html = "";
-
-        if (timeText) {
-          html += '<span class="slot-item-time">' + escapeHtml(timeText) + "</span>";
-        }
-
-        html += escapeHtml(String(item.purpose || ""));
-
-        if (state.statusFilter === "all" && String(item.status || "")) {
-          html += '<span class="status-badge">' + escapeHtml(String(item.status || "")) + "</span>";
-        }
+        const sub = document.createElement("div");
+        sub.className = "room-item-sub";
+        sub.textContent = item.displayTimeText;
+        card.appendChild(sub);
 
         if (item.note) {
-          html += '<span class="note-line">※' + escapeHtml(String(item.note)) + "</span>";
+          const note = document.createElement("div");
+          note.className = "room-item-note";
+          note.textContent = "※" + item.note;
+          card.appendChild(note);
         }
 
-        div.innerHTML = html;
-        return div;
-      }
-
-      function sortReservations(items) {
-        return items.slice().sort(function (a, b) {
-          const orderA = toNumber(a.display_order, 9999);
-          const orderB = toNumber(b.display_order, 9999);
-          if (orderA !== orderB) return orderA - orderB;
-
-          const startA = String(a.start_time || "");
-          const startB = String(b.start_time || "");
-          if (startA !== startB) return startA.localeCompare(startB);
-
-          const purposeA = String(a.purpose || "");
-          const purposeB = String(b.purpose || "");
-          return purposeA.localeCompare(purposeB, "ja");
-        });
+        return card;
       }
 
       function openModal(dateStr, roomName, roomReservations) {
-        const sorted = sortReservations(roomReservations);
-        const amReservations = sorted.filter(function (item) {
-          return String(item.time_slot || "").toUpperCase() === "AM";
-        });
-        const pmReservations = sorted.filter(function (item) {
-          return String(item.time_slot || "").toUpperCase() === "PM";
-        });
+        const sorted = sortDisplayReservations(roomReservations);
 
         modalTitleEl.textContent = roomName;
         modalSubtitleEl.textContent = dateStr;
         modalBodyEl.innerHTML = "";
 
-        modalBodyEl.appendChild(buildModalSection("AM", amReservations));
-        modalBodyEl.appendChild(buildModalSection("PM", pmReservations));
+        if (sorted.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "modal-empty";
+          empty.textContent = "予約はありません。";
+          modalBodyEl.appendChild(empty);
+        } else {
+          sorted.forEach(function (item) {
+            modalBodyEl.appendChild(buildDetailCard(item));
+          });
+        }
 
         modalOverlayEl.classList.add("is-open");
         modalOverlayEl.setAttribute("aria-hidden", "false");
@@ -857,49 +924,39 @@ monthLabelEl.textContent =
         modalOverlayEl.setAttribute("aria-hidden", "true");
       }
 
-      function buildModalSection(label, items) {
-        const section = document.createElement("section");
-        section.className = "modal-section";
-
-        const head = document.createElement("div");
-        head.className = "modal-section-head";
-        head.textContent = label;
-        section.appendChild(head);
-
-        const body = document.createElement("div");
-        body.className = "modal-section-body";
-
-        if (items.length === 0) {
-          const empty = document.createElement("div");
-          empty.className = "modal-empty";
-          empty.textContent = "予約はありません。";
-          body.appendChild(empty);
-        } else {
-          items.forEach(function (item) {
-            body.appendChild(buildDetailCard(item));
-          });
-        }
-
-        section.appendChild(body);
-        return section;
-      }
-
       function buildDetailCard(item) {
         const card = document.createElement("div");
         card.className = "detail-card";
 
+        const head = document.createElement("div");
+        head.className = "detail-head";
+
+        const kindBadge = document.createElement("span");
+        kindBadge.className = "kind-badge " + getKindClass(item.displayKind);
+        kindBadge.textContent = getKindLabel(item.displayKind);
+        head.appendChild(kindBadge);
+
+        const statusBadge = document.createElement("span");
+        statusBadge.className = "status-badge " + getStatusClass(item.status);
+        statusBadge.textContent = item.status || "";
+        head.appendChild(statusBadge);
+
+        card.appendChild(head);
+
         const title = document.createElement("h3");
         title.className = "detail-title";
-        title.textContent = buildDetailTitle(item);
+        title.textContent = item.purpose || "";
         card.appendChild(title);
 
         const meta = document.createElement("div");
         meta.className = "detail-meta";
         meta.innerHTML =
+          '<div><strong>表示:</strong> ' + escapeHtml(item.displayTimeText) + '</div>' +
+          '<div><strong>期間:</strong> ' + escapeHtml(item.start_date + " ～ " + item.end_date) + '</div>' +
+          '<div><strong>終日:</strong> ' + escapeHtml(String(item.is_all_day) === "1" ? "終日" : "時間指定") + '</div>' +
           '<div><strong>部署:</strong> ' + escapeHtml(String(item.department_name || "")) + '</div>' +
           '<div><strong>担当者:</strong> ' + escapeHtml(String(item.person_in_charge || "")) + '</div>' +
           '<div><strong>入力者:</strong> ' + escapeHtml(String(item.entered_by || "")) + '</div>' +
-          '<div><strong>状態:</strong> ' + escapeHtml(String(item.status || "")) + '</div>' +
           '<div><strong>表示順:</strong> ' + escapeHtml(String(item.display_order || "")) + '</div>' +
           '<div><strong>備考:</strong> ' + escapeHtml(String(item.note || "なし")) + '</div>' +
           '<div><strong>作成日:</strong> ' + escapeHtml(String(item.created_at || "")) + '</div>' +
@@ -909,24 +966,112 @@ monthLabelEl.textContent =
         return card;
       }
 
-      function buildDetailTitle(item) {
-        const timeText = buildTimeText(item.start_time, item.end_time);
-        return timeText ? timeText + " " + String(item.purpose || "") : String(item.purpose || "");
+      function isReservationActiveOnDate(item, dateStr) {
+        const start = String(item.start_date || "");
+        const end = String(item.end_date || "");
+        return start <= dateStr && dateStr <= end;
       }
 
-      function buildTimeText(startTime, endTime) {
-        const start = String(startTime || "").trim();
-        const end = String(endTime || "").trim();
+      function buildDisplayReservation(item, dateStr) {
+        const start = String(item.start_date || "");
+        const end = String(item.end_date || "");
+        const isAllDay = Number(item.is_all_day) === 1;
 
-        if (start && end) return start + "-" + end;
-        if (start) return start;
-        if (end) return end;
+        let displayKind = "single";
+        if (start === end) {
+          displayKind = "single";
+        } else if (dateStr === start) {
+          displayKind = "start";
+        } else if (dateStr === end) {
+          displayKind = "end";
+        } else {
+          displayKind = "continue";
+        }
+
+        return Object.assign({}, item, {
+          displayKind: displayKind,
+          displayTimeText: buildDisplayTimeText(item, displayKind)
+        });
+      }
+
+      function buildDisplayTimeText(item, displayKind) {
+        const startTime = String(item.start_time || "").trim();
+        const endTime = String(item.end_time || "").trim();
+        const isAllDay = Number(item.is_all_day) === 1;
+        const sameDay = String(item.start_date || "") === String(item.end_date || "");
+
+        if (sameDay) {
+          if (isAllDay) return "終日";
+          if (startTime && endTime) return startTime + "-" + endTime;
+          if (startTime) return startTime + "開始";
+          if (endTime) return endTime + "終了";
+          return "時間指定";
+        }
+
+        if (isAllDay) {
+          if (displayKind === "start") return "開始日";
+          if (displayKind === "continue") return "継続中";
+          if (displayKind === "end") return "終了日";
+          return "終日";
+        }
+
+        if (displayKind === "start") {
+          return startTime ? startTime + "開始" : "開始日";
+        }
+        if (displayKind === "continue") {
+          return "終日";
+        }
+        if (displayKind === "end") {
+          return endTime ? endTime + "終了" : "終了日";
+        }
+
+        if (startTime && endTime) return startTime + "-" + endTime;
+        return "時間指定";
+      }
+
+      function sortDisplayReservations(items) {
+        return items.slice().sort(function (a, b) {
+          const orderA = toNumber(a.display_order, 9999);
+          const orderB = toNumber(b.display_order, 9999);
+          if (orderA !== orderB) return orderA - orderB;
+
+          const kindA = kindSortValue(a.displayKind);
+          const kindB = kindSortValue(b.displayKind);
+          if (kindA !== kindB) return kindA - kindB;
+
+          const purposeA = String(a.purpose || "");
+          const purposeB = String(b.purpose || "");
+          return purposeA.localeCompare(purposeB, "ja");
+        });
+      }
+
+      function kindSortValue(kind) {
+        if (kind === "start") return 1;
+        if (kind === "continue") return 2;
+        if (kind === "end") return 3;
+        return 0;
+      }
+
+      function getKindLabel(kind) {
+        if (kind === "start") return "開始";
+        if (kind === "continue") return "継続";
+        if (kind === "end") return "終了";
+        return "当日";
+      }
+
+      function getKindClass(kind) {
+        if (kind === "start") return "kind-start";
+        if (kind === "continue") return "kind-continue";
+        if (kind === "end") return "kind-end";
+        return "kind-single";
+      }
+
+      function getStatusClass(status) {
+        if (status === "承認済") return "status-approved";
+        if (status === "申請中") return "status-pending";
+        if (status === "却下") return "status-rejected";
+        if (status === "キャンセル") return "status-cancelled";
         return "";
-      }
-
-      function toNumber(value, fallback) {
-        const n = Number(value);
-        return Number.isFinite(n) ? n : fallback;
       }
 
       function getDaysInMonth(year, monthIndex) {
@@ -949,6 +1094,27 @@ monthLabelEl.textContent =
         return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
       }
 
+      function toNumber(value, fallback) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : fallback;
+      }
+
+      function getWareki(year) {
+        if (year >= 2019) {
+          const w = year - 2018;
+          return w === 1 ? "令和元年" : "令和" + w + "年";
+        }
+        if (year >= 1989) {
+          const w = year - 1988;
+          return w === 1 ? "平成元年" : "平成" + w + "年";
+        }
+        if (year >= 1926) {
+          const w = year - 1925;
+          return w === 1 ? "昭和元年" : "昭和" + w + "年";
+        }
+        return year + "年";
+      }
+
       function escapeHtml(value) {
         return String(value)
           .replace(/&/g, "&amp;")
@@ -958,21 +1124,6 @@ monthLabelEl.textContent =
           .replace(/'/g, "&#39;");
       }
     })();
-    function getWareki(year) {
-  if (year >= 2019) {
-    const w = year - 2018;
-    return w === 1 ? "令和元年" : "令和" + w + "年";
-  }
-  if (year >= 1989) {
-    const w = year - 1988;
-    return w === 1 ? "平成元年" : "平成" + w + "年";
-  }
-  if (year >= 1926) {
-    const w = year - 1925;
-    return w === 1 ? "昭和元年" : "昭和" + w + "年";
-  }
-  return year + "年";
-}
   </script>
 </body>
 </html>
