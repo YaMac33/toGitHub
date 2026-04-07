@@ -1,0 +1,718 @@
+/* ==========================================================================
+   Modern Calendar Style (style.css)
+   ========================================================================== */
+
+:root {
+  /* カラーパレット */
+  --color-bg: #f4f7fb;
+  --color-text-main: #1e293b;
+  --color-text-sub: #64748b;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-light: #eff6ff;
+  --color-border: #e2e8f0;
+  --color-surface: #ffffff;
+  
+  /* シャドウ */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+
+  /* アニメーション */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  background-image: radial-gradient(at 0% 0%, hsla(210,100%,97%,1) 0, transparent 50%), 
+                    radial-gradient(at 100% 100%, hsla(220,100%,96%,1) 0, transparent 50%);
+  background-attachment: fixed;
+  color: var(--color-text-main);
+  font-family: "Inter", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  line-height: 1.6;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+button {
+  font: inherit;
+  font-family: inherit;
+}
+
+.calendar-page {
+  min-height: 100vh;
+  padding: 32px 20px;
+}
+
+.page-header {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+}
+
+.page-header__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-sub);
+}
+
+.calendar-main {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.calendar-card {
+  background: var(--color-surface);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   Toolbar
+   ========================================================================== */
+.calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.calendar-toolbar__nav,
+.calendar-toolbar__view-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-bg);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.calendar-toolbar__label {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  text-align: center;
+  min-width: 280px;
+  letter-spacing: -0.01em;
+}
+
+.toolbar-button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--color-text-sub);
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+}
+
+.toolbar-button:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--color-text-main);
+}
+
+.toolbar-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.toolbar-button--today {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.toolbar-button--today:hover {
+  background: #dbeafe;
+}
+
+.toolbar-button--active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ==========================================================================
+   Month View
+   ========================================================================== */
+.calendar-view {
+  width: 100%;
+}
+
+.calendar-board {
+  padding: 0;
+  background: var(--color-border);
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  background: var(--color-surface);
+}
+
+.calendar-weekdays__item {
+  padding: 16px 8px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.calendar-weekdays__item--sun { color: #ef4444; }
+.calendar-weekdays__item--sat { color: var(--color-primary); }
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px; /* 1pxの隙間を作ってボーダーに見せるテクニック */
+  background: var(--color-border);
+}
+
+.calendar-grid--month {
+  grid-template-rows: repeat(6, minmax(150px, auto));
+}
+
+.calendar-cell {
+  background: var(--color-surface);
+  min-height: 150px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: background-color var(--transition-fast);
+}
+
+.calendar-cell:hover {
+  background: #fafafa;
+}
+
+.calendar-cell--other-month {
+  background: #f8fafc;
+}
+
+.calendar-cell--today {
+  background: #f4f8ff;
+}
+
+.calendar-cell--selected {
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+  z-index: 1; /* ボーダーが他のセルに隠れないように */
+}
+
+.calendar-cell__header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* 日付を右上に配置 */
+  margin-bottom: 8px;
+}
+
+.calendar-cell__date {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  transition: all var(--transition-fast);
+}
+
+.calendar-cell--other-month .calendar-cell__date {
+  color: #cbd5e1;
+}
+
+.calendar-cell--today .calendar-cell__date {
+  background: var(--color-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-glow);
+}
+
+.calendar-cell__events {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+/* ==========================================================================
+   Week View
+   ========================================================================== */
+.week-board {
+  width: 100%;
+}
+
+.week-header {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.week-header__date,
+.week-header__content {
+  padding: 16px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.week-header__date {
+  border-right: 1px solid var(--color-border);
+}
+
+.week-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.week-row {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  transition: background-color var(--transition-fast);
+}
+
+.week-row:hover {
+  background: #fafafa;
+}
+
+.week-row:last-child {
+  border-bottom: none;
+}
+
+.week-row--today {
+  background: #f4f8ff;
+}
+
+.week-row--selected {
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+
+.week-row__date {
+  padding: 20px;
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.week-row__date-main {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  letter-spacing: -0.02em;
+}
+
+.week-row__date-sub {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-sub);
+}
+
+.week-row__date-sub--sun { color: #ef4444; }
+.week-row__date-sub--sat { color: var(--color-primary); }
+
+.week-row__content {
+  padding: 16px 20px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.week-row__events {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.week-row__event-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.week-row__event-time {
+  font-weight: 700;
+  color: var(--color-text-main);
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.week-row__event-title {
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.week-row__event-meta {
+  color: var(--color-text-sub);
+  font-size: 13px;
+  background: #f8fafc;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+
+/* ==========================================================================
+   Event Chips
+   ========================================================================== */
+.event-chip {
+  width: 100%;
+  border: 1px solid transparent;
+  border-left-width: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-main);
+  border-radius: 8px;
+  padding: 6px 10px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.event-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  filter: brightness(0.98);
+}
+
+.event-chip__time {
+  display: inline-block;
+  margin-right: 6px;
+  color: var(--color-text-sub);
+  font-size: 11px;
+}
+
+/* カテゴリ別カラー（より洗練されたパステル＆ビビッドの組み合わせ） */
+.category-MEETING  { border-left-color: #3b82f6; background: #eff6ff; border-right-color: #dbeafe; border-top-color: #dbeafe; border-bottom-color: #dbeafe; }
+.category-COMMITTEE{ border-left-color: #10b981; background: #ecfdf5; border-right-color: #d1fae5; border-top-color: #d1fae5; border-bottom-color: #d1fae5; }
+.category-QUESTION { border-left-color: #f59e0b; background: #fffbeb; border-right-color: #fef3c7; border-top-color: #fef3c7; border-bottom-color: #fef3c7; }
+.category-RESERVE  { border-left-color: #8b5cf6; background: #f5f3ff; border-right-color: #ede9fe; border-top-color: #ede9fe; border-bottom-color: #ede9fe; }
+.category-HOLIDAY  { border-left-color: #ef4444; background: #fef2f2; border-right-color: #fee2e2; border-top-color: #fee2e2; border-bottom-color: #fee2e2; }
+.category-TERM     { border-left-color: #06b6d4; background: #ecfeff; border-right-color: #cffafe; border-top-color: #cffafe; border-bottom-color: #cffafe; }
+.category-OTHER    { border-left-color: #64748b; background: #f8fafc; border-right-color: #f1f5f9; border-top-color: #f1f5f9; border-bottom-color: #f1f5f9; }
+
+.event-chip--more {
+  border: 1px dashed #cbd5e1;
+  background: transparent;
+  color: var(--color-text-sub);
+  text-align: center;
+  box-shadow: none;
+}
+
+.event-chip--more:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: var(--color-text-main);
+  transform: none;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   Modals (グラスモーフィズムを取り入れたリッチな表現)
+   ========================================================================== */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 1000;
+}
+
+.modal.is-open {
+  display: block;
+}
+
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(6px); /* すりガラス効果 */
+}
+
+.modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(600px, calc(100% - 32px));
+  margin: 64px auto;
+  background: var(--color-surface);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  letter-spacing: -0.01em;
+}
+
+.modal__close {
+  appearance: none;
+  border: none;
+  background: #f1f5f9;
+  color: var(--color-text-sub);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.modal__close:hover {
+  background: #e2e8f0;
+  color: var(--color-text-main);
+  transform: rotate(90deg);
+}
+
+.modal__body {
+  padding: 24px;
+}
+
+.modal-detail {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-detail__row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 16px;
+  align-items: baseline;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.modal-detail__row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.modal-detail__label {
+  margin: 0;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text-sub);
+}
+
+.modal-detail__value {
+  margin: 0;
+  font-weight: 500;
+  color: var(--color-text-main);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ==========================================================================
+   Day List Modal
+   ========================================================================== */
+.day-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.day-list__item {
+  width: 100%;
+  appearance: none;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.day-list__item:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.day-list__item-line1 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.day-list__item-time {
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.day-list__item-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--color-text-main);
+}
+
+.day-list__item-line2 {
+  font-size: 13px;
+  color: var(--color-text-sub);
+}
+
+/* ==========================================================================
+   Responsive Utilities
+   ========================================================================== */
+.is-hidden {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .calendar-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .calendar-toolbar__label {
+    order: -1;
+    margin-bottom: 8px;
+  }
+  
+  .calendar-toolbar__nav,
+  .calendar-toolbar__view-switch {
+    justify-content: center;
+  }
+
+  .week-header,
+  .week-row {
+    grid-template-columns: 140px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .calendar-page {
+    padding: 16px 12px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .calendar-toolbar {
+    padding: 16px;
+  }
+
+  .calendar-weekdays__item {
+    font-size: 11px;
+    padding: 12px 4px;
+  }
+
+  .calendar-cell {
+    min-height: 100px;
+    padding: 6px;
+  }
+
+  .calendar-cell__date {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .event-chip {
+    font-size: 10px;
+    padding: 4px 6px;
+    border-radius: 4px;
+  }
+
+  .week-header {
+    display: none;
+  }
+
+  .week-row {
+    grid-template-columns: 1fr;
+  }
+
+  .week-row__date {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    flex-direction: row;
+    align-items: baseline;
+    padding: 12px 16px;
+  }
+
+  .modal__dialog {
+    margin: 24px auto;
+  }
+
+  .modal-detail__row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
