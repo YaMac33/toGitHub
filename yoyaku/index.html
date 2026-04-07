@@ -654,6 +654,137 @@
 
   <script>
     (function () {
+"use strict";
+
+/* =========================
+   ★追加（ここが最重要）
+========================= */
+function normalizeDate(value) {
+  return String(value || "").replace(/\//g, "-");
+}
+
+function isValidDateString(value) {
+  return /^\d{4}[-\/]\d{2}[-\/]\d{2}$/.test(String(value || ""));
+}
+
+function parseDateString(value) {
+  const normalized = normalizeDate(value);
+  const parts = normalized.split("-");
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+}
+/* ========================= */
+
+const ROOM_NAMES = ["委員会室","小委員会室","部課長控室","小会議室"];
+const WEEKDAY_LABELS = ["日","月","火","水","木","金","土"];
+
+const state = {
+  currentYear: 0,
+  currentMonth: 0,
+  statusFilter: "承認済"
+};
+
+const bodyEl = document.getElementById("reservation-body");
+const emptyMessageEl = document.getElementById("empty-message");
+const monthLabelEl = document.getElementById("month-label");
+const statusFilterEl = document.getElementById("status-filter");
+
+const modalOverlayEl = document.getElementById("modal-overlay");
+const modalTitleEl = document.getElementById("modal-title");
+const modalSubtitleEl = document.getElementById("modal-subtitle");
+const modalBodyEl = document.getElementById("modal-body");
+
+const allReservations = Array.isArray(window.APP_DATA && window.APP_DATA.reservations)
+  ? window.APP_DATA.reservations.slice()
+  : [];
+
+init();
+
+/* ========================= */
+
+function getInitialMonthDate() {
+  const firstValid = allReservations.find(item => isValidDateString(item.start_date));
+  return firstValid ? parseDateString(firstValid.start_date) : new Date();
+}
+
+/* ========================= */
+
+function filterReservationsForCurrentView() {
+  const firstStr = normalizeDate(toDateString(new Date(state.currentYear, state.currentMonth, 1)));
+  const lastStr = normalizeDate(toDateString(new Date(state.currentYear, state.currentMonth + 1, 0)));
+
+  return allReservations.filter(function (item) {
+    if (!isValidDateString(item.start_date) || !isValidDateString(item.end_date)) return false;
+
+    if (state.statusFilter !== "all" && String(item.status || "") !== state.statusFilter) return false;
+
+    const start = normalizeDate(item.start_date);
+    const end = normalizeDate(item.end_date);
+
+    return !(end < firstStr || start > lastStr);
+  });
+}
+
+/* ========================= */
+
+function isReservationActiveOnDate(item, dateStr) {
+  const start = normalizeDate(item.start_date);
+  const end = normalizeDate(item.end_date);
+  const target = normalizeDate(dateStr);
+
+  return start <= target && target <= end;
+}
+
+/* ========================= */
+
+function buildDisplayReservation(item, dateStr) {
+  const start = normalizeDate(item.start_date);
+  const end = normalizeDate(item.end_date);
+
+  let displayKind = "single";
+  if (start !== end) {
+    if (dateStr === start) displayKind = "start";
+    else if (dateStr === end) displayKind = "end";
+    else displayKind = "continue";
+  }
+
+  return Object.assign({}, item, {
+    displayKind,
+    displayTimeText: buildDisplayTimeText(item, displayKind)
+  });
+}
+
+/* ========================= */
+
+function buildDisplayTimeText(item, displayKind) {
+  const startTime = String(item.start_time || "").trim();
+  const endTime = String(item.end_time || "").trim();
+  const isAllDay = Number(item.is_all_day) === 1;
+  const sameDay = normalizeDate(item.start_date) === normalizeDate(item.end_date);
+
+  if (sameDay) {
+    if (isAllDay) return "終日";
+    if (startTime && endTime) return startTime + "-" + endTime;
+    if (startTime) return startTime + "開始";
+    if (endTime) return endTime + "終了";
+    return "時間指定";
+  }
+
+  if (isAllDay) {
+    if (displayKind === "start") return "開始日";
+    if (displayKind === "continue") return "継続中";
+    if (displayKind === "end") return "終了日";
+    return "終日";
+  }
+
+  if (displayKind === "start") return startTime ? startTime + "開始" : "開始日";
+  if (displayKind === "continue") return "終日";
+  if (displayKind === "end") return endTime ? endTime + "終了" : "終了日";
+
+  return startTime && endTime ? startTime + "-" + endTime : "時間指定";
+}
+
+    
+    (function () {
       "use strict";
 
       const ROOM_NAMES = ["委員会室", "小委員会室", "部課長控室", "小会議室"];
