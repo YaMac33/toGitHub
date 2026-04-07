@@ -678,7 +678,9 @@
       }
 
       function render() {
-        monthLabelEl.textContent = state.currentYear + "年" + (state.currentMonth + 1) + "月";
+        const wareki = getWareki(state.currentYear);
+monthLabelEl.textContent =
+  wareki + "(" + state.currentYear + "年)" + (state.currentMonth + 1) + "月";
         bodyEl.innerHTML = "";
 
         const days = getDaysInMonth(state.currentYear, state.currentMonth);
@@ -956,6 +958,21 @@
           .replace(/'/g, "&#39;");
       }
     })();
+    function getWareki(year) {
+  if (year >= 2019) {
+    const w = year - 2018;
+    return w === 1 ? "令和元年" : "令和" + w + "年";
+  }
+  if (year >= 1989) {
+    const w = year - 1988;
+    return w === 1 ? "平成元年" : "平成" + w + "年";
+  }
+  if (year >= 1926) {
+    const w = year - 1925;
+    return w === 1 ? "昭和元年" : "昭和" + w + "年";
+  }
+  return year + "年";
+}
   </script>
 </body>
 </html>
