@@ -31,6 +31,10 @@ Public Sub ExportReservationsJs()
     Dim valueText As String
     Dim headerName As String
 
+    Dim requiredMessage As String
+    Dim dataRowCount As Long
+    Dim exportedCount As Long
+
     Set ws = ThisWorkbook.Worksheets("reservations")
 
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
@@ -52,8 +56,15 @@ Public Sub ExportReservationsJs()
         End If
     Next colIndex
 
-    ' 必須列チェック
+    ' 必須列の存在チェック
     ValidateRequiredHeaders headers
+
+    ' 必須列空欄チェック（3行目以降、完全空行は除外）
+    requiredMessage = ValidateRequiredCells(ws, headers, lastRow, lastCol)
+    If requiredMessage <> "" Then
+        MsgBox requiredMessage, vbExclamation
+        Exit Sub
+    End If
 
     baseFolder = ThisWorkbook.Path
     outputPath = baseFolder & Application.PathSeparator & "reservations.js"
@@ -64,9 +75,14 @@ Public Sub ExportReservationsJs()
     Print #fileNo, "window.APP_DATA = window.APP_DATA || {};"
     Print #fileNo, "window.APP_DATA.reservations = ["
 
+    exportedCount = 0
+    dataRowCount = CountDataRows(ws, lastRow, lastCol)
+
     For rowIndex = 3 To lastRow
-        ' 完全空行はスキップ
+        ' 2行目は自動で無視、3行目以降だけ対象
         If Not IsRowEmpty(ws, rowIndex, lastCol) Then
+            exportedCount = exportedCount + 1
+
             Print #fileNo, "  {"
 
             For colIndex = 1 To lastCol
@@ -82,7 +98,7 @@ Public Sub ExportReservationsJs()
                 Print #fileNo, lineText
             Next colIndex
 
-            If rowIndex < lastRow Then
+            If exportedCount < dataRowCount Then
                 Print #fileNo, "  },"
             Else
                 Print #fileNo, "  }"
@@ -114,17 +130,12 @@ Private Sub ValidateRequiredHeaders(ByRef headers() As String)
         "room_name", _
         "reservation_date", _
         "time_slot", _
-        "start_time", _
-        "end_time", _
         "purpose", _
         "department_name", _
         "person_in_charge", _
         "entered_by", _
         "status", _
-        "display_order", _
-        "note", _
-        "created_at", _
-        "updated_at" _
+        "display_order" _
     )
 
     For i = LBound(requiredHeaders) To UBound(requiredHeaders)
@@ -142,6 +153,73 @@ Private Sub ValidateRequiredHeaders(ByRef headers() As String)
         End If
     Next i
 End Sub
+
+Private Function ValidateRequiredCells(ByVal ws As Worksheet, ByRef headers() As String, ByVal lastRow As Long, ByVal lastCol As Long) As String
+    Dim requiredHeaders As Variant
+    Dim i As Long
+    Dim rowIndex As Long
+    Dim colIndex As Long
+    Dim messageText As String
+    Dim cellValue As String
+
+    requiredHeaders = Array( _
+        "reservation_id", _
+        "room_name", _
+        "reservation_date", _
+        "time_slot", _
+        "purpose", _
+        "department_name", _
+        "person_in_charge", _
+        "entered_by", _
+        "status", _
+        "display_order" _
+    )
+
+    messageText = ""
+
+    For rowIndex = 3 To lastRow
+        If Not IsRowEmpty(ws, rowIndex, lastCol) Then
+            For i = LBound(requiredHeaders) To UBound(requiredHeaders)
+                colIndex = GetHeaderColumn(headers, CStr(requiredHeaders(i)))
+                cellValue = Trim(CStr(ws.Cells(rowIndex, colIndex).Value))
+
+                If cellValue = "" Then
+                    messageText = messageText & "行 " & rowIndex & " : " & requiredHeaders(i) & " が空欄です。" & vbCrLf
+                End If
+            Next i
+        End If
+    Next rowIndex
+
+    ValidateRequiredCells = messageText
+End Function
+
+Private Function GetHeaderColumn(ByRef headers() As String, ByVal targetHeader As String) As Long
+    Dim i As Long
+
+    For i = LBound(headers) To UBound(headers)
+        If headers(i) = targetHeader Then
+            GetHeaderColumn = i
+            Exit Function
+        End If
+    Next i
+
+    Err.Raise vbObjectError + 1001, , "列が見つかりません: " & targetHeader
+End Function
+
+Private Function CountDataRows(ByVal ws As Worksheet, ByVal lastRow As Long, ByVal lastCol As Long) As Long
+    Dim rowIndex As Long
+    Dim countValue As Long
+
+    countValue = 0
+
+    For rowIndex = 3 To lastRow
+        If Not IsRowEmpty(ws, rowIndex, lastCol) Then
+            countValue = countValue + 1
+        End If
+    Next rowIndex
+
+    CountDataRows = countValue
+End Function
 
 Private Function IsRowEmpty(ByVal ws As Worksheet, ByVal rowIndex As Long, ByVal lastCol As Long) As Boolean
     Dim colIndex As Long
