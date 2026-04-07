@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>会議室予約表</title>
+  <script src="./reservations.js"></script>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --card: #ffffff;
+      --line: #d7dbe2;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --am-bg: #f8fafc;
+      --pm-bg: #fff7ed;
+      --empty: #9ca3af;
+      --danger: #b91c1c;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      padding: 20px;
+    }
+
+    .page {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .header-card,
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .header-card {
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .page-title {
+      margin: 0 0 16px;
+      font-size: 28px;
+      line-height: 1.3;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 16px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .month-label {
+      min-width: 170px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.92;
+      color: #fff;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .field select {
+      min-width: 140px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .table-card {
+      overflow: hidden;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1100px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f3f4f6;
+      color: #111827;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 14px 10px;
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    thead th:first-child {
+      min-width: 130px;
+    }
+
+    thead th:not(:first-child) {
+      min-width: 250px;
+    }
+
+    tbody td {
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      background: #fff;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody td:last-child,
+    thead th:last-child {
+      border-right: none;
+    }
+
+    .date-cell {
+      padding: 14px 10px;
+      text-align: center;
+      background: #fafafa;
+      white-space: nowrap;
+    }
+
+    .date-main {
+      font-weight: 700;
+      font-size: 16px;
+      color: #111827;
+    }
+
+    .date-sub {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .room-cell {
+      padding: 10px;
+    }
+
+    .room-click {
+      display: block;
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 12px;
+    }
+
+    .room-click:hover .slot-block {
+      border-color: var(--accent);
+    }
+
+    .slot-block {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .slot-half {
+      padding: 10px;
+      min-height: 108px;
+    }
+
+    .slot-half + .slot-half {
+      border-top: 1px dashed var(--line);
+    }
+
+    .slot-half.am {
+      background: var(--am-bg);
+    }
+
+    .slot-half.pm {
+      background: var(--pm-bg);
+    }
+
+    .slot-label {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .slot-item-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .slot-item {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #111827;
+      padding-left: 0;
+      word-break: break-word;
+    }
+
+    .slot-item-time {
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    .slot-empty {
+      font-size: 12px;
+      color: var(--empty);
+      line-height: 1.5;
+    }
+
+    .note-line {
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .status-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      line-height: 1.4;
+      background: #eef2ff;
+      color: #3730a3;
+      vertical-align: middle;
+    }
+
+    .empty-message {
+      padding: 32px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      padding: 14px 20px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-box {
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+
+    .legend-am {
+      background: var(--am-bg);
+    }
+
+    .legend-pm {
+      background: var(--pm-bg);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 9999;
+    }
+
+    .modal-overlay.is-open {
+      display: flex;
+    }
+
+    .modal {
+      width: min(760px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 20px 48px rgba(15, 23, 42, 0.28);
+      border: 1px solid var(--line);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 20px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-title-wrap h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      line-height: 1.3;
+    }
+
+    .modal-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .icon-btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .modal-body {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .modal-section {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .modal-section-head {
+      padding: 12px 14px;
+      font-weight: 700;
+      background: #f9fafb;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-section-body {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .detail-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .detail-title {
+      margin: 0 0 8px;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    .detail-meta {
+      display: grid;
+      gap: 4px;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    .detail-meta strong {
+      color: #111827;
+    }
+
+    .modal-empty {
+      color: var(--empty);
+      font-size: 14px;
+    }
+
+    .footer-actions {
+      padding: 0 20px 20px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        padding: 12px;
+      }
+
+      .header-card {
+        padding: 16px;
+      }
+
+      .page-title {
+        font-size: 24px;
+      }
+
+      .month-label {
+        min-width: auto;
+        font-size: 18px;
+      }
+
+      thead th:not(:first-child) {
+        min-width: 210px;
+      }
+
+      .slot-half {
+        min-height: 96px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="header-card">
+      <h1 class="page-title">会議室予約表</h1>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="month-nav">
+            <button type="button" class="btn" id="prev-month-btn">＜前月</button>
+            <div class="month-label" id="month-label">----</div>
+            <button type="button" class="btn" id="next-month-btn">翌月＞</button>
+          </div>
+
+          <button type="button" class="btn" id="today-btn">今月へ戻る</button>
+        </div>
+
+        <div class="toolbar-right">
+          <label class="field">
+            <span>状態</span>
+            <select id="status-filter">
+              <option value="承認済">承認済</option>
+              <option value="申請中">申請中</option>
+              <option value="却下">却下</option>
+              <option value="キャンセル">キャンセル</option>
+              <option value="all">すべて</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-box legend-am"></span>
+          <span>AM</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-box legend-pm"></span>
+          <span>PM</span>
+        </div>
+        <div class="legend-item">
+          <span>セルをクリックすると詳細を表示</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>委員会室</th>
+              <th>小委員会室</th>
+              <th>部課長控室</th>
+              <th>小会議室</th>
+            </tr>
+          </thead>
+          <tbody id="reservation-body"></tbody>
+        </table>
+      </div>
+      <div class="empty-message" id="empty-message" hidden>この条件に該当する予約はありません。</div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h2 id="modal-title">予約詳細</h2>
+          <div class="modal-subtitle" id="modal-subtitle"></div>
+        </div>
+        <button type="button" class="icon-btn" id="modal-close-btn" aria-label="閉じる">×</button>
+      </div>
+
+      <div class="modal-body" id="modal-body"></div>
+
+      <div class="footer-actions">
+        <button type="button" class="btn btn-primary" id="modal-close-footer-btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const ROOM_NAMES = ["委員会室", "小委員会室", "部課長控室", "小会議室"];
+      const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+
+      const state = {
+        currentYear: 0,
+        currentMonth: 0,
+        statusFilter: "承認済"
+      };
+
+      const bodyEl = document.getElementById("reservation-body");
+      const emptyMessageEl = document.getElementById("empty-message");
+      const monthLabelEl = document.getElementById("month-label");
+      const statusFilterEl = document.getElementById("status-filter");
+
+      const modalOverlayEl = document.getElementById("modal-overlay");
+      const modalTitleEl = document.getElementById("modal-title");
+      const modalSubtitleEl = document.getElementById("modal-subtitle");
+      const modalBodyEl = document.getElementById("modal-body");
+
+      const allReservations = Array.isArray(window.APP_DATA && window.APP_DATA.reservations)
+        ? window.APP_DATA.reservations.slice()
+        : [];
+
+      init();
+
+      function init() {
+        const initialDate = getInitialMonthDate();
+        state.currentYear = initialDate.getFullYear();
+        state.currentMonth = initialDate.getMonth();
+
+        document.getElementById("prev-month-btn").addEventListener("click", handlePrevMonth);
+        document.getElementById("next-month-btn").addEventListener("click", handleNextMonth);
+        document.getElementById("today-btn").addEventListener("click", handleTodayMonth);
+
+        statusFilterEl.addEventListener("change", function () {
+          state.statusFilter = statusFilterEl.value;
+          render();
+        });
+
+        document.getElementById("modal-close-btn").addEventListener("click", closeModal);
+        document.getElementById("modal-close-footer-btn").addEventListener("click", closeModal);
+        modalOverlayEl.addEventListener("click", function (event) {
+          if (event.target === modalOverlayEl) closeModal();
+        });
+
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "Escape" && modalOverlayEl.classList.contains("is-open")) {
+            closeModal();
+          }
+        });
+
+        render();
+      }
+
+      function getInitialMonthDate() {
+        if (allReservations.length > 0) {
+          const firstValid = allReservations.find(function (item) {
+            return isValidDateString(item.reservation_date);
+          });
+          if (firstValid) {
+            return parseDateString(firstValid.reservation_date);
+          }
+        }
+        return new Date();
+      }
+
+      function handlePrevMonth() {
+        state.currentMonth -= 1;
+        normalizeCurrentMonth();
+        render();
+      }
+
+      function handleNextMonth() {
+        state.currentMonth += 1;
+        normalizeCurrentMonth();
+        render();
+      }
+
+      function handleTodayMonth() {
+        const now = new Date();
+        state.currentYear = now.getFullYear();
+        state.currentMonth = now.getMonth();
+        render();
+      }
+
+      function normalizeCurrentMonth() {
+        while (state.currentMonth < 0) {
+          state.currentMonth += 12;
+          state.currentYear -= 1;
+        }
+        while (state.currentMonth > 11) {
+          state.currentMonth -= 12;
+          state.currentYear += 1;
+        }
+      }
+
+      function render() {
+        monthLabelEl.textContent = state.currentYear + "年" + (state.currentMonth + 1) + "月";
+        bodyEl.innerHTML = "";
+
+        const days = getDaysInMonth(state.currentYear, state.currentMonth);
+        const filteredReservations = filterReservationsForCurrentView();
+
+        for (let day = 1; day <= days; day += 1) {
+          const dateObj = new Date(state.currentYear, state.currentMonth, day);
+          const dateStr = toDateString(dateObj);
+          const row = buildRow(dateObj, dateStr, filteredReservations);
+          bodyEl.appendChild(row);
+        }
+
+        const hasAny = filteredReservations.length > 0;
+        emptyMessageEl.hidden = hasAny;
+      }
+
+      function filterReservationsForCurrentView() {
+        return allReservations.filter(function (item) {
+          if (!isValidDateString(item.reservation_date)) return false;
+
+          const date = parseDateString(item.reservation_date);
+          if (date.getFullYear() !== state.currentYear) return false;
+          if (date.getMonth() !== state.currentMonth) return false;
+
+          if (state.statusFilter !== "all" && String(item.status || "") !== state.statusFilter) {
+            return false;
+          }
+
+          return true;
+        });
+      }
+
+      function buildRow(dateObj, dateStr, reservations) {
+        const tr = document.createElement("tr");
+
+        const dateTd = document.createElement("td");
+        dateTd.className = "date-cell";
+        dateTd.innerHTML =
+          '<div class="date-main">' + escapeHtml((dateObj.getMonth() + 1) + "/" + dateObj.getDate() + "（" + WEEKDAY_LABELS[dateObj.getDay()] + "）") + '</div>' +
+          '<div class="date-sub">' + escapeHtml(dateStr) + '</div>';
+        tr.appendChild(dateTd);
+
+        ROOM_NAMES.forEach(function (roomName) {
+          const td = document.createElement("td");
+          td.className = "room-cell";
+
+          const roomReservations = reservations.filter(function (item) {
+            return item.reservation_date === dateStr && String(item.room_name || "") === roomName;
+          });
+
+          td.appendChild(buildRoomCellButton(dateStr, roomName, roomReservations));
+          tr.appendChild(td);
+        });
+
+        return tr;
+      }
+
+      function buildRoomCellButton(dateStr, roomName, roomReservations) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "room-click";
+        button.addEventListener("click", function () {
+          openModal(dateStr, roomName, roomReservations);
+        });
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "slot-block";
+
+        const amReservations = sortReservations(roomReservations.filter(function (item) {
+          return String(item.time_slot || "").toUpperCase() === "AM";
+        }));
+
+        const pmReservations = sortReservations(roomReservations.filter(function (item) {
+          return String(item.time_slot || "").toUpperCase() === "PM";
+        }));
+
+        wrapper.appendChild(buildHalfBlock("AM", "am", amReservations));
+        wrapper.appendChild(buildHalfBlock("PM", "pm", pmReservations));
+
+        button.appendChild(wrapper);
+        return button;
+      }
+
+      function buildHalfBlock(label, className, items) {
+        const half = document.createElement("div");
+        half.className = "slot-half " + className;
+
+        const labelEl = document.createElement("div");
+        labelEl.className = "slot-label";
+        labelEl.textContent = label;
+        half.appendChild(labelEl);
+
+        const list = document.createElement("div");
+        list.className = "slot-item-list";
+
+        if (items.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "slot-empty";
+          empty.textContent = "（なし）";
+          list.appendChild(empty);
+        } else {
+          items.forEach(function (item) {
+            list.appendChild(buildSlotItem(item));
+          });
+        }
+
+        half.appendChild(list);
+        return half;
+      }
+
+      function buildSlotItem(item) {
+        const div = document.createElement("div");
+        div.className = "slot-item";
+
+        const timeText = buildTimeText(item.start_time, item.end_time);
+        let html = "";
+
+        if (timeText) {
+          html += '<span class="slot-item-time">' + escapeHtml(timeText) + "</span>";
+        }
+
+        html += escapeHtml(String(item.purpose || ""));
+
+        if (state.statusFilter === "all" && String(item.status || "")) {
+          html += '<span class="status-badge">' + escapeHtml(String(item.status || "")) + "</span>";
+        }
+
+        if (item.note) {
+          html += '<span class="note-line">※' + escapeHtml(String(item.note)) + "</span>";
+        }
+
+        div.innerHTML = html;
+        return div;
+      }
+
+      function sortReservations(items) {
+        return items.slice().sort(function (a, b) {
+          const orderA = toNumber(a.display_order, 9999);
+          const orderB = toNumber(b.display_order, 9999);
+          if (orderA !== orderB) return orderA - orderB;
+
+          const startA = String(a.start_time || "");
+          const startB = String(b.start_time || "");
+          if (startA !== startB) return startA.localeCompare(startB);
+
+          const purposeA = String(a.purpose || "");
+          const purposeB = String(b.purpose || "");
+          return purposeA.localeCompare(purposeB, "ja");
+        });
+      }
+
+      function openModal(dateStr, roomName, roomReservations) {
+        const sorted = sortReservations(roomReservations);
+        const amReservations = sorted.filter(function (item) {
+          return String(item.time_slot || "").toUpperCase() === "AM";
+        });
+        const pmReservations = sorted.filter(function (item) {
+          return String(item.time_slot || "").toUpperCase() === "PM";
+        });
+
+        modalTitleEl.textContent = roomName;
+        modalSubtitleEl.textContent = dateStr;
+        modalBodyEl.innerHTML = "";
+
+        modalBodyEl.appendChild(buildModalSection("AM", amReservations));
+        modalBodyEl.appendChild(buildModalSection("PM", pmReservations));
+
+        modalOverlayEl.classList.add("is-open");
+        modalOverlayEl.setAttribute("aria-hidden", "false");
+      }
+
+      function closeModal() {
+        modalOverlayEl.classList.remove("is-open");
+        modalOverlayEl.setAttribute("aria-hidden", "true");
+      }
+
+      function buildModalSection(label, items) {
+        const section = document.createElement("section");
+        section.className = "modal-section";
+
+        const head = document.createElement("div");
+        head.className = "modal-section-head";
+        head.textContent = label;
+        section.appendChild(head);
+
+        const body = document.createElement("div");
+        body.className = "modal-section-body";
+
+        if (items.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "modal-empty";
+          empty.textContent = "予約はありません。";
+          body.appendChild(empty);
+        } else {
+          items.forEach(function (item) {
+            body.appendChild(buildDetailCard(item));
+          });
+        }
+
+        section.appendChild(body);
+        return section;
+      }
+
+      function buildDetailCard(item) {
+        const card = document.createElement("div");
+        card.className = "detail-card";
+
+        const title = document.createElement("h3");
+        title.className = "detail-title";
+        title.textContent = buildDetailTitle(item);
+        card.appendChild(title);
+
+        const meta = document.createElement("div");
+        meta.className = "detail-meta";
+        meta.innerHTML =
+          '<div><strong>部署:</strong> ' + escapeHtml(String(item.department_name || "")) + '</div>' +
+          '<div><strong>担当者:</strong> ' + escapeHtml(String(item.person_in_charge || "")) + '</div>' +
+          '<div><strong>入力者:</strong> ' + escapeHtml(String(item.entered_by || "")) + '</div>' +
+          '<div><strong>状態:</strong> ' + escapeHtml(String(item.status || "")) + '</div>' +
+          '<div><strong>表示順:</strong> ' + escapeHtml(String(item.display_order || "")) + '</div>' +
+          '<div><strong>備考:</strong> ' + escapeHtml(String(item.note || "なし")) + '</div>' +
+          '<div><strong>作成日:</strong> ' + escapeHtml(String(item.created_at || "")) + '</div>' +
+          '<div><strong>更新日:</strong> ' + escapeHtml(String(item.updated_at || "")) + '</div>';
+        card.appendChild(meta);
+
+        return card;
+      }
+
+      function buildDetailTitle(item) {
+        const timeText = buildTimeText(item.start_time, item.end_time);
+        return timeText ? timeText + " " + String(item.purpose || "") : String(item.purpose || "");
+      }
+
+      function buildTimeText(startTime, endTime) {
+        const start = String(startTime || "").trim();
+        const end = String(endTime || "").trim();
+
+        if (start && end) return start + "-" + end;
+        if (start) return start;
+        if (end) return end;
+        return "";
+      }
+
+      function toNumber(value, fallback) {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : fallback;
+      }
+
+      function getDaysInMonth(year, monthIndex) {
+        return new Date(year, monthIndex + 1, 0).getDate();
+      }
+
+      function toDateString(dateObj) {
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const day = String(dateObj.getDate()).padStart(2, "0");
+        return year + "-" + month + "-" + day;
+      }
+
+      function isValidDateString(value) {
+        return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
+      }
+
+      function parseDateString(value) {
+        const parts = String(value).split("-");
+        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+    })();
+  </script>
+</body>
+</html>
