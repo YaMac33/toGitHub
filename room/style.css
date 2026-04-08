@@ -133,7 +133,7 @@ body {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1100px;
+  min-width: 960px;
 }
 
 thead th {
@@ -156,7 +156,7 @@ thead th:first-child {
 }
 
 thead th:not(:first-child) {
-  min-width: 260px;
+  min-width: 220px;
 }
 
 tbody td {
@@ -220,8 +220,17 @@ thead th:last-child {
   border-radius: 12px;
 }
 
-.room-click:hover .room-stack {
+.room-click:hover .room-stack,
+.room-click:focus-visible .room-stack {
   border-color: var(--accent);
+}
+
+.room-click:focus-visible {
+  outline: none;
+}
+
+.room-click:focus-visible .room-item {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
 }
 
 .room-stack {
@@ -301,8 +310,12 @@ thead th:last-child {
 
 .slot-empty {
   font-size: 14px;
-  color: #9ca3af;
+  color: #6b7280;
   align-self: start;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
 }
 
 .empty-message {
@@ -491,7 +504,7 @@ thead th:last-child {
   }
 
   thead th:not(:first-child) {
-    min-width: 220px;
+    min-width: 180px;
   }
 
   .room-stack {
