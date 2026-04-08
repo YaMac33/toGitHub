@@ -20,6 +20,7 @@ Option Explicit
 '   - 10:00 形式OK
 '   - 10:00:00 形式OK
 '   - Excelの時刻型OK
+'   - 数値シリアルOK
 ' ・JS出力時の時刻は "HH:MM" に統一
 '
 ' 出力形式
@@ -75,10 +76,8 @@ Public Sub ExportReservationsJs()
         End If
     Next colIndex
 
-    ' 必須列の存在チェック
     ValidateRequiredHeaders headers
 
-    ' 2行目以降のデータ検証
     validationMessage = ValidateRows(ws, headers, lastRow, lastCol)
     If validationMessage <> "" Then
         MsgBox validationMessage, vbExclamation
@@ -112,12 +111,11 @@ Public Sub ExportReservationsJs()
                 headerName = headers(colIndex)
                 valueText = ToJsValue(headerName, ws.Cells(rowIndex, colIndex).Value)
 
-                lineText = "    """ & EscapeJsString(headerName) & """: " & valueText
-                lineText = lineText & ","
+                lineText = "    """ & EscapeJsString(headerName) & """: " & valueText & ","
                 Print #fileNo, lineText
             Next colIndex
 
-            ' 追加変換項目（アプリ側で使いやすいように出す）
+            ' 追加変換項目
             Print #fileNo, "    ""is_all_day"": " & GetIsAllDayValue(ws, headers, rowIndex)
 
             If exportedCount < dataRowCount Then
@@ -148,13 +146,14 @@ Private Sub ValidateRequiredHeaders(ByRef headers() As String)
     Dim j As Long
 
     requiredHeaders = Array( _
+        "ＩＤ（システムＩＤ：自動発番）", _
         "開始日", _
         "終了日", _
+        "開始時刻", _
+        "終了時刻", _
         "内容", _
         "予約種別", _
-        "フラグ", _
-        "開始時刻", _
-        "終了時刻" _
+        "フラグ" _
     )
 
     For i = LBound(requiredHeaders) To UBound(requiredHeaders)
@@ -348,7 +347,7 @@ Private Function ToJsValue(ByVal headerName As String, ByVal cellValue As Varian
             If IsDate(cellValue) Then
                 ToJsValue = """" & Format(CDate(cellValue), "yyyy-mm-dd") & """"
             Else
-                ToJsValue = """" & EscapeJsString(normalizeDateText(textValue)) & """"
+                ToJsValue = """" & EscapeJsString(NormalizeDateText(textValue)) & """"
             End If
 
         Case "開始時刻", "終了時刻"
@@ -396,7 +395,23 @@ Private Function IsValidTimeValue(ByVal valueIn As Variant) As Boolean
     Dim hh As Long
     Dim mm As Long
     Dim ss As Long
+    Dim n As Double
 
+    If IsEmpty(valueIn) Then
+        IsValidTimeValue = False
+        Exit Function
+    End If
+
+    ' Excelの時刻セル / 数値シリアル対応
+    If IsNumeric(valueIn) Then
+        n = CDbl(valueIn)
+        If n >= 0 And n < 1 Then
+            IsValidTimeValue = True
+            Exit Function
+        End If
+    End If
+
+    ' 文字列でも IsDate が True の場合あり
     If IsDate(valueIn) Then
         IsValidTimeValue = True
         Exit Function
@@ -454,6 +469,15 @@ Private Function FormatTimeToHHMM(ByVal valueIn As Variant) As String
     Dim parts() As String
     Dim hh As Long
     Dim mm As Long
+    Dim n As Double
+
+    If IsNumeric(valueIn) Then
+        n = CDbl(valueIn)
+        If n >= 0 And n < 1 Then
+            FormatTimeToHHMM = Format(CDate(n), "hh:mm")
+            Exit Function
+        End If
+    End If
 
     If IsDate(valueIn) Then
         FormatTimeToHHMM = Format(CDate(valueIn), "hh:mm")
@@ -469,6 +493,6 @@ Private Function FormatTimeToHHMM(ByVal valueIn As Variant) As String
     FormatTimeToHHMM = Format(hh, "00") & ":" & Format(mm, "00")
 End Function
 
-Private Function normalizeDateText(ByVal valueText As String) As String
-    normalizeDateText = Replace(Trim(valueText), "/", "-")
+Private Function NormalizeDateText(ByVal valueText As String) As String
+    NormalizeDateText = Replace(Trim(valueText), "/", "-")
 End Function
