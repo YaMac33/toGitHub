@@ -3,6 +3,7 @@
 
   const ROOM_NAMES = ["委員会室", "小委員会室", "部課長控室", "小会議室"];
   const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+  const STORAGE_KEY = "room_calendar_current_month";
 
   const RAW_DATA = Array.isArray(window.APP_DATA && window.APP_DATA.reservations)
     ? window.APP_DATA.reservations.slice()
@@ -10,14 +11,12 @@
 
   const state = {
     currentYear: 0,
-    currentMonth: 0,
-    statusFilter: "承認済"
+    currentMonth: 0
   };
 
   const bodyEl = document.getElementById("reservation-body");
   const emptyMessageEl = document.getElementById("empty-message");
   const monthLabelEl = document.getElementById("month-label");
-  const statusFilterEl = document.getElementById("status-filter");
 
   const modalOverlayEl = document.getElementById("modal-overlay");
   const modalTitleEl = document.getElementById("modal-title");
@@ -33,18 +32,15 @@
   init();
 
   function init() {
-    const initialDate = getInitialMonthDate();
+    const savedMonth = loadCurrentMonth();
+    const initialDate = savedMonth || getInitialMonthDate();
+
     state.currentYear = initialDate.getFullYear();
     state.currentMonth = initialDate.getMonth();
 
     document.getElementById("prev-month-btn").addEventListener("click", handlePrevMonth);
     document.getElementById("next-month-btn").addEventListener("click", handleNextMonth);
     document.getElementById("today-btn").addEventListener("click", handleTodayMonth);
-
-    statusFilterEl.addEventListener("change", function () {
-      state.statusFilter = statusFilterEl.value;
-      render();
-    });
 
     document.getElementById("modal-close-btn").addEventListener("click", closeModal);
     document.getElementById("modal-close-footer-btn").addEventListener("click", closeModal);
@@ -89,12 +85,10 @@
       purpose: purpose,
       purpose_sub: String(getField(raw, "利用目的") || "").trim(),
       note: String(getField(raw, "利用目的詳細") || "").trim(),
-      status: convertStatus(getField(raw, "情報公開レベル")),
       display_order: convertDisplayOrder(getField(raw, "重要度")),
-      is_all_day: convertIsAllDay(getField(raw, "フラグ")),
+      is_all_day: convertIsAllDay(getField(raw, "フラグ"), getField(raw, "is_all_day")),
       icon_no: String(getField(raw, "アイコン番号") || "").trim(),
-      raw_flag: String(getField(raw, "フラグ") || "").trim(),
-      raw_public_level: String(getField(raw, "情報公開レベル") || "").trim()
+      raw_flag: String(getField(raw, "フラグ") || "").trim()
     };
   }
 
@@ -108,25 +102,19 @@
     return "";
   }
 
-  function convertStatus(value) {
-    const text = String(value || "").trim();
-
-    if (text === "公開") return "承認済";
-    if (text === "内部") return "申請中";
-    if (text === "非公開") return "キャンセル";
-
-    return text || "承認済";
-  }
-
   function convertDisplayOrder(value) {
     const text = String(value || "").trim();
     const num = Number(text);
     return Number.isFinite(num) ? num : 9999;
   }
 
-  function convertIsAllDay(value) {
-    const text = String(value || "").trim();
-    return text === "終日" ? 1 : 0;
+  function convertIsAllDay(flagValue, directValue) {
+    const directText = String(directValue || "").trim();
+    if (directText === "1") return 1;
+    if (directText === "0") return 0;
+
+    const flagText = String(flagValue || "").trim();
+    return flagText === "終日" ? 1 : 0;
   }
 
   function normalizeDate(value) {
@@ -134,7 +122,17 @@
   }
 
   function normalizeTime(value) {
-    return String(value || "").trim();
+    const text = String(value || "").trim();
+    if (!text) return "";
+
+    const parts = text.split(":");
+    if (parts.length >= 2) {
+      const hh = String(parts[0]).padStart(2, "0");
+      const mm = String(parts[1]).padStart(2, "0");
+      return hh + ":" + mm;
+    }
+
+    return text;
   }
 
   function isValidDateString(value) {
@@ -162,12 +160,14 @@
   function handlePrevMonth() {
     state.currentMonth -= 1;
     normalizeCurrentMonth();
+    saveCurrentMonth();
     render();
   }
 
   function handleNextMonth() {
     state.currentMonth += 1;
     normalizeCurrentMonth();
+    saveCurrentMonth();
     render();
   }
 
@@ -175,6 +175,7 @@
     const now = new Date();
     state.currentYear = now.getFullYear();
     state.currentMonth = now.getMonth();
+    saveCurrentMonth();
     render();
   }
 
@@ -186,6 +187,42 @@
     while (state.currentMonth > 11) {
       state.currentMonth -= 12;
       state.currentYear += 1;
+    }
+  }
+
+  function saveCurrentMonth() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          year: state.currentYear,
+          month: state.currentMonth
+        })
+      );
+    } catch (error) {
+      // 何もしない
+    }
+  }
+
+  function loadCurrentMonth() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+      if (
+        !parsed ||
+        !Number.isInteger(parsed.year) ||
+        !Number.isInteger(parsed.month) ||
+        parsed.month < 0 ||
+        parsed.month > 11
+      ) {
+        return null;
+      }
+
+      return new Date(parsed.year, parsed.month, 1);
+    } catch (error) {
+      return null;
     }
   }
 
@@ -220,10 +257,6 @@
       }
 
       if (!isValidDateString(item.start_date) || !isValidDateString(item.end_date)) {
-        return false;
-      }
-
-      if (state.statusFilter !== "all" && String(item.status || "") !== state.statusFilter) {
         return false;
       }
 
@@ -309,13 +342,6 @@
     kindBadge.textContent = getKindLabel(item.displayKind);
     head.appendChild(kindBadge);
 
-    if (state.statusFilter === "all") {
-      const statusBadge = document.createElement("span");
-      statusBadge.className = "status-badge " + getStatusClass(item.status);
-      statusBadge.textContent = item.status || "";
-      head.appendChild(statusBadge);
-    }
-
     card.appendChild(head);
 
     const title = document.createElement("div");
@@ -377,11 +403,6 @@
     kindBadge.textContent = getKindLabel(item.displayKind);
     head.appendChild(kindBadge);
 
-    const statusBadge = document.createElement("span");
-    statusBadge.className = "status-badge " + getStatusClass(item.status);
-    statusBadge.textContent = item.status || "";
-    head.appendChild(statusBadge);
-
     card.appendChild(head);
 
     const title = document.createElement("h3");
@@ -397,8 +418,6 @@
       '<div><strong>終日:</strong> ' + escapeHtml(item.is_all_day === 1 ? "終日" : "時間指定") + "</div>" +
       '<div><strong>利用目的:</strong> ' + escapeHtml(item.purpose_sub || "なし") + "</div>" +
       '<div><strong>詳細:</strong> ' + escapeHtml(item.note || "なし") + "</div>" +
-      '<div><strong>情報公開レベル:</strong> ' + escapeHtml(item.raw_public_level || "なし") + "</div>" +
-      '<div><strong>重要度:</strong> ' + escapeHtml(String(item.display_order)) + "</div>" +
       '<div><strong>予約種別:</strong> ' + escapeHtml(item.room_name || "なし") + "</div>" +
       '<div><strong>フラグ:</strong> ' + escapeHtml(item.raw_flag || "なし") + "</div>" +
       '<div><strong>アイコン番号:</strong> ' + escapeHtml(item.icon_no || "なし") + "</div>" +
@@ -508,14 +527,6 @@
     if (kind === "continue") return "kind-continue";
     if (kind === "end") return "kind-end";
     return "kind-single";
-  }
-
-  function getStatusClass(status) {
-    if (status === "承認済") return "status-approved";
-    if (status === "申請中") return "status-pending";
-    if (status === "却下") return "status-rejected";
-    if (status === "キャンセル") return "status-cancelled";
-    return "";
   }
 
   function getDaysInMonth(year, monthIndex) {
