@@ -1,7 +1,7 @@
 Option Explicit
 
 ' =========================================================
-' reservations シート → reservations.js 出力
+' reservations シート → reservations.js 出力（UTF-8版）
 ' 前提
 ' ・1行目 = 列名
 ' ・2行目以降 = データ
@@ -22,6 +22,7 @@ Option Explicit
 '   - Excelの時刻型OK
 '   - 数値シリアルOK
 ' ・JS出力時の時刻は "HH:MM" に統一
+' ・出力ファイルは UTF-8
 '
 ' 出力形式
 ' window.APP_DATA = window.APP_DATA || {};
@@ -39,7 +40,6 @@ Public Sub ExportReservationsJs()
 
     Dim baseFolder As String
     Dim outputPath As String
-    Dim fileNo As Integer
 
     Dim headers() As String
     Dim lineText As String
@@ -49,6 +49,8 @@ Public Sub ExportReservationsJs()
     Dim validationMessage As String
     Dim dataRowCount As Long
     Dim exportedCount As Long
+
+    Dim content As String
 
     Set ws = ThisWorkbook.Worksheets("reservations")
 
@@ -93,11 +95,9 @@ Public Sub ExportReservationsJs()
     baseFolder = ThisWorkbook.Path
     outputPath = baseFolder & Application.PathSeparator & "reservations.js"
 
-    fileNo = FreeFile
-    Open outputPath For Output As #fileNo
-
-    Print #fileNo, "window.APP_DATA = window.APP_DATA || {};"
-    Print #fileNo, "window.APP_DATA.reservations = ["
+    content = ""
+    content = content & "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
+    content = content & "window.APP_DATA.reservations = [" & vbCrLf
 
     exportedCount = 0
 
@@ -105,37 +105,35 @@ Public Sub ExportReservationsJs()
         If Not IsRowEmpty(ws, rowIndex, lastCol) Then
             exportedCount = exportedCount + 1
 
-            Print #fileNo, "  {"
+            content = content & "  {" & vbCrLf
 
             For colIndex = 1 To lastCol
                 headerName = headers(colIndex)
                 valueText = ToJsValue(headerName, ws.Cells(rowIndex, colIndex).Value)
 
                 lineText = "    """ & EscapeJsString(headerName) & """: " & valueText & ","
-                Print #fileNo, lineText
+                content = content & lineText & vbCrLf
             Next colIndex
 
             ' 追加変換項目
-            Print #fileNo, "    ""is_all_day"": " & GetIsAllDayValue(ws, headers, rowIndex)
+            content = content & "    ""is_all_day"": " & GetIsAllDayValue(ws, headers, rowIndex) & vbCrLf
 
             If exportedCount < dataRowCount Then
-                Print #fileNo, "  },"
+                content = content & "  }," & vbCrLf
             Else
-                Print #fileNo, "  }"
+                content = content & "  }" & vbCrLf
             End If
         End If
     Next rowIndex
 
-    Print #fileNo, "];"
+    content = content & "];" & vbCrLf
 
-    Close #fileNo
+    WriteTextUtf8 outputPath, content
 
     MsgBox "出力完了: " & outputPath, vbInformation
     Exit Sub
 
 ErrHandler:
-    On Error Resume Next
-    If fileNo <> 0 Then Close #fileNo
     MsgBox "エラーが発生しました: " & Err.Description, vbCritical
 End Sub
 
@@ -402,7 +400,6 @@ Private Function IsValidTimeValue(ByVal valueIn As Variant) As Boolean
         Exit Function
     End If
 
-    ' Excelの時刻セル / 数値シリアル対応
     If IsNumeric(valueIn) Then
         n = CDbl(valueIn)
         If n >= 0 And n < 1 Then
@@ -411,7 +408,6 @@ Private Function IsValidTimeValue(ByVal valueIn As Variant) As Boolean
         End If
     End If
 
-    ' 文字列でも IsDate が True の場合あり
     If IsDate(valueIn) Then
         IsValidTimeValue = True
         Exit Function
@@ -496,3 +492,17 @@ End Function
 Private Function NormalizeDateText(ByVal valueText As String) As String
     NormalizeDateText = Replace(Trim(valueText), "/", "-")
 End Function
+
+Private Sub WriteTextUtf8(ByVal filePath As String, ByVal textContent As String)
+    Dim stm As Object
+
+    Set stm = CreateObject("ADODB.Stream")
+    stm.Type = 2              ' adTypeText
+    stm.Charset = "utf-8"
+    stm.Open
+    stm.WriteText textContent
+    stm.SaveToFile filePath, 2 ' adSaveCreateOverWrite
+    stm.Close
+
+    Set stm = Nothing
+End Sub
