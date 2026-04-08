@@ -1,7 +1,7 @@
 Option Explicit
 
 ' =========================================================
-' reservations シート → yoyaku/reservations.js 出力
+' reservations シート → reservations.js 出力
 ' 前提
 ' ・1行目 = 列名
 ' ・2行目以降 = データ
@@ -11,6 +11,16 @@ Option Explicit
 ' ・1行目の途中空白列はエラー
 ' ・フラグ = "終日" のとき is_all_day = 1
 ' ・それ以外は is_all_day = 0
+'
+' 追加仕様
+' ・「ＩＤ（システムＩＤ：自動発番）」は空欄必須
+'   （値が入っていたらエラー）
+' ・開始時刻 / 終了時刻 は
+'   - 空欄OK
+'   - 10:00 形式OK
+'   - 10:00:00 形式OK
+'   - Excelの時刻型OK
+' ・JS出力時の時刻は "HH:MM" に統一
 '
 ' 出力形式
 ' window.APP_DATA = window.APP_DATA || {};
@@ -103,15 +113,12 @@ Public Sub ExportReservationsJs()
                 valueText = ToJsValue(headerName, ws.Cells(rowIndex, colIndex).Value)
 
                 lineText = "    """ & EscapeJsString(headerName) & """: " & valueText
-                If colIndex < lastCol Then
-                    lineText = lineText & ","
-                End If
-
+                lineText = lineText & ","
                 Print #fileNo, lineText
             Next colIndex
 
             ' 追加変換項目（アプリ側で使いやすいように出す）
-            Print #fileNo, "    ,""is_all_day"": " & GetIsAllDayValue(ws, headers, rowIndex)
+            Print #fileNo, "    ""is_all_day"": " & GetIsAllDayValue(ws, headers, rowIndex)
 
             If exportedCount < dataRowCount Then
                 Print #fileNo, "  },"
@@ -141,11 +148,13 @@ Private Sub ValidateRequiredHeaders(ByRef headers() As String)
     Dim j As Long
 
     requiredHeaders = Array( _
-        "ＩＤ（システムＩＤ：自動発番）", _
         "開始日", _
         "終了日", _
         "内容", _
-        "予約種別" _
+        "予約種別", _
+        "フラグ", _
+        "開始時刻", _
+        "終了時刻" _
     )
 
     For i = LBound(requiredHeaders) To UBound(requiredHeaders)
@@ -173,6 +182,7 @@ Private Function ValidateRows(ByVal ws As Worksheet, ByRef headers() As String, 
     For rowIndex = 2 To lastRow
         If Not IsRowEmpty(ws, rowIndex, lastCol) Then
             msg = msg & ValidateRequiredCellsForRow(ws, headers, rowIndex)
+            msg = msg & ValidateIdBlankForRow(ws, headers, rowIndex)
             msg = msg & ValidateDateRulesForRow(ws, headers, rowIndex)
             msg = msg & ValidateTimeRulesForRow(ws, headers, rowIndex)
         End If
@@ -189,7 +199,6 @@ Private Function ValidateRequiredCellsForRow(ByVal ws As Worksheet, ByRef header
     Dim msg As String
 
     requiredHeaders = Array( _
-        "ＩＤ（システムＩＤ：自動発番）", _
         "開始日", _
         "終了日", _
         "内容", _
@@ -208,6 +217,20 @@ Private Function ValidateRequiredCellsForRow(ByVal ws As Worksheet, ByRef header
     Next i
 
     ValidateRequiredCellsForRow = msg
+End Function
+
+Private Function ValidateIdBlankForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim colIndex As Long
+    Dim cellValue As String
+
+    colIndex = GetHeaderColumn(headers, "ＩＤ（システムＩＤ：自動発番）")
+    cellValue = Trim(CStr(ws.Cells(rowIndex, colIndex).Value))
+
+    If cellValue <> "" Then
+        ValidateIdBlankForRow = "行 " & rowIndex & " : ＩＤ（システムＩＤ：自動発番）は空欄にしてください。" & vbCrLf
+    Else
+        ValidateIdBlankForRow = ""
+    End If
 End Function
 
 Private Function ValidateDateRulesForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
@@ -243,24 +266,29 @@ Private Function ValidateDateRulesForRow(ByVal ws As Worksheet, ByRef headers() 
 End Function
 
 Private Function ValidateTimeRulesForRow(ByVal ws As Worksheet, ByRef headers() As String, ByVal rowIndex As Long) As String
+    Dim startTimeValue As Variant
+    Dim endTimeValue As Variant
     Dim startTimeText As String
     Dim endTimeText As String
     Dim msg As String
 
     msg = ""
 
-    startTimeText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "開始時刻")).Value))
-    endTimeText = Trim(CStr(ws.Cells(rowIndex, GetHeaderColumn(headers, "終了時刻")).Value))
+    startTimeValue = ws.Cells(rowIndex, GetHeaderColumn(headers, "開始時刻")).Value
+    endTimeValue = ws.Cells(rowIndex, GetHeaderColumn(headers, "終了時刻")).Value
+
+    startTimeText = Trim(CStr(startTimeValue))
+    endTimeText = Trim(CStr(endTimeValue))
 
     If startTimeText <> "" Then
-        If Not IsValidTimeText(startTimeText) Then
-            msg = msg & "行 " & rowIndex & " : 開始時刻 は HH:MM 形式で入力してください。" & vbCrLf
+        If Not IsValidTimeValue(startTimeValue) Then
+            msg = msg & "行 " & rowIndex & " : 開始時刻 は HH:MM または HH:MM:SS 形式で入力してください。" & vbCrLf
         End If
     End If
 
     If endTimeText <> "" Then
-        If Not IsValidTimeText(endTimeText) Then
-            msg = msg & "行 " & rowIndex & " : 終了時刻 は HH:MM 形式で入力してください。" & vbCrLf
+        If Not IsValidTimeValue(endTimeValue) Then
+            msg = msg & "行 " & rowIndex & " : 終了時刻 は HH:MM または HH:MM:SS 形式で入力してください。" & vbCrLf
         End If
     End If
 
@@ -320,6 +348,15 @@ Private Function ToJsValue(ByVal headerName As String, ByVal cellValue As Varian
             If IsDate(cellValue) Then
                 ToJsValue = """" & Format(CDate(cellValue), "yyyy-mm-dd") & """"
             Else
+                ToJsValue = """" & EscapeJsString(normalizeDateText(textValue)) & """"
+            End If
+
+        Case "開始時刻", "終了時刻"
+            If Trim(CStr(cellValue)) = "" Then
+                ToJsValue = """"""
+            ElseIf IsValidTimeValue(cellValue) Then
+                ToJsValue = """" & FormatTimeToHHMM(cellValue) & """"
+            Else
                 ToJsValue = """" & EscapeJsString(textValue) & """"
             End If
 
@@ -353,45 +390,85 @@ Private Function EscapeJsString(ByVal textValue As String) As String
     EscapeJsString = s
 End Function
 
-Private Function IsValidTimeText(ByVal valueText As String) As Boolean
+Private Function IsValidTimeValue(ByVal valueIn As Variant) As Boolean
     Dim s As String
+    Dim parts() As String
     Dim hh As Long
     Dim mm As Long
+    Dim ss As Long
 
-    s = Trim(valueText)
-
-    If Len(s) <> 5 Then
-        IsValidTimeText = False
+    If IsDate(valueIn) Then
+        IsValidTimeValue = True
         Exit Function
     End If
 
-    If Mid$(s, 3, 1) <> ":" Then
-        IsValidTimeText = False
+    s = Trim(CStr(valueIn))
+    If s = "" Then
+        IsValidTimeValue = False
         Exit Function
     End If
 
-    If Not IsNumeric(Left$(s, 2)) Then
-        IsValidTimeText = False
+    parts = Split(s, ":")
+
+    If UBound(parts) <> 1 And UBound(parts) <> 2 Then
+        IsValidTimeValue = False
         Exit Function
     End If
 
-    If Not IsNumeric(Right$(s, 2)) Then
-        IsValidTimeText = False
+    If Not IsNumeric(parts(0)) Or Not IsNumeric(parts(1)) Then
+        IsValidTimeValue = False
         Exit Function
     End If
 
-    hh = CLng(Left$(s, 2))
-    mm = CLng(Right$(s, 2))
+    hh = CLng(parts(0))
+    mm = CLng(parts(1))
 
     If hh < 0 Or hh > 23 Then
-        IsValidTimeText = False
+        IsValidTimeValue = False
         Exit Function
     End If
 
     If mm < 0 Or mm > 59 Then
-        IsValidTimeText = False
+        IsValidTimeValue = False
         Exit Function
     End If
 
-    IsValidTimeText = True
+    If UBound(parts) = 2 Then
+        If Not IsNumeric(parts(2)) Then
+            IsValidTimeValue = False
+            Exit Function
+        End If
+
+        ss = CLng(parts(2))
+        If ss < 0 Or ss > 59 Then
+            IsValidTimeValue = False
+            Exit Function
+        End If
+    End If
+
+    IsValidTimeValue = True
+End Function
+
+Private Function FormatTimeToHHMM(ByVal valueIn As Variant) As String
+    Dim s As String
+    Dim parts() As String
+    Dim hh As Long
+    Dim mm As Long
+
+    If IsDate(valueIn) Then
+        FormatTimeToHHMM = Format(CDate(valueIn), "hh:mm")
+        Exit Function
+    End If
+
+    s = Trim(CStr(valueIn))
+    parts = Split(s, ":")
+
+    hh = CLng(parts(0))
+    mm = CLng(parts(1))
+
+    FormatTimeToHHMM = Format(hh, "00") & ":" & Format(mm, "00")
+End Function
+
+Private Function normalizeDateText(ByVal valueText As String) As String
+    normalizeDateText = Replace(Trim(valueText), "/", "-")
 End Function
