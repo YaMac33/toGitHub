@@ -112,12 +112,50 @@ window.CALENDAR_VIEW = (function () {
 
   function loadEvents() {
     const rawEvents = Array.isArray(window.APP_DATA.events) ? window.APP_DATA.events : [];
+    const rawReservations = Array.isArray(window.APP_DATA.reservations) ? window.APP_DATA.reservations : [];
+    const reservationEvents = rawReservations.map(convertReservationToEvent);
+    const mergedEvents = rawEvents.concat(reservationEvents);
 
-    state.events = rawEvents
+    state.events = mergedEvents
       .map(normalizeEvent)
       .filter(function (item) {
         return !!item;
       });
+  }
+
+  function convertReservationToEvent(item, index) {
+    if (!item) {
+      return null;
+    }
+
+    const id = String(item["ＩＤ"] || "reservation_" + index);
+    const startDate = normalizeReservationDate(item["開始日"]);
+    const endDate = normalizeReservationDate(item["終了日"]) || startDate;
+    const startTime = normalizeTime(item["開始時刻"]);
+    const endTime = normalizeTime(item["終了時刻"]);
+    const isAllDay = String(item["フラグ"] || "").indexOf("終日") !== -1 || (!startTime && !endTime);
+
+    return {
+      event_id: id,
+      date: startDate,
+      end_date: endDate,
+      title: String(item["内容"] || item["利用目的詳細"] || item["利用目的"] || "予約"),
+      start_time: startTime,
+      end_time: endTime,
+      is_all_day: isAllDay ? 1 : 0,
+      category: "RESERVE",
+      department_name: String(item["利用目的"] || ""),
+      location: String(item["予約種別"] || ""),
+      note: String(item["利用目的詳細"] || ""),
+      sort_order: 50
+    };
+  }
+
+  function normalizeReservationDate(value) {
+    if (!value) {
+      return "";
+    }
+    return String(value).trim().replace(/\//g, "-");
   }
 
   function normalizeEvent(item) {
@@ -831,7 +869,8 @@ window.CALENDAR_VIEW = (function () {
       return null;
     }
 
-    const parts = String(value).split("-");
+    const normalizedValue = String(value).trim().replace(/\//g, "-");
+    const parts = normalizedValue.split("-");
     if (parts.length !== 3) {
       return null;
     }
