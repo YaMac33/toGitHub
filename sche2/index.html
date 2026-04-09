@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共有カレンダー</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button id="btn-sidebar-toggle" class="icon-btn mobile-only" aria-label="表示選択を開く">
+                    ☰
+                </button>
+                <div>
+                    <p class="app-kicker">Shared Schedule</p>
+                    <h1>共有カレンダー</h1>
+                </div>
+            </div>
+
+            <div class="topbar-center">
+                <div class="view-controls" role="tablist" aria-label="表示切替">
+                    <button id="btn-month" class="active" type="button">月間</button>
+                    <button id="btn-week" type="button">週間</button>
+                    <button id="btn-day" type="button">1日</button>
+                </div>
+            </div>
+
+            <div class="topbar-right">
+                <div class="date-controls">
+                    <button id="btn-prev" type="button">&lt; 前</button>
+                    <button id="btn-today" type="button">今日</button>
+                    <span id="current-date-display"></span>
+                    <button id="btn-next" type="button">次 &gt;</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-head">
+                    <h2>表示選択</h2>
+                    <button id="btn-sidebar-close" class="icon-btn mobile-only" aria-label="閉じる">×</button>
+                </div>
+
+                <div class="sidebar-section">
+                    <p class="sidebar-label">カレンダー</p>
+                    <div class="sidebar-actions">
+                        <button id="btn-filter-all" type="button" class="ghost-btn">すべてON</button>
+                        <button id="btn-filter-none" type="button" class="ghost-btn">すべてOFF</button>
+                    </div>
+                    <div id="calendar-toggles" class="toggle-list"></div>
+                </div>
+
+                <div class="sidebar-section">
+                    <p class="sidebar-label">凡例</p>
+                    <div id="legend-list" class="legend-list"></div>
+                </div>
+            </aside>
+
+            <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+            <main class="content-area">
+                <section class="content-card">
+                    <div class="content-card-head">
+                        <div>
+                            <p class="section-kicker">Calendar View</p>
+                            <h2 id="view-title">スケジュール</h2>
+                        </div>
+                        <div id="view-summary" class="view-summary"></div>
+                    </div>
+
+                    <div id="calendar-view" class="calendar-view"></div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="event-modal" class="modal" aria-hidden="true">
+        <div class="modal-backdrop" data-close-modal="true"></div>
+        <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal-head">
+                <div>
+                    <p class="modal-kicker">予定詳細</p>
+                    <h3 id="modal-title">予定</h3>
+                </div>
+                <button id="modal-close" class="icon-btn" type="button" aria-label="閉じる">×</button>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="list.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
