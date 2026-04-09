@@ -430,13 +430,51 @@ button {
 }
 
 /* カテゴリ別カラー（より洗練されたパステル＆ビビッドの組み合わせ） */
-.category-MEETING  { border-left-color: #3b82f6; background: #eff6ff; border-right-color: #dbeafe; border-top-color: #dbeafe; border-bottom-color: #dbeafe; }
-.category-COMMITTEE{ border-left-color: #10b981; background: #ecfdf5; border-right-color: #d1fae5; border-top-color: #d1fae5; border-bottom-color: #d1fae5; }
-.category-QUESTION { border-left-color: #f59e0b; background: #fffbeb; border-right-color: #fef3c7; border-top-color: #fef3c7; border-bottom-color: #fef3c7; }
-.category-RESERVE  { border-left-color: #8b5cf6; background: #f5f3ff; border-right-color: #ede9fe; border-top-color: #ede9fe; border-bottom-color: #ede9fe; }
-.category-HOLIDAY  { border-left-color: #ef4444; background: #fef2f2; border-right-color: #fee2e2; border-top-color: #fee2e2; border-bottom-color: #fee2e2; }
-.category-TERM     { border-left-color: #06b6d4; background: #ecfeff; border-right-color: #cffafe; border-top-color: #cffafe; border-bottom-color: #cffafe; }
-.category-OTHER    { border-left-color: #64748b; background: #f8fafc; border-right-color: #f1f5f9; border-top-color: #f1f5f9; border-bottom-color: #f1f5f9; }
+.category-WORK {
+  border-left-color: #64748b;
+  background: #f8fafc;
+}
+
+.category-MEETING {
+  border-left-color: #2563eb;
+  background: #eff6ff;
+}
+
+.category-TASK {
+  border-left-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.category-DEADLINE {
+  border-left-color: #dc2626;
+  background: #fef2f2;
+}
+
+.category-VISIT {
+  border-left-color: #ea580c;
+  background: #fff7ed;
+}
+
+.category-RESERVE {
+  border-left-color: #7c3aed;
+  background: #f5f3ff;
+}
+
+.category-HOLIDAY {
+  border-left-color: #db2777;
+  background: #fdf2f8;
+}
+
+.category-ABSENCE {
+  border-left-color: #0891b2;
+  background: #ecfeff;
+}
+
+.category-OTHER {
+  border-left-color: #64748b;
+  background: #f8fafc;
+}
+
 
 .event-chip--more {
   border: 1px dashed #cbd5e1;
@@ -716,3 +754,4 @@ button {
     gap: 4px;
   }
 }
+
