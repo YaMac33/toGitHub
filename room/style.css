@@ -132,14 +132,21 @@ body {
 
 table {
   width: 100%;
-  border-collapse: collapse;
-  min-width: 960px;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1100px;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }
 
 thead th {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 30;
   background: #f3f4f6;
   color: #111827;
   font-size: 16px;
@@ -149,14 +156,18 @@ thead th {
   border-right: 1px solid var(--line);
   text-align: center;
   vertical-align: middle;
+  box-shadow: 0 1px 0 var(--line);
 }
 
 thead th:first-child {
+  left: 0;
+  z-index: 40;
   min-width: 140px;
+  box-shadow: 1px 0 0 var(--line), 0 1px 0 var(--line);
 }
 
 thead th:not(:first-child) {
-  min-width: 220px;
+  min-width: 260px;
 }
 
 tbody td {
@@ -176,10 +187,14 @@ thead th:last-child {
 }
 
 .date-cell {
+  position: sticky;
+  left: 0;
+  z-index: 10;
   padding: 16px 12px;
   text-align: center;
   background: #fafafa;
   white-space: nowrap;
+  box-shadow: 1px 0 0 var(--line);
 }
 
 .date-main {
@@ -220,17 +235,8 @@ thead th:last-child {
   border-radius: 12px;
 }
 
-.room-click:hover .room-stack,
-.room-click:focus-visible .room-stack {
+.room-click:hover .room-stack {
   border-color: var(--accent);
-}
-
-.room-click:focus-visible {
-  outline: none;
-}
-
-.room-click:focus-visible .room-item {
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
 }
 
 .room-stack {
@@ -310,12 +316,8 @@ thead th:last-child {
 
 .slot-empty {
   font-size: 14px;
-  color: #6b7280;
+  color: #9ca3af;
   align-self: start;
-  background: #f9fafb;
-  border: 1px dashed #d1d5db;
-  border-radius: 8px;
-  padding: 8px 10px;
 }
 
 .empty-message {
@@ -504,7 +506,7 @@ thead th:last-child {
   }
 
   thead th:not(:first-child) {
-    min-width: 180px;
+    min-width: 220px;
   }
 
   .room-stack {
