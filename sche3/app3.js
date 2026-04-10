@@ -3,6 +3,7 @@ window.calendarData = window.calendarData || {};
 let currentDate = new Date();
 let currentView = "month";
 let activeFilters = new Set();
+
 const colors = [
     "#4f46e5",
     "#0ea5e9",
@@ -17,27 +18,54 @@ const colors = [
 const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 const MAX_MONTH_EVENTS = 3;
 
+const FIELD_KEYS = {
+    id: ["ＩＤ（システムＩＤ：自動発番）", "ID", "ＩＤ"],
+    startDate: ["開始日"],
+    startTime: ["開始時刻"],
+    endDate: ["終了日"],
+    endTime: ["終了時刻"],
+    subject: ["予定"],
+    subjectDetail: ["予定詳細"],
+    place: ["場所"],
+    placeDetail: ["場所詳細"],
+    content: ["内容"],
+    publicLevel: ["情報公開レベル"],
+    outingType: ["外出区分"],
+    priority: ["重要度"],
+    reserveType: ["予約種別"],
+    flag: ["フラグ"],
+    iconNo: ["アイコン番号"],
+    approval: ["承認依頼"],
+    noticeMail: ["通知の方法：メール"],
+    noticeMessage: ["通知の方法：伝言"]
+};
+
 document.addEventListener("DOMContentLoaded", () => {
-    if (typeof fileList === "undefined" || !Array.isArray(fileList) || fileList.length === 0) {
+    if (!Array.isArray(window.fileList) || window.fileList.length === 0) {
+        console.warn("list.js が未設定、または fileList が空です。");
         initializeApp();
         return;
     }
 
     let loadedCount = 0;
 
-    fileList.forEach((fileName) => {
+    window.fileList.forEach((fileName) => {
         const script = document.createElement("script");
         script.src = `${fileName}.js`;
 
         script.onload = () => {
             loadedCount++;
-            if (loadedCount === fileList.length) initializeApp();
+            if (loadedCount === window.fileList.length) {
+                initializeApp();
+            }
         };
 
         script.onerror = () => {
             console.error(`${fileName}.js の読み込みに失敗しました。`);
             loadedCount++;
-            if (loadedCount === fileList.length) initializeApp();
+            if (loadedCount === window.fileList.length) {
+                initializeApp();
+            }
         };
 
         document.body.appendChild(script);
@@ -53,15 +81,20 @@ function initializeApp() {
 function setupSidebar() {
     const container = document.getElementById("calendar-toggles");
     const legendList = document.getElementById("legend-list");
+
+    if (!container) return;
+
     container.innerHTML = "";
-    legendList.innerHTML = "";
+    if (legendList) legendList.innerHTML = "";
+    activeFilters.clear();
 
-    if (typeof fileList === "undefined" || !Array.isArray(fileList)) return;
+    if (!Array.isArray(window.fileList)) return;
 
-    fileList.forEach((fileName, index) => {
+    window.fileList.forEach((fileName, index) => {
         activeFilters.add(fileName);
 
         const color = colors[index % colors.length];
+        const data = Array.isArray(window.calendarData[fileName]) ? window.calendarData[fileName] : [];
 
         const label = document.createElement("label");
         label.className = "toggle-label";
@@ -84,7 +117,7 @@ function setupSidebar() {
 
         const count = document.createElement("span");
         count.className = "toggle-count";
-        count.textContent = `${Array.isArray(window.calendarData[fileName]) ? window.calendarData[fileName].length : 0}件`;
+        count.textContent = `${data.length}件`;
 
         textWrap.appendChild(name);
         textWrap.appendChild(count);
@@ -103,56 +136,85 @@ function setupSidebar() {
         label.appendChild(textWrap);
         container.appendChild(label);
 
-        const legend = document.createElement("div");
-        legend.className = "legend-item";
-        legend.innerHTML = `<span class="legend-swatch" style="background:${color}"></span><span>${escapeHtml(fileName)}</span>`;
-        legendList.appendChild(legend);
+        if (legendList) {
+            const legend = document.createElement("div");
+            legend.className = "legend-item";
+            legend.innerHTML = `<span class="legend-swatch" style="background:${color}"></span><span>${escapeHtml(fileName)}</span>`;
+            legendList.appendChild(legend);
+        }
     });
 }
 
 function setupEventListeners() {
-    document.getElementById("btn-prev").addEventListener("click", () => changeDate(-1));
-    document.getElementById("btn-next").addEventListener("click", () => changeDate(1));
-    document.getElementById("btn-today").addEventListener("click", goToToday);
+    const btnPrev = document.getElementById("btn-prev");
+    const btnNext = document.getElementById("btn-next");
+    const btnToday = document.getElementById("btn-today");
+    const btnFilterAll = document.getElementById("btn-filter-all");
+    const btnFilterNone = document.getElementById("btn-filter-none");
+    const btnSidebarToggle = document.getElementById("btn-sidebar-toggle");
+    const btnSidebarClose = document.getElementById("btn-sidebar-close");
+    const backdrop = document.getElementById("sidebar-backdrop");
+    const modal = document.getElementById("event-modal");
+    const modalClose = document.getElementById("modal-close");
 
-    const views = ["month", "week", "day"];
-    views.forEach((view) => {
-        document.getElementById(`btn-${view}`).addEventListener("click", (e) => {
+    if (btnPrev) btnPrev.addEventListener("click", () => changeDate(-1));
+    if (btnNext) btnNext.addEventListener("click", () => changeDate(1));
+    if (btnToday) btnToday.addEventListener("click", goToToday);
+
+    ["month", "week", "day"].forEach((view) => {
+        const btn = document.getElementById(`btn-${view}`);
+        if (!btn) return;
+
+        btn.addEventListener("click", (e) => {
             currentView = view;
-            views.forEach((v) => document.getElementById(`btn-${v}`).classList.remove("active"));
+
+            ["month", "week", "day"].forEach((v) => {
+                const target = document.getElementById(`btn-${v}`);
+                if (target) target.classList.remove("active");
+            });
+
             e.currentTarget.classList.add("active");
             renderCalendar();
         });
     });
 
-    document.getElementById("btn-filter-all").addEventListener("click", () => {
-        if (!Array.isArray(fileList)) return;
-        activeFilters = new Set(fileList);
-        syncCheckboxStates(true);
-        renderCalendar();
-    });
+    if (btnFilterAll) {
+        btnFilterAll.addEventListener("click", () => {
+            if (!Array.isArray(window.fileList)) return;
+            activeFilters = new Set(window.fileList);
+            syncCheckboxStates(true);
+            renderCalendar();
+        });
+    }
 
-    document.getElementById("btn-filter-none").addEventListener("click", () => {
-        activeFilters.clear();
-        syncCheckboxStates(false);
-        renderCalendar();
-    });
+    if (btnFilterNone) {
+        btnFilterNone.addEventListener("click", () => {
+            activeFilters.clear();
+            syncCheckboxStates(false);
+            renderCalendar();
+        });
+    }
 
-    const sidebar = document.getElementById("sidebar");
-    const backdrop = document.getElementById("sidebar-backdrop");
+    if (btnSidebarToggle) {
+        btnSidebarToggle.addEventListener("click", () => {
+            const sidebar = document.getElementById("sidebar");
+            if (sidebar) sidebar.classList.add("open");
+            if (backdrop) backdrop.classList.add("show");
+        });
+    }
 
-    document.getElementById("btn-sidebar-toggle").addEventListener("click", () => {
-        sidebar.classList.add("open");
-        backdrop.classList.add("show");
-    });
+    if (btnSidebarClose) btnSidebarClose.addEventListener("click", closeSidebar);
+    if (backdrop) backdrop.addEventListener("click", closeSidebar);
 
-    document.getElementById("btn-sidebar-close").addEventListener("click", closeSidebar);
-    backdrop.addEventListener("click", closeSidebar);
+    if (modalClose) modalClose.addEventListener("click", closeModal);
 
-    document.getElementById("modal-close").addEventListener("click", closeModal);
-    document.getElementById("event-modal").addEventListener("click", (e) => {
-        if (e.target.dataset.closeModal === "true") closeModal();
-    });
+    if (modal) {
+        modal.addEventListener("click", (e) => {
+            if (e.target.dataset.closeModal === "true") {
+                closeModal();
+            }
+        });
+    }
 
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
@@ -169,8 +231,11 @@ function syncCheckboxStates(isChecked) {
 }
 
 function closeSidebar() {
-    document.getElementById("sidebar").classList.remove("open");
-    document.getElementById("sidebar-backdrop").classList.remove("show");
+    const sidebar = document.getElementById("sidebar");
+    const backdrop = document.getElementById("sidebar-backdrop");
+
+    if (sidebar) sidebar.classList.remove("open");
+    if (backdrop) backdrop.classList.remove("show");
 }
 
 function goToToday() {
@@ -198,20 +263,28 @@ function renderCalendar() {
     const viewTitle = document.getElementById("view-title");
     const summary = document.getElementById("view-summary");
 
+    if (!viewContainer) return;
+
     viewContainer.innerHTML = "";
     updateDateDisplay();
 
     const allEvents = getFilteredEvents();
 
-    viewTitle.textContent =
-        currentView === "month" ? "月間スケジュール" :
-        currentView === "week" ? "週間スケジュール" :
-        "1日スケジュール";
+    if (viewTitle) {
+        viewTitle.textContent =
+            currentView === "month"
+                ? "月間スケジュール"
+                : currentView === "week"
+                ? "週間スケジュール"
+                : "1日スケジュール";
+    }
 
-    summary.innerHTML = `
-        <span class="summary-chip">表示中 ${allEvents.length}件</span>
-        <span class="summary-chip">選択 ${activeFilters.size}件</span>
-    `;
+    if (summary) {
+        summary.innerHTML = `
+            <span class="summary-chip">表示中 ${allEvents.length}件</span>
+            <span class="summary-chip">選択 ${activeFilters.size}件</span>
+        `;
+    }
 
     if (currentView === "month") {
         renderMonthView(viewContainer, allEvents);
@@ -224,6 +297,8 @@ function renderCalendar() {
 
 function updateDateDisplay() {
     const display = document.getElementById("current-date-display");
+    if (!display) return;
+
     const y = currentDate.getFullYear();
     const m = currentDate.getMonth() + 1;
     const d = currentDate.getDate();
@@ -244,19 +319,49 @@ function getFilteredEvents() {
     let events = [];
 
     activeFilters.forEach((fileName) => {
-        const sourceEvents = Array.isArray(window.calendarData[fileName]) ? window.calendarData[fileName] : [];
-        const colorIndex = Array.isArray(fileList) ? fileList.indexOf(fileName) : 0;
+        const sourceEvents = Array.isArray(window.calendarData[fileName])
+            ? window.calendarData[fileName]
+            : [];
 
-        const normalized = sourceEvents.map((e) => ({
-            ...e,
-            _source: fileName,
-            _color: colors[(colorIndex >= 0 ? colorIndex : 0) % colors.length]
-        }));
+        const colorIndex = Array.isArray(window.fileList)
+            ? window.fileList.indexOf(fileName)
+            : 0;
+
+        const normalized = sourceEvents.map((e) => normalizeEvent(e, fileName, colorIndex));
 
         events = events.concat(normalized);
     });
 
     return events;
+}
+
+function normalizeEvent(raw, sourceName, colorIndex) {
+    const event = { ...raw };
+
+    event._source = sourceName;
+    event._color = colors[(colorIndex >= 0 ? colorIndex : 0) % colors.length];
+
+    event._id = getField(raw, FIELD_KEYS.id);
+    event._startDate = normalizeDateString(getField(raw, FIELD_KEYS.startDate));
+    event._startTime = normalizeTimeString(getField(raw, FIELD_KEYS.startTime));
+    event._endDate = normalizeDateString(getField(raw, FIELD_KEYS.endDate)) || event._startDate;
+    event._endTime = normalizeTimeString(getField(raw, FIELD_KEYS.endTime));
+    event._subject = getField(raw, FIELD_KEYS.subject);
+    event._subjectDetail = getField(raw, FIELD_KEYS.subjectDetail);
+    event._place = getField(raw, FIELD_KEYS.place);
+    event._placeDetail = getField(raw, FIELD_KEYS.placeDetail);
+    event._content = getField(raw, FIELD_KEYS.content);
+    event._publicLevel = getField(raw, FIELD_KEYS.publicLevel);
+    event._outingType = getField(raw, FIELD_KEYS.outingType);
+    event._priority = getField(raw, FIELD_KEYS.priority);
+    event._reserveType = getField(raw, FIELD_KEYS.reserveType);
+    event._flag = getField(raw, FIELD_KEYS.flag);
+    event._iconNo = getField(raw, FIELD_KEYS.iconNo);
+    event._approval = getField(raw, FIELD_KEYS.approval);
+    event._noticeMail = getField(raw, FIELD_KEYS.noticeMail);
+    event._noticeMessage = getField(raw, FIELD_KEYS.noticeMessage);
+
+    return event;
 }
 
 function renderMonthView(container, allEvents) {
@@ -356,6 +461,7 @@ function createDayCell(dateObj, allEvents, options = {}) {
 
     const cell = document.createElement("div");
     cell.className = "calendar-day";
+
     if (!isCurrentMonth) cell.classList.add("other-month");
     if (isToday(dateObj)) cell.classList.add("today");
     if (dateObj.getDay() === 0) cell.classList.add("is-sun");
@@ -398,7 +504,7 @@ function createDayCell(dateObj, allEvents, options = {}) {
         eventEl.style.background = `linear-gradient(135deg, ${e._color}, ${hexToRgba(e._color, 0.78)})`;
 
         const time = buildEventTimeLabel(e, dateObj);
-        const title = e["予定詳細"] || e["予定"] || "予定あり";
+        const title = buildEventTitle(e);
 
         eventEl.innerHTML = `
             <span class="event-time">${escapeHtml(time)}</span>
@@ -418,9 +524,12 @@ function createDayCell(dateObj, allEvents, options = {}) {
         moreBtn.addEventListener("click", () => {
             currentDate = new Date(dateObj);
             currentView = "day";
+
             ["month", "week", "day"].forEach((v) => {
-                document.getElementById(`btn-${v}`).classList.toggle("active", v === "day");
+                const btn = document.getElementById(`btn-${v}`);
+                if (btn) btn.classList.toggle("active", v === "day");
             });
+
             renderCalendar();
         });
         list.appendChild(moreBtn);
@@ -435,14 +544,14 @@ function createDetailedEventCard(e) {
     card.className = "event-detail-card";
     card.style.setProperty("--card-accent", e._color);
 
-    const title = e["予定詳細"] || e["予定"] || "予定あり";
-    const place = [e["場所"], e["場所詳細"]].filter(Boolean).join(" / ");
-    const time = `${e["開始日"] || ""} ${e["開始時刻"] || ""}${e["終了時刻"] ? " ～ " + e["終了時刻"] : ""}`;
+    const title = buildEventTitle(e);
+    const place = [e._place, e._placeDetail].filter(Boolean).join(" / ");
+    const time = buildEventRangeText(e);
 
     card.innerHTML = `
         <div class="event-detail-top">
             <span class="event-detail-source">${escapeHtml(e._source)}</span>
-            <span class="event-detail-time">${escapeHtml(time.trim())}</span>
+            <span class="event-detail-time">${escapeHtml(time)}</span>
         </div>
         <div class="event-detail-title">${escapeHtml(title)}</div>
         <div class="event-detail-meta">
@@ -461,28 +570,29 @@ function getEventsForDate(dateObj, allEvents) {
 }
 
 function isEventOnDate(event, dateObj) {
-    const start = parseDateOnly(event["開始日"]);
+    const start = parseDateOnly(event._startDate);
     if (!start) return false;
 
-    const end = parseDateOnly(event["終了日"]) || start;
+    const end = parseDateOnly(event._endDate) || start;
     const target = startOfDay(dateObj);
 
     return target >= start && target <= end;
 }
 
 function compareEvents(a, b) {
-    const aTime = a["開始時刻"] || "99:99";
-    const bTime = b["開始時刻"] || "99:99";
+    const aTime = a._startTime || "99:99";
+    const bTime = b._startTime || "99:99";
     const timeComp = aTime.localeCompare(bTime, "ja");
     if (timeComp !== 0) return timeComp;
-    return (a["予定詳細"] || a["予定"] || "").localeCompare(b["予定詳細"] || b["予定"] || "", "ja");
+
+    return buildEventTitle(a).localeCompare(buildEventTitle(b), "ja");
 }
 
 function buildEventTimeLabel(event, dateObj) {
-    const startDate = parseDateOnly(event["開始日"]);
-    const endDate = parseDateOnly(event["終了日"]) || startDate;
-    const startTime = event["開始時刻"] || "";
-    const endTime = event["終了時刻"] || "";
+    const startDate = parseDateOnly(event._startDate);
+    const endDate = parseDateOnly(event._endDate) || startDate;
+    const startTime = event._startTime || "";
+    const endTime = event._endTime || "";
 
     if (!startDate) return "時刻未設定";
 
@@ -500,26 +610,56 @@ function buildEventTimeLabel(event, dateObj) {
     return "継続";
 }
 
+function buildEventRangeText(event) {
+    const startDate = event._startDate || "";
+    const startTime = event._startTime || "";
+    const endDate = event._endDate || "";
+    const endTime = event._endTime || "";
+
+    if (!startDate && !endDate) return "日時未設定";
+
+    if (startDate === endDate) {
+        if (startTime && endTime) return `${startDate} ${startTime} ～ ${endTime}`;
+        if (startTime) return `${startDate} ${startTime}`;
+        return `${startDate} 終日`;
+    }
+
+    return `${startDate} ${startTime} ～ ${endDate} ${endTime}`.trim();
+}
+
+function buildEventTitle(event) {
+    return event._subjectDetail || event._subject || "予定あり";
+}
+
 function openEventModal(e) {
     const modal = document.getElementById("event-modal");
     const title = document.getElementById("modal-title");
     const body = document.getElementById("modal-body");
 
-    title.textContent = e["予定詳細"] || e["予定"] || "予定";
+    if (!modal || !title || !body) return;
+
+    title.textContent = buildEventTitle(e);
 
     body.innerHTML = `
         <div class="detail-grid">
             ${buildDetailRow("カレンダー", e._source)}
-            ${buildDetailRow("開始", `${e["開始日"] || ""} ${e["開始時刻"] || ""}`.trim())}
-            ${buildDetailRow("終了", `${e["終了日"] || ""} ${e["終了時刻"] || ""}`.trim())}
-            ${buildDetailRow("予定", e["予定"] || "")}
-            ${buildDetailRow("予定詳細", e["予定詳細"] || "")}
-            ${buildDetailRow("場所", e["場所"] || "")}
-            ${buildDetailRow("場所詳細", e["場所詳細"] || "")}
-            ${buildDetailRow("内容", e["内容"] || "")}
-            ${buildDetailRow("情報公開レベル", e["情報公開レベル"] || "")}
-            ${buildDetailRow("重要度", e["重要度"] || "")}
-            ${buildDetailRow("予約種別", e["予約種別"] || "")}
+            ${buildDetailRow("ID", e._id)}
+            ${buildDetailRow("開始", `${e._startDate || ""} ${e._startTime || ""}`.trim())}
+            ${buildDetailRow("終了", `${e._endDate || ""} ${e._endTime || ""}`.trim())}
+            ${buildDetailRow("予定", e._subject)}
+            ${buildDetailRow("予定詳細", e._subjectDetail)}
+            ${buildDetailRow("場所", e._place)}
+            ${buildDetailRow("場所詳細", e._placeDetail)}
+            ${buildDetailRow("内容", e._content)}
+            ${buildDetailRow("情報公開レベル", e._publicLevel)}
+            ${buildDetailRow("外出区分", e._outingType)}
+            ${buildDetailRow("重要度", e._priority)}
+            ${buildDetailRow("予約種別", e._reserveType)}
+            ${buildDetailRow("フラグ", e._flag)}
+            ${buildDetailRow("アイコン番号", e._iconNo)}
+            ${buildDetailRow("承認依頼", e._approval)}
+            ${buildDetailRow("通知の方法：メール", e._noticeMail)}
+            ${buildDetailRow("通知の方法：伝言", e._noticeMessage)}
         </div>
     `;
 
@@ -538,6 +678,8 @@ function buildDetailRow(label, value) {
 
 function closeModal() {
     const modal = document.getElementById("event-modal");
+    if (!modal) return;
+
     modal.classList.remove("show");
     modal.setAttribute("aria-hidden", "true");
 }
@@ -551,7 +693,11 @@ function getStartOfWeek(date) {
 
 function parseDateOnly(value) {
     if (!value) return null;
-    const parts = String(value).split("/");
+
+    const normalized = normalizeDateString(value);
+    if (!normalized) return null;
+
+    const parts = normalized.split("/");
     if (parts.length !== 3) return null;
 
     const y = Number(parts[0]);
@@ -559,7 +705,63 @@ function parseDateOnly(value) {
     const d = Number(parts[2]);
 
     if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return null;
+
     return new Date(y, m, d);
+}
+
+function normalizeDateString(value) {
+    if (value == null) return "";
+    let s = String(value).trim();
+    if (!s) return "";
+
+    s = s.replace(/[.\-]/g, "/");
+    s = s.replace(/\s+/g, "");
+
+    const parts = s.split("/");
+    if (parts.length !== 3) return s;
+
+    const y = Number(parts[0]);
+    const m = Number(parts[1]);
+    const d = Number(parts[2]);
+
+    if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return s;
+
+    return `${y}/${m}/${d}`;
+}
+
+function normalizeTimeString(value) {
+    if (value == null) return "";
+    let s = String(value).trim();
+    if (!s) return "";
+
+    s = s.replace("：", ":");
+
+    if (/^\d{1,2}:\d{1,2}$/.test(s)) {
+        const parts = s.split(":");
+        return `${Number(parts[0])}:${String(Number(parts[1])).padStart(2, "0")}`;
+    }
+
+    if (/^\d{3,4}$/.test(s)) {
+        const padded = s.padStart(4, "0");
+        return `${Number(padded.slice(0, 2))}:${padded.slice(2, 4)}`;
+    }
+
+    return s;
+}
+
+function getField(obj, keys) {
+    if (!obj || !Array.isArray(keys)) return "";
+
+    for (const key of keys) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            const value = obj[key];
+            if (value != null && String(value).trim() !== "") {
+                return String(value).trim();
+            }
+        }
+    }
+
+    return "";
 }
 
 function startOfDay(date) {
@@ -599,11 +801,17 @@ function escapeHtml(value) {
 }
 
 function hexToRgba(hex, alpha) {
-    const h = hex.replace("#", "");
+    const h = String(hex || "").replace("#", "");
     const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+
+    if (!/^[0-9a-fA-F]{6}$/.test(full)) {
+        return `rgba(79, 70, 229, ${alpha})`;
+    }
+
     const bigint = parseInt(full, 16);
     const r = (bigint >> 16) & 255;
     const g = (bigint >> 8) & 255;
     const b = bigint & 255;
+
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
