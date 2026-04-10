@@ -583,6 +583,151 @@ button {
     border-color: #94a3b8;
 }
 
+.week-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.week-row {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.week-row.today {
+    border-color: #bfdbfe;
+    box-shadow: 0 10px 24px rgba(59, 130, 246, 0.12);
+}
+
+.week-row__date {
+    padding: 16px 12px;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-align: center;
+}
+
+.week-row.today .week-row__date {
+    background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 100%);
+}
+
+.week-row__weekday {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--color-text-sub);
+}
+
+.week-row__day-number {
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 800;
+    color: var(--color-text-main);
+}
+
+.week-row__full-date {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-sub);
+}
+
+.week-row.is-sun .week-row__weekday,
+.week-row.is-sun .week-row__day-number {
+    color: var(--color-danger);
+}
+
+.week-row.is-sat .week-row__weekday,
+.week-row.is-sat .week-row__day-number {
+    color: var(--color-primary);
+}
+
+.week-row.today .week-row__day-number {
+    color: var(--color-primary);
+}
+
+.week-row__content {
+    padding: 10px 12px;
+    min-width: 0;
+}
+
+.week-row__events {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px;
+}
+
+.week-row__empty {
+    min-height: 68px;
+    border: 1px dashed #d6e1ee;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-sub);
+    background: #fbfdff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.week-event-item {
+    width: 100%;
+    appearance: none;
+    border: none;
+    border-radius: 12px;
+    color: #ffffff;
+    text-align: left;
+    padding: 10px 12px;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+
+.week-event-item:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    filter: brightness(0.98);
+}
+
+.week-event-item__time,
+.week-event-item__title,
+.week-event-item__meta {
+    display: block;
+}
+
+.week-event-item__time {
+    font-size: 11px;
+    font-weight: 800;
+    opacity: 0.92;
+}
+
+.week-event-item__title {
+    margin-top: 3px;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.week-event-item__meta {
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.4;
+    opacity: 0.92;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
 .day-view-panel {
     display: flex;
     flex-direction: column;
@@ -846,6 +991,22 @@ button {
         grid-template-columns: 1fr;
         gap: 6px;
     }
+
+    .week-row {
+        grid-template-columns: 88px minmax(0, 1fr);
+    }
+
+    .week-row__date {
+        padding: 14px 8px;
+    }
+
+    .week-row__day-number {
+        font-size: 26px;
+    }
+
+    .week-row__events {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 640px) {
@@ -943,6 +1104,39 @@ button {
 
     .event-title {
         font-size: 11px;
+    }
+
+    .week-row {
+        grid-template-columns: 72px minmax(0, 1fr);
+        border-radius: 14px;
+    }
+
+    .week-row__date {
+        padding: 12px 6px;
+    }
+
+    .week-row__weekday {
+        font-size: 11px;
+    }
+
+    .week-row__day-number {
+        font-size: 22px;
+    }
+
+    .week-row__full-date {
+        font-size: 10px;
+    }
+
+    .week-row__content {
+        padding: 8px;
+    }
+
+    .week-event-item {
+        padding: 9px 10px;
+    }
+
+    .week-event-item__title {
+        font-size: 12px;
     }
 
     .modal__dialog {

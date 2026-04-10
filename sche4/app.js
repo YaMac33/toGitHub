@@ -295,23 +295,12 @@ function renderWeekView(container, allEvents) {
     const start = getStartOfWeek(currentDate);
 
     const grid = document.createElement("div");
-    grid.className = "calendar-grid week-grid";
-
-    WEEK_LABELS.forEach((day, index) => {
-        const head = document.createElement("div");
-        head.className = `calendar-header-day ${index === 0 ? "sun" : ""} ${index === 6 ? "sat" : ""}`;
-        head.textContent = day;
-        grid.appendChild(head);
-    });
+    grid.className = "week-list";
 
     for (let i = 0; i < 7; i++) {
         const date = new Date(start);
         date.setDate(start.getDate() + i);
-        const cell = createDayCell(date, allEvents, {
-            isCurrentMonth: true,
-            compact: false
-        });
-        grid.appendChild(cell);
+        grid.appendChild(createWeekRow(date, allEvents));
     }
 
     container.appendChild(grid);
@@ -452,6 +441,77 @@ function createDetailedEventCard(e) {
 
     card.addEventListener("click", () => openEventModal(e));
     return card;
+}
+
+function createWeekRow(dateObj, allEvents) {
+    const row = document.createElement("section");
+    row.className = "week-row";
+    if (isToday(dateObj)) row.classList.add("today");
+    if (dateObj.getDay() === 0) row.classList.add("is-sun");
+    if (dateObj.getDay() === 6) row.classList.add("is-sat");
+
+    const aside = document.createElement("div");
+    aside.className = "week-row__date";
+
+    const weekday = document.createElement("div");
+    weekday.className = "week-row__weekday";
+    weekday.textContent = WEEK_LABELS[dateObj.getDay()];
+
+    const dayNumber = document.createElement("div");
+    dayNumber.className = "week-row__day-number";
+    dayNumber.textContent = `${dateObj.getDate()}`;
+
+    const fullDate = document.createElement("div");
+    fullDate.className = "week-row__full-date";
+    fullDate.textContent = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+
+    aside.appendChild(weekday);
+    aside.appendChild(dayNumber);
+    aside.appendChild(fullDate);
+    row.appendChild(aside);
+
+    const content = document.createElement("div");
+    content.className = "week-row__content";
+
+    const events = getEventsForDate(dateObj, allEvents);
+    if (events.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "week-row__empty";
+        empty.textContent = "予定はありません";
+        content.appendChild(empty);
+    } else {
+        const list = document.createElement("div");
+        list.className = "week-row__events";
+        events.forEach((e) => {
+            list.appendChild(createWeekEventItem(e, dateObj));
+        });
+        content.appendChild(list);
+    }
+
+    row.appendChild(content);
+    return row;
+}
+
+function createWeekEventItem(event, dateObj) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "week-event-item";
+    item.style.background = `linear-gradient(135deg, ${event._color}, ${hexToRgba(event._color, 0.82)})`;
+
+    const detailCard = createDetailedEventCard(event);
+    const title = detailCard.querySelector(".event-detail-title")?.textContent?.trim() || "";
+    const place = detailCard.querySelector(".event-detail-meta")?.textContent?.trim() || "";
+    const detailParts = [event._source];
+    if (place) detailParts.push(place);
+
+    item.innerHTML = `
+        <span class="week-event-item__time">${escapeHtml(buildEventTimeLabel(event, dateObj))}</span>
+        <span class="week-event-item__title">${escapeHtml(title)}</span>
+        <span class="week-event-item__meta">${escapeHtml(detailParts.join(" | "))}</span>
+    `;
+
+    item.addEventListener("click", () => openEventModal(event));
+    return item;
 }
 
 function getEventsForDate(dateObj, allEvents) {
