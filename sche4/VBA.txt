@@ -1,0 +1,246 @@
+Option Explicit
+
+' ============================================
+' Excel各シート → scheフォルダへ .js 出力
+' 同時に list.js も自動更新
+'
+' 想定:
+' - 各シート = 1人分の予定
+' - シート名 = 出力ファイル名（例: Satou → Satou.js）
+' - 1行目 = 見出し
+' - 2行目以降 = データ
+'
+' 出力先:
+' - このExcelファイルと同じ階層の "sche" フォルダ
+' ============================================
+
+Public Sub ExportScheduleAll()
+    On Error GoTo ErrHandler
+    
+    Dim baseFolder As String
+    Dim outFolder As String
+    Dim ws As Worksheet
+    Dim exportedNames As Collection
+    
+    Set exportedNames = New Collection
+    
+    baseFolder = ThisWorkbook.Path
+    outFolder = baseFolder & Application.PathSeparator & "sche"
+    
+    EnsureFolderExists outFolder
+    
+    For Each ws In ThisWorkbook.Worksheets
+        If ShouldExportSheet(ws) Then
+            ExportScheduleSheet ws, outFolder
+            exportedNames.Add ws.Name
+        End If
+    Next ws
+    
+    ExportListJs outFolder, exportedNames
+    
+    MsgBox "出力完了しました。", vbInformation
+    Exit Sub
+
+ErrHandler:
+    MsgBox "エラー: " & Err.Description, vbExclamation
+End Sub
+
+Private Function ShouldExportSheet(ByVal ws As Worksheet) As Boolean
+    ' 必要に応じて除外シート名を追加
+    Select Case ws.Name
+        Case "README", "設定", "マスタ", "template", "一覧"
+            ShouldExportSheet = False
+        Case Else
+            ShouldExportSheet = True
+    End Select
+End Function
+
+Private Sub ExportScheduleSheet(ByVal ws As Worksheet, ByVal outFolder As String)
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim filePath As String
+    Dim fileNo As Integer
+    Dim sb As String
+    Dim safeSheetName As String
+    Dim arrHeaders() As String
+    Dim r As Long, c As Long
+    Dim firstRecord As Boolean
+    Dim recordHasData As Boolean
+    Dim key As String
+    Dim value As Variant
+    
+    lastRow = GetLastRow(ws)
+    lastCol = GetLastCol(ws)
+    
+    If lastRow < 2 Or lastCol < 1 Then Exit Sub
+    
+    ReDim arrHeaders(1 To lastCol)
+    For c = 1 To lastCol
+        arrHeaders(c) = Trim$(CStr(ws.Cells(1, c).Value))
+    Next c
+    
+    safeSheetName = SanitizeFileName(ws.Name)
+    filePath = outFolder & Application.PathSeparator & safeSheetName & ".js"
+    
+    sb = ""
+    sb = sb & "window.calendarData = window.calendarData || {};" & vbCrLf & vbCrLf
+    sb = sb & "window.calendarData[""" & EscapeJsString(ws.Name) & """] = [" & vbCrLf
+    
+    firstRecord = True
+    
+    For r = 2 To lastRow
+        recordHasData = RowHasAnyData(ws, r, lastCol)
+        
+        If recordHasData Then
+            If Not firstRecord Then
+                sb = sb & "," & vbCrLf
+            End If
+            
+            sb = sb & "  {" & vbCrLf
+            
+            For c = 1 To lastCol
+                key = arrHeaders(c)
+                value = ws.Cells(r, c).Value
+                
+                sb = sb & "    """ & EscapeJsString(key) & """: " & ToJsValue(value, key)
+                
+                If c < lastCol Then
+                    sb = sb & ","
+                End If
+                sb = sb & vbCrLf
+            Next c
+            
+            sb = sb & "  }"
+            firstRecord = False
+        End If
+    Next r
+    
+    sb = sb & vbCrLf & "];" & vbCrLf
+    
+    fileNo = FreeFile
+    Open filePath For Output As #fileNo
+    Print #fileNo, sb
+    Close #fileNo
+End Sub
+
+Private Sub ExportListJs(ByVal outFolder As String, ByVal exportedNames As Collection)
+    Dim filePath As String
+    Dim fileNo As Integer
+    Dim sb As String
+    Dim i As Long
+    
+    filePath = outFolder & Application.PathSeparator & "list.js"
+    
+    sb = "const fileList = ["
+    
+    For i = 1 To exportedNames.Count
+        If i > 1 Then
+            sb = sb & ", "
+        End If
+        sb = sb & """" & EscapeJsString(CStr(exportedNames(i))) & """"
+    Next i
+    
+    sb = sb & "];" & vbCrLf
+    
+    fileNo = FreeFile
+    Open filePath For Output As #fileNo
+    Print #fileNo, sb
+    Close #fileNo
+End Sub
+
+Private Function RowHasAnyData(ByVal ws As Worksheet, ByVal rowNo As Long, ByVal lastCol As Long) As Boolean
+    Dim c As Long
+    
+    For c = 1 To lastCol
+        If Trim$(CStr(ws.Cells(rowNo, c).Value)) <> "" Then
+            RowHasAnyData = True
+            Exit Function
+        End If
+    Next c
+    
+    RowHasAnyData = False
+End Function
+
+Private Function GetLastRow(ByVal ws As Worksheet) As Long
+    Dim lastCell As Range
+    
+    On Error Resume Next
+    Set lastCell = ws.Cells.Find(What:="*", After:=ws.Range("A1"), LookIn:=xlFormulas, _
+                                 LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+    On Error GoTo 0
+    
+    If lastCell Is Nothing Then
+        GetLastRow = 1
+    Else
+        GetLastRow = lastCell.Row
+    End If
+End Function
+
+Private Function GetLastCol(ByVal ws As Worksheet) As Long
+    Dim lastCell As Range
+    
+    On Error Resume Next
+    Set lastCell = ws.Cells.Find(What:="*", After:=ws.Range("A1"), LookIn:=xlFormulas, _
+                                 LookAt:=xlPart, SearchOrder:=xlByColumns, SearchDirection:=xlPrevious)
+    On Error GoTo 0
+    
+    If lastCell Is Nothing Then
+        GetLastCol = 1
+    Else
+        GetLastCol = lastCell.Column
+    End If
+End Function
+
+Private Function ToJsValue(ByVal v As Variant, ByVal headerName As String) As String
+    If IsError(v) Then
+        ToJsValue = """"""
+        Exit Function
+    End If
+    
+    If IsEmpty(v) Or Trim$(CStr(v)) = "" Then
+        ToJsValue = """"""
+        Exit Function
+    End If
+    
+    ' 今回は全部文字列で吐く
+    ' 日付/時刻も Excel表示に寄せて文字列化
+    If IsDate(v) Then
+        If InStr(1, headerName, "時刻", vbTextCompare) > 0 Then
+            ToJsValue = """" & EscapeJsString(Format$(v, "H:mm")) & """"
+        ElseIf InStr(1, headerName, "日", vbTextCompare) > 0 Then
+            ToJsValue = """" & EscapeJsString(Format$(v, "yyyy/m/d")) & """"
+        Else
+            ToJsValue = """" & EscapeJsString(CStr(v)) & """"
+        End If
+    Else
+        ToJsValue = """" & EscapeJsString(CStr(v)) & """"
+    End If
+End Function
+
+Private Function EscapeJsString(ByVal s As String) As String
+    s = Replace(s, "\", "\\")
+    s = Replace(s, """", "\""")
+    s = Replace(s, vbCrLf, "\n")
+    s = Replace(s, vbCr, "\n")
+    s = Replace(s, vbLf, "\n")
+    EscapeJsString = s
+End Function
+
+Private Function SanitizeFileName(ByVal s As String) As String
+    Dim ngChars As Variant
+    Dim i As Long
+    
+    ngChars = Array("\", "/", ":", "*", "?", """", "<", ">", "|")
+    
+    For i = LBound(ngChars) To UBound(ngChars)
+        s = Replace(s, ngChars(i), "_")
+    Next i
+    
+    SanitizeFileName = s
+End Function
+
+Private Sub EnsureFolderExists(ByVal folderPath As String)
+    If Dir(folderPath, vbDirectory) = "" Then
+        MkDir folderPath
+    End If
+End Sub
