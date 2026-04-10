@@ -3,7 +3,6 @@ window.calendarData = window.calendarData || {};
 let currentDate = new Date();
 let currentView = "month";
 let activeFilters = new Set();
-
 const colors = [
     "#4f46e5",
     "#0ea5e9",
@@ -19,31 +18,26 @@ const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 const MAX_MONTH_EVENTS = 3;
 
 document.addEventListener("DOMContentLoaded", () => {
-    if (!Array.isArray(window.fileList) || window.fileList.length === 0) {
-        console.warn("list.js が未設定、または fileList が空です。");
+    if (typeof fileList === "undefined" || !Array.isArray(fileList) || fileList.length === 0) {
         initializeApp();
         return;
     }
 
     let loadedCount = 0;
 
-    window.fileList.forEach((fileName) => {
+    fileList.forEach((fileName) => {
         const script = document.createElement("script");
         script.src = `${fileName}.js`;
 
         script.onload = () => {
             loadedCount++;
-            if (loadedCount === window.fileList.length) {
-                initializeApp();
-            }
+            if (loadedCount === fileList.length) initializeApp();
         };
 
         script.onerror = () => {
             console.error(`${fileName}.js の読み込みに失敗しました。`);
             loadedCount++;
-            if (loadedCount === window.fileList.length) {
-                initializeApp();
-            }
+            if (loadedCount === fileList.length) initializeApp();
         };
 
         document.body.appendChild(script);
@@ -59,20 +53,15 @@ function initializeApp() {
 function setupSidebar() {
     const container = document.getElementById("calendar-toggles");
     const legendList = document.getElementById("legend-list");
-
-    if (!container) return;
-
     container.innerHTML = "";
-    if (legendList) legendList.innerHTML = "";
-    activeFilters.clear();
+    legendList.innerHTML = "";
 
-    if (!Array.isArray(window.fileList)) return;
+    if (typeof fileList === "undefined" || !Array.isArray(fileList)) return;
 
-    window.fileList.forEach((fileName, index) => {
+    fileList.forEach((fileName, index) => {
         activeFilters.add(fileName);
 
         const color = colors[index % colors.length];
-        const data = Array.isArray(window.calendarData[fileName]) ? window.calendarData[fileName] : [];
 
         const label = document.createElement("label");
         label.className = "toggle-label";
@@ -95,7 +84,7 @@ function setupSidebar() {
 
         const count = document.createElement("span");
         count.className = "toggle-count";
-        count.textContent = `${data.length}件`;
+        count.textContent = `${Array.isArray(window.calendarData[fileName]) ? window.calendarData[fileName].length : 0}件`;
 
         textWrap.appendChild(name);
         textWrap.appendChild(count);
@@ -114,85 +103,56 @@ function setupSidebar() {
         label.appendChild(textWrap);
         container.appendChild(label);
 
-        if (legendList) {
-            const legend = document.createElement("div");
-            legend.className = "legend-item";
-            legend.innerHTML = `<span class="legend-swatch" style="background:${color}"></span><span>${escapeHtml(fileName)}</span>`;
-            legendList.appendChild(legend);
-        }
+        const legend = document.createElement("div");
+        legend.className = "legend-item";
+        legend.innerHTML = `<span class="legend-swatch" style="background:${color}"></span><span>${escapeHtml(fileName)}</span>`;
+        legendList.appendChild(legend);
     });
 }
 
 function setupEventListeners() {
-    const btnPrev = document.getElementById("btn-prev");
-    const btnNext = document.getElementById("btn-next");
-    const btnToday = document.getElementById("btn-today");
-    const btnFilterAll = document.getElementById("btn-filter-all");
-    const btnFilterNone = document.getElementById("btn-filter-none");
-    const btnSidebarToggle = document.getElementById("btn-sidebar-toggle");
-    const btnSidebarClose = document.getElementById("btn-sidebar-close");
-    const backdrop = document.getElementById("sidebar-backdrop");
-    const modal = document.getElementById("event-modal");
-    const modalClose = document.getElementById("modal-close");
+    document.getElementById("btn-prev").addEventListener("click", () => changeDate(-1));
+    document.getElementById("btn-next").addEventListener("click", () => changeDate(1));
+    document.getElementById("btn-today").addEventListener("click", goToToday);
 
-    if (btnPrev) btnPrev.addEventListener("click", () => changeDate(-1));
-    if (btnNext) btnNext.addEventListener("click", () => changeDate(1));
-    if (btnToday) btnToday.addEventListener("click", goToToday);
-
-    ["month", "week", "day"].forEach((view) => {
-        const btn = document.getElementById(`btn-${view}`);
-        if (!btn) return;
-
-        btn.addEventListener("click", (e) => {
+    const views = ["month", "week", "day"];
+    views.forEach((view) => {
+        document.getElementById(`btn-${view}`).addEventListener("click", (e) => {
             currentView = view;
-
-            ["month", "week", "day"].forEach((v) => {
-                const target = document.getElementById(`btn-${v}`);
-                if (target) target.classList.remove("active");
-            });
-
+            views.forEach((v) => document.getElementById(`btn-${v}`).classList.remove("active"));
             e.currentTarget.classList.add("active");
             renderCalendar();
         });
     });
 
-    if (btnFilterAll) {
-        btnFilterAll.addEventListener("click", () => {
-            if (!Array.isArray(window.fileList)) return;
-            activeFilters = new Set(window.fileList);
-            syncCheckboxStates(true);
-            renderCalendar();
-        });
-    }
+    document.getElementById("btn-filter-all").addEventListener("click", () => {
+        if (!Array.isArray(fileList)) return;
+        activeFilters = new Set(fileList);
+        syncCheckboxStates(true);
+        renderCalendar();
+    });
 
-    if (btnFilterNone) {
-        btnFilterNone.addEventListener("click", () => {
-            activeFilters.clear();
-            syncCheckboxStates(false);
-            renderCalendar();
-        });
-    }
+    document.getElementById("btn-filter-none").addEventListener("click", () => {
+        activeFilters.clear();
+        syncCheckboxStates(false);
+        renderCalendar();
+    });
 
-    if (btnSidebarToggle) {
-        btnSidebarToggle.addEventListener("click", () => {
-            const sidebar = document.getElementById("sidebar");
-            if (sidebar) sidebar.classList.add("open");
-            if (backdrop) backdrop.classList.add("show");
-        });
-    }
+    const sidebar = document.getElementById("sidebar");
+    const backdrop = document.getElementById("sidebar-backdrop");
 
-    if (btnSidebarClose) btnSidebarClose.addEventListener("click", closeSidebar);
-    if (backdrop) backdrop.addEventListener("click", closeSidebar);
+    document.getElementById("btn-sidebar-toggle").addEventListener("click", () => {
+        sidebar.classList.add("open");
+        backdrop.classList.add("show");
+    });
 
-    if (modalClose) modalClose.addEventListener("click", closeModal);
+    document.getElementById("btn-sidebar-close").addEventListener("click", closeSidebar);
+    backdrop.addEventListener("click", closeSidebar);
 
-    if (modal) {
-        modal.addEventListener("click", (e) => {
-            if (e.target.dataset.closeModal === "true") {
-                closeModal();
-            }
-        });
-    }
+    document.getElementById("modal-close").addEventListener("click", closeModal);
+    document.getElementById("event-modal").addEventListener("click", (e) => {
+        if (e.target.dataset.closeModal === "true") closeModal();
+    });
 
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
@@ -209,11 +169,8 @@ function syncCheckboxStates(isChecked) {
 }
 
 function closeSidebar() {
-    const sidebar = document.getElementById("sidebar");
-    const backdrop = document.getElementById("sidebar-backdrop");
-
-    if (sidebar) sidebar.classList.remove("open");
-    if (backdrop) backdrop.classList.remove("show");
+    document.getElementById("sidebar").classList.remove("open");
+    document.getElementById("sidebar-backdrop").classList.remove("show");
 }
 
 function goToToday() {
@@ -241,28 +198,20 @@ function renderCalendar() {
     const viewTitle = document.getElementById("view-title");
     const summary = document.getElementById("view-summary");
 
-    if (!viewContainer) return;
-
     viewContainer.innerHTML = "";
     updateDateDisplay();
 
     const allEvents = getFilteredEvents();
 
-    if (viewTitle) {
-        viewTitle.textContent =
-            currentView === "month"
-                ? "月間スケジュール"
-                : currentView === "week"
-                ? "週間一覧"
-                : "1日スケジュール";
-    }
+    viewTitle.textContent =
+        currentView === "month" ? "月間スケジュール" :
+        currentView === "week" ? "週間スケジュール" :
+        "1日スケジュール";
 
-    if (summary) {
-        summary.innerHTML = `
-            <span class="summary-chip">表示中 ${allEvents.length}件</span>
-            <span class="summary-chip">選択 ${activeFilters.size}件</span>
-        `;
-    }
+    summary.innerHTML = `
+        <span class="summary-chip">表示中 ${allEvents.length}件</span>
+        <span class="summary-chip">選択 ${activeFilters.size}件</span>
+    `;
 
     if (currentView === "month") {
         renderMonthView(viewContainer, allEvents);
@@ -275,8 +224,6 @@ function renderCalendar() {
 
 function updateDateDisplay() {
     const display = document.getElementById("current-date-display");
-    if (!display) return;
-
     const y = currentDate.getFullYear();
     const m = currentDate.getMonth() + 1;
     const d = currentDate.getDate();
@@ -297,13 +244,8 @@ function getFilteredEvents() {
     let events = [];
 
     activeFilters.forEach((fileName) => {
-        const sourceEvents = Array.isArray(window.calendarData[fileName])
-            ? window.calendarData[fileName]
-            : [];
-
-        const colorIndex = Array.isArray(window.fileList)
-            ? window.fileList.indexOf(fileName)
-            : 0;
+        const sourceEvents = Array.isArray(window.calendarData[fileName]) ? window.calendarData[fileName] : [];
+        const colorIndex = Array.isArray(fileList) ? fileList.indexOf(fileName) : 0;
 
         const normalized = sourceEvents.map((e) => ({
             ...e,
@@ -351,113 +293,28 @@ function renderMonthView(container, allEvents) {
 
 function renderWeekView(container, allEvents) {
     const start = getStartOfWeek(currentDate);
-    const wrapper = document.createElement("div");
-    wrapper.className = "week-list";
+
+    const grid = document.createElement("div");
+    grid.className = "calendar-grid week-grid";
+
+    WEEK_LABELS.forEach((day, index) => {
+        const head = document.createElement("div");
+        head.className = `calendar-header-day ${index === 0 ? "sun" : ""} ${index === 6 ? "sat" : ""}`;
+        head.textContent = day;
+        grid.appendChild(head);
+    });
 
     for (let i = 0; i < 7; i++) {
         const date = new Date(start);
         date.setDate(start.getDate() + i);
-
-        const row = createWeekRow(date, allEvents);
-        wrapper.appendChild(row);
-    }
-
-    container.appendChild(wrapper);
-}
-
-function createWeekRow(dateObj, allEvents) {
-    const row = document.createElement("div");
-    row.className = "week-row";
-
-    if (isToday(dateObj)) row.classList.add("week-row--today");
-    if (dateObj.getDay() === 0) row.classList.add("week-row--sun");
-    if (dateObj.getDay() === 6) row.classList.add("week-row--sat");
-
-    const left = document.createElement("div");
-    left.className = "week-row__date";
-
-    const dateMain = document.createElement("div");
-    dateMain.className = "week-row__date-main";
-    dateMain.textContent = `${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
-
-    const dateSub = document.createElement("div");
-    dateSub.className = "week-row__date-sub";
-    dateSub.textContent = `${WEEK_LABELS[dateObj.getDay()]}曜日`;
-
-    left.appendChild(dateMain);
-    left.appendChild(dateSub);
-
-    const right = document.createElement("div");
-    right.className = "week-row__content";
-
-    const dayEvents = getEventsForDate(dateObj, allEvents);
-
-    if (dayEvents.length === 0) {
-        const empty = document.createElement("div");
-        empty.className = "week-row__empty";
-        empty.textContent = "予定はありません。";
-        right.appendChild(empty);
-    } else {
-        const list = document.createElement("div");
-        list.className = "week-row__events";
-
-        dayEvents.forEach((e) => {
-            list.appendChild(createWeekEventCard(e));
+        const cell = createDayCell(date, allEvents, {
+            isCurrentMonth: true,
+            compact: false
         });
-
-        right.appendChild(list);
+        grid.appendChild(cell);
     }
 
-    row.appendChild(left);
-    row.appendChild(right);
-    return row;
-}
-
-function createWeekEventCard(e) {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "week-event-card";
-    card.style.borderLeftColor = e._color;
-
-    const title = e["予定詳細"] || e["予定"] || "予定あり";
-    const time = buildWeekEventTime(e);
-    const place = [e["場所"], e["場所詳細"]].filter(Boolean).join(" / ");
-    const content = e["内容"] || "";
-    const source = e._source || "";
-
-    card.innerHTML = `
-        <div class="week-event-card__top">
-            <span class="week-event-card__time">${escapeHtml(time || "終日")}</span>
-            <span class="week-event-card__source">${escapeHtml(source)}</span>
-        </div>
-        <div class="week-event-card__title">${escapeHtml(title)}</div>
-        ${e["予定"] ? `<div class="week-event-card__line"><span class="week-event-card__label">予定</span><span>${escapeHtml(e["予定"])}</span></div>` : ""}
-        ${place ? `<div class="week-event-card__line"><span class="week-event-card__label">場所</span><span>${escapeHtml(place)}</span></div>` : ""}
-        ${content ? `<div class="week-event-card__line"><span class="week-event-card__label">内容</span><span>${escapeHtml(content)}</span></div>` : ""}
-    `;
-
-    card.addEventListener("click", () => openEventModal(e));
-    return card;
-}
-
-function buildWeekEventTime(e) {
-    const startDate = parseDateOnly(e["開始日"]);
-    const endDate = parseDateOnly(e["終了日"]) || startDate;
-    const startTime = e["開始時刻"] || "";
-    const endTime = e["終了時刻"] || "";
-
-    if (!startDate) return "";
-
-    if (isSameDate(startDate, endDate)) {
-        if (startTime && endTime) return `${startTime}〜${endTime}`;
-        if (startTime) return startTime;
-        return "終日";
-    }
-
-    if (startTime && endTime) return `${startTime}〜${endTime}`;
-    if (startTime) return `${startTime}〜`;
-    if (endTime) return `〜${endTime}`;
-    return "継続";
+    container.appendChild(grid);
 }
 
 function renderDayView(container, allEvents) {
@@ -499,7 +356,6 @@ function createDayCell(dateObj, allEvents, options = {}) {
 
     const cell = document.createElement("div");
     cell.className = "calendar-day";
-
     if (!isCurrentMonth) cell.classList.add("other-month");
     if (isToday(dateObj)) cell.classList.add("today");
     if (dateObj.getDay() === 0) cell.classList.add("is-sun");
@@ -562,12 +418,9 @@ function createDayCell(dateObj, allEvents, options = {}) {
         moreBtn.addEventListener("click", () => {
             currentDate = new Date(dateObj);
             currentView = "day";
-
             ["month", "week", "day"].forEach((v) => {
-                const btn = document.getElementById(`btn-${v}`);
-                if (btn) btn.classList.toggle("active", v === "day");
+                document.getElementById(`btn-${v}`).classList.toggle("active", v === "day");
             });
-
             renderCalendar();
         });
         list.appendChild(moreBtn);
@@ -622,11 +475,7 @@ function compareEvents(a, b) {
     const bTime = b["開始時刻"] || "99:99";
     const timeComp = aTime.localeCompare(bTime, "ja");
     if (timeComp !== 0) return timeComp;
-
-    return (a["予定詳細"] || a["予定"] || "").localeCompare(
-        b["予定詳細"] || b["予定"] || "",
-        "ja"
-    );
+    return (a["予定詳細"] || a["予定"] || "").localeCompare(b["予定詳細"] || b["予定"] || "", "ja");
 }
 
 function buildEventTimeLabel(event, dateObj) {
@@ -655,8 +504,6 @@ function openEventModal(e) {
     const modal = document.getElementById("event-modal");
     const title = document.getElementById("modal-title");
     const body = document.getElementById("modal-body");
-
-    if (!modal || !title || !body) return;
 
     title.textContent = e["予定詳細"] || e["予定"] || "予定";
 
@@ -691,8 +538,6 @@ function buildDetailRow(label, value) {
 
 function closeModal() {
     const modal = document.getElementById("event-modal");
-    if (!modal) return;
-
     modal.classList.remove("show");
     modal.setAttribute("aria-hidden", "true");
 }
@@ -706,7 +551,6 @@ function getStartOfWeek(date) {
 
 function parseDateOnly(value) {
     if (!value) return null;
-
     const parts = String(value).split("/");
     if (parts.length !== 3) return null;
 
@@ -715,7 +559,6 @@ function parseDateOnly(value) {
     const d = Number(parts[2]);
 
     if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return null;
-
     return new Date(y, m, d);
 }
 
@@ -756,17 +599,11 @@ function escapeHtml(value) {
 }
 
 function hexToRgba(hex, alpha) {
-    const h = String(hex || "").replace("#", "");
+    const h = hex.replace("#", "");
     const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
-
-    if (!/^[0-9a-fA-F]{6}$/.test(full)) {
-        return `rgba(79, 70, 229, ${alpha})`;
-    }
-
     const bigint = parseInt(full, 16);
     const r = (bigint >> 16) & 255;
     const g = (bigint >> 8) & 255;
     const b = bigint & 255;
-
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

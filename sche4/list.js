@@ -2,5 +2,5 @@ const fileList = [
 "Honda", 
 "Satou", 
 "Suzuki",
-"田中", 
+"田中" 
 ]; 
