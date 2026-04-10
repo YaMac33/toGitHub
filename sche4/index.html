@@ -23,22 +23,6 @@
 
         <main class="page-main">
             <section class="calendar-card">
-                <div class="calendar-toolbar">
-                    <div class="calendar-toolbar__nav">
-                        <button id="btn-prev" class="toolbar-button" type="button" aria-label="前へ">◀</button>
-                        <button id="btn-today" class="toolbar-button toolbar-button--today" type="button">今日</button>
-                        <button id="btn-next" class="toolbar-button" type="button" aria-label="次へ">▶</button>
-                    </div>
-
-                    <div id="current-date-display" class="calendar-toolbar__label" aria-live="polite"></div>
-
-                    <div class="calendar-toolbar__view-switch" role="group" aria-label="表示切替">
-                        <button id="btn-month" class="toolbar-button toolbar-button--active active" type="button">月間</button>
-                        <button id="btn-week" class="toolbar-button" type="button">週間</button>
-                        <button id="btn-day" class="toolbar-button" type="button">1日</button>
-                    </div>
-                </div>
-
                 <aside id="sidebar" class="filter-panel" aria-label="表示設定">
                     <div class="filter-panel__head">
                         <div>
@@ -65,6 +49,22 @@
                         <div id="legend-list" class="legend-list"></div>
                     </div>
                 </aside>
+
+                <div class="calendar-toolbar">
+                    <div class="calendar-toolbar__nav">
+                        <button id="btn-prev" class="toolbar-button" type="button" aria-label="前へ">◀</button>
+                        <button id="btn-today" class="toolbar-button toolbar-button--today" type="button">今日</button>
+                        <button id="btn-next" class="toolbar-button" type="button" aria-label="次へ">▶</button>
+                    </div>
+
+                    <div id="current-date-display" class="calendar-toolbar__label" aria-live="polite"></div>
+
+                    <div class="calendar-toolbar__view-switch" role="group" aria-label="表示切替">
+                        <button id="btn-month" class="toolbar-button active" type="button">月間</button>
+                        <button id="btn-week" class="toolbar-button" type="button">週間</button>
+                        <button id="btn-day" class="toolbar-button" type="button">1日</button>
+                    </div>
+                </div>
 
                 <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
 

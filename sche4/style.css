@@ -194,7 +194,6 @@ button {
     background: #dbeafe;
 }
 
-.toolbar-button--active,
 .toolbar-button.active {
     background: var(--color-surface);
     color: var(--color-primary);
