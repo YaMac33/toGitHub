@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共有カレンダー</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="page-header">
+            <div class="page-header__inner">
+                <div class="page-title-group">
+                    <p class="page-kicker">Shared Schedule</p>
+                    <h1 class="page-title">共有カレンダー</h1>
+                </div>
+
+                <button id="btn-sidebar-toggle" class="mobile-filter-button" type="button" aria-label="表示設定を開く">
+                    表示設定
+                </button>
+            </div>
+        </header>
+
+        <main class="page-main">
+            <section class="calendar-card">
+                <div class="calendar-toolbar">
+                    <div class="calendar-toolbar__nav">
+                        <button id="btn-prev" class="toolbar-button" type="button" aria-label="前へ">◀</button>
+                        <button id="btn-today" class="toolbar-button toolbar-button--today" type="button">今日</button>
+                        <button id="btn-next" class="toolbar-button" type="button" aria-label="次へ">▶</button>
+                    </div>
+
+                    <div id="current-date-display" class="calendar-toolbar__label" aria-live="polite"></div>
+
+                    <div class="calendar-toolbar__view-switch" role="group" aria-label="表示切替">
+                        <button id="btn-month" class="toolbar-button toolbar-button--active active" type="button">月間</button>
+                        <button id="btn-week" class="toolbar-button" type="button">週間</button>
+                        <button id="btn-day" class="toolbar-button" type="button">1日</button>
+                    </div>
+                </div>
+
+                <aside id="sidebar" class="filter-panel" aria-label="表示設定">
+                    <div class="filter-panel__head">
+                        <div>
+                            <p class="filter-panel__kicker">Display Settings</p>
+                            <h2 class="filter-panel__title">表示設定</h2>
+                        </div>
+                        <button id="btn-sidebar-close" class="filter-panel__close" type="button" aria-label="閉じる">×</button>
+                    </div>
+
+                    <div class="filter-panel__section">
+                        <div class="filter-panel__section-head">
+                            <p class="filter-panel__label">カレンダー</p>
+                            <div class="filter-panel__actions">
+                                <button id="btn-filter-all" class="mini-button" type="button">すべてON</button>
+                                <button id="btn-filter-none" class="mini-button" type="button">すべてOFF</button>
+                            </div>
+                        </div>
+
+                        <div id="calendar-toggles" class="toggle-list"></div>
+                    </div>
+
+                    <div class="filter-panel__section">
+                        <p class="filter-panel__label">凡例</p>
+                        <div id="legend-list" class="legend-list"></div>
+                    </div>
+                </aside>
+
+                <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+                <section class="calendar-content">
+                    <div class="calendar-content__head">
+                        <div>
+                            <p class="calendar-content__kicker">Calendar View</p>
+                            <h2 id="view-title" class="calendar-content__title">月間スケジュール</h2>
+                        </div>
+                        <div id="view-summary" class="view-summary"></div>
+                    </div>
+
+                    <div id="calendar-view" class="calendar-view"></div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <div id="event-modal" class="modal" aria-hidden="true">
+        <div class="modal__backdrop" data-close-modal="true"></div>
+
+        <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal__header">
+                <div>
+                    <p class="modal__kicker">Event Detail</p>
+                    <h3 id="modal-title" class="modal__title">予定詳細</h3>
+                </div>
+                <button id="modal-close" class="modal__close" type="button" aria-label="閉じる">×</button>
+            </div>
+
+            <div id="modal-body" class="modal__body"></div>
+        </div>
+    </div>
+
+    <script src="list.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
