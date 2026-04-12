@@ -2,17 +2,32 @@ window.addEventListener("DOMContentLoaded", () => {
   "use strict";
 
   const app = document.getElementById("app");
-  const pageTitle = document.getElementById("pageTitle");
+  const titleEl = document.getElementById("pageTitle");
+  const subtitleEl = document.getElementById("pageSubtitle");
+  const periodEl = document.getElementById("pagePeriod");
+  const participantsEl = document.getElementById("pageParticipants");
+  const noteEl = document.getElementById("pageNote");
+  const periodRow = document.getElementById("periodRow");
+  const participantsRow = document.getElementById("participantsRow");
+  const noteRow = document.getElementById("noteRow");
 
   const meta = window.KOUTEI_DATA?.meta || {};
   const rows = Array.isArray(window.KOUTEI_DATA?.itinerary)
     ? window.KOUTEI_DATA.itinerary
     : [];
 
-  if (pageTitle) {
-    pageTitle.textContent = safeText(meta.title) || "行程表";
-    document.title = `${safeText(meta.title) || "行程表"}`;
-  }
+  renderHeaderMeta({
+    meta,
+    titleEl,
+    subtitleEl,
+    periodEl,
+    participantsEl,
+    noteEl,
+    periodRow,
+    participantsRow,
+    noteRow,
+    rows
+  });
 
   if (!app) return;
 
@@ -30,6 +45,70 @@ window.addEventListener("DOMContentLoaded", () => {
 
   app.innerHTML = grouped.map(renderDaySection).join("");
 });
+
+function renderHeaderMeta(params) {
+  const {
+    meta,
+    titleEl,
+    subtitleEl,
+    periodEl,
+    participantsEl,
+    noteEl,
+    periodRow,
+    participantsRow,
+    noteRow,
+    rows
+  } = params;
+
+  const title = safeText(meta.title) || "行程表";
+  const subtitle = safeText(meta.subtitle);
+  const participants = safeText(meta.participants);
+  const note = safeText(meta.note);
+
+  const inferredPeriod = inferPeriodFromRows(rows);
+  const periodStart = normalizeDate(meta.period_start) || inferredPeriod.start;
+  const periodEnd = normalizeDate(meta.period_end) || inferredPeriod.end;
+  const periodText = buildPeriodText(periodStart, periodEnd);
+
+  if (titleEl) {
+    titleEl.textContent = title;
+    document.title = title;
+  }
+
+  if (subtitleEl) {
+    subtitleEl.textContent = subtitle;
+  }
+
+  if (periodEl && periodRow) {
+    if (periodText) {
+      periodEl.textContent = periodText;
+      periodRow.hidden = false;
+    } else {
+      periodEl.textContent = "";
+      periodRow.hidden = true;
+    }
+  }
+
+  if (participantsEl && participantsRow) {
+    if (participants) {
+      participantsEl.textContent = participants;
+      participantsRow.hidden = false;
+    } else {
+      participantsEl.textContent = "";
+      participantsRow.hidden = true;
+    }
+  }
+
+  if (noteEl && noteRow) {
+    if (note) {
+      noteEl.textContent = note;
+      noteRow.hidden = false;
+    } else {
+      noteEl.textContent = "";
+      noteRow.hidden = true;
+    }
+  }
+}
 
 function normalizeRow(row) {
   return {
@@ -108,7 +187,7 @@ function renderDaySection(group) {
 }
 
 function renderTimelineItem(item) {
-  const categoryClass = `category-${item.category || "default"}`;
+  const categoryClass = buildCategoryClass(item.category);
   const title = item.title || "名称未設定";
   const place = item.place_name || "";
   const detail = item.detail || "";
@@ -133,8 +212,9 @@ function renderTimelineItem(item) {
         <div class="end-time">${escapeHtml(timeRange)}</div>
       </div>
 
-      <div class="dot-wrap">
-        <span class="dot"></span>
+      <div class="axis-block">
+        <span class="axis-line"></span>
+        <span class="axis-dot"></span>
       </div>
 
       <div class="card">
@@ -151,6 +231,42 @@ function renderTimelineItem(item) {
       </div>
     </article>
   `;
+}
+
+function buildCategoryClass(category) {
+  const text = safeText(category);
+  return text ? `category-${text}` : "";
+}
+
+function inferPeriodFromRows(rows) {
+  const dates = rows
+    .map((row) => normalizeDate(row?.date))
+    .filter(Boolean)
+    .sort();
+
+  if (!dates.length) {
+    return { start: "", end: "" };
+  }
+
+  return {
+    start: dates[0],
+    end: dates[dates.length - 1]
+  };
+}
+
+function buildPeriodText(start, end) {
+  if (!start && !end) return "";
+  if (start && !end) return formatWarekiSeirekiDate(start);
+  if (!start && end) return formatWarekiSeirekiDate(end);
+  if (start === end) return formatWarekiSeirekiDate(start);
+
+  const sameYear = start.slice(0, 4) === end.slice(0, 4);
+
+  if (sameYear) {
+    return `${formatWarekiSeirekiDate(start)} ～ ${formatMonthDayOnly(end)}`;
+  }
+
+  return `${formatWarekiSeirekiDate(start)} ～ ${formatWarekiSeirekiDate(end)}`;
 }
 
 function normalizeDate(value) {
@@ -190,9 +306,17 @@ function formatWarekiSeirekiDate(value) {
   return `${wareki}(${year}年)${month}月${day}日`;
 }
 
+function formatMonthDayOnly(value) {
+  if (!value) return "";
+
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return value;
+
+  return `${Number(match[2])}月${Number(match[3])}日`;
+}
+
 function toWareki(year, month, day) {
   const target = new Date(year, month - 1, day);
-
   const reiwaStart = new Date(2019, 4, 1);
   const heiseiStart = new Date(1989, 0, 8);
   const showaStart = new Date(1926, 11, 25);
