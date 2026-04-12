@@ -1,8 +1,12 @@
 window.KOUTEI_DATA = window.KOUTEI_DATA || {};
 
+window.KOUTEI_DATA.meta = {
+  title: "行政視察行程表"
+};
+
 window.KOUTEI_DATA.itinerary = [
   {
-    schedule_id: "KT20260415001",
+   schedule_id: "KT20260415001",
     day_no: 1,
     date: "2026-04-15",
     start_time: "08:50",
