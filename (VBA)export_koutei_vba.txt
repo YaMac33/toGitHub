@@ -4,7 +4,7 @@ Option Explicit
 ' source_koutei.xlsm
 '   ├─ meta シート
 '   ├─ itinerary シート
-'   └─ （このVBA）
+'   └─ 標準モジュールにこのVBA
 '
 ' 出力先:
 '   [このブックのあるフォルダ]\koutei\data\itinerary.js
@@ -12,10 +12,10 @@ Option Explicit
 ' 仕様:
 ' - meta シート 2行目を window.KOUTEI_DATA.meta として出力
 ' - itinerary シート 2行目以降を window.KOUTEI_DATA.itinerary として出力
-' - 日付は YYYY-MM-DD に正規化
-' - 時刻は HH:MM に正規化
-' - Excelの表示ゆれ（2026/4/15, 8:5 など）をVBA側で吸収
-' - 必要なフォルダが無ければ自動作成
+' - 日付入力の揺れを YYYY-MM-DD に正規化
+' - 時刻入力の揺れを HH:MM に正規化
+' - 必要フォルダがなければ自動作成
+' - UTF-8で出力
 ' ============================================================
 
 Public Sub ExportKouteiData()
@@ -24,10 +24,9 @@ Public Sub ExportKouteiData()
     Dim wb As Workbook
     Dim wsMeta As Worksheet
     Dim wsItinerary As Worksheet
-
     Dim baseFolder As String
     Dim outputPath As String
-    Dim jsonText As String
+    Dim jsText As String
 
     Set wb = ThisWorkbook
     Set wsMeta = wb.Worksheets("meta")
@@ -35,34 +34,31 @@ Public Sub ExportKouteiData()
 
     baseFolder = wb.Path
     If Len(baseFolder) = 0 Then
-        Err.Raise vbObjectError + 1000, , "このブックがまだ保存されていません。先に .xlsm として保存してください。"
+        Err.Raise vbObjectError + 1000, , "このブックが未保存です。.xlsm として保存してから実行してください。"
     End If
 
     outputPath = BuildPath(baseFolder, "koutei\data\itinerary.js")
     EnsureParentFoldersExist outputPath
 
-    jsonText = BuildKouteiJs(wsMeta, wsItinerary)
-
-    WriteUtf8Text outputPath, jsonText
+    jsText = BuildKouteiJs(wsMeta, wsItinerary)
+    WriteUtf8Text outputPath, jsText
 
     MsgBox "出力完了:" & vbCrLf & outputPath, vbInformation
-
     Exit Sub
 
 ErrHandler:
-    MsgBox "出力中にエラーが発生しました。" & vbCrLf & _
-           "内容: " & Err.Description, vbExclamation
+    MsgBox "出力中にエラーが発生しました。" & vbCrLf & Err.Description, vbExclamation
 End Sub
 
 Private Function BuildKouteiJs(ByVal wsMeta As Worksheet, ByVal wsItinerary As Worksheet) As String
-    Dim sb As String
+    Dim result As String
 
-    sb = ""
-    sb = sb & "window.KOUTEI_DATA = window.KOUTEI_DATA || {};" & vbCrLf & vbCrLf
-    sb = sb & "window.KOUTEI_DATA.meta = " & BuildMetaObject(wsMeta) & ";" & vbCrLf & vbCrLf
-    sb = sb & "window.KOUTEI_DATA.itinerary = " & BuildItineraryArray(wsItinerary) & ";" & vbCrLf
+    result = ""
+    result = result & "window.KOUTEI_DATA = window.KOUTEI_DATA || {};" & vbCrLf & vbCrLf
+    result = result & "window.KOUTEI_DATA.meta = " & BuildMetaObject(wsMeta) & ";" & vbCrLf & vbCrLf
+    result = result & "window.KOUTEI_DATA.itinerary = " & BuildItineraryArray(wsItinerary) & ";" & vbCrLf
 
-    BuildKouteiJs = sb
+    BuildKouteiJs = result
 End Function
 
 Private Function BuildMetaObject(ByVal ws As Worksheet) As String
@@ -130,9 +126,9 @@ Private Function BuildItineraryArray(ByVal ws As Worksheet) As String
     Dim lastRow As Long
     Dim lastCol As Long
     Dim r As Long
-    Dim rowsText As Collection
-    Dim result As String
+    Dim rowTexts As Collection
     Dim i As Long
+    Dim result As String
 
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
@@ -141,20 +137,20 @@ Private Function BuildItineraryArray(ByVal ws As Worksheet) As String
         Err.Raise vbObjectError + 1200, , "itinerary シートに見出しがありません。"
     End If
 
-    Set rowsText = New Collection
+    Set rowTexts = New Collection
 
     For r = 2 To lastRow
         If Not IsRowCompletelyEmpty(ws, r, lastCol) Then
-            rowsText.Add BuildItineraryRowObject(ws, r, lastCol)
+            rowTexts.Add BuildItineraryRowObject(ws, r, lastCol)
         End If
     Next r
 
     result = "[" & vbCrLf
 
-    If rowsText.Count > 0 Then
-        For i = 1 To rowsText.Count
-            result = result & rowsText(i)
-            If i < rowsText.Count Then
+    If rowTexts.Count > 0 Then
+        For i = 1 To rowTexts.Count
+            result = result & rowTexts(i)
+            If i < rowTexts.Count Then
                 result = result & ","
             End If
             result = result & vbCrLf
@@ -268,9 +264,9 @@ Private Function NormalizeDateValue(ByVal v As Variant, ByVal label As String) A
                 m = CLng(parts(1))
                 d = CLng(parts(2))
 
-                On Error GoTo DateErr1
+                On Error GoTo DateErr
                 dt = DateSerial(y, m, d)
-                If Year(dt) <> y Or Month(dt) <> m Or Day(dt) <> d Then GoTo DateErr1
+                If Year(dt) <> y Or Month(dt) <> m Or Day(dt) <> d Then GoTo DateErr
                 On Error GoTo 0
 
                 NormalizeDateValue = Format$(dt, "yyyy-mm-dd")
@@ -284,7 +280,7 @@ Private Function NormalizeDateValue(ByVal v As Variant, ByVal label As String) A
         Exit Function
     End If
 
-DateErr1:
+DateErr:
     On Error GoTo 0
     Err.Raise vbObjectError + 1301, , label & " の日付を解釈できません: [" & CStr(v) & "]"
 End Function
@@ -293,7 +289,6 @@ Private Function NormalizeTimeValue(ByVal v As Variant, ByVal label As String) A
     Dim s As String
     Dim hh As Long, nn As Long
     Dim parts() As String
-    Dim dt As Date
 
     If IsEmpty(v) Or IsNull(v) Then
         NormalizeTimeValue = ""
