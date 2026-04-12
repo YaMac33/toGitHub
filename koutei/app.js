@@ -2,9 +2,17 @@ window.addEventListener("DOMContentLoaded", () => {
   "use strict";
 
   const app = document.getElementById("app");
+  const pageTitle = document.getElementById("pageTitle");
+
+  const meta = window.KOUTEI_DATA?.meta || {};
   const rows = Array.isArray(window.KOUTEI_DATA?.itinerary)
     ? window.KOUTEI_DATA.itinerary
     : [];
+
+  if (pageTitle) {
+    pageTitle.textContent = safeText(meta.title) || "行程表";
+    document.title = `${safeText(meta.title) || "行程表"}`;
+  }
 
   if (!app) return;
 
@@ -79,7 +87,7 @@ function groupByDay(rows) {
 
 function renderDaySection(group) {
   const dayNoLabel = group.day_no ? `${group.day_no}日目` : "日程";
-  const dateLabel = formatJapaneseDate(group.date);
+  const dateLabel = formatWarekiSeirekiDate(group.date);
   const countLabel = `${group.items.length}件`;
 
   return `
@@ -168,13 +176,43 @@ function normalizeTime(value) {
   return `${hour}:${minute}`;
 }
 
-function formatJapaneseDate(value) {
+function formatWarekiSeirekiDate(value) {
   if (!value) return "";
 
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return value;
 
-  return `${Number(match[1])}年${Number(match[2])}月${Number(match[3])}日`;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  const wareki = toWareki(year, month, day);
+  return `${wareki}(${year}年)${month}月${day}日`;
+}
+
+function toWareki(year, month, day) {
+  const target = new Date(year, month - 1, day);
+
+  const reiwaStart = new Date(2019, 4, 1);
+  const heiseiStart = new Date(1989, 0, 8);
+  const showaStart = new Date(1926, 11, 25);
+
+  if (target >= reiwaStart) {
+    const warekiYear = year - 2018;
+    return `令和${warekiYear}年`;
+  }
+
+  if (target >= heiseiStart) {
+    const warekiYear = year - 1988;
+    return `平成${warekiYear}年`;
+  }
+
+  if (target >= showaStart) {
+    const warekiYear = year - 1925;
+    return `昭和${warekiYear}年`;
+  }
+
+  return `${year}年`;
 }
 
 function toNumber(value) {
