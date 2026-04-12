@@ -11,11 +11,33 @@
 <body>
   <div class="page">
     <header class="page-header">
-      <div>
+      <div class="page-header-main">
         <p class="eyebrow">KOUTEI</p>
         <h1 id="pageTitle" class="page-title">行程表</h1>
+
+        <div class="page-meta">
+          <p id="pageSubtitle" class="page-subtitle"></p>
+
+          <div class="page-meta-list">
+            <div id="periodRow" class="page-meta-row" hidden>
+              <span class="page-meta-label">期間</span>
+              <span id="pagePeriod" class="page-meta-value"></span>
+            </div>
+
+            <div id="participantsRow" class="page-meta-row" hidden>
+              <span class="page-meta-label">参加者</span>
+              <span id="pageParticipants" class="page-meta-value"></span>
+            </div>
+
+            <div id="noteRow" class="page-meta-row" hidden>
+              <span class="page-meta-label">備考</span>
+              <span id="pageNote" class="page-meta-value"></span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="print-actions">
+
+      <div class="page-actions no-print">
         <button type="button" class="print-button" onclick="window.print()">印刷</button>
       </div>
     </header>
