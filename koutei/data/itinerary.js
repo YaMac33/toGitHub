@@ -1,12 +1,17 @@
 window.KOUTEI_DATA = window.KOUTEI_DATA || {};
 
 window.KOUTEI_DATA.meta = {
-  title: "行政視察行程表"
+  title: "行政視察行程表",
+  subtitle: "○○市・△△市視察",
+  period_start: "2026-04-15",
+  period_end: "2026-04-16",
+  participants: "議会運営委員会委員、事務局職員",
+  note: "天候・交通事情等により、一部行程が変更となる場合があります。"
 };
 
 window.KOUTEI_DATA.itinerary = [
   {
-   schedule_id: "KT20260415001",
+    schedule_id: "KT20260415001",
     day_no: 1,
     date: "2026-04-15",
     start_time: "08:50",
@@ -26,7 +31,7 @@ window.KOUTEI_DATA.itinerary = [
     start_time: "09:00",
     end_time: "10:30",
     category: "移動",
-    place_name: "市役所 → ○○市",
+    place_name: "市役所 → ○○市役所",
     title: "移動（公用車）",
     detail: "○○市役所へ移動",
     move_method: "公用車",
@@ -42,7 +47,7 @@ window.KOUTEI_DATA.itinerary = [
     category: "視察",
     place_name: "○○市役所",
     title: "議会運営視察",
-    detail: "議会運営の説明・質疑",
+    detail: "議会運営に関する説明聴取および質疑応答",
     move_method: "",
     note: "担当：山田様",
     sort_order: 30
@@ -56,7 +61,7 @@ window.KOUTEI_DATA.itinerary = [
     category: "昼食",
     place_name: "レストラン○○",
     title: "昼食",
-    detail: "",
+    detail: "昼食休憩",
     move_method: "",
     note: "",
     sort_order: 40
@@ -70,7 +75,7 @@ window.KOUTEI_DATA.itinerary = [
     category: "視察",
     place_name: "△△施設",
     title: "施設見学",
-    detail: "設備説明・現地視察",
+    detail: "施設概要説明、現地見学",
     move_method: "徒歩",
     note: "",
     sort_order: 50
@@ -82,8 +87,8 @@ window.KOUTEI_DATA.itinerary = [
     start_time: "15:30",
     end_time: "17:30",
     category: "移動",
-    place_name: "△△施設 → 宿泊先",
-    title: "移動",
+    place_name: "△△施設 → ○○ホテル",
+    title: "宿泊先へ移動",
     detail: "ホテルへ移動",
     move_method: "バス",
     note: "",
@@ -98,12 +103,11 @@ window.KOUTEI_DATA.itinerary = [
     category: "宿泊",
     place_name: "○○ホテル",
     title: "宿泊・夕食",
-    detail: "",
+    detail: "チェックイン、夕食",
     move_method: "",
     note: "",
     sort_order: 70
   },
-
   {
     schedule_id: "KT20260416001",
     day_no: 2,
@@ -113,7 +117,7 @@ window.KOUTEI_DATA.itinerary = [
     category: "会議",
     place_name: "○○ホテル 会議室",
     title: "意見交換会",
-    detail: "前日の振り返り",
+    detail: "前日の視察内容の振り返りと意見交換",
     move_method: "",
     note: "",
     sort_order: 10
@@ -127,7 +131,7 @@ window.KOUTEI_DATA.itinerary = [
     category: "視察",
     place_name: "□□センター",
     title: "施設視察",
-    detail: "先進事例の確認",
+    detail: "先進事例の説明聴取および見学",
     move_method: "徒歩",
     note: "",
     sort_order: 20
@@ -141,7 +145,7 @@ window.KOUTEI_DATA.itinerary = [
     category: "移動",
     place_name: "□□センター → 市役所",
     title: "帰路",
-    detail: "",
+    detail: "市役所へ移動",
     move_method: "公用車",
     note: "",
     sort_order: 30
@@ -155,7 +159,7 @@ window.KOUTEI_DATA.itinerary = [
     category: "解散",
     place_name: "市役所",
     title: "解散",
-    detail: "",
+    detail: "到着後、解散",
     move_method: "",
     note: "",
     sort_order: 40
