@@ -285,3 +285,23 @@ textarea {
 .form-actions .secondary {
   background: #64748b;
 }
+
+.pin.dragging {
+  background: #2563eb;
+  width: 18px;
+  height: 18px;
+  z-index: 20;
+  cursor: grabbing;
+}
+
+#pinList li.dragging {
+  opacity: 0.45;
+}
+
+#pinList li.drop-before {
+  border-top: 3px solid #2563eb;
+}
+
+#pinList li.drop-after {
+  border-bottom: 3px solid #2563eb;
+}

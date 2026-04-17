@@ -2,6 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "mapAppCurrentData";
+  const DRAG_THRESHOLD = 4;
 
   const state = {
     mapData: {
@@ -14,10 +15,22 @@
     mode: "normal", // normal / add / edit
     tempPin: null,
     selectedPinId: null,
-    editingPinId: null
+    editingPinId: null,
+
+    pinDrag: {
+      isPointerDown: false,
+      isDragging: false,
+      pinId: null,
+      moved: false
+    },
+
+    listDrag: {
+      draggingPinId: null
+    }
   };
 
   const mapContainer = document.getElementById("mapContainer");
+  const mapImage = document.getElementById("mapImage");
   const pinLayer = document.getElementById("pinLayer");
   const tempPin = document.getElementById("tempPin");
   const coordX = document.getElementById("coordX");
@@ -58,11 +71,16 @@
     mapContainer.addEventListener("click", onMapClick);
     pinForm.addEventListener("submit", onSubmitPinForm);
     btnCancelModal.addEventListener("click", closeModal);
+
     modalBackdrop.addEventListener("click", (e) => {
       if (e.target === modalBackdrop) {
         closeModal();
       }
     });
+
+    window.addEventListener("pointermove", onWindowPointerMove);
+    window.addEventListener("pointerup", onWindowPointerUp);
+    window.addEventListener("pointercancel", onWindowPointerUp);
   }
 
   function loadData() {
@@ -73,8 +91,12 @@
     }
 
     if (window.APP_DATA && window.APP_DATA.mapPins) {
-      state.mapData = structuredClone(window.APP_DATA.mapPins);
+      state.mapData = cloneObject(window.APP_DATA.mapPins);
     }
+  }
+
+  function cloneObject(value) {
+    return JSON.parse(JSON.stringify(value));
   }
 
   function saveData() {
@@ -98,6 +120,11 @@
   }
 
   function updateStatus() {
+    if (state.pinDrag.isDragging) {
+      status.textContent = "ピン移動中";
+      return;
+    }
+
     if (state.mode === "add") {
       status.textContent = "ピン追加モード";
     } else if (state.mode === "edit") {
@@ -109,14 +136,14 @@
 
   function onMapClick(e) {
     if (state.mode !== "add") return;
+    if (state.pinDrag.isDragging) return;
 
-    const rect = mapContainer.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const point = getPointOnImage(e.clientX, e.clientY);
+    if (!point) return;
 
     state.tempPin = {
-      x: round1(x),
-      y: round1(y)
+      x: round1(point.x),
+      y: round1(point.y)
     };
 
     showTempPin(state.tempPin.x, state.tempPin.y);
@@ -128,6 +155,10 @@
 
   function round1(value) {
     return Math.round(value * 10) / 10;
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
   }
 
   function showTempPin(x, y) {
@@ -207,6 +238,8 @@
   }
 
   function createPin(name) {
+    const timestamp = nowIso();
+
     const pin = {
       id: "P" + Date.now(),
       name,
@@ -214,8 +247,8 @@
       y: state.tempPin.y,
       category: pinCategory.value.trim(),
       note: pinNote.value.trim(),
-      created_at: nowIso(),
-      updated_at: nowIso()
+      created_at: timestamp,
+      updated_at: timestamp
     };
 
     state.mapData.pins.push(pin);
@@ -246,16 +279,26 @@
     state.mapData.pins.forEach((pin) => {
       const el = document.createElement("div");
       el.className = "pin";
+      el.dataset.pinId = pin.id;
+
       if (pin.id === state.selectedPinId) {
         el.classList.add("selected");
+      }
+      if (pin.id === state.pinDrag.pinId && state.pinDrag.isDragging) {
+        el.classList.add("dragging");
       }
 
       el.style.left = pin.x + "%";
       el.style.top = pin.y + "%";
       el.title = pin.name;
 
+      el.addEventListener("pointerdown", (e) => {
+        onPinPointerDown(e, pin.id, el);
+      });
+
       el.addEventListener("click", (e) => {
         e.stopPropagation();
+        if (state.pinDrag.moved) return;
         state.selectedPinId = pin.id;
         renderAll();
       });
@@ -277,6 +320,8 @@
     state.mapData.pins.forEach((pin) => {
       const li = document.createElement("li");
       li.textContent = pin.category ? `【${pin.category}】${pin.name}` : pin.name;
+      li.dataset.pinId = pin.id;
+      li.draggable = true;
 
       if (pin.id === state.selectedPinId) {
         li.classList.add("active");
@@ -285,6 +330,26 @@
       li.addEventListener("click", () => {
         state.selectedPinId = pin.id;
         renderAll();
+      });
+
+      li.addEventListener("dragstart", (e) => {
+        onListDragStart(e, pin.id, li);
+      });
+
+      li.addEventListener("dragover", (e) => {
+        onListDragOver(e, pin.id, li);
+      });
+
+      li.addEventListener("dragleave", () => {
+        li.classList.remove("drop-before", "drop-after");
+      });
+
+      li.addEventListener("drop", (e) => {
+        onListDrop(e, pin.id, li);
+      });
+
+      li.addEventListener("dragend", () => {
+        onListDragEnd();
       });
 
       pinList.appendChild(li);
@@ -336,6 +401,224 @@
     renderAll();
   }
 
+  function getPinById(pinId) {
+    return state.mapData.pins.find((pin) => pin.id === pinId) || null;
+  }
+
+  function onPinPointerDown(e, pinId, el) {
+    if (state.mode !== "normal") return;
+    if (e.button !== 0) return;
+
+    e.stopPropagation();
+
+    state.selectedPinId = pinId;
+    state.pinDrag.isPointerDown = true;
+    state.pinDrag.isDragging = false;
+    state.pinDrag.pinId = pinId;
+    state.pinDrag.moved = false;
+
+    el.setPointerCapture?.(e.pointerId);
+
+    renderAll();
+  }
+
+  function onWindowPointerMove(e) {
+    if (!state.pinDrag.isPointerDown || !state.pinDrag.pinId) return;
+
+    const point = getPointOnImage(e.clientX, e.clientY);
+    if (!point) return;
+
+    const pin = getPinById(state.pinDrag.pinId);
+    if (!pin) return;
+
+    const dx = Math.abs(pin.x - point.x);
+    const dy = Math.abs(pin.y - point.y);
+
+    if (!state.pinDrag.isDragging) {
+      if (dx < getPercentThresholdX() && dy < getPercentThresholdY()) {
+        return;
+      }
+      state.pinDrag.isDragging = true;
+      state.pinDrag.moved = true;
+      updateStatus();
+    }
+
+    pin.x = round1(clamp(point.x, 0, 100));
+    pin.y = round1(clamp(point.y, 0, 100));
+    pin.updated_at = nowIso();
+
+    coordX.textContent = pin.x.toFixed(1);
+    coordY.textContent = pin.y.toFixed(1);
+
+    renderAll();
+  }
+
+  function onWindowPointerUp() {
+    if (!state.pinDrag.isPointerDown) return;
+
+    const shouldSave = state.pinDrag.isDragging;
+
+    state.pinDrag.isPointerDown = false;
+    state.pinDrag.isDragging = false;
+    const moved = state.pinDrag.moved;
+    state.pinDrag.pinId = null;
+
+    if (shouldSave) {
+      saveData();
+    }
+
+    setTimeout(() => {
+      state.pinDrag.moved = false;
+    }, 0);
+
+    if (!moved) {
+      updateStatus();
+      return;
+    }
+
+    renderAll();
+    updateStatus();
+  }
+
+  function getPercentThresholdX() {
+    const imageRect = getRenderedImageRect();
+    if (!imageRect) return 0.5;
+    return (DRAG_THRESHOLD / imageRect.width) * 100;
+  }
+
+  function getPercentThresholdY() {
+    const imageRect = getRenderedImageRect();
+    if (!imageRect) return 0.5;
+    return (DRAG_THRESHOLD / imageRect.height) * 100;
+  }
+
+  function getRenderedImageRect() {
+    const containerRect = mapContainer.getBoundingClientRect();
+
+    const naturalWidth = mapImage.naturalWidth || containerRect.width;
+    const naturalHeight = mapImage.naturalHeight || containerRect.height;
+
+    if (!naturalWidth || !naturalHeight) return null;
+
+    const containerRatio = containerRect.width / containerRect.height;
+    const imageRatio = naturalWidth / naturalHeight;
+
+    let width;
+    let height;
+    let left;
+    let top;
+
+    if (imageRatio > containerRatio) {
+      width = containerRect.width;
+      height = width / imageRatio;
+      left = containerRect.left;
+      top = containerRect.top + (containerRect.height - height) / 2;
+    } else {
+      height = containerRect.height;
+      width = height * imageRatio;
+      top = containerRect.top;
+      left = containerRect.left + (containerRect.width - width) / 2;
+    }
+
+    return {
+      left,
+      top,
+      width,
+      height
+    };
+  }
+
+  function getPointOnImage(clientX, clientY) {
+    const rect = getRenderedImageRect();
+    if (!rect) return null;
+
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+
+    return {
+      x: clamp(x, 0, 100),
+      y: clamp(y, 0, 100)
+    };
+  }
+
+  function onListDragStart(e, pinId, li) {
+    state.listDrag.draggingPinId = pinId;
+    li.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", pinId);
+  }
+
+  function onListDragOver(e, targetPinId, li) {
+    if (!state.listDrag.draggingPinId) return;
+    if (state.listDrag.draggingPinId === targetPinId) return;
+
+    e.preventDefault();
+    clearListDropClasses();
+
+    const rect = li.getBoundingClientRect();
+    const offset = e.clientY - rect.top;
+    const isBefore = offset < rect.height / 2;
+
+    li.classList.add(isBefore ? "drop-before" : "drop-after");
+  }
+
+  function onListDrop(e, targetPinId, li) {
+    e.preventDefault();
+
+    const draggingPinId = state.listDrag.draggingPinId;
+    if (!draggingPinId || draggingPinId === targetPinId) {
+      clearListDropClasses();
+      return;
+    }
+
+    const rect = li.getBoundingClientRect();
+    const offset = e.clientY - rect.top;
+    const insertBefore = offset < rect.height / 2;
+
+    movePinInArray(draggingPinId, targetPinId, insertBefore);
+    clearListDropClasses();
+    saveData();
+    renderAll();
+  }
+
+  function onListDragEnd() {
+    state.listDrag.draggingPinId = null;
+    clearListDropClasses();
+
+    pinList.querySelectorAll("li").forEach((li) => {
+      li.classList.remove("dragging");
+    });
+  }
+
+  function clearListDropClasses() {
+    pinList.querySelectorAll("li").forEach((li) => {
+      li.classList.remove("drop-before", "drop-after");
+    });
+  }
+
+  function movePinInArray(draggingPinId, targetPinId, insertBefore) {
+    const pins = state.mapData.pins;
+    const fromIndex = pins.findIndex((pin) => pin.id === draggingPinId);
+    const targetIndex = pins.findIndex((pin) => pin.id === targetPinId);
+
+    if (fromIndex === -1 || targetIndex === -1) return;
+    if (fromIndex === targetIndex) return;
+
+    const [draggingPin] = pins.splice(fromIndex, 1);
+
+    let insertIndex = pins.findIndex((pin) => pin.id === targetPinId);
+    if (insertIndex === -1) {
+      pins.push(draggingPin);
+      return;
+    }
+
+    if (!insertBefore) {
+      insertIndex += 1;
+    }
+
+    pins.splice(insertIndex, 0, draggingPin);
+  }
+
   function exportData() {
     const text =
 `window.APP_DATA = window.APP_DATA || {};
@@ -343,10 +626,11 @@ window.APP_DATA.mapPins = ${JSON.stringify(state.mapData, null, 2)};`;
 
     const blob = new Blob([text], { type: "text/javascript" });
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    a.href = url;
     a.download = "pins.js";
     a.click();
-    URL.revokeObjectURL(a.href);
+    URL.revokeObjectURL(url);
   }
 
   function importData(e) {
@@ -394,3 +678,4 @@ window.APP_DATA.mapPins = ${JSON.stringify(state.mapData, null, 2)};`;
       .replaceAll("'", "&#39;");
   }
 })();
+
