@@ -4,77 +4,93 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>地点マップ</title>
-
   <link rel="stylesheet" href="./style.css" />
-
-  <!-- 初期データ -->
   <script src="./pins.js"></script>
-
-  <!-- ロジック -->
   <script src="./app.js" defer></script>
 </head>
 <body>
   <div class="page">
-
-    <!-- ヘッダー -->
     <header class="header">
       <h1 class="title">地点マップ</h1>
-      <p class="subtitle">地図クリックでピンを配置</p>
+      <p class="subtitle">地図クリックでピンを配置・編集</p>
     </header>
 
-    <!-- 操作バー -->
     <div class="toolbar">
-      <button id="btnAddMode">＋ピン追加モード</button>
-      <button id="btnExport">エクスポート</button>
+      <button id="btnAddMode" type="button">＋ピン追加モード</button>
+      <button id="btnExport" type="button">エクスポート</button>
+      <label class="import-label">
+        インポート
+        <input id="fileImport" type="file" accept=".js" hidden />
+      </label>
       <span id="status">通常モード</span>
     </div>
 
-    <!-- メイン -->
     <main class="layout">
-
-      <!-- 地図エリア -->
       <section class="map-area">
         <div class="map-container" id="mapContainer">
-
-          <!-- 地図画像 -->
-          <img src="./map.png" class="map-image" id="mapImage" />
-
-          <!-- ピン描画エリア -->
+          <img src="./map.png" class="map-image" id="mapImage" alt="地図画像" />
           <div class="pin-layer" id="pinLayer"></div>
-
-          <!-- 仮ピン -->
           <div class="temp-pin hidden" id="tempPin"></div>
-
         </div>
 
-        <!-- 座標表示 -->
         <div class="coords">
           X: <span id="coordX">--</span> /
           Y: <span id="coordY">--</span>
         </div>
       </section>
 
-      <!-- サイド -->
       <aside class="side">
-
-        <!-- 一覧 -->
-        <div class="list">
+        <section class="list">
           <h2>ピン一覧</h2>
           <ul id="pinList"></ul>
+        </section>
+
+        <section class="detail">
+          <h2>詳細</h2>
+          <div id="pinDetail">未選択</div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <!-- モーダル -->
+  <div class="modal-backdrop hidden" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle">ピン登録</h2>
+
+      <form id="pinForm" class="pin-form">
+        <div class="form-row">
+          <label for="pinName">名称</label>
+          <input id="pinName" name="pinName" type="text" required />
         </div>
 
-        <!-- 詳細 -->
-        <div class="detail">
-          <h2>詳細</h2>
-          <div id="pinDetail">
-            未選択
+        <div class="form-row">
+          <label for="pinCategory">区分</label>
+          <input id="pinCategory" name="pinCategory" type="text" />
+        </div>
+
+        <div class="form-row">
+          <label for="pinNote">備考</label>
+          <textarea id="pinNote" name="pinNote" rows="3"></textarea>
+        </div>
+
+        <div class="form-row form-row-inline">
+          <div>
+            <label for="pinX">X座標</label>
+            <input id="pinX" name="pinX" type="text" readonly />
+          </div>
+          <div>
+            <label for="pinY">Y座標</label>
+            <input id="pinY" name="pinY" type="text" readonly />
           </div>
         </div>
 
-      </aside>
-
-    </main>
-
+        <div class="form-actions">
+          <button id="btnSavePin" type="submit">登録</button>
+          <button id="btnCancelModal" type="button" class="secondary">キャンセル</button>
+        </div>
+      </form>
+    </div>
   </div>
 </body>
 </html>
