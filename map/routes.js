@@ -2,57 +2,50 @@
   "use strict";
 
   // =========================
-  // 状態
+  // 内部状態（UI専用）
   // =========================
-  const ROUTE_STORAGE_KEY = "mapRoutesData";
-
   const state = {
-    routes: [],
     mode: "normal", // normal / create / edit
     tempRoute: null,
     selectedRouteId: null,
-    draggingPointIndex: null
+    draggingPointIndex: null,
+    mousePoint: null
   };
 
   // =========================
-  // DOM（後でindex.htmlに合わせる）
+  // 外部連携（app.js）
+  // =========================
+  let getMapData;
+  let onChange;
+
+  // =========================
+  // DOM
   // =========================
   let mapContainer;
   let mapImage;
   let svgLayer;
 
   // =========================
-  // 初期化（外部から呼ぶ）
+  // 公開API
   // =========================
   window.ROUTES = {
     init,
     setModeCreate,
     confirmRoute,
-    cancelRoute
+    cancelRoute,
+    render
   };
 
   function init(config) {
+    getMapData = config.getMapData;
+    onChange = config.onChange;
+
     mapContainer = config.mapContainer;
     mapImage = config.mapImage;
     svgLayer = config.svgLayer;
 
-    loadData();
     bindEvents();
-    renderAll();
-  }
-
-  // =========================
-  // データ
-  // =========================
-  function loadData() {
-    const saved = localStorage.getItem(ROUTE_STORAGE_KEY);
-    if (saved) {
-      state.routes = JSON.parse(saved);
-    }
-  }
-
-  function saveData() {
-    localStorage.setItem(ROUTE_STORAGE_KEY, JSON.stringify(state.routes));
+    render();
   }
 
   // =========================
@@ -61,7 +54,6 @@
   function setModeCreate() {
     state.mode = "create";
     state.tempRoute = {
-      id: null,
       name: "",
       points: []
     };
@@ -70,26 +62,28 @@
   function confirmRoute() {
     if (!state.tempRoute || state.tempRoute.points.length < 2) return;
 
-    const route = {
+    const mapData = getMapData();
+
+    const newRoute = {
       id: "R" + Date.now(),
-      name: "経路" + (state.routes.length + 1),
+      name: "経路" + (mapData.routes.length + 1),
       points: state.tempRoute.points,
       created_at: now(),
       updated_at: now()
     };
 
-    state.routes.push(route);
+    const newRoutes = [...mapData.routes, newRoute];
+
     state.tempRoute = null;
     state.mode = "normal";
 
-    saveData();
-    renderAll();
+    onChange(newRoutes);
   }
 
   function cancelRoute() {
     state.tempRoute = null;
     state.mode = "normal";
-    renderAll();
+    render();
   }
 
   // =========================
@@ -109,16 +103,22 @@
     if (!point) return;
 
     state.tempRoute.points.push(point);
-    renderAll();
+    render();
   }
 
   // =========================
   // ドラッグ（頂点移動）
   // =========================
   function onPointerMove(e) {
-    if (state.draggingPointIndex === null) return;
+    state.mousePoint = getPointOnImage(e.clientX, e.clientY);
 
-    const route = getSelectedRoute();
+    if (state.draggingPointIndex === null) {
+      render(); // 仮線追従
+      return;
+    }
+
+    const mapData = getMapData();
+    const route = mapData.routes.find(r => r.id === state.selectedRouteId);
     if (!route) return;
 
     const point = getPointOnImage(e.clientX, e.clientY);
@@ -127,12 +127,13 @@
     route.points[state.draggingPointIndex] = point;
     route.updated_at = now();
 
-    renderAll();
+    render();
   }
 
   function onPointerUp() {
     if (state.draggingPointIndex !== null) {
-      saveData();
+      const mapData = getMapData();
+      onChange([...mapData.routes]); // 保存トリガー
     }
     state.draggingPointIndex = null;
   }
@@ -140,46 +141,63 @@
   // =========================
   // 描画
   // =========================
-  function renderAll() {
-    renderRoutes();
-    renderTempRoute();
-  }
-
-  function renderRoutes() {
+  function render() {
     svgLayer.innerHTML = "";
 
-    state.routes.forEach((route) => {
-      const polyline = createPolyline(route.points, false);
+    const mapData = getMapData();
 
-      polyline.addEventListener("click", () => {
-        state.selectedRouteId = route.id;
-        state.mode = "edit";
-        renderAll();
-      });
+    // 保存済み経路
+    mapData.routes.forEach(route => {
+      drawRoute(route, false);
 
-      svgLayer.appendChild(polyline);
-
-      // 編集中：頂点表示
-      if (state.selectedRouteId === route.id) {
-        route.points.forEach((p, i) => {
-          const c = createPointCircle(p, true);
-
-          c.addEventListener("pointerdown", (e) => {
-            e.stopPropagation();
-            state.draggingPointIndex = i;
-          });
-
-          svgLayer.appendChild(c);
-        });
+      if (route.id === state.selectedRouteId) {
+        drawPoints(route);
       }
     });
+
+    // 作成中
+    if (state.tempRoute) {
+      drawTempRoute();
+    }
   }
 
-  function renderTempRoute() {
+  function drawRoute(route, isTemp) {
+    const el = createPolyline(route.points, isTemp);
+
+    el.addEventListener("click", () => {
+      state.selectedRouteId = route.id;
+      state.mode = "edit";
+      render();
+    });
+
+    svgLayer.appendChild(el);
+  }
+
+  function drawTempRoute() {
     if (!state.tempRoute) return;
 
-    const polyline = createPolyline(state.tempRoute.points, true);
-    svgLayer.appendChild(polyline);
+    let points = [...state.tempRoute.points];
+
+    // 仮線：最後 + マウス
+    if (state.mousePoint) {
+      points = [...points, state.mousePoint];
+    }
+
+    const el = createPolyline(points, true);
+    svgLayer.appendChild(el);
+  }
+
+  function drawPoints(route) {
+    route.points.forEach((p, i) => {
+      const c = createPointCircle(p);
+
+      c.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        state.draggingPointIndex = i;
+      });
+
+      svgLayer.appendChild(c);
+    });
   }
 
   // =========================
@@ -202,12 +220,12 @@
     return el;
   }
 
-  function createPointCircle(p, isEdit) {
+  function createPointCircle(p) {
     const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
 
     c.setAttribute("cx", p.x);
     c.setAttribute("cy", p.y);
-    c.setAttribute("r", isEdit ? 4 : 3);
+    c.setAttribute("r", 4);
     c.setAttribute("fill", "#fff");
     c.setAttribute("stroke", "#2563eb");
     c.setAttribute("stroke-width", "2");
@@ -216,7 +234,7 @@
   }
 
   // =========================
-  // 座標変換（画像基準）
+  // 座標
   // =========================
   function getPointOnImage(clientX, clientY) {
     const rect = mapImage.getBoundingClientRect();
@@ -226,10 +244,7 @@
 
     if (x < 0 || x > 100 || y < 0 || y > 100) return null;
 
-    return {
-      x: round1(x),
-      y: round1(y)
-    };
+    return { x: round1(x), y: round1(y) };
   }
 
   function round1(v) {
@@ -238,10 +253,6 @@
 
   function now() {
     return new Date().toISOString();
-  }
-
-  function getSelectedRoute() {
-    return state.routes.find(r => r.id === state.selectedRouteId);
   }
 
 })();
