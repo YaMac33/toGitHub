@@ -29,8 +29,9 @@
       <section class="map-area">
         <div class="map-container" id="mapContainer">
           <img src="./map.png" class="map-image" id="mapImage" alt="地図画像" />
-          <div class="pin-layer" id="pinLayer"></div>
-          <div class="temp-pin hidden" id="tempPin"></div>
+          <div class="pin-layer" id="pinLayer">
+            <div class="temp-pin hidden" id="tempPin"></div>
+          </div>
         </div>
 
         <div class="coords">
@@ -53,7 +54,6 @@
     </main>
   </div>
 
-  <!-- モーダル -->
   <div class="modal-backdrop hidden" id="modalBackdrop">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <h2 id="modalTitle">ピン登録</h2>
