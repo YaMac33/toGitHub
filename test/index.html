@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JSON動作確認</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 24px;
+      line-height: 1.6;
+      background: #f7f8fa;
+      color: #222;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #dcdfe4;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 24px;
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .ok {
+      color: #0a7a2f;
+      font-weight: bold;
+    }
+
+    .ng {
+      color: #b00020;
+      font-weight: bold;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #e2e5ea;
+    }
+  </style>
+</head>
+<body>
+  <h1>JSON動作確認</h1>
+
+  <div class="card">
+    <h2>1. JSON.parse / JSON.stringify</h2>
+    <div id="result1">確認中...</div>
+  </div>
+
+  <div class="card">
+    <h2>2. fetch API</h2>
+    <div id="result2">確認中...</div>
+  </div>
+
+  <div class="card">
+    <h2>3. test.json 読み込み結果</h2>
+    <pre id="result3">確認中...</pre>
+  </div>
+
+  <div class="card">
+    <h2>4. 実行環境情報</h2>
+    <pre id="envInfo">確認中...</pre>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
