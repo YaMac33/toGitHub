@@ -1,0 +1,566 @@
+:root {
+  --page-bg: #efe7db;
+  --page-bg-strong: #e2d6c5;
+  --paper: rgba(255, 252, 247, 0.94);
+  --paper-strong: #fffdfa;
+  --ink: #203040;
+  --muted: #627283;
+  --line: rgba(184, 170, 148, 0.45);
+  --line-strong: rgba(103, 132, 160, 0.35);
+  --accent: #1f5d74;
+  --accent-strong: #15495d;
+  --accent-soft: #d7e9ef;
+  --danger-soft: #fbe7dc;
+  --shadow: 0 18px 36px rgba(28, 43, 59, 0.1);
+  --shadow-soft: 0 10px 24px rgba(28, 43, 59, 0.08);
+  --radius-xl: 28px;
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(31, 93, 116, 0.18), transparent 22%),
+    radial-gradient(circle at 100% 20%, rgba(161, 121, 72, 0.12), transparent 24%),
+    linear-gradient(180deg, #f8f4ec 0%, var(--page-bg) 60%, var(--page-bg-strong) 100%);
+}
+
+a,
+button,
+input {
+  font: inherit;
+}
+
+.page {
+  width: min(1240px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0 56px;
+}
+
+.page-header,
+.overview,
+.controls,
+.table-shell,
+.empty-state {
+  backdrop-filter: blur(12px);
+}
+
+.page-header,
+.controls,
+.table-shell {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+}
+
+.page-header {
+  margin-bottom: 18px;
+  padding: 30px;
+}
+
+.header-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.header-copy {
+  min-width: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.7rem);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.page-subtitle {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.print-button,
+.ghost-button,
+.filter-chip {
+  border: none;
+  border-radius: 999px;
+  font-size: 0.94rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.print-button,
+.ghost-button {
+  padding: 12px 18px;
+}
+
+.print-button {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.ghost-button {
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--accent);
+  border: 1px solid rgba(31, 93, 116, 0.18);
+}
+
+.print-button:hover,
+.ghost-button:hover,
+.filter-chip:hover {
+  transform: translateY(-1px);
+}
+
+.header-meta {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(184, 170, 148, 0.55);
+}
+
+.meta-line {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.meta-line::before {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+#metaPeriod::before {
+  content: "期間: ";
+}
+
+#metaParticipants::before {
+  content: "参加者: ";
+}
+
+#metaNote::before {
+  content: "備考: ";
+}
+
+.overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.overview-card {
+  min-width: 0;
+  padding: 18px 18px 16px;
+  background: rgba(255, 253, 249, 0.82);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+
+.overview-label,
+.overview-value,
+.overview-detail {
+  margin: 0;
+}
+
+.overview-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.overview-value {
+  margin-top: 12px;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.overview-detail {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 22px 24px;
+}
+
+.control-group {
+  min-width: 0;
+}
+
+.control-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(31, 93, 116, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: rgba(31, 93, 116, 0.4);
+  box-shadow: 0 0 0 4px rgba(31, 93, 116, 0.08);
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filter-chip {
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--muted);
+  border: 1px solid rgba(31, 93, 116, 0.12);
+}
+
+.filter-chip.is-active {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.table-shell {
+  padding: 24px;
+}
+
+.table-shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.table-title {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.table-status {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.app {
+  min-width: 0;
+}
+
+.table-host {
+  min-height: 320px;
+}
+
+.empty-state {
+  padding: 42px 24px;
+  background: rgba(255, 252, 247, 0.78);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  color: var(--muted);
+  text-align: center;
+}
+
+.empty-state strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+
+.fallback-note {
+  margin-bottom: 12px;
+  color: #8a4d27;
+  font-size: 0.92rem;
+}
+
+.fallback-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fallback-table th,
+.fallback-table td {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.fallback-table th {
+  background: rgba(215, 233, 239, 0.54);
+}
+
+.tabulator {
+  border: 1px solid rgba(103, 132, 160, 0.18);
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--paper-strong);
+  color: var(--ink);
+}
+
+.tabulator .tabulator-header {
+  border-bottom: 1px solid rgba(103, 132, 160, 0.18);
+  background: linear-gradient(180deg, #f9fbfd 0%, #edf3f7 100%);
+  color: var(--ink);
+}
+
+.tabulator .tabulator-header .tabulator-col {
+  background: transparent;
+  border-right: 1px solid rgba(103, 132, 160, 0.12);
+}
+
+.tabulator .tabulator-header .tabulator-col:last-child {
+  border-right: none;
+}
+
+.tabulator .tabulator-header .tabulator-col .tabulator-col-content {
+  padding: 14px 12px;
+}
+
+.tabulator .tabulator-tableholder .tabulator-table {
+  background: transparent;
+}
+
+.tabulator-row {
+  border-bottom: 1px solid rgba(103, 132, 160, 0.1);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.tabulator-row:nth-child(even) {
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.tabulator-row.is-move-row {
+  background: rgba(251, 231, 220, 0.52);
+}
+
+.tabulator-row .tabulator-cell {
+  padding: 12px;
+  border-right: 1px solid rgba(103, 132, 160, 0.08);
+  white-space: normal;
+  line-height: 1.6;
+}
+
+.tabulator-row .tabulator-cell:last-child {
+  border-right: none;
+}
+
+.tabulator-row.tabulator-selectable:hover {
+  background-color: rgba(215, 233, 239, 0.35);
+}
+
+.tabulator .tabulator-col-resize-handle {
+  opacity: 0.22;
+}
+
+.tabulator .tabulator-row.tabulator-group {
+  background: rgba(215, 233, 239, 0.45);
+  border-top: 1px solid rgba(103, 132, 160, 0.12);
+  border-bottom: 1px solid rgba(103, 132, 160, 0.12);
+}
+
+.tabulator .tabulator-row.tabulator-group .tabulator-cell {
+  padding: 0;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.group-header__date {
+  font-weight: 800;
+}
+
+.group-header__meta {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(215, 233, 239, 0.78);
+  color: #20485a;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.no-print {
+  print-color-adjust: exact;
+}
+
+@media (max-width: 960px) {
+  .overview,
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .header-main,
+  .table-shell__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    width: min(100% - 20px, 100%);
+    padding: 18px 0 32px;
+  }
+
+  .page-header,
+  .controls,
+  .table-shell {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+  }
+
+  .print-button,
+  .ghost-button {
+    width: 100%;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .page {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .page-header,
+  .overview,
+  .table-shell {
+    box-shadow: none;
+    border: 1px solid #c7ccd1;
+    background: #ffffff;
+  }
+
+  .page-header {
+    margin-bottom: 10px;
+    padding: 14px 16px;
+  }
+
+  .overview {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .overview-card {
+    padding: 10px 12px;
+    box-shadow: none;
+    background: #ffffff;
+  }
+
+  .controls,
+  .no-print {
+    display: none !important;
+  }
+
+  .table-shell {
+    padding: 0;
+    border: none;
+  }
+
+  .table-shell__header {
+    margin-bottom: 6px;
+    padding: 0 0 6px;
+  }
+
+  .tabulator {
+    border: none;
+    border-radius: 0;
+  }
+
+  .tabulator .tabulator-header {
+    background: #eef2f5 !important;
+    print-color-adjust: exact;
+  }
+
+  .tabulator-row,
+  .tabulator-row:nth-child(even),
+  .tabulator-row.is-move-row {
+    background: #ffffff !important;
+  }
+
+  .tabulator .tabulator-row.tabulator-group {
+    background: #e6edf1 !important;
+    print-color-adjust: exact;
+  }
+}
