@@ -1,0 +1,14 @@
+{
+  "test": "OK",
+  "title": "JSON読込テスト",
+  "year": 2026,
+  "items": [
+    "りんご",
+    "みかん",
+    "ぶどう"
+  ],
+  "info": {
+    "author": "test",
+    "status": "success"
+  }
+}
