@@ -53,6 +53,7 @@
   const pinY = document.getElementById("pinY");
   const btnSavePin = document.getElementById("btnSavePin");
   const btnCancelModal = document.getElementById("btnCancelModal");
+  const btnCloseModalIcon = document.getElementById("btnCloseModalIcon");
 
   init();
 
@@ -72,6 +73,7 @@
     mapContainer.addEventListener("click", onMapClick);
     pinForm.addEventListener("submit", onSubmitPinForm);
     btnCancelModal.addEventListener("click", closeModal);
+    if(btnCloseModalIcon) btnCloseModalIcon.addEventListener("click", closeModal);
 
     modalBackdrop.addEventListener("click", (e) => {
       if (e.target === modalBackdrop) {
@@ -132,16 +134,20 @@
 
   function updateStatus() {
     if (state.pinDrag.isDragging) {
-      status.textContent = "ピン移動中";
+      status.textContent = "ピン移動中...";
+      status.classList.add("active");
       return;
     }
 
     if (state.mode === "add") {
-      status.textContent = "ピン追加モード";
+      status.textContent = "追加モード（地図をクリック）";
+      status.classList.add("active");
     } else if (state.mode === "edit") {
       status.textContent = "編集中";
+      status.classList.add("active");
     } else {
       status.textContent = "通常モード";
+      status.classList.remove("active");
     }
   }
 
@@ -190,7 +196,7 @@
 
     state.mode = "add";
     updateStatus();
-    modalTitle.textContent = "ピン登録";
+    modalTitle.textContent = "新規ピンの登録";
     btnSavePin.textContent = "登録";
 
     pinForm.reset();
@@ -206,7 +212,7 @@
     state.editingPinId = pin.id;
     updateStatus();
 
-    modalTitle.textContent = "ピン編集";
+    modalTitle.textContent = "ピンの編集";
     btnSavePin.textContent = "更新";
 
     pinName.value = pin.name || "";
@@ -304,7 +310,12 @@
 
       el.style.left = pin.x + "%";
       el.style.top = pin.y + "%";
-      el.title = pin.name;
+
+      // ツールチップ要素の追加
+      const tooltip = document.createElement("div");
+      tooltip.className = "pin-tooltip";
+      tooltip.textContent = pin.name;
+      el.appendChild(tooltip);
 
       el.addEventListener("pointerdown", (e) => {
         onPinPointerDown(e, pin.id, el);
@@ -326,20 +337,35 @@
 
     if (!state.mapData.pins.length) {
       const li = document.createElement("li");
-      li.textContent = "ピンはありません";
+      li.textContent = "ピンはまだ登録されていません";
+      li.style.justifyContent = "center";
+      li.style.color = "var(--text-muted)";
+      li.style.backgroundColor = "transparent";
+      li.style.border = "none";
       pinList.appendChild(li);
       return;
     }
 
     state.mapData.pins.forEach((pin) => {
       const li = document.createElement("li");
-      li.textContent = pin.category ? `【${pin.category}】${pin.name}` : pin.name;
       li.dataset.pinId = pin.id;
       li.draggable = true;
 
       if (pin.id === state.selectedPinId) {
         li.classList.add("active");
+        // 選択時にリスト内で見える位置にスクロール
+        setTimeout(() => li.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
       }
+
+      const badgeHtml = pin.category ? `<span class="pin-badge">${escapeHtml(pin.category)}</span>` : '';
+      
+      li.innerHTML = `
+        <div class="pin-list-content">
+          ${badgeHtml}
+          <span class="pin-list-name">${escapeHtml(pin.name)}</span>
+        </div>
+        <span class="material-symbols-outlined drag-handle" title="ドラッグで並べ替え">drag_indicator</span>
+      `;
 
       li.addEventListener("click", () => {
         state.selectedPinId = pin.id;
@@ -374,19 +400,31 @@
     const pin = getSelectedPin();
 
     if (!pin) {
-      pinDetail.textContent = "未選択";
+      pinDetail.innerHTML = '<div style="color: var(--text-muted); text-align: center; margin-top: 20px;">ピンを選択するか、追加モードで地図をクリックしてください。</div>';
       return;
     }
 
     pinDetail.innerHTML = `
-      <div>名称: ${escapeHtml(pin.name)}</div>
-      <div>区分: ${escapeHtml(pin.category || "")}</div>
-      <div>X: ${pin.x.toFixed(1)}</div>
-      <div>Y: ${pin.y.toFixed(1)}</div>
-      <div>備考: ${escapeHtml(pin.note || "")}</div>
+      <div class="detail-grid">
+        <div class="detail-label">名称</div>
+        <div class="detail-value">${escapeHtml(pin.name)}</div>
+        
+        <div class="detail-label">区分</div>
+        <div class="detail-value">${pin.category ? `<span class="pin-badge">${escapeHtml(pin.category)}</span>` : '<span style="color:var(--border)">-</span>'}</div>
+        
+        <div class="detail-label">座標</div>
+        <div class="detail-value" style="font-family: monospace;">X: ${pin.x.toFixed(1)} / Y: ${pin.y.toFixed(1)}</div>
+        
+        <div class="detail-label">備考</div>
+        <div class="detail-value" style="white-space: pre-wrap;">${pin.note ? escapeHtml(pin.note) : '<span style="color:var(--border)">-</span>'}</div>
+      </div>
       <div class="detail-actions">
-        <button type="button" id="btnEditPin">編集</button>
-        <button type="button" class="danger" id="btnDeletePin">削除</button>
+        <button type="button" class="btn btn-outline" id="btnEditPin">
+          <span class="material-symbols-outlined" style="font-size: 16px;">edit</span> 編集
+        </button>
+        <button type="button" class="btn btn-danger" id="btnDeletePin">
+          <span class="material-symbols-outlined" style="font-size: 16px;">delete</span> 削除
+        </button>
       </div>
     `;
 
@@ -407,7 +445,7 @@
     const pin = getSelectedPin();
     if (!pin) return;
 
-    if (!confirm(`「${pin.name}」を削除しますか？`)) return;
+    if (!confirm(`「${pin.name}」を削除しますか？\n※この操作は取り消せません。`)) return;
 
     state.mapData.pins = state.mapData.pins.filter((item) => item.id !== pin.id);
     state.selectedPinId = null;
@@ -703,3 +741,4 @@ window.APP_DATA.mapPins = ${JSON.stringify(state.mapData, null, 2)};`;
       .replaceAll("'", "&#39;");
   }
 })();
+
