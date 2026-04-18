@@ -2,14 +2,11 @@ window.addEventListener("DOMContentLoaded", () => {
   "use strict";
 
   const app = document.getElementById("app");
-  const titleEl = document.getElementById("pageTitle");
-  const subtitleEl = document.getElementById("pageSubtitle");
-  const periodEl = document.getElementById("pagePeriod");
-  const participantsEl = document.getElementById("pageParticipants");
-  const noteEl = document.getElementById("pageNote");
-  const periodRow = document.getElementById("periodRow");
-  const participantsRow = document.getElementById("participantsRow");
-  const noteRow = document.getElementById("noteRow");
+  const pageTitle = document.getElementById("pageTitle");
+  const pageSubtitle = document.getElementById("pageSubtitle");
+  const pagePeriod = document.getElementById("metaPeriod");
+  const pageParticipants = document.getElementById("metaParticipants");
+  const pageNote = document.getElementById("metaNote");
 
   const meta = window.KOUTEI_DATA?.meta || {};
   const rows = Array.isArray(window.KOUTEI_DATA?.itinerary)
@@ -18,21 +15,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
   renderHeaderMeta({
     meta,
-    titleEl,
-    subtitleEl,
-    periodEl,
-    participantsEl,
-    noteEl,
-    periodRow,
-    participantsRow,
-    noteRow,
-    rows
+    rows,
+    pageTitle,
+    pageSubtitle,
+    pagePeriod,
+    pageParticipants,
+    pageNote
   });
 
   if (!app) return;
 
   if (!rows.length) {
-    app.innerHTML = `<div class="empty">行程データがありません。</div>`;
+    app.innerHTML = `<div class="empty-state">行程データがありません。</div>`;
     return;
   }
 
@@ -49,15 +43,12 @@ window.addEventListener("DOMContentLoaded", () => {
 function renderHeaderMeta(params) {
   const {
     meta,
-    titleEl,
-    subtitleEl,
-    periodEl,
-    participantsEl,
-    noteEl,
-    periodRow,
-    participantsRow,
-    noteRow,
-    rows
+    rows,
+    pageTitle,
+    pageSubtitle,
+    pagePeriod,
+    pageParticipants,
+    pageNote
   } = params;
 
   const title = safeText(meta.title) || "行程表";
@@ -65,47 +56,53 @@ function renderHeaderMeta(params) {
   const participants = safeText(meta.participants);
   const note = safeText(meta.note);
 
-  const inferredPeriod = inferPeriodFromRows(rows);
-  const periodStart = normalizeDate(meta.period_start) || inferredPeriod.start;
-  const periodEnd = normalizeDate(meta.period_end) || inferredPeriod.end;
+  const inferred = inferPeriodFromRows(rows);
+  const periodStart = normalizeDate(meta.period_start) || inferred.start;
+  const periodEnd = normalizeDate(meta.period_end) || inferred.end;
   const periodText = buildPeriodText(periodStart, periodEnd);
 
-  if (titleEl) {
-    titleEl.textContent = title;
+  if (pageTitle) {
+    pageTitle.textContent = title;
     document.title = title;
   }
 
-  if (subtitleEl) {
-    subtitleEl.textContent = subtitle;
+  if (pageSubtitle) {
+    if (subtitle) {
+      pageSubtitle.textContent = subtitle;
+      pageSubtitle.hidden = false;
+    } else {
+      pageSubtitle.textContent = "";
+      pageSubtitle.hidden = true;
+    }
   }
 
-  if (periodEl && periodRow) {
+  if (pagePeriod) {
     if (periodText) {
-      periodEl.textContent = periodText;
-      periodRow.hidden = false;
+      pagePeriod.textContent = periodText;
+      pagePeriod.hidden = false;
     } else {
-      periodEl.textContent = "";
-      periodRow.hidden = true;
+      pagePeriod.textContent = "";
+      pagePeriod.hidden = true;
     }
   }
 
-  if (participantsEl && participantsRow) {
+  if (pageParticipants) {
     if (participants) {
-      participantsEl.textContent = participants;
-      participantsRow.hidden = false;
+      pageParticipants.textContent = participants;
+      pageParticipants.hidden = false;
     } else {
-      participantsEl.textContent = "";
-      participantsRow.hidden = true;
+      pageParticipants.textContent = "";
+      pageParticipants.hidden = true;
     }
   }
 
-  if (noteEl && noteRow) {
+  if (pageNote) {
     if (note) {
-      noteEl.textContent = note;
-      noteRow.hidden = false;
+      pageNote.textContent = note;
+      pageNote.hidden = false;
     } else {
-      noteEl.textContent = "";
-      noteRow.hidden = true;
+      pageNote.textContent = "";
+      pageNote.hidden = true;
     }
   }
 }
@@ -118,10 +115,9 @@ function normalizeRow(row) {
     start_time: normalizeTime(row.start_time),
     end_time: normalizeTime(row.end_time),
     category: safeText(row.category),
-    place_name: safeText(row.place_name),
     title: safeText(row.title),
     detail: safeText(row.detail),
-    move_method: safeText(row.move_method),
+    distance: safeText(row.distance),
     note: safeText(row.note),
     sort_order: toNumber(row.sort_order)
   };
@@ -187,29 +183,32 @@ function renderDaySection(group) {
 }
 
 function renderTimelineItem(item) {
-  const categoryClass = buildCategoryClass(item.category);
-  const title = item.title || "名称未設定";
-  const place = item.place_name || "";
-  const detail = item.detail || "";
-  const start = item.start_time || "--:--";
-  const end = item.end_time || "";
-  const timeRange = end ? `〜 ${end}` : "";
+  const category = item.category || "未分類";
+  const categoryClass = buildCategoryClass(category);
+  const isMove = category === "移動";
 
-  const meta = [];
+  const startTime = item.start_time || "";
+  const endTime = item.end_time || "";
 
-  if (item.move_method) {
-    meta.push(`<span class="meta-chip">移動: ${escapeHtml(item.move_method)}</span>`);
-  }
+  const topTime = startTime || "--:--";
+  const bottomTime = endTime || "--:--";
 
-  if (item.note) {
-    meta.push(`<span class="meta-chip">備考: ${escapeHtml(item.note)}</span>`);
-  }
+  const duration = isMove ? formatTravelDuration(startTime, endTime) : "";
 
   return `
     <article class="timeline-item">
       <div class="time-block">
-        <div class="start-time">${escapeHtml(start)}</div>
-        <div class="end-time">${escapeHtml(timeRange)}</div>
+        <div class="time-top">
+          ${startTime
+            ? `<div class="time-value">${escapeHtml(topTime)}</div>`
+            : `<div class="time-value muted">--:--</div>`}
+        </div>
+
+        <div class="time-bottom">
+          ${endTime
+            ? `<div class="time-value">${escapeHtml(bottomTime)}</div>`
+            : `<div class="time-value muted">--:--</div>`}
+        </div>
       </div>
 
       <div class="axis-block">
@@ -219,15 +218,24 @@ function renderTimelineItem(item) {
 
       <div class="card">
         <div class="card-head">
-          <span class="category-badge ${escapeHtml(categoryClass)}">
-            ${escapeHtml(item.category || "未分類")}
-          </span>
-          <div class="title">${escapeHtml(title)}</div>
+          <span class="category-badge ${escapeHtml(categoryClass)}">${escapeHtml(category)}</span>
+          <div class="title">${escapeHtml(item.title || "")}</div>
         </div>
 
-        ${place ? `<p class="place">${escapeHtml(place)}</p>` : ""}
-        ${detail ? `<p class="detail">${escapeHtml(detail)}</p>` : ""}
-        ${meta.length ? `<div class="meta">${meta.join("")}</div>` : ""}
+        ${item.detail ? `<p class="detail">${escapeHtml(item.detail)}</p>` : ""}
+
+        ${isMove && (duration || item.distance) ? `
+          <div class="move-info">
+            ${duration ? `<div class="move-duration">所要時間：${escapeHtml(duration)}</div>` : ""}
+            ${item.distance ? `<div class="move-method">距離：${escapeHtml(item.distance)}</div>` : ""}
+          </div>
+        ` : ""}
+
+        ${item.note ? `
+          <div class="meta">
+            <span class="meta-chip">備考：${escapeHtml(item.note)}</span>
+          </div>
+        ` : ""}
       </div>
     </article>
   `;
@@ -263,10 +271,43 @@ function buildPeriodText(start, end) {
   const sameYear = start.slice(0, 4) === end.slice(0, 4);
 
   if (sameYear) {
-    return `${formatWarekiSeirekiDate(start)} ～ ${formatMonthDayOnly(end)}`;
+    return `${formatWarekiSeirekiDate(start)} - ${formatMonthDayOnly(end)}`;
   }
 
-  return `${formatWarekiSeirekiDate(start)} ～ ${formatWarekiSeirekiDate(end)}`;
+  return `${formatWarekiSeirekiDate(start)} - ${formatWarekiSeirekiDate(end)}`;
+}
+
+function formatTravelDuration(startTime, endTime) {
+  const startMinutes = parseTimeToMinutes(startTime);
+  const endMinutes = parseTimeToMinutes(endTime);
+
+  if (startMinutes == null || endMinutes == null) return "";
+
+  let diff = endMinutes - startMinutes;
+  if (diff < 0) diff += 24 * 60;
+  if (diff === 0) return "0分";
+
+  const hours = Math.floor(diff / 60);
+  const minutes = diff % 60;
+
+  if (hours > 0 && minutes > 0) return `${hours}時間${minutes}分`;
+  if (hours > 0) return `${hours}時間`;
+  return `${minutes}分`;
+}
+
+function parseTimeToMinutes(value) {
+  const text = safeText(value);
+  const match = text.match(/^(\d{2}):(\d{2})$/);
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
 }
 
 function normalizeDate(value) {

@@ -11,40 +11,25 @@
 <body>
   <div class="page">
     <header class="page-header">
-      <div class="page-header-main">
-        <p class="eyebrow">KOUTEI</p>
-        <h1 id="pageTitle" class="page-title">行程表</h1>
-
-        <div class="page-meta">
-          <p id="pageSubtitle" class="page-subtitle"></p>
-
-          <div class="page-meta-list">
-            <div id="periodRow" class="page-meta-row" hidden>
-              <span class="page-meta-label">期間</span>
-              <span id="pagePeriod" class="page-meta-value"></span>
-            </div>
-
-            <div id="participantsRow" class="page-meta-row" hidden>
-              <span class="page-meta-label">参加者</span>
-              <span id="pageParticipants" class="page-meta-value"></span>
-            </div>
-
-            <div id="noteRow" class="page-meta-row" hidden>
-              <span class="page-meta-label">備考</span>
-              <span id="pageNote" class="page-meta-value"></span>
-            </div>
-          </div>
+      <div class="header-main">
+        <div class="header-copy">
+          <h1 id="pageTitle" class="page-title">行程表</h1>
+          <p id="pageSubtitle" class="page-subtitle" hidden></p>
         </div>
+
+        <button type="button" onclick="window.print()" class="print-button no-print">
+          印刷
+        </button>
       </div>
 
-      <div class="page-actions no-print">
-        <button type="button" class="print-button" onclick="window.print()">印刷</button>
+      <div class="header-meta">
+        <p id="metaPeriod" class="meta-line" hidden></p>
+        <p id="metaParticipants" class="meta-line" hidden></p>
+        <p id="metaNote" class="meta-line" hidden></p>
       </div>
     </header>
 
-    <main id="app" class="app">
-      <div class="loading">読み込み中...</div>
-    </main>
+    <main id="app" class="app"></main>
   </div>
 </body>
 </html>
