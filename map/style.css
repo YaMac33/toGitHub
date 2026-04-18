@@ -98,7 +98,6 @@ textarea {
 
 .pin-layer {
   position: absolute;
-  inset: 0;
 }
 
 .pin,
@@ -113,7 +112,7 @@ textarea {
 .pin {
   background: #ef4444;
   border: 2px solid #fff;
-  cursor: pointer;
+  cursor: grab;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
@@ -121,6 +120,14 @@ textarea {
   background: #f59e0b;
   width: 16px;
   height: 16px;
+}
+
+.pin.dragging {
+  background: #2563eb;
+  width: 18px;
+  height: 18px;
+  z-index: 20;
+  cursor: grabbing;
 }
 
 .temp-pin {
@@ -180,6 +187,18 @@ textarea {
 
 #pinList li.active {
   background: #e0f2fe;
+}
+
+#pinList li.dragging {
+  opacity: 0.45;
+}
+
+#pinList li.drop-before {
+  border-top: 3px solid #2563eb;
+}
+
+#pinList li.drop-after {
+  border-bottom: 3px solid #2563eb;
 }
 
 .detail {
@@ -284,24 +303,4 @@ textarea {
 
 .form-actions .secondary {
   background: #64748b;
-}
-
-.pin.dragging {
-  background: #2563eb;
-  width: 18px;
-  height: 18px;
-  z-index: 20;
-  cursor: grabbing;
-}
-
-#pinList li.dragging {
-  opacity: 0.45;
-}
-
-#pinList li.drop-before {
-  border-top: 3px solid #2563eb;
-}
-
-#pinList li.drop-after {
-  border-bottom: 3px solid #2563eb;
 }
