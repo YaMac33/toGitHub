@@ -1,222 +1,294 @@
 window.addEventListener("DOMContentLoaded", () => {
+  "use strict";
+
   const app = document.getElementById("app");
-  const meta = normalizeMeta(window.KOUTEI_DATA?.meta || {});
-  const itinerary = collectItineraries(window.KOUTEI_DATA || {});
+  const pageTitle = document.getElementById("pageTitle");
+  const pageSubtitle = document.getElementById("pageSubtitle");
+  const pagePeriod = document.getElementById("pagePeriod");
+  const pageParticipants = document.getElementById("pageParticipants");
+  const pageNote = document.getElementById("pageNote");
+  const periodRow = document.getElementById("periodRow");
+  const participantsRow = document.getElementById("participantsRow");
+  const noteRow = document.getElementById("noteRow");
 
-  applyMeta(meta);
+  const meta = window.KOUTEI_DATA?.meta || {};
+  const rows = Array.isArray(window.KOUTEI_DATA?.itinerary)
+    ? window.KOUTEI_DATA.itinerary
+    : [];
 
-  if (!itinerary.length) {
-    app.innerHTML = `<div class="empty-state">データがありません。</div>`;
+  renderHeaderMeta({
+    meta,
+    rows,
+    pageTitle,
+    pageSubtitle,
+    pagePeriod,
+    pageParticipants,
+    pageNote,
+    periodRow,
+    participantsRow,
+    noteRow
+  });
+
+  if (!app) return;
+
+  if (!rows.length) {
+    app.innerHTML = `<div class="empty">行程データがありません。</div>`;
     return;
   }
 
-  const rows = itinerary.map(normalizeRow).sort(compareRows);
-  const grouped = groupByDay(rows);
+  const normalized = rows
+    .map(normalizeRow)
+    .filter((row) => row.date);
 
-  app.innerHTML = grouped.map(renderDay).join("");
+  const sorted = normalized.sort(compareItinerary);
+  const grouped = groupByDay(sorted);
+
+  app.innerHTML = grouped.map(renderDaySection).join("");
 });
 
-const MOVE_CATEGORY = "移動";
+function renderHeaderMeta(params) {
+  const {
+    meta,
+    rows,
+    pageTitle,
+    pageSubtitle,
+    pagePeriod,
+    pageParticipants,
+    pageNote,
+    periodRow,
+    participantsRow,
+    noteRow
+  } = params;
 
-function collectItineraries(source) {
-  return Object.keys(source)
-    .filter((key) => /^itinerary\d*$/i.test(key))
-    .sort(compareItineraryKeys)
-    .flatMap((key) => (Array.isArray(source[key]) ? source[key] : []));
-}
+  const title = safeText(meta.title) || "行程表";
+  const subtitle = safeText(meta.subtitle);
+  const participants = safeText(meta.participants);
+  const note = safeText(meta.note);
 
-function compareItineraryKeys(a, b) {
-  const aNum = extractItineraryIndex(a);
-  const bNum = extractItineraryIndex(b);
-  return aNum - bNum;
-}
+  const inferred = inferPeriodFromRows(rows);
+  const periodStart = normalizeDate(meta.period_start) || inferred.start;
+  const periodEnd = normalizeDate(meta.period_end) || inferred.end;
+  const periodText = buildPeriodText(periodStart, periodEnd);
 
-function extractItineraryIndex(key) {
-  const match = String(key).match(/^itinerary(\d*)$/i);
-  if (!match) return Number.MAX_SAFE_INTEGER;
-  return match[1] ? Number(match[1]) : 0;
-}
+  if (pageTitle) {
+    pageTitle.textContent = title;
+    document.title = title;
+  }
 
-function applyMeta(meta) {
-  document.title = meta.title || "行程表";
-  setText("pageTitle", meta.title || "行程表");
-  setText("pageSubtitle", meta.subtitle);
-  setText("metaPeriod", formatPeriod(meta.period_start, meta.period_end));
-  setText("metaParticipants", meta.participants);
-  setText("metaNote", meta.note);
-}
+  if (pageSubtitle) {
+    pageSubtitle.textContent = subtitle;
+  }
 
-function setText(id, value) {
-  const element = document.getElementById(id);
-  if (!element) return;
+  if (pagePeriod && periodRow) {
+    if (periodText) {
+      pagePeriod.textContent = periodText;
+      periodRow.hidden = false;
+    } else {
+      pagePeriod.textContent = "";
+      periodRow.hidden = true;
+    }
+  }
 
-  const text = value || "";
-  element.textContent = text;
-  element.hidden = !text;
-}
+  if (pageParticipants && participantsRow) {
+    if (participants) {
+      pageParticipants.textContent = participants;
+      participantsRow.hidden = false;
+    } else {
+      pageParticipants.textContent = "";
+      participantsRow.hidden = true;
+    }
+  }
 
-function renderDay(group) {
-  return `
-    <section class="day-section">
-      <div class="day-header">
-        <div class="day-no">${escapeHtml(String(group.day_no))}日目</div>
-        <div class="day-date">${escapeHtml(toWarekiDisplay(group.date))}</div>
-      </div>
-      <div class="timeline">
-        ${group.items.map(renderItem).join("")}
-      </div>
-    </section>
-  `;
-}
-
-function renderItem(item) {
-  const isMove = item.category === MOVE_CATEGORY;
-  const topLabel = isMove ? "出発" : "到着";
-  const bottomLabel = isMove ? "到着" : "出発";
-  const start = item.start_time || "--:--";
-  const end = item.end_time || "--:--";
-  const duration = isMove ? calcDuration(start, end) : "";
-  const badgeClass = `category-badge ${categoryClassName(item.category)}`.trim();
-
-  return `
-    <article class="timeline-item">
-      <div class="time-block" aria-label="時刻">
-        <div class="time-top">
-          <div class="time-label">${topLabel}</div>
-          <div class="time-value">${escapeHtml(start)}</div>
-        </div>
-        <div class="time-bottom">
-          <div class="time-label">${bottomLabel}</div>
-          <div class="time-value">${escapeHtml(end)}</div>
-        </div>
-      </div>
-
-      <div class="axis-block" aria-hidden="true">
-        <span class="axis-line"></span>
-        <span class="axis-dot"></span>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <span class="${escapeHtml(badgeClass)}">${escapeHtml(item.category || "未分類")}</span>
-          <div class="title">${escapeHtml(item.title)}</div>
-        </div>
-
-        ${renderTextBlock("place", item.place_name)}
-        ${renderTextBlock("detail", item.detail)}
-
-        ${isMove ? renderMoveInfo(duration, item.move_method) : ""}
-        ${item.note ? `<div class="note">備考: ${escapeHtml(item.note)}</div>` : ""}
-      </div>
-    </article>
-  `;
-}
-
-function renderMoveInfo(duration, moveMethod) {
-  if (!duration && !moveMethod) return "";
-
-  return `
-    <div class="move-info">
-      ${duration ? `<div class="move-row">所要時間: ${escapeHtml(duration)}</div>` : ""}
-      ${moveMethod ? `<div class="move-row">移動手段: ${escapeHtml(moveMethod)}</div>` : ""}
-    </div>
-  `;
-}
-
-function renderTextBlock(className, value) {
-  if (!value) return "";
-  return `<p class="${className}">${escapeHtml(value)}</p>`;
-}
-
-function normalizeMeta(meta) {
-  return {
-    title: normalizeString(meta.title),
-    subtitle: normalizeString(meta.subtitle),
-    period_start: formatDate(meta.period_start),
-    period_end: formatDate(meta.period_end),
-    participants: normalizeString(meta.participants),
-    note: normalizeString(meta.note)
-  };
+  if (pageNote && noteRow) {
+    if (note) {
+      pageNote.textContent = note;
+      noteRow.hidden = false;
+    } else {
+      pageNote.textContent = "";
+      noteRow.hidden = true;
+    }
+  }
 }
 
 function normalizeRow(row) {
   return {
-    schedule_id: normalizeString(row.schedule_id),
-    day_no: normalizeNumber(row.day_no, 1),
-    date: formatDate(row.date),
-    start_time: formatTime(row.start_time),
-    end_time: formatTime(row.end_time),
-    category: normalizeString(row.category),
-    title: normalizeString(row.title),
-    place_name: normalizeString(row.place_name),
-    detail: normalizeString(row.detail),
-    move_method: normalizeString(row.move_method),
-    note: normalizeString(row.note),
-    sort_order: normalizeNumber(row.sort_order, 0)
+    schedule_id: safeText(row.schedule_id),
+    day_no: toNumber(row.day_no),
+    date: normalizeDate(row.date),
+    start_time: normalizeTime(row.start_time),
+    end_time: normalizeTime(row.end_time),
+    category: safeText(row.category),
+    title: safeText(row.title),
+    detail: safeText(row.detail),
+    distance: safeText(row.distance),
+    note: safeText(row.note),
+    sort_order: toNumber(row.sort_order)
   };
 }
 
-function normalizeString(value) {
-  if (value == null) return "";
-  return String(value).trim();
-}
+function compareItinerary(a, b) {
+  const dateCompare = a.date.localeCompare(b.date);
+  if (dateCompare !== 0) return dateCompare;
 
-function normalizeNumber(value, fallback) {
-  const normalized = Number(value);
-  return Number.isFinite(normalized) ? normalized : fallback;
-}
+  const timeCompare = (a.start_time || "99:99").localeCompare(b.start_time || "99:99");
+  if (timeCompare !== 0) return timeCompare;
 
-function compareRows(a, b) {
-  if (a.date !== b.date) return a.date.localeCompare(b.date);
-  if (a.day_no !== b.day_no) return a.day_no - b.day_no;
-  if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
-  if (a.end_time !== b.end_time) return a.end_time.localeCompare(b.end_time);
-  return a.sort_order - b.sort_order;
+  const sortCompare = a.sort_order - b.sort_order;
+  if (sortCompare !== 0) return sortCompare;
+
+  return a.schedule_id.localeCompare(b.schedule_id);
 }
 
 function groupByDay(rows) {
-  const groups = new Map();
+  const map = new Map();
 
   rows.forEach((row) => {
-    const key = `${row.day_no}-${row.date}`;
-    if (!groups.has(key)) {
-      groups.set(key, {
+    const key = `${row.day_no || 0}__${row.date}`;
+
+    if (!map.has(key)) {
+      map.set(key, {
         day_no: row.day_no,
         date: row.date,
         items: []
       });
     }
 
-    groups.get(key).items.push(row);
+    map.get(key).items.push(row);
   });
 
-  return Array.from(groups.values());
+  return Array.from(map.values()).sort((a, b) => {
+    const dateCompare = a.date.localeCompare(b.date);
+    if (dateCompare !== 0) return dateCompare;
+    return (a.day_no || 0) - (b.day_no || 0);
+  });
 }
 
-function formatDate(value) {
-  if (value == null || value === "") return "";
-  return String(value).trim().replace(/\//g, "-");
+function renderDaySection(group) {
+  const dayNoLabel = group.day_no ? `${group.day_no}日目` : "日程";
+  const dateLabel = formatWarekiSeirekiDate(group.date);
+  const countLabel = `${group.items.length}件`;
+
+  return `
+    <section class="day-section">
+      <div class="day-header">
+        <div class="day-title-wrap">
+          <div class="day-no">${escapeHtml(dayNoLabel)}</div>
+          <div class="day-date">${escapeHtml(dateLabel)}</div>
+        </div>
+        <div class="day-count">${escapeHtml(countLabel)}</div>
+      </div>
+
+      <div class="timeline">
+        ${group.items.map(renderTimelineItem).join("")}
+      </div>
+    </section>
+  `;
 }
 
-function formatTime(value) {
-  if (value == null || value === "") return "";
+function renderTimelineItem(item) {
+  const category = item.category || "未分類";
+  const categoryClass = buildCategoryClass(category);
+  const isMove = category === "移動";
 
-  const match = String(value).trim().match(/^(\d{1,2}):(\d{1,2})$/);
-  if (!match) return String(value).trim();
+  const startTime = item.start_time || "";
+  const endTime = item.end_time || "";
 
-  const hours = match[1].padStart(2, "0");
-  const minutes = match[2].padStart(2, "0");
-  return `${hours}:${minutes}`;
+  const topTime = startTime || "--:--";
+  const bottomTime = endTime || "--:--";
+
+  const duration = isMove ? formatTravelDuration(startTime, endTime) : "";
+
+  return `
+    <article class="timeline-item">
+      <div class="time-block">
+        <div class="time-top">
+          ${startTime
+            ? `<div class="time-value">${escapeHtml(topTime)}</div>`
+            : `<div class="time-value muted">--:--</div>`}
+        </div>
+
+        <div class="time-bottom">
+          ${endTime
+            ? `<div class="time-value">${escapeHtml(bottomTime)}</div>`
+            : `<div class="time-value muted">--:--</div>`}
+        </div>
+      </div>
+
+      <div class="axis-block">
+        <span class="axis-line"></span>
+        <span class="axis-dot"></span>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="category-badge ${escapeHtml(categoryClass)}">${escapeHtml(category)}</span>
+          <div class="title">${escapeHtml(item.title || "")}</div>
+        </div>
+
+        ${item.detail ? `<p class="detail">${escapeHtml(item.detail)}</p>` : ""}
+
+        ${isMove && (duration || item.distance) ? `
+          <div class="move-info">
+            ${duration ? `<div class="move-duration">所要時間：${escapeHtml(duration)}</div>` : ""}
+            ${item.distance ? `<div class="move-method">距離：${escapeHtml(item.distance)}</div>` : ""}
+          </div>
+        ` : ""}
+
+        ${item.note ? `
+          <div class="meta">
+            <span class="meta-chip">備考：${escapeHtml(item.note)}</span>
+          </div>
+        ` : ""}
+      </div>
+    </article>
+  `;
 }
 
-function calcDuration(start, end) {
-  const startMinutes = parseTime(start);
-  const endMinutes = parseTime(end);
+function buildCategoryClass(category) {
+  const text = safeText(category);
+  return text ? `category-${text}` : "";
+}
+
+function inferPeriodFromRows(rows) {
+  const dates = rows
+    .map((row) => normalizeDate(row?.date))
+    .filter(Boolean)
+    .sort();
+
+  if (!dates.length) {
+    return { start: "", end: "" };
+  }
+
+  return {
+    start: dates[0],
+    end: dates[dates.length - 1]
+  };
+}
+
+function buildPeriodText(start, end) {
+  if (!start && !end) return "";
+  if (start && !end) return formatWarekiSeirekiDate(start);
+  if (!start && end) return formatWarekiSeirekiDate(end);
+  if (start === end) return formatWarekiSeirekiDate(start);
+
+  const sameYear = start.slice(0, 4) === end.slice(0, 4);
+
+  if (sameYear) {
+    return `${formatWarekiSeirekiDate(start)} - ${formatMonthDayOnly(end)}`;
+  }
+
+  return `${formatWarekiSeirekiDate(start)} - ${formatWarekiSeirekiDate(end)}`;
+}
+
+function formatTravelDuration(startTime, endTime) {
+  const startMinutes = parseTimeToMinutes(startTime);
+  const endMinutes = parseTimeToMinutes(endTime);
 
   if (startMinutes == null || endMinutes == null) return "";
 
-  const diff = endMinutes - startMinutes;
-  if (diff <= 0) return "";
+  let diff = endMinutes - startMinutes;
+  if (diff < 0) diff += 24 * 60;
+  if (diff === 0) return "0分";
 
   const hours = Math.floor(diff / 60);
   const minutes = diff % 60;
@@ -226,61 +298,98 @@ function calcDuration(start, end) {
   return `${minutes}分`;
 }
 
-function parseTime(value) {
-  const match = String(value).trim().match(/^(\d{1,2}):(\d{2})$/);
+function parseTimeToMinutes(value) {
+  const text = safeText(value);
+  const match = text.match(/^(\d{2}):(\d{2})$/);
   if (!match) return null;
 
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) return null;
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
 
   return hours * 60 + minutes;
 }
 
-function formatPeriod(start, end) {
-  if (!start && !end) return "";
-  if (start && end) {
-    return `${toWarekiDisplay(start)} - ${toWarekiDisplay(end)}`;
-  }
+function normalizeDate(value) {
+  const text = safeText(value).replace(/\//g, "-");
+  const match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!match) return "";
 
-  return toWarekiDisplay(start || end);
+  const year = match[1];
+  const month = match[2].padStart(2, "0");
+  const day = match[3].padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-function toWarekiDisplay(dateString) {
-  if (!dateString) return "";
+function normalizeTime(value) {
+  const text = safeText(value);
+  if (!text) return "";
 
-  const match = String(dateString).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (!match) return dateString;
+  const match = text.match(/^(\d{1,2}):(\d{1,2})$/);
+  if (!match) return text;
+
+  const hour = match[1].padStart(2, "0");
+  const minute = match[2].padStart(2, "0");
+  return `${hour}:${minute}`;
+}
+
+function formatWarekiSeirekiDate(value) {
+  if (!value) return "";
+
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return value;
 
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  const era = getJapaneseEra(year, month, day);
 
-  if (!era) return `${year}年${month}月${day}日`;
-
-  return `${era.label}${era.year}年(${year}年)${month}月${day}日`;
+  const wareki = toWareki(year, month, day);
+  return `${wareki}(${year}年)${month}月${day}日`;
 }
 
-function getJapaneseEra(year, month, day) {
-  const value = Number(`${String(year).padStart(4, "0")}${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}`);
+function formatMonthDayOnly(value) {
+  if (!value) return "";
 
-  if (value >= 20190501) {
-    return { label: "令和", year: year - 2018 };
-  }
-  if (value >= 19890108) {
-    return { label: "平成", year: year - 1988 };
-  }
-  if (value >= 19261225) {
-    return { label: "昭和", year: year - 1925 };
-  }
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return value;
 
-  return null;
+  return `${Number(match[2])}月${Number(match[3])}日`;
 }
 
-function categoryClassName(category) {
-  if (!category) return "";
-  return `category-${String(category).replace(/[^\p{L}\p{N}_-]/gu, "-")}`;
+function toWareki(year, month, day) {
+  const target = new Date(year, month - 1, day);
+  const reiwaStart = new Date(2019, 4, 1);
+  const heiseiStart = new Date(1989, 0, 8);
+  const showaStart = new Date(1926, 11, 25);
+
+  if (target >= reiwaStart) {
+    const warekiYear = year - 2018;
+    return `令和${warekiYear}年`;
+  }
+
+  if (target >= heiseiStart) {
+    const warekiYear = year - 1988;
+    return `平成${warekiYear}年`;
+  }
+
+  if (target >= showaStart) {
+    const warekiYear = year - 1925;
+    return `昭和${warekiYear}年`;
+  }
+
+  return `${year}年`;
+}
+
+function toNumber(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function safeText(value) {
+  return value == null ? "" : String(value).trim();
 }
 
 function escapeHtml(value) {
