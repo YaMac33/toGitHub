@@ -13,11 +13,12 @@
     <header class="page-header">
       <div class="header-main">
         <div class="header-copy">
+          <p class="eyebrow">Itinerary Viewer</p>
           <h1 id="pageTitle" class="page-title">行程表</h1>
           <p id="pageSubtitle" class="page-subtitle" hidden></p>
         </div>
 
-        <button type="button" onclick="window.print()" class="print-button no-print">
+        <button id="printButton" type="button" class="print-button no-print">
           印刷
         </button>
       </div>
@@ -29,7 +30,10 @@
       </div>
     </header>
 
-    <main id="app" class="app"></main>
+    <section id="overview" class="overview" hidden></section>
+    <nav id="dayNav" class="day-nav no-print" aria-label="日ごとの移動" hidden></nav>
+
+    <main id="app" class="app" aria-live="polite"></main>
   </div>
 </body>
 </html>
