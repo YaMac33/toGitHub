@@ -4,12 +4,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const app = document.getElementById("app");
   const pageTitle = document.getElementById("pageTitle");
   const pageSubtitle = document.getElementById("pageSubtitle");
-  const pagePeriod = document.getElementById("pagePeriod");
-  const pageParticipants = document.getElementById("pageParticipants");
-  const pageNote = document.getElementById("pageNote");
-  const periodRow = document.getElementById("periodRow");
-  const participantsRow = document.getElementById("participantsRow");
-  const noteRow = document.getElementById("noteRow");
+  const pagePeriod = document.getElementById("metaPeriod");
+  const pageParticipants = document.getElementById("metaParticipants");
+  const pageNote = document.getElementById("metaNote");
 
   const meta = window.KOUTEI_DATA?.meta || {};
   const rows = Array.isArray(window.KOUTEI_DATA?.itinerary)
@@ -23,16 +20,13 @@ window.addEventListener("DOMContentLoaded", () => {
     pageSubtitle,
     pagePeriod,
     pageParticipants,
-    pageNote,
-    periodRow,
-    participantsRow,
-    noteRow
+    pageNote
   });
 
   if (!app) return;
 
   if (!rows.length) {
-    app.innerHTML = `<div class="empty">行程データがありません。</div>`;
+    app.innerHTML = `<div class="empty-state">行程データがありません。</div>`;
     return;
   }
 
@@ -54,10 +48,7 @@ function renderHeaderMeta(params) {
     pageSubtitle,
     pagePeriod,
     pageParticipants,
-    pageNote,
-    periodRow,
-    participantsRow,
-    noteRow
+    pageNote
   } = params;
 
   const title = safeText(meta.title) || "行程表";
@@ -76,36 +67,42 @@ function renderHeaderMeta(params) {
   }
 
   if (pageSubtitle) {
-    pageSubtitle.textContent = subtitle;
+    if (subtitle) {
+      pageSubtitle.textContent = subtitle;
+      pageSubtitle.hidden = false;
+    } else {
+      pageSubtitle.textContent = "";
+      pageSubtitle.hidden = true;
+    }
   }
 
-  if (pagePeriod && periodRow) {
+  if (pagePeriod) {
     if (periodText) {
       pagePeriod.textContent = periodText;
-      periodRow.hidden = false;
+      pagePeriod.hidden = false;
     } else {
       pagePeriod.textContent = "";
-      periodRow.hidden = true;
+      pagePeriod.hidden = true;
     }
   }
 
-  if (pageParticipants && participantsRow) {
+  if (pageParticipants) {
     if (participants) {
       pageParticipants.textContent = participants;
-      participantsRow.hidden = false;
+      pageParticipants.hidden = false;
     } else {
       pageParticipants.textContent = "";
-      participantsRow.hidden = true;
+      pageParticipants.hidden = true;
     }
   }
 
-  if (pageNote && noteRow) {
+  if (pageNote) {
     if (note) {
       pageNote.textContent = note;
-      noteRow.hidden = false;
+      pageNote.hidden = false;
     } else {
       pageNote.textContent = "";
-      noteRow.hidden = true;
+      pageNote.hidden = true;
     }
   }
 }
