@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>地点マップ管理</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="./pins.js"></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div class="header-title">
+        <span class="material-symbols-outlined logo-icon">map</span>
+        <div>
+          <h1 class="title">地点マップ管理</h1>
+          <p class="subtitle">地図上のクリックでピンを配置・ドラッグで移動</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <span id="status" class="status-badge">通常モード</span>
+        <button id="btnAddMode" type="button" class="btn btn-primary">
+          <span class="material-symbols-outlined">add_location_alt</span>
+          ピン追加モード
+        </button>
+        <div class="divider"></div>
+        <button id="btnExport" type="button" class="btn btn-outline">
+          <span class="material-symbols-outlined">download</span>
+          エクスポート
+        </button>
+        <label class="btn btn-outline import-label">
+          <span class="material-symbols-outlined">upload</span>
+          インポート
+          <input id="fileImport" type="file" accept=".js" hidden />
+        </label>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="map-area">
+        <div class="map-container" id="mapContainer">
+          <img src="./map.png" class="map-image" id="mapImage" alt="地図画像" />
+          <div class="pin-layer" id="pinLayer">
+            <div class="temp-pin hidden" id="tempPin">
+              <div class="temp-pin-pulse"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="coords">
+          <span class="material-symbols-outlined">my_location</span>
+          X: <span id="coordX" class="coord-val">--</span> /
+          Y: <span id="coordY" class="coord-val">--</span>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="list">
+          <h2>
+            <span class="material-symbols-outlined">format_list_bulleted</span>
+            ピン一覧
+          </h2>
+          <ul id="pinList"></ul>
+        </section>
+
+        <section class="detail">
+          <h2>
+            <span class="material-symbols-outlined">info</span>
+            詳細情報
+          </h2>
+          <div id="pinDetail" class="detail-content">未選択</div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h2 id="modalTitle">ピン登録</h2>
+        <button type="button" class="btn-icon" id="btnCloseModalIcon">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="pinForm" class="pin-form">
+        <div class="form-row">
+          <label for="pinName">名称 <span class="required">*</span></label>
+          <input id="pinName" name="pinName" type="text" required placeholder="例: 市役所" />
+        </div>
+
+        <div class="form-row">
+          <label for="pinCategory">区分</label>
+          <input id="pinCategory" name="pinCategory" type="text" placeholder="例: 1日目視察先" />
+        </div>
+
+        <div class="form-row">
+          <label for="pinNote">備考</label>
+          <textarea id="pinNote" name="pinNote" rows="3" placeholder="メモを入力"></textarea>
+        </div>
+
+        <div class="form-row form-row-inline">
+          <div>
+            <label for="pinX">X座標</label>
+            <input id="pinX" name="pinX" type="text" readonly class="readonly" />
+          </div>
+          <div>
+            <label for="pinY">Y座標</label>
+            <input id="pinY" name="pinY" type="text" readonly class="readonly" />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button id="btnCancelModal" type="button" class="btn btn-text">キャンセル</button>
+          <button id="btnSavePin" type="submit" class="btn btn-primary">登録</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
+
