@@ -22,7 +22,7 @@
 
 body {
   margin: 0;
-  font-family: 'Noto Sans JP', sans-serif;
+  font-family: "Yu Gothic UI", "Hiragino Sans", "Meiryo", sans-serif;
   background: var(--bg-color);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
@@ -58,11 +58,6 @@ textarea {
   align-items: center;
   gap: 12px;
   min-width: 0;
-}
-
-.logo-icon {
-  font-size: 32px;
-  color: var(--primary);
 }
 
 .title {
@@ -104,10 +99,6 @@ textarea {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-}
-
-.btn .material-symbols-outlined {
-  font-size: 18px;
 }
 
 .btn-primary {
@@ -234,12 +225,13 @@ textarea {
 .pin-layer {
   position: absolute;
   z-index: 3;
+  pointer-events: none;
 }
 
 .route-layer {
   position: absolute;
   z-index: 2;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .route-layer .route-line {
@@ -270,6 +262,7 @@ textarea {
   vector-effect: non-scaling-stroke;
   pointer-events: all;
   cursor: grab;
+  touch-action: none;
 }
 
 .route-layer .route-point.dragging {
@@ -291,6 +284,7 @@ textarea {
   cursor: grab;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
   transition: width 0.2s, height 0.2s, background 0.2s;
+  pointer-events: auto;
 }
 
 .pin::after,
@@ -405,10 +399,6 @@ textarea {
   color: var(--text-muted);
 }
 
-.coords .material-symbols-outlined {
-  font-size: 16px;
-}
-
 .coord-val {
   font-family: monospace;
   font-weight: 700;
@@ -460,11 +450,6 @@ textarea {
   background: var(--bg-color);
   border-bottom: 1px solid var(--border-light);
   color: var(--secondary);
-}
-
-.list h2 .material-symbols-outlined,
-.detail h2 .material-symbols-outlined {
-  font-size: 18px;
 }
 
 #pinList,
@@ -555,6 +540,9 @@ textarea {
 .drag-handle {
   color: var(--border);
   cursor: grab;
+  font-size: 18px;
+  line-height: 1;
+  user-select: none;
 }
 
 .drag-handle:active {
@@ -580,10 +568,6 @@ textarea {
   color: var(--text-muted);
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-}
-
-.list-icon-btn .material-symbols-outlined {
-  font-size: 18px;
 }
 
 .list-icon-btn:hover {
@@ -624,6 +608,17 @@ textarea {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px dashed var(--border-light);
+}
+
+.detail-help {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1d4ed8;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .empty-state {

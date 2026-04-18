@@ -4,10 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>地点マップ管理</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <link rel="stylesheet" href="./style.css" />
   <script src="./pins.js"></script>
   <script src="./routes.js"></script>
@@ -17,7 +13,6 @@
   <div class="page">
     <header class="header">
       <div class="header-title">
-        <span class="material-symbols-outlined logo-icon">map</span>
         <div>
           <h1 class="title">地点マップ管理</h1>
           <p class="subtitle">地図上のクリックでピンを配置・ドラッグで移動・経路を描画</p>
@@ -28,34 +23,28 @@
         <span id="status" class="status-badge">通常モード</span>
 
         <button id="btnAddMode" type="button" class="btn btn-primary">
-          <span class="material-symbols-outlined">add_location_alt</span>
           ピン追加モード
         </button>
 
         <button id="btnRouteMode" type="button" class="btn btn-primary">
-          <span class="material-symbols-outlined">timeline</span>
-          経路追加モード
+          <span id="btnRouteModeLabel">経路追加モード</span>
         </button>
 
         <button id="btnRouteConfirm" type="button" class="btn btn-outline">
-          <span class="material-symbols-outlined">check</span>
           経路確定
         </button>
 
         <button id="btnRouteCancel" type="button" class="btn btn-outline">
-          <span class="material-symbols-outlined">close</span>
           経路取消
         </button>
 
         <div class="divider"></div>
 
         <button id="btnExport" type="button" class="btn btn-outline">
-          <span class="material-symbols-outlined">download</span>
           エクスポート
         </button>
 
         <label class="btn btn-outline import-label">
-          <span class="material-symbols-outlined">upload</span>
           インポート
           <input id="fileImport" type="file" accept=".js" hidden />
         </label>
@@ -77,7 +66,6 @@
         </div>
 
         <div class="coords">
-          <span class="material-symbols-outlined">my_location</span>
           X: <span id="coordX" class="coord-val">--</span> /
           Y: <span id="coordY" class="coord-val">--</span>
         </div>
@@ -86,7 +74,6 @@
       <aside class="side">
         <section class="list">
           <h2>
-            <span class="material-symbols-outlined">format_list_bulleted</span>
             ピン一覧
           </h2>
           <ul id="pinList"></ul>
@@ -94,7 +81,6 @@
 
         <section class="detail">
           <h2>
-            <span class="material-symbols-outlined">info</span>
             ピン詳細
           </h2>
           <div id="pinDetail" class="detail-content">未選択</div>
@@ -102,7 +88,6 @@
 
         <section class="list">
           <h2>
-            <span class="material-symbols-outlined">timeline</span>
             経路一覧
           </h2>
           <ul id="routeList"></ul>
@@ -110,7 +95,6 @@
 
         <section class="detail">
           <h2>
-            <span class="material-symbols-outlined">route</span>
             経路詳細
           </h2>
           <div id="routeDetail" class="detail-content">未選択</div>
@@ -124,7 +108,7 @@
       <div class="modal-header">
         <h2 id="modalTitle">ピン登録</h2>
         <button type="button" class="btn-icon" id="btnCloseModalIcon">
-          <span class="material-symbols-outlined">close</span>
+          ×
         </button>
       </div>
 

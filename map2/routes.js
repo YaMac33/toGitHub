@@ -22,6 +22,7 @@
     init,
     render,
     setModeCreate,
+    setModeEdit,
     confirmRoute,
     cancelRoute,
     canConfirmRoute,
@@ -79,6 +80,11 @@
     onSelectRoute(null);
     onDraftChange();
     render();
+  }
+
+  function setModeEdit(routeId = state.selectedRouteId) {
+    if (!routeId) return;
+    select(routeId);
   }
 
   function confirmRoute() {
@@ -232,7 +238,7 @@
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       circle.setAttribute("cx", point.x);
       circle.setAttribute("cy", point.y);
-      circle.setAttribute("r", "1");
+      circle.setAttribute("r", "1.3");
       circle.setAttribute("class", "route-point");
       svgLayer.appendChild(circle);
     });
@@ -243,13 +249,14 @@
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       circle.setAttribute("cx", point.x);
       circle.setAttribute("cy", point.y);
-      circle.setAttribute("r", state.draggingPointIndex === index ? "1.3" : "1");
+      circle.setAttribute("r", state.draggingPointIndex === index ? "1.8" : "1.4");
       circle.setAttribute("class", [
         "route-point",
         state.draggingPointIndex === index ? "dragging" : ""
       ].filter(Boolean).join(" "));
 
       circle.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
         e.stopPropagation();
         state.draggingPointIndex = index;
       });

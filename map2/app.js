@@ -45,6 +45,7 @@
 
   const btnAddMode = document.getElementById("btnAddMode");
   const btnRouteMode = document.getElementById("btnRouteMode");
+  const btnRouteModeLabel = document.getElementById("btnRouteModeLabel");
   const btnRouteConfirm = document.getElementById("btnRouteConfirm");
   const btnRouteCancel = document.getElementById("btnRouteCancel");
   const btnExport = document.getElementById("btnExport");
@@ -250,7 +251,12 @@
     state.selectedPinId = null;
 
     if (window.ROUTES) {
-      window.ROUTES.setModeCreate();
+      const selectedRouteId = window.ROUTES.getSelectedRouteId();
+      if (selectedRouteId) {
+        window.ROUTES.setModeEdit(selectedRouteId);
+      } else {
+        window.ROUTES.setModeCreate();
+      }
     }
 
     renderAll();
@@ -287,7 +293,7 @@
     }
 
     if (routeMode === "edit") {
-      status.textContent = "経路編集中";
+      status.textContent = "経路編集中（ポイントをドラッグ）";
       status.classList.add("active");
       return;
     }
@@ -462,9 +468,13 @@
     const canConfirmRoute = window.ROUTES ? window.ROUTES.canConfirmRoute() : false;
 
     btnAddMode.classList.toggle("is-active", state.mode === "add");
-    btnRouteMode.classList.toggle("is-active", routeMode === "create");
-    btnRouteConfirm.disabled = !canConfirmRoute;
-    btnRouteCancel.disabled = routeMode !== "create";
+    btnRouteMode.classList.toggle("is-active", routeMode === "create" || routeMode === "edit");
+    btnRouteConfirm.disabled = routeMode !== "create" || !canConfirmRoute;
+    btnRouteCancel.disabled = routeMode === "normal";
+
+    if (btnRouteModeLabel) {
+      btnRouteModeLabel.textContent = routeMode === "edit" ? "経路編集モード" : "経路追加モード";
+    }
   }
 
   function renderPins() {
@@ -542,7 +552,7 @@
           ${badgeHtml}
           <span class="pin-list-name">${escapeHtml(pin.name)}</span>
         </div>
-        <span class="material-symbols-outlined drag-handle" title="ドラッグで並べ替え">drag_indicator</span>
+        <span class="drag-handle" title="ドラッグで並べ替え">≡</span>
       `;
 
       li.addEventListener("click", () => {
@@ -558,7 +568,7 @@
       pinDeleteButton.className = "list-icon-btn";
       pinDeleteButton.setAttribute("aria-label", "Delete pin");
       pinDeleteButton.title = "Delete pin";
-      pinDeleteButton.innerHTML = '<span class="material-symbols-outlined">delete</span>';
+      pinDeleteButton.textContent = "×";
       pinDeleteButton.addEventListener("click", (e) => {
         e.stopPropagation();
         deletePinById(pin.id);
@@ -620,10 +630,10 @@
       </div>
       <div class="detail-actions">
         <button type="button" class="btn btn-outline" id="btnEditPin">
-          <span class="material-symbols-outlined" style="font-size: 16px;">edit</span> 編集
+          編集
         </button>
         <button type="button" class="btn btn-danger" id="btnDeletePin">
-          <span class="material-symbols-outlined" style="font-size: 16px;">delete</span> 削除
+          削除
         </button>
       </div>
     `;
@@ -687,7 +697,7 @@
       routeDeleteButton.className = "list-icon-btn";
       routeDeleteButton.setAttribute("aria-label", "Delete route");
       routeDeleteButton.title = "Delete route";
-      routeDeleteButton.innerHTML = '<span class="material-symbols-outlined">delete</span>';
+      routeDeleteButton.textContent = "×";
       routeDeleteButton.addEventListener("click", (e) => {
         e.stopPropagation();
         deleteRouteById(route.id);
@@ -704,7 +714,7 @@
     const selectedRoute = window.ROUTES ? window.ROUTES.getSelectedRoute() : null;
 
     if (!selectedRoute) {
-      routeDetail.innerHTML = '<div class="empty-state">経路を選択するか、経路追加モードで地図をクリックしてください。</div>';
+      routeDetail.innerHTML = '<div class="empty-state">経路を選択して編集するか、経路追加モードで地図をクリックしてください。</div>';
       return;
     }
 
@@ -725,12 +735,22 @@
         <div class="detail-label">終点</div>
         <div class="detail-value" style="font-family: monospace;">X: ${endPoint.x.toFixed(1)} / Y: ${endPoint.y.toFixed(1)}</div>
       </div>
+      <div class="detail-help">経路編集モードでは、各ポイントをドラッグして位置を調整できます。</div>
       <div class="detail-actions">
+        <button type="button" class="btn btn-outline" id="btnEditRoute">
+          編集
+        </button>
         <button type="button" class="btn btn-danger" id="btnDeleteRoute">
-          <span class="material-symbols-outlined" style="font-size: 16px;">delete</span> 削除
+          削除
         </button>
       </div>
     `;
+
+    document.getElementById("btnEditRoute").addEventListener("click", () => {
+      if (window.ROUTES) {
+        window.ROUTES.setModeEdit(selectedRoute.id);
+      }
+    });
 
     document.getElementById("btnDeleteRoute").addEventListener("click", () => {
       deleteRouteById(selectedRoute.id);
