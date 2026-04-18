@@ -9,13 +9,18 @@ Option Explicit
 ' 出力先:
 '   [このブックのあるフォルダ]\koutei\data\itinerary.js
 '
-' 仕様:
-' - meta シート 2行目を window.KOUTEI_DATA.meta として出力
-' - itinerary シート 2行目以降を window.KOUTEI_DATA.itinerary として出力
-' - 日付入力の揺れを YYYY-MM-DD に正規化
-' - 時刻入力の揺れを HH:MM に正規化
-' - 必要フォルダがなければ自動作成
-' - UTF-8で出力
+' itinerary列:
+'   schedule_id
+'   day_no
+'   date
+'   start_time
+'   end_time
+'   category
+'   title
+'   detail
+'   distance
+'   note
+'   sort_order
 ' ============================================================
 
 Public Sub ExportKouteiData()
@@ -114,7 +119,7 @@ Private Sub AddJsonLine(ByRef lines As Collection, ByVal key As String, ByVal di
         valueText = """"""
     End If
 
-    lineText = key & ": " & valueText
+    lineText = """" & key & """: " & valueText
     If Not isLast Then
         lineText = lineText & ","
     End If
@@ -181,18 +186,17 @@ Private Function BuildItineraryRowObject(ByVal ws As Worksheet, ByVal rowIndex A
 
     result = ""
     result = result & "  {" & vbCrLf
-    result = result & "    schedule_id: " & ToJsString(dict, "schedule_id") & "," & vbCrLf
-    result = result & "    day_no: " & ToJsNumber(dict, "day_no") & "," & vbCrLf
-    result = result & "    date: " & ToJsString(dict, "date") & "," & vbCrLf
-    result = result & "    start_time: " & ToJsString(dict, "start_time") & "," & vbCrLf
-    result = result & "    end_time: " & ToJsString(dict, "end_time") & "," & vbCrLf
-    result = result & "    category: " & ToJsString(dict, "category") & "," & vbCrLf
-    result = result & "    place_name: " & ToJsString(dict, "place_name") & "," & vbCrLf
-    result = result & "    title: " & ToJsString(dict, "title") & "," & vbCrLf
-    result = result & "    detail: " & ToJsString(dict, "detail") & "," & vbCrLf
-    result = result & "    move_method: " & ToJsString(dict, "move_method") & "," & vbCrLf
-    result = result & "    note: " & ToJsString(dict, "note") & "," & vbCrLf
-    result = result & "    sort_order: " & ToJsNumber(dict, "sort_order") & vbCrLf
+    result = result & "    ""schedule_id"": " & ToJsString(dict, "schedule_id") & "," & vbCrLf
+    result = result & "    ""day_no"": " & ToJsNumberString(dict, "day_no") & "," & vbCrLf
+    result = result & "    ""date"": " & ToJsString(dict, "date") & "," & vbCrLf
+    result = result & "    ""start_time"": " & ToJsString(dict, "start_time") & "," & vbCrLf
+    result = result & "    ""end_time"": " & ToJsString(dict, "end_time") & "," & vbCrLf
+    result = result & "    ""category"": " & ToJsString(dict, "category") & "," & vbCrLf
+    result = result & "    ""title"": " & ToJsString(dict, "title") & "," & vbCrLf
+    result = result & "    ""detail"": " & ToJsString(dict, "detail") & "," & vbCrLf
+    result = result & "    ""distance"": " & ToJsString(dict, "distance") & "," & vbCrLf
+    result = result & "    ""note"": " & ToJsString(dict, "note") & "," & vbCrLf
+    result = result & "    ""sort_order"": " & ToJsNumberString(dict, "sort_order") & vbCrLf
     result = result & "  }"
 
     BuildItineraryRowObject = result
@@ -295,6 +299,13 @@ Private Function NormalizeTimeValue(ByVal v As Variant, ByVal label As String) A
         Exit Function
     End If
 
+    If IsNumeric(v) Then
+        If CDbl(v) >= 0 And CDbl(v) < 1 Then
+            NormalizeTimeValue = Format$(CDbl(v), "hh:nn")
+            Exit Function
+        End If
+    End If
+
     If IsDate(v) Then
         NormalizeTimeValue = Format$(CDate(v), "hh:nn")
         Exit Function
@@ -366,15 +377,11 @@ Private Function ToJsString(ByVal dict As Object, ByVal key As String) As String
     End If
 End Function
 
-Private Function ToJsNumber(ByVal dict As Object, ByVal key As String) As String
+Private Function ToJsNumberString(ByVal dict As Object, ByVal key As String) As String
     If dict.Exists(key) Then
-        If IsNumeric(dict(key)) Then
-            ToJsNumber = CStr(CLng(dict(key)))
-        Else
-            ToJsNumber = "0"
-        End If
+        ToJsNumberString = """" & CStr(dict(key)) & """"
     Else
-        ToJsNumber = "0"
+        ToJsNumberString = """0"""
     End If
 End Function
 
