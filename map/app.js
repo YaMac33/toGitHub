@@ -58,6 +58,7 @@
 
   function init() {
     loadData();
+    syncPinLayerToImage();
     renderAll();
     bindEvents();
     updateStatus();
@@ -76,6 +77,16 @@
       if (e.target === modalBackdrop) {
         closeModal();
       }
+    });
+
+    mapImage.addEventListener("load", () => {
+      syncPinLayerToImage();
+      renderAll();
+    });
+
+    window.addEventListener("resize", () => {
+      syncPinLayerToImage();
+      renderAll();
     });
 
     window.addEventListener("pointermove", onWindowPointerMove);
@@ -268,13 +279,16 @@
   }
 
   function renderAll() {
+    syncPinLayerToImage();
     renderPins();
     renderList();
     renderDetail();
   }
 
   function renderPins() {
+    const tempPinEl = tempPin;
     pinLayer.innerHTML = "";
+    pinLayer.appendChild(tempPinEl);
 
     state.mapData.pins.forEach((pin) => {
       const el = document.createElement("div");
@@ -528,6 +542,17 @@
     };
   }
 
+  function syncPinLayerToImage() {
+    const imageRect = getRenderedImageRect();
+    const containerRect = mapContainer.getBoundingClientRect();
+    if (!imageRect) return;
+
+    pinLayer.style.left = imageRect.left - containerRect.left + "px";
+    pinLayer.style.top = imageRect.top - containerRect.top + "px";
+    pinLayer.style.width = imageRect.width + "px";
+    pinLayer.style.height = imageRect.height + "px";
+  }
+
   function getPointOnImage(clientX, clientY) {
     const rect = getRenderedImageRect();
     if (!rect) return null;
@@ -678,4 +703,3 @@ window.APP_DATA.mapPins = ${JSON.stringify(state.mapData, null, 2)};`;
       .replaceAll("'", "&#39;");
   }
 })();
-
