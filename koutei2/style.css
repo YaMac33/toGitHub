@@ -195,6 +195,10 @@ body {
   line-height: 1.2;
 }
 
+.time-value.muted {
+  color: #9ca3af;
+}
+
 .axis-block {
   position: relative;
   display: flex;
