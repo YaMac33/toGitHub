@@ -13,6 +13,7 @@
   let getMapData;
   let onChange;
   let onSelectRoute;
+  let onDraftChange;
 
   let mapContainer;
   let svgLayer;
@@ -23,6 +24,7 @@
     setModeCreate,
     confirmRoute,
     cancelRoute,
+    canConfirmRoute,
     select,
     clearSelection,
     getSelectedRouteId,
@@ -34,6 +36,7 @@
     getMapData = config.getMapData;
     onChange = config.onChange;
     onSelectRoute = config.onSelectRoute || function () {};
+    onDraftChange = config.onDraftChange || function () {};
 
     mapContainer = config.mapContainer;
     svgLayer = config.svgLayer;
@@ -74,6 +77,7 @@
       points: []
     };
     onSelectRoute(null);
+    onDraftChange();
     render();
   }
 
@@ -96,8 +100,13 @@
     state.selectedRouteId = newRoute.id;
     state.mousePoint = null;
 
+    onDraftChange();
     onChange([...routes, newRoute]);
     onSelectRoute(newRoute.id);
+  }
+
+  function canConfirmRoute() {
+    return Boolean(state.tempRoute && state.tempRoute.points.length >= 2);
   }
 
   function cancelRoute() {
@@ -106,6 +115,7 @@
     if (state.mode === "create") {
       state.mode = state.selectedRouteId ? "edit" : "normal";
     }
+    onDraftChange();
     render();
   }
 
@@ -131,6 +141,7 @@
     if (!point) return;
 
     state.tempRoute.points.push(point);
+    onDraftChange();
     render();
   }
 

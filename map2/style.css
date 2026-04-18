@@ -120,6 +120,10 @@ textarea {
   background: var(--primary-hover);
 }
 
+.btn.is-active {
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.35);
+}
+
 .btn-outline {
   background: var(--surface);
   color: var(--text-main);
@@ -129,6 +133,18 @@ textarea {
 .btn-outline:hover {
   background: var(--bg-color);
   border-color: var(--text-muted);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn:disabled:hover {
+  background: inherit;
+  border-color: inherit;
+  transform: none;
 }
 
 .btn-danger {
@@ -543,6 +559,37 @@ textarea {
 
 .drag-handle:active {
   cursor: grabbing;
+}
+
+.list-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.list-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.list-icon-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.list-icon-btn:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: var(--danger);
 }
 
 /* --- Detail Section --- */

@@ -103,9 +103,56 @@
       renderAll();
     });
 
+    window.addEventListener("keydown", onWindowKeyDown);
     window.addEventListener("pointermove", onWindowPointerMove);
     window.addEventListener("pointerup", onWindowPointerUp);
     window.addEventListener("pointercancel", onWindowPointerUp);
+  }
+
+  function onWindowKeyDown(e) {
+    if (isEditableTarget(e.target)) return;
+
+    if (e.key === "Escape") {
+      if (isModalOpen()) {
+        closeModal();
+        return;
+      }
+
+      if (window.ROUTES && window.ROUTES.getMode() === "create") {
+        onClickRouteCancel();
+        return;
+      }
+
+      if (window.ROUTES && window.ROUTES.getSelectedRouteId()) {
+        window.ROUTES.clearSelection({ silent: true });
+        renderAll();
+        return;
+      }
+
+      if (state.mode === "add") {
+        toggleAddMode();
+        return;
+      }
+
+      if (state.selectedPinId) {
+        state.selectedPinId = null;
+        renderAll();
+      }
+      return;
+    }
+
+    if (e.key !== "Delete" || isModalOpen()) return;
+
+    if (window.ROUTES && window.ROUTES.getSelectedRouteId()) {
+      e.preventDefault();
+      deleteRouteById(window.ROUTES.getSelectedRouteId());
+      return;
+    }
+
+    if (!state.selectedPinId) return;
+
+    e.preventDefault();
+    deletePinById(state.selectedPinId);
   }
 
   function initRoutesModule() {
@@ -115,6 +162,7 @@
       getMapData: () => state.mapData,
       onChange: handleRoutesChange,
       onSelectRoute: handleRouteSelect,
+      onDraftChange: handleRouteDraftChange,
       mapContainer,
       svgLayer: routeLayer
     });
@@ -129,6 +177,11 @@
   function handleRouteSelect() {
     state.selectedPinId = null;
     renderAll();
+  }
+
+  function handleRouteDraftChange() {
+    updateToolbarState();
+    updateStatus();
   }
 
   function loadData() {
@@ -400,7 +453,18 @@
       window.ROUTES.render();
     }
 
+    updateToolbarState();
     updateStatus();
+  }
+
+  function updateToolbarState() {
+    const routeMode = window.ROUTES ? window.ROUTES.getMode() : "normal";
+    const canConfirmRoute = window.ROUTES ? window.ROUTES.canConfirmRoute() : false;
+
+    btnAddMode.classList.toggle("is-active", state.mode === "add");
+    btnRouteMode.classList.toggle("is-active", routeMode === "create");
+    btnRouteConfirm.disabled = !canConfirmRoute;
+    btnRouteCancel.disabled = routeMode !== "create";
   }
 
   function renderPins() {
@@ -489,6 +553,25 @@
         renderAll();
       });
 
+      const pinDeleteButton = document.createElement("button");
+      pinDeleteButton.type = "button";
+      pinDeleteButton.className = "list-icon-btn";
+      pinDeleteButton.setAttribute("aria-label", "Delete pin");
+      pinDeleteButton.title = "Delete pin";
+      pinDeleteButton.innerHTML = '<span class="material-symbols-outlined">delete</span>';
+      pinDeleteButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deletePinById(pin.id);
+      });
+
+      const pinDragHandle = li.querySelector(".drag-handle");
+      if (pinDragHandle) {
+        const actions = document.createElement("div");
+        actions.className = "list-item-actions";
+        actions.append(pinDeleteButton, pinDragHandle);
+        li.appendChild(actions);
+      }
+
       li.addEventListener("dragstart", (e) => {
         onListDragStart(e, pin.id, li);
       });
@@ -550,7 +633,7 @@
     });
 
     document.getElementById("btnDeletePin").addEventListener("click", () => {
-      deleteSelectedPin();
+      deletePinById(pin.id);
     });
   }
 
@@ -596,6 +679,23 @@
         }
       });
 
+      const routeActions = document.createElement("div");
+      routeActions.className = "list-item-actions";
+
+      const routeDeleteButton = document.createElement("button");
+      routeDeleteButton.type = "button";
+      routeDeleteButton.className = "list-icon-btn";
+      routeDeleteButton.setAttribute("aria-label", "Delete route");
+      routeDeleteButton.title = "Delete route";
+      routeDeleteButton.innerHTML = '<span class="material-symbols-outlined">delete</span>';
+      routeDeleteButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteRouteById(route.id);
+      });
+
+      routeActions.appendChild(routeDeleteButton);
+      li.appendChild(routeActions);
+
       routeList.appendChild(li);
     });
   }
@@ -633,12 +733,54 @@
     `;
 
     document.getElementById("btnDeleteRoute").addEventListener("click", () => {
-      deleteSelectedRoute();
+      deleteRouteById(selectedRoute.id);
     });
   }
 
   function getSelectedPin() {
     return state.mapData.pins.find((pin) => pin.id === state.selectedPinId) || null;
+  }
+
+  function getRouteById(routeId) {
+    return state.mapData.routes.find((route) => route.id === routeId) || null;
+  }
+
+  function deletePinById(pinId) {
+    if (!pinId) return;
+
+    const pin = getPinById(pinId);
+    if (!pin) return;
+    if (!confirmDelete(pin.name)) return;
+
+    state.mapData.pins = state.mapData.pins.filter((item) => item.id !== pinId);
+
+    if (state.selectedPinId === pinId) {
+      state.selectedPinId = null;
+    }
+
+    saveData();
+    renderAll();
+  }
+
+  function deleteRouteById(routeId) {
+    if (!routeId) return;
+
+    const route = getRouteById(routeId);
+    if (!route) return;
+    if (!confirmDelete(route.name)) return;
+
+    state.mapData.routes = state.mapData.routes.filter((item) => item.id !== routeId);
+
+    if (window.ROUTES && window.ROUTES.getSelectedRouteId() === routeId) {
+      window.ROUTES.clearSelection({ silent: true });
+    }
+
+    saveData();
+    renderAll();
+  }
+
+  function confirmDelete(name) {
+    return confirm(`\u300c${name}\u300d\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f\n\u203b\u3053\u306e\u64cd\u4f5c\u306f\u53d6\u308a\u6d88\u305b\u307e\u305b\u3093\u3002`);
   }
 
   function deleteSelectedPin() {
@@ -982,5 +1124,13 @@ window.APP_DATA.mapData = ${JSON.stringify(state.mapData, null, 2)};`;
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
+  }
+
+  function isEditableTarget(target) {
+    return Boolean(target && target.closest("input, textarea, select, button"));
+  }
+
+  function isModalOpen() {
+    return !modalBackdrop.classList.contains("hidden");
   }
 })();
