@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>行程表</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="./data/itinerary.js"></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <div class="header-main">
+        <div class="header-copy">
+          <p class="eyebrow">Itinerary Viewer</p>
+          <div class="page-title-row">
+            <h1 id="pageTitle" class="page-title">行程表</h1>
+            <button
+              id="headerToggle"
+              type="button"
+              class="collapse-toggle no-print"
+              aria-expanded="false"
+              aria-controls="headerSupplement"
+              hidden
+            >
+              補足情報を表示
+            </button>
+          </div>
+        </div>
+
+        <button id="printButton" type="button" class="print-button no-print">
+          印刷
+        </button>
+      </div>
+
+      <div id="headerSupplement" class="header-supplement" hidden>
+        <p id="pageSubtitle" class="page-subtitle" hidden></p>
+
+        <div class="header-meta">
+          <p id="metaPeriod" class="meta-line" hidden></p>
+          <p id="metaParticipants" class="meta-line" hidden></p>
+          <p id="metaNote" class="meta-line" hidden></p>
+        </div>
+      </div>
+    </header>
+
+    <section id="overview" class="overview" hidden></section>
+    <nav id="dayNav" class="day-nav no-print" aria-label="日ごとの移動"></nav>
+
+    <main id="app" class="app" aria-live="polite"></main>
+  </div>
+</body>
+</html>
