@@ -327,8 +327,8 @@ function renderTimelineItem(item, dayIndex, itemIndex, prevItem, nextItem) {
   const distance = safeText(item.distance);
   const timeRange = buildTimeRange(item.start_time, item.end_time);
   const animationDelay = Math.min((dayIndex * 120) + (itemIndex * 55), 600);
-  const startLabel = isMove ? "出発" : "開始";
-  const endLabel = isMove ? "到着" : "終了";
+  const startLabel = isMove ? "出発" : "";
+  const endLabel = isMove ? "到着" : "";
   const showStartTime = shouldShowTimeSlot(item, "start", prevItem, nextItem);
   const showEndTime = shouldShowTimeSlot(item, "end", prevItem, nextItem);
   const showAnyTime = showStartTime || showEndTime;
