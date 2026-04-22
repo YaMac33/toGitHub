@@ -8,6 +8,10 @@ window.addEventListener("DOMContentLoaded", () => {
     pagePeriod: document.getElementById("metaPeriod"),
     pageParticipants: document.getElementById("metaParticipants"),
     pageNote: document.getElementById("metaNote"),
+    headerSupplement: document.getElementById("headerSupplement"),
+    headerToggle: document.getElementById("headerToggle"),
+    overviewSection: document.getElementById("overviewSection"),
+    overviewToggle: document.getElementById("overviewToggle"),
     overview: document.getElementById("overview"),
     dayNav: document.getElementById("dayNav"),
     printButton: document.getElementById("printButton")
@@ -29,6 +33,7 @@ window.addEventListener("DOMContentLoaded", () => {
     pageParticipants: elements.pageParticipants,
     pageNote: elements.pageNote
   });
+  setupHeaderToggle(elements);
 
   if (!elements.app) return;
 
@@ -37,19 +42,20 @@ window.addEventListener("DOMContentLoaded", () => {
     .filter((row) => row.date && hasVisibleContent(row));
 
   if (!normalized.length) {
-    hideElement(elements.overview);
+    hideElement(elements.overviewSection);
     hideElement(elements.dayNav);
-    elements.app.innerHTML = `<div class="empty-state">行程データがありません。</div>`;
+    elements.app.innerHTML = '<div class="empty-state">表示できるデータがありません。</div>';
     return;
   }
 
   const sorted = normalized.sort(compareItinerary);
-  const grouped = buildDayGroups(sorted);
-  const summary = buildSummary(grouped);
+  const groups = buildDayGroups(sorted);
+  const summary = buildSummary(groups);
 
   renderOverview(summary, elements.overview);
-  renderDayNav(grouped, elements.dayNav);
-  elements.app.innerHTML = grouped
+  setupOverviewToggle(elements);
+  renderDayNav(groups, elements.dayNav);
+  elements.app.innerHTML = groups
     .map((group, dayIndex) => renderDaySection(group, dayIndex))
     .join("");
 
@@ -60,7 +66,7 @@ function setupPrintButton(button) {
   if (!button) return;
 
   if (typeof window.print !== "function") {
-    button.hidden = true;
+    hideElement(button);
     return;
   }
 
@@ -99,17 +105,51 @@ function renderHeaderMeta(params) {
   toggleText(pageNote, note);
 }
 
+function setupHeaderToggle(elements) {
+  const {
+    headerToggle,
+    headerSupplement,
+    pageSubtitle,
+    pagePeriod,
+    pageParticipants,
+    pageNote
+  } = elements;
+
+  if (!headerToggle || !headerSupplement) return;
+
+  const hasSupplement = [
+    pageSubtitle,
+    pagePeriod,
+    pageParticipants,
+    pageNote
+  ].some((element) => element && !element.hidden && safeText(element.textContent));
+
+  if (!hasSupplement) {
+    hideElement(headerToggle);
+    hideElement(headerSupplement);
+    return;
+  }
+
+  showElement(headerToggle);
+  setExpandableState(headerToggle, headerSupplement, false, "補足情報");
+
+  headerToggle.addEventListener("click", () => {
+    const isExpanded = headerToggle.getAttribute("aria-expanded") === "true";
+    setExpandableState(headerToggle, headerSupplement, !isExpanded, "補足情報");
+  });
+}
+
 function renderOverview(summary, container) {
   if (!container) return;
 
   const cards = [
     {
-      label: "日程",
+      label: "日数",
       value: `${summary.totalDays}日`,
-      detail: summary.periodLabel || "日付未設定"
+      detail: summary.periodLabel || "日程未設定"
     },
     {
-      label: "予定",
+      label: "件数",
       value: `${summary.totalItems}件`,
       detail: `1日平均 ${formatAverage(summary.totalItems, summary.totalDays)}件`
     },
@@ -136,8 +176,24 @@ function renderOverview(summary, container) {
       `;
     })
     .join("");
+}
 
-  showElement(container);
+function setupOverviewToggle(elements) {
+  const { overviewSection, overview, overviewToggle } = elements;
+
+  if (!overviewSection || !overview || !overviewToggle || !overview.innerHTML.trim()) {
+    hideElement(overviewSection);
+    hideElement(overview);
+    return;
+  }
+
+  showElement(overviewSection);
+  setExpandableState(overviewToggle, overview, false, "集計情報");
+
+  overviewToggle.addEventListener("click", () => {
+    const isExpanded = overviewToggle.getAttribute("aria-expanded") === "true";
+    setExpandableState(overviewToggle, overview, !isExpanded, "集計情報");
+  });
 }
 
 function renderDayNav(groups, container) {
@@ -233,24 +289,22 @@ function buildDayStats(items) {
     .map((item) => parseTimeToMinutes(item.start_time))
     .filter((value) => value != null);
 
-  const endCandidates = items
+  const endTimes = items
     .map((item) => parseTimeToMinutes(item.end_time || item.start_time))
     .filter((value) => value != null);
 
-  const moveItems = items.filter((item) => item.category === "移動");
-  const moveDuration = moveItems.reduce((total, item) => {
-    return total + getTravelDurationMinutes(item.start_time, item.end_time);
-  }, 0);
-
+  const moveItems = items.filter((item) => isMoveCategory(item.category));
   const distanceValues = items
     .map((item) => parseDistanceValue(item.distance))
     .filter((value) => value != null);
 
   return {
     firstStart: startTimes.length ? formatMinutes(Math.min(...startTimes)) : "",
-    lastEnd: endCandidates.length ? formatMinutes(Math.max(...endCandidates)) : "",
+    lastEnd: endTimes.length ? formatMinutes(Math.max(...endTimes)) : "",
     moveCount: moveItems.length,
-    moveDuration,
+    moveDuration: moveItems.reduce((total, item) => {
+      return total + getTravelDurationMinutes(item.start_time, item.end_time);
+    }, 0),
     distanceTotal: distanceValues.reduce((total, value) => total + value, 0),
     distanceCount: distanceValues.length
   };
@@ -318,30 +372,46 @@ function renderDaySection(group, dayIndex) {
 }
 
 function renderTimelineItem(item, dayIndex, itemIndex, prevItem, nextItem) {
-  const category = item.category || "未分類";
-  const isMove = item.category === "移動";
+  const category = item.category || "未設定";
+  const isMove = isMoveCategory(category);
   const title = item.title || item.detail || "予定";
-  const duration = isMove
-    ? formatTravelDuration(item.start_time, item.end_time)
-    : "";
-  const distance = safeText(item.distance);
+  const distanceLabel = formatDistanceLabel(item.distance);
+  const duration = isMove ? formatTravelDuration(item.start_time, item.end_time) : "";
   const timeRange = buildTimeRange(item.start_time, item.end_time);
   const animationDelay = Math.min((dayIndex * 120) + (itemIndex * 55), 600);
-  const startLabel = isMove ? "出発" : "";
-  const endLabel = isMove ? "到着" : "";
   const showStartTime = shouldShowTimeSlot(item, "start", prevItem, nextItem);
   const showEndTime = shouldShowTimeSlot(item, "end", prevItem, nextItem);
   const showAnyTime = showStartTime || showEndTime;
+  const startLabel = isMove ? "出発" : "";
+  const endLabel = isMove ? "到着" : "";
 
   const infoChips = [
-    duration ? buildInfoChip("所要", duration) : "",
-    distance ? buildInfoChip("距離", distance) : ""
+    duration ? buildInfoChip("所要時間", duration) : "",
+    distanceLabel ? buildInfoChip("距離", distanceLabel) : ""
   ]
     .filter(Boolean)
     .join("");
 
+  const content = isMove
+    ? renderMoveContent({
+        category,
+        title,
+        timeRange,
+        detail: item.detail,
+        note: item.note,
+        infoChips
+      })
+    : renderPlaceContent({
+        category,
+        title,
+        timeRange,
+        detail: item.detail,
+        note: item.note,
+        infoChips
+      });
+
   return `
-    <article class="timeline-item" style="--item-delay:${animationDelay}ms">
+    <article class="timeline-item ${isMove ? "timeline-item-move" : "timeline-item-place"}" style="--item-delay:${animationDelay}ms">
       <div class="time-block"${showAnyTime ? ` aria-label="${escapeHtml(timeRange || "時刻未設定")}"` : ' aria-hidden="true"'}>
         <div class="time-top${showStartTime ? "" : " is-hidden"}"${showStartTime ? "" : ' aria-hidden="true"'}>
           <div class="time-label">${escapeHtml(startLabel)}</div>
@@ -354,30 +424,65 @@ function renderTimelineItem(item, dayIndex, itemIndex, prevItem, nextItem) {
       </div>
 
       <div class="axis-block" aria-hidden="true">
-        <span class="axis-line"></span>
-        <span class="axis-dot"></span>
+        <span class="axis-stem"></span>
+        <span class="axis-marker"></span>
+        <span class="axis-arrow"></span>
       </div>
 
-      <div class="card">
-        <div class="card-head">
-          <div class="card-title-wrap">
-            <span class="category-badge" data-category="${escapeHtml(category)}">${escapeHtml(category)}</span>
-            <div class="title">${escapeHtml(title)}</div>
-          </div>
-          ${timeRange ? `<span class="time-range-chip">${escapeHtml(timeRange)}</span>` : ""}
-        </div>
-
-        ${item.detail && item.detail !== title
-          ? `<p class="detail">${escapeHtml(item.detail)}</p>`
-          : ""}
-
-        ${infoChips ? `<div class="move-info">${infoChips}</div>` : ""}
-
-        ${item.note
-          ? `<div class="meta"><span class="meta-chip">備考: ${escapeHtml(item.note)}</span></div>`
-          : ""}
-      </div>
+      ${content}
     </article>
+  `;
+}
+
+function renderPlaceContent(params) {
+  const { category, title, timeRange, detail, note, infoChips } = params;
+
+  return `
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title-wrap">
+          <span class="category-badge" data-category="${escapeHtml(category)}">${escapeHtml(category)}</span>
+          <div class="title">${escapeHtml(title)}</div>
+        </div>
+        ${timeRange ? `<span class="time-range-chip">${escapeHtml(timeRange)}</span>` : ""}
+      </div>
+
+      ${detail && detail !== title
+        ? `<p class="detail">${escapeHtml(detail)}</p>`
+        : ""}
+
+      ${infoChips ? `<div class="move-info">${infoChips}</div>` : ""}
+
+      ${note
+        ? `<div class="meta"><span class="meta-chip">備考: ${escapeHtml(note)}</span></div>`
+        : ""}
+    </div>
+  `;
+}
+
+function renderMoveContent(params) {
+  const { category, title, timeRange, detail, note, infoChips } = params;
+
+  return `
+    <div class="move-strip">
+      <div class="move-strip-head">
+        <div class="move-strip-title">
+          <span class="category-badge" data-category="${escapeHtml(category)}">${escapeHtml(category)}</span>
+          <div class="title">${escapeHtml(title)}</div>
+        </div>
+        ${timeRange ? `<span class="time-range-chip">${escapeHtml(timeRange)}</span>` : ""}
+      </div>
+
+      ${detail && detail !== title
+        ? `<p class="move-detail">${escapeHtml(detail)}</p>`
+        : ""}
+
+      ${infoChips ? `<div class="move-info move-strip-info">${infoChips}</div>` : ""}
+
+      ${note
+        ? `<div class="meta move-strip-meta"><span class="meta-chip">備考: ${escapeHtml(note)}</span></div>`
+        : ""}
+    </div>
   `;
 }
 
@@ -403,7 +508,7 @@ function shouldShowTimeSlot(item, slot, prevItem, nextItem) {
 }
 
 function getTimeSlotPriority(item, slot) {
-  const isMove = item?.category === "移動";
+  const isMove = isMoveCategory(item?.category);
 
   if (slot === "start") {
     return isMove ? 4 : 2;
@@ -476,7 +581,6 @@ function buildPeriodText(start, end) {
   if (start === end) return formatWarekiSeirekiDate(start);
 
   const sameYear = start.slice(0, 4) === end.slice(0, 4);
-
   if (sameYear) {
     return `${formatWarekiSeirekiDate(start)} - ${formatMonthDayOnly(end)}`;
   }
@@ -513,10 +617,7 @@ function parseTimeToMinutes(value) {
 
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
-
-  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-    return null;
-  }
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
 
   return hours * 60 + minutes;
 }
@@ -570,8 +671,8 @@ function formatWarekiSeirekiDate(value) {
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  const weekday = formatWeekday(value);
   const wareki = toWareki(year, month, day);
+  const weekday = formatWeekday(value);
 
   return `${wareki} (${year}年) ${month}月${day}日${weekday}`;
 }
@@ -637,6 +738,8 @@ function parseDistanceValue(value) {
 }
 
 function formatDistance(value) {
+  if (value == null || Number.isNaN(value)) return "";
+
   const hasDecimal = Math.abs(value % 1) > 0.001;
   return `${new Intl.NumberFormat("ja-JP", {
     minimumFractionDigits: 0,
@@ -644,8 +747,14 @@ function formatDistance(value) {
   }).format(value)}km`;
 }
 
+function formatDistanceLabel(value) {
+  const parsed = parseDistanceValue(value);
+  return parsed == null ? safeText(value) : formatDistance(parsed);
+}
+
 function formatAverage(total, count) {
   if (!count) return "0";
+
   const average = total / count;
   return new Intl.NumberFormat("ja-JP", {
     minimumFractionDigits: 0,
@@ -668,6 +777,18 @@ function buildInfoChip(label, value) {
 
 function buildDayId(group, index) {
   return `day-${group.day_no || index + 1}-${group.date}`;
+}
+
+function isMoveCategory(category) {
+  return safeText(category) === "移動";
+}
+
+function setExpandableState(button, panel, expanded, label) {
+  if (!button || !panel) return;
+
+  button.setAttribute("aria-expanded", String(expanded));
+  button.textContent = expanded ? `${label}を隠す` : `${label}を表示`;
+  panel.hidden = !expanded;
 }
 
 function toggleText(element, text) {
