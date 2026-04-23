@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>予定表</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="calendar-page">
+    <main class="calendar-main">
+      <section class="calendar-card" aria-label="カレンダー">
+        <div class="calendar-toolbar">
+          <div class="calendar-toolbar__nav">
+            <button
+              type="button"
+              id="prevButton"
+              class="toolbar-button"
+              aria-label="前へ"
+            >
+              ←
+            </button>
+
+            <button
+              type="button"
+              id="todayButton"
+              class="toolbar-button toolbar-button--today"
+            >
+              今日
+            </button>
+
+            <button
+              type="button"
+              id="nextButton"
+              class="toolbar-button"
+              aria-label="次へ"
+            >
+              →
+            </button>
+          </div>
+
+          <div
+            id="currentLabel"
+            class="calendar-toolbar__label"
+            aria-live="polite"
+          >
+            令和8年(2026年)4月
+          </div>
+
+          <div
+            class="calendar-toolbar__view-switch"
+            role="group"
+            aria-label="表示切替"
+          >
+            <button
+              type="button"
+              id="monthViewButton"
+              class="toolbar-button toolbar-button--active"
+              aria-pressed="true"
+            >
+              月表示
+            </button>
+            <button
+              type="button"
+              id="weekViewButton"
+              class="toolbar-button"
+              aria-pressed="false"
+            >
+              週表示
+            </button>
+          </div>
+        </div>
+
+        <div
+          id="monthViewArea"
+          class="calendar-view calendar-view--month"
+          aria-label="月表示エリア"
+        >
+          <div class="calendar-board">
+            <div class="calendar-weekdays" aria-hidden="true">
+              <div class="calendar-weekdays__item calendar-weekdays__item--sun">日</div>
+              <div class="calendar-weekdays__item">月</div>
+              <div class="calendar-weekdays__item">火</div>
+              <div class="calendar-weekdays__item">水</div>
+              <div class="calendar-weekdays__item">木</div>
+              <div class="calendar-weekdays__item">金</div>
+              <div class="calendar-weekdays__item calendar-weekdays__item--sat">土</div>
+            </div>
+
+            <div
+              id="calendarGrid"
+              class="calendar-grid calendar-grid--month"
+              aria-label="月表示カレンダー本体"
+            ></div>
+          </div>
+        </div>
+
+        <div
+          id="weekViewArea"
+          class="calendar-view calendar-view--week is-hidden"
+          aria-label="週表示エリア"
+        >
+          <div class="week-board">
+            <div class="week-header" aria-hidden="true">
+              <div class="week-header__date">日付・曜日</div>
+              <div class="week-header__content">予定一覧</div>
+            </div>
+
+            <div
+              id="calendarWeekList"
+              class="week-list"
+              aria-label="週表示一覧"
+            ></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div
+    id="eventModal"
+    class="modal"
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modalTitle"
+  >
+    <div class="modal__backdrop" data-close-modal="true"></div>
+
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <h2 id="modalTitle" class="modal__title">予定詳細</h2>
+        <button
+          type="button"
+          id="modalCloseButton"
+          class="modal__close"
+          aria-label="閉じる"
+        >
+          ×
+        </button>
+      </div>
+
+      <div id="modalBody" class="modal__body">
+        <dl class="modal-detail">
+          <div class="modal-detail__row">
+            <dt class="modal-detail__label">件名</dt>
+            <dd class="modal-detail__value">-</dd>
+          </div>
+
+          <div class="modal-detail__row">
+            <dt class="modal-detail__label">日付</dt>
+            <dd class="modal-detail__value">-</dd>
+          </div>
+
+          <div class="modal-detail__row">
+            <dt class="modal-detail__label">時間</dt>
+            <dd class="modal-detail__value">-</dd>
+          </div>
+
+          <div class="modal-detail__row">
+            <dt class="modal-detail__label">分類</dt>
+            <dd class="modal-detail__value">-</dd>
+          </div>
+
+          <div class="modal-detail__row">
+            <dt class="modal-detail__label">部署</dt>
+            <dd class="modal-detail__value">-</dd>
+          </div>
+
+          <div class="modal-detail__row">
+            <dt class="modal-detail__label">場所</dt>
+            <dd class="modal-detail__value">-</dd>
+          </div>
+
+          <div class="modal-detail__row">
+            <dt class="modal-detail__label">詳細</dt>
+            <dd class="modal-detail__value">-</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="dayListModal"
+    class="modal"
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dayListModalTitle"
+  >
+    <div class="modal__backdrop" data-close-day-list-modal="true"></div>
+
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <h2 id="dayListModalTitle" class="modal__title">当日の予定一覧</h2>
+        <button
+          type="button"
+          id="dayListModalCloseButton"
+          class="modal__close"
+          aria-label="閉じる"
+        >
+          ×
+        </button>
+      </div>
+
+      <div id="dayListModalBody" class="modal__body">
+        <div class="day-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="events.js"></script>
+  <script src="view_calendar.js"></script>
+</body>
+</html>
