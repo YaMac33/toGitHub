@@ -22,13 +22,15 @@
 
 body {
   margin: 0;
-  font-family: 'Noto Sans JP', sans-serif;
+  font-family: "Yu Gothic UI", "Hiragino Sans", "Meiryo", sans-serif;
   background: var(--bg-color);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
 }
 
-button, input, textarea {
+button,
+input,
+textarea {
   font: inherit;
 }
 
@@ -43,6 +45,7 @@ button, input, textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   padding: 12px 24px;
   background: var(--surface);
   border-bottom: 1px solid var(--border-light);
@@ -54,11 +57,7 @@ button, input, textarea {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.logo-icon {
-  font-size: 32px;
-  color: var(--primary);
+  min-width: 0;
 }
 
 .title {
@@ -78,6 +77,8 @@ button, input, textarea {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .divider {
@@ -100,10 +101,6 @@ button, input, textarea {
   transition: all 0.2s;
 }
 
-.btn .material-symbols-outlined {
-  font-size: 18px;
-}
-
 .btn-primary {
   background: var(--primary);
   color: #fff;
@@ -112,6 +109,10 @@ button, input, textarea {
 
 .btn-primary:hover {
   background: var(--primary-hover);
+}
+
+.btn.is-active {
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.35);
 }
 
 .btn-outline {
@@ -123,6 +124,18 @@ button, input, textarea {
 .btn-outline:hover {
   background: var(--bg-color);
   border-color: var(--text-muted);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn:disabled:hover {
+  background: inherit;
+  border-color: inherit;
+  transform: none;
 }
 
 .btn-danger {
@@ -189,7 +202,7 @@ button, input, textarea {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #e2e8f0; /* 少し暗めにしてマップを際立たせる */
+  background: #e2e8f0;
   position: relative;
 }
 
@@ -211,6 +224,51 @@ button, input, textarea {
 
 .pin-layer {
   position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.route-layer {
+  position: absolute;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.route-layer .route-line {
+  fill: none;
+  stroke: #2563eb;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: stroke;
+}
+
+.route-layer .route-line.selected {
+  stroke: #1d4ed8;
+  stroke-width: 1.4;
+}
+
+.route-layer .route-line.temp {
+  stroke: #94a3b8;
+  stroke-width: 0.9;
+  stroke-dasharray: 1.8 1.2;
+}
+
+.route-layer .route-point {
+  fill: #fff;
+  stroke: #2563eb;
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+  pointer-events: all;
+  cursor: grab;
+  touch-action: none;
+}
+
+.route-layer .route-point.dragging {
+  fill: #dbeafe;
+  stroke-width: 1;
+  cursor: grabbing;
 }
 
 /* --- Pins --- */
@@ -224,8 +282,9 @@ button, input, textarea {
   border-radius: 50%;
   transform: translate(-50%, -50%);
   cursor: grab;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
   transition: width 0.2s, height 0.2s, background 0.2s;
+  pointer-events: auto;
 }
 
 .pin::after,
@@ -248,11 +307,13 @@ button, input, textarea {
   z-index: 10;
 }
 
-/* 選択時の波紋エフェクト */
 .pin.selected::before {
   content: '';
   position: absolute;
-  top: -8px; left: -8px; right: -8px; bottom: -8px;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
   border: 2px solid var(--primary);
   border-radius: 50%;
   animation: ripple 1.5s infinite ease-out;
@@ -264,7 +325,7 @@ button, input, textarea {
   height: 24px;
   z-index: 20;
   cursor: grabbing;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
 .temp-pin {
@@ -274,7 +335,10 @@ button, input, textarea {
 
 .temp-pin-pulse {
   position: absolute;
-  top: -10px; left: -10px; right: -10px; bottom: -10px;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
   border: 2px solid var(--primary);
   border-radius: 50%;
   animation: ripple 1s infinite ease-out;
@@ -285,7 +349,6 @@ button, input, textarea {
   100% { transform: scale(1.5); opacity: 0; }
 }
 
-/* ツールチップ（マップ上の名称） */
 .pin-tooltip {
   position: absolute;
   top: -30px;
@@ -335,9 +398,7 @@ button, input, textarea {
   border-top: 1px solid var(--border-light);
   color: var(--text-muted);
 }
-.coords .material-symbols-outlined {
-  font-size: 16px;
-}
+
 .coord-val {
   font-family: monospace;
   font-weight: 700;
@@ -348,24 +409,38 @@ button, input, textarea {
 
 /* --- Sidebar --- */
 .side {
-  width: 320px;
+  width: 360px;
   background: var(--surface);
+  display: grid;
+  grid-template-rows: minmax(160px, 1fr) minmax(180px, 240px) minmax(140px, 1fr) minmax(160px, 220px);
+  border-left: 1px solid var(--border-light);
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.02);
+  z-index: 5;
+  overflow: hidden;
+}
+
+.list,
+.detail {
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--border-light);
-  box-shadow: -2px 0 10px rgba(0,0,0,0.02);
-  z-index: 5;
 }
 
 .list {
-  flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
   border-bottom: 1px solid var(--border-light);
-  display: flex;
-  flex-direction: column;
 }
 
-.list h2, .detail h2 {
+.detail {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.side > section:last-child {
+  border-bottom: none;
+}
+
+.list h2,
+.detail h2 {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -377,24 +452,24 @@ button, input, textarea {
   color: var(--secondary);
 }
 
-.list h2 .material-symbols-outlined,
-.detail h2 .material-symbols-outlined {
-  font-size: 18px;
-}
-
-#pinList {
+#pinList,
+#routeList {
   list-style: none;
   margin: 0;
   padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
-#pinList li {
+#pinList li,
+#routeList li {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 10px 12px;
   background: var(--surface);
   border: 1px solid var(--border-light);
@@ -403,36 +478,44 @@ button, input, textarea {
   transition: all 0.2s;
 }
 
-#pinList li:hover {
+#pinList li:hover,
+#routeList li:hover {
   border-color: var(--border);
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
 
-#pinList li.active {
+#pinList li.active,
+#routeList li.active {
   background: #eff6ff;
   border-color: #93c5fd;
 }
 
-#pinList li.dragging {
+#pinList li.dragging,
+#routeList li.dragging {
   opacity: 0.5;
 }
 
-#pinList li.drop-before {
+#pinList li.drop-before,
+#routeList li.drop-before {
   border-top: 2px solid var(--primary);
 }
 
-#pinList li.drop-after {
+#pinList li.drop-after,
+#routeList li.drop-after {
   border-bottom: 2px solid var(--primary);
 }
 
-.pin-list-content {
+.pin-list-content,
+.route-list-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
-.pin-badge {
+.pin-badge,
+.route-badge {
   align-self: flex-start;
   font-size: 10px;
   background: var(--bg-color);
@@ -442,26 +525,58 @@ button, input, textarea {
   border: 1px solid var(--border-light);
 }
 
-.pin-list-name {
+.pin-list-name,
+.route-list-name {
   font-size: 14px;
   font-weight: 500;
+  word-break: break-word;
+}
+
+.route-list-sub {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .drag-handle {
   color: var(--border);
   cursor: grab;
+  font-size: 18px;
+  line-height: 1;
+  user-select: none;
 }
+
 .drag-handle:active {
   cursor: grabbing;
 }
 
-/* --- Detail Section --- */
-.detail {
-  height: 280px;
+.list-item-actions {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
+.list-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.list-icon-btn:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: var(--danger);
+}
+
+/* --- Detail Section --- */
 .detail-content {
   padding: 16px;
   font-size: 14px;
@@ -484,6 +599,7 @@ button, input, textarea {
 
 .detail-value {
   font-weight: 500;
+  min-width: 0;
 }
 
 .detail-actions {
@@ -492,6 +608,23 @@ button, input, textarea {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px dashed var(--border-light);
+}
+
+.detail-help {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1d4ed8;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 20px;
 }
 
 /* --- Modal --- */
@@ -598,4 +731,3 @@ button, input, textarea {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
