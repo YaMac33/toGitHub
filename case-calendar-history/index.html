@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>案件カレンダー・対応履歴</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Case calendar</p>
+      <h1>案件カレンダー・対応履歴</h1>
+    </div>
+    <div class="header-actions" aria-label="表示月の操作">
+      <button class="button button-outline icon-button" id="prevMonthBtn" type="button" aria-label="前の月">‹</button>
+      <button class="button button-outline" id="todayBtn" type="button">今日</button>
+      <button class="button button-outline icon-button" id="nextMonthBtn" type="button" aria-label="次の月">›</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="toolbar" aria-label="絞り込み">
+      <div class="search-box">
+        <label class="field-label" for="keywordInput">検索</label>
+        <input id="keywordInput" type="search" placeholder="案件名、顧客名、対応内容で検索">
+      </div>
+      <label class="select-field">
+        <span class="field-label">担当</span>
+        <select id="ownerFilter">
+          <option value="all">すべて</option>
+        </select>
+      </label>
+      <label class="select-field">
+        <span class="field-label">状態</span>
+        <select id="statusFilter">
+          <option value="all">すべて</option>
+          <option value="open">対応中</option>
+          <option value="waiting">先方待ち</option>
+          <option value="done">完了</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="summary-strip" aria-label="集計">
+      <div>
+        <span class="summary-label">今月の対応</span>
+        <strong id="monthCount">0</strong>
+      </div>
+      <div>
+        <span class="summary-label">対象案件</span>
+        <strong id="caseCount">0</strong>
+      </div>
+      <div>
+        <span class="summary-label">未完了</span>
+        <strong id="openCount">0</strong>
+      </div>
+    </section>
+
+    <div class="workspace">
+      <section class="calendar-panel" aria-labelledby="calendarTitle">
+        <div class="section-heading">
+          <h2 id="calendarTitle">カレンダー</h2>
+          <p id="currentMonthLabel"></p>
+        </div>
+        <div class="calendar-grid week-header" aria-hidden="true">
+          <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </section>
+
+      <aside class="detail-panel" aria-labelledby="detailTitle">
+        <div class="section-heading">
+          <h2 id="detailTitle">対応履歴</h2>
+          <p id="detailSubTitle">予定をクリックすると案件別に抽出します</p>
+        </div>
+
+        <div class="selected-case" id="selectedCase"></div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>日付</th>
+                <th>種別</th>
+                <th>対応内容</th>
+                <th>担当</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
