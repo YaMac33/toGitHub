@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DXスキル可視化ダッシュボード</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero card">
+      <div>
+        <p class="eyebrow">Offline Dashboard</p>
+        <h1>DXスキル可視化ダッシュボード</h1>
+        <p class="hero-text">
+          DXスキル自己評価アンケートの結果を、部署別の傾向と個人ごとの強み・課題が分かる形で表示します。
+        </p>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="summary-grid" aria-label="集計カード">
+        <article class="summary-card card">
+          <p class="summary-label">対象人数</p>
+          <p id="totalCount" class="summary-value">0</p>
+        </article>
+        <article class="summary-card card">
+          <p class="summary-label">平均スコア</p>
+          <p id="averageScore" class="summary-value">0.0</p>
+        </article>
+        <article class="summary-card card">
+          <p class="summary-label">初級人数</p>
+          <p id="beginnerCount" class="summary-value">0</p>
+        </article>
+        <article class="summary-card card">
+          <p class="summary-label">中級人数</p>
+          <p id="intermediateCount" class="summary-value">0</p>
+        </article>
+        <article class="summary-card card">
+          <p class="summary-label">上級人数</p>
+          <p id="advancedCount" class="summary-value">0</p>
+        </article>
+      </section>
+
+      <section class="filters card" aria-label="フィルター">
+        <div class="filter-field">
+          <label for="departmentFilter">部署</label>
+          <select id="departmentFilter">
+            <option value="">すべての部署</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="levelFilter">レベル</label>
+          <select id="levelFilter">
+            <option value="">すべてのレベル</option>
+          </select>
+        </div>
+        <div class="filter-field filter-search">
+          <label for="nameSearch">職員名検索</label>
+          <input id="nameSearch" type="search" placeholder="氏名で検索" autocomplete="off">
+        </div>
+      </section>
+
+      <section id="globalEmptyState" class="empty-state card hidden" aria-live="polite">
+        <h2>表示できるデータがありません</h2>
+        <p>
+          <code>data/dx_scores.js</code> にデータが未設定、または有効なレコードがありません。
+          VBA出力後の内容をご確認ください。
+        </p>
+      </section>
+
+      <section id="contentArea" class="content-grid">
+        <aside class="card panel list-panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-eyebrow">Employees</p>
+              <h2>職員一覧</h2>
+            </div>
+            <p id="listCount" class="panel-count">0件</p>
+          </div>
+          <div id="listEmptyState" class="empty-inline hidden">条件に一致する職員がいません。</div>
+          <div id="employeeList" class="employee-list" role="list" aria-label="職員一覧"></div>
+        </aside>
+
+        <section class="detail-column">
+          <article class="card panel chart-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-eyebrow">Radar Chart</p>
+                <h2>スキル比較</h2>
+              </div>
+              <p id="chartCaption" class="chart-caption">個人スコアを表示します。</p>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="skillChart" aria-label="DXスキルレーダーチャート"></canvas>
+            </div>
+            <p id="chartFallback" class="chart-fallback hidden">
+              チャートライブラリを読み込めなかったため、グラフは表示できません。
+            </p>
+          </article>
+
+          <article class="card panel detail-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-eyebrow">Profile</p>
+                <h2>職員詳細</h2>
+              </div>
+            </div>
+            <div id="detailContent" class="detail-content">
+              <p class="empty-inline">職員を選択すると詳細を表示します。</p>
+            </div>
+          </article>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="./data/dx_scores.js"></script>
+  <script src="./lib/chart/chart.umd.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
