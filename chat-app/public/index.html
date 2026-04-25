@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local Chat App</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="loginView" class="panel">
+        <h1>Local Chat</h1>
+        <form id="loginForm" class="form">
+          <label>
+            ユーザー名
+            <input id="usernameInput" type="text" autocomplete="username" required />
+          </label>
+          <label>
+            パスワード
+            <input
+              id="passwordInput"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </label>
+          <button type="submit">ログイン</button>
+          <p id="loginError" class="error" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section id="chatView" class="panel chat-view hidden">
+        <header class="chat-header">
+          <div>
+            <h1>Local Chat</h1>
+            <p id="currentUserLabel"></p>
+          </div>
+          <button id="logoutButton" type="button" class="secondary-button">
+            ログアウト
+          </button>
+        </header>
+
+        <div id="messagesList" class="messages" aria-live="polite"></div>
+
+        <form id="messageForm" class="message-form">
+          <input
+            id="messageInput"
+            type="text"
+            placeholder="メッセージを入力"
+            autocomplete="off"
+            required
+          />
+          <button type="submit">送信</button>
+        </form>
+        <p id="messageError" class="error" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

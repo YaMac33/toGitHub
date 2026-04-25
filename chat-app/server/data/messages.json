@@ -1,0 +1,16 @@
+[
+  {
+    "id": "msg_001",
+    "userId": "userA",
+    "userName": "userA",
+    "text": "userAからの送信テスト",
+    "time": "2026-04-25T12:10:08.204Z"
+  },
+  {
+    "id": "msg_002",
+    "userId": "userB",
+    "userName": "userB",
+    "text": "userBからの送信テスト",
+    "time": "2026-04-25T12:10:42.254Z"
+  }
+]

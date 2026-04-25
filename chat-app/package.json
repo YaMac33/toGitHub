@@ -1,0 +1,13 @@
+{
+  "name": "local-chat-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Small local chat app built with Node.js, Express, HTML, CSS, and JavaScript.",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
