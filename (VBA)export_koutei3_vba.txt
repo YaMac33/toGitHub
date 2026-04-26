@@ -1,0 +1,502 @@
+Option Explicit
+
+' ============================================================
+' source_koutei3.xlsm
+'   ├─ meta シート
+'   ├─ itinerary シート
+'   └─ 標準モジュールにこのVBA
+'
+' 出力先:
+'   [このブックのあるフォルダ]\koutei3\data\itinerary.js
+'
+' meta列:
+'   title
+'   subtitle
+'   period_start
+'   period_end
+'   participants
+'   note
+'
+' itinerary列:
+'   schedule_id
+'   day_no
+'   date
+'   start_time
+'   end_time
+'   category
+'   title
+'   detail
+'   distance
+'   transport_cost
+'   note
+'   sort_order
+' ============================================================
+
+Public Sub ExportKoutei3Data()
+    On Error GoTo ErrHandler
+
+    Dim wb As Workbook
+    Dim wsMeta As Worksheet
+    Dim wsItinerary As Worksheet
+    Dim baseFolder As String
+    Dim outputPath As String
+    Dim jsText As String
+
+    Set wb = ThisWorkbook
+    Set wsMeta = wb.Worksheets("meta")
+    Set wsItinerary = wb.Worksheets("itinerary")
+
+    baseFolder = wb.Path
+    If Len(baseFolder) = 0 Then
+        Err.Raise vbObjectError + 1000, , "このブックが未保存です。.xlsm として保存してから実行してください。"
+    End If
+
+    outputPath = BuildPath(baseFolder, "koutei3\data\itinerary.js")
+    EnsureParentFoldersExist outputPath
+
+    jsText = BuildKouteiJs(wsMeta, wsItinerary)
+    WriteUtf8Text outputPath, jsText
+
+    MsgBox "出力完了:" & vbCrLf & outputPath, vbInformation
+    Exit Sub
+
+ErrHandler:
+    MsgBox "出力中にエラーが発生しました。" & vbCrLf & Err.Description, vbExclamation
+End Sub
+
+Private Function BuildKouteiJs(ByVal wsMeta As Worksheet, ByVal wsItinerary As Worksheet) As String
+    Dim result As String
+
+    result = ""
+    result = result & "window.KOUTEI_DATA = window.KOUTEI_DATA || {};" & vbCrLf & vbCrLf
+    result = result & "window.KOUTEI_DATA.meta = " & BuildMetaObject(wsMeta) & ";" & vbCrLf & vbCrLf
+    result = result & "window.KOUTEI_DATA.itinerary = " & BuildItineraryArray(wsItinerary) & ";" & vbCrLf
+
+    BuildKouteiJs = result
+End Function
+
+Private Function BuildMetaObject(ByVal ws As Worksheet) As String
+    Dim lastCol As Long
+    Dim dict As Object
+    Dim c As Long
+    Dim key As String
+    Dim rawValue As Variant
+    Dim lines As Collection
+    Dim i As Long
+    Dim result As String
+
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    If lastCol < 1 Then
+        Err.Raise vbObjectError + 1100, , "meta シートに見出しがありません。"
+    End If
+
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    For c = 1 To lastCol
+        key = Trim$(CStr(ws.Cells(1, c).Value))
+        If Len(key) > 0 Then
+            rawValue = ws.Cells(2, c).Value
+            dict(key) = NormalizeMetaValue(key, rawValue)
+        End If
+    Next c
+
+    Set lines = New Collection
+
+    AddJsonLine lines, "title", dict, False
+    AddJsonLine lines, "subtitle", dict, False
+    AddJsonLine lines, "period_start", dict, False
+    AddJsonLine lines, "period_end", dict, False
+    AddJsonLine lines, "participants", dict, False
+    AddJsonLine lines, "note", dict, True
+
+    result = "{" & vbCrLf
+    For i = 1 To lines.Count
+        result = result & "  " & lines(i) & vbCrLf
+    Next i
+    result = result & "}"
+
+    BuildMetaObject = result
+End Function
+
+Private Sub AddJsonLine(ByRef lines As Collection, ByVal key As String, ByVal dict As Object, ByVal isLast As Boolean)
+    Dim valueText As String
+    Dim lineText As String
+
+    If dict.Exists(key) Then
+        valueText = """" & EscapeJsString(CStr(dict(key))) & """"
+    Else
+        valueText = """"""
+    End If
+
+    lineText = """" & key & """: " & valueText
+    If Not isLast Then
+        lineText = lineText & ","
+    End If
+
+    lines.Add lineText
+End Sub
+
+Private Function BuildItineraryArray(ByVal ws As Worksheet) As String
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim r As Long
+    Dim rowTexts As Collection
+    Dim i As Long
+    Dim result As String
+
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+
+    If lastCol < 1 Then
+        Err.Raise vbObjectError + 1200, , "itinerary シートに見出しがありません。"
+    End If
+
+    Set rowTexts = New Collection
+
+    For r = 2 To lastRow
+        If Not IsRowCompletelyEmpty(ws, r, lastCol) Then
+            rowTexts.Add BuildItineraryRowObject(ws, r, lastCol)
+        End If
+    Next r
+
+    result = "[" & vbCrLf
+
+    If rowTexts.Count > 0 Then
+        For i = 1 To rowTexts.Count
+            result = result & rowTexts(i)
+            If i < rowTexts.Count Then
+                result = result & ","
+            End If
+            result = result & vbCrLf
+        Next i
+    End If
+
+    result = result & "]"
+
+    BuildItineraryArray = result
+End Function
+
+Private Function BuildItineraryRowObject(ByVal ws As Worksheet, ByVal rowIndex As Long, ByVal lastCol As Long) As String
+    Dim dict As Object
+    Dim c As Long
+    Dim key As String
+    Dim rawValue As Variant
+    Dim result As String
+
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    For c = 1 To lastCol
+        key = Trim$(CStr(ws.Cells(1, c).Value))
+        If Len(key) > 0 Then
+            rawValue = ws.Cells(rowIndex, c).Value
+            dict(key) = NormalizeItineraryValue(key, rawValue, rowIndex)
+        End If
+    Next c
+
+    result = ""
+    result = result & "  {" & vbCrLf
+    result = result & "    ""schedule_id"": " & ToJsString(dict, "schedule_id") & "," & vbCrLf
+    result = result & "    ""day_no"": " & ToJsNumberString(dict, "day_no") & "," & vbCrLf
+    result = result & "    ""date"": " & ToJsString(dict, "date") & "," & vbCrLf
+    result = result & "    ""start_time"": " & ToJsString(dict, "start_time") & "," & vbCrLf
+    result = result & "    ""end_time"": " & ToJsString(dict, "end_time") & "," & vbCrLf
+    result = result & "    ""category"": " & ToJsString(dict, "category") & "," & vbCrLf
+    result = result & "    ""title"": " & ToJsString(dict, "title") & "," & vbCrLf
+    result = result & "    ""detail"": " & ToJsString(dict, "detail") & "," & vbCrLf
+    result = result & "    ""distance"": " & ToJsString(dict, "distance") & "," & vbCrLf
+    result = result & "    ""transport_cost"": " & ToJsString(dict, "transport_cost") & "," & vbCrLf
+    result = result & "    ""note"": " & ToJsString(dict, "note") & "," & vbCrLf
+    result = result & "    ""sort_order"": " & ToJsNumberString(dict, "sort_order") & vbCrLf
+    result = result & "  }"
+
+    BuildItineraryRowObject = result
+End Function
+
+Private Function NormalizeMetaValue(ByVal key As String, ByVal rawValue As Variant) As String
+    Select Case LCase$(key)
+        Case "period_start", "period_end"
+            NormalizeMetaValue = NormalizeDateValue(rawValue, "meta." & key)
+        Case Else
+            NormalizeMetaValue = TrimSafe(rawValue)
+    End Select
+End Function
+
+Private Function NormalizeItineraryValue(ByVal key As String, ByVal rawValue As Variant, ByVal rowIndex As Long) As Variant
+    Select Case LCase$(key)
+        Case "day_no", "sort_order"
+            NormalizeItineraryValue = NormalizeNumberValue(rawValue)
+
+        Case "date"
+            NormalizeItineraryValue = NormalizeDateValue(rawValue, "itinerary " & rowIndex & "行目 date")
+
+        Case "start_time"
+            NormalizeItineraryValue = NormalizeTimeValue(rawValue, "itinerary " & rowIndex & "行目 start_time")
+
+        Case "end_time"
+            NormalizeItineraryValue = NormalizeTimeValue(rawValue, "itinerary " & rowIndex & "行目 end_time")
+
+        Case "transport_cost"
+            NormalizeItineraryValue = NormalizeTransportCostValue(rawValue)
+
+        Case Else
+            NormalizeItineraryValue = TrimSafe(rawValue)
+    End Select
+End Function
+
+Private Function NormalizeTransportCostValue(ByVal v As Variant) As String
+    If IsEmpty(v) Or IsNull(v) Then
+        NormalizeTransportCostValue = ""
+    ElseIf IsNumeric(v) Then
+        NormalizeTransportCostValue = Format$(CDbl(v), "0")
+    Else
+        NormalizeTransportCostValue = TrimSafe(v)
+    End If
+End Function
+
+Private Function NormalizeDateValue(ByVal v As Variant, ByVal label As String) As String
+    Dim s As String
+    Dim y As Long, m As Long, d As Long
+    Dim parts() As String
+    Dim dt As Date
+
+    If IsEmpty(v) Or IsNull(v) Then
+        NormalizeDateValue = ""
+        Exit Function
+    End If
+
+    If IsDate(v) Then
+        NormalizeDateValue = Format$(CDate(v), "yyyy-mm-dd")
+        Exit Function
+    End If
+
+    s = Trim$(CStr(v))
+    If Len(s) = 0 Then
+        NormalizeDateValue = ""
+        Exit Function
+    End If
+
+    s = Replace$(s, ".", "/")
+    s = Replace$(s, "-", "/")
+    s = Replace$(s, "年", "/")
+    s = Replace$(s, "月", "/")
+    s = Replace$(s, "日", "")
+    s = Replace$(s, "　", "")
+    s = Replace$(s, " ", "")
+
+    If InStr(s, "/") > 0 Then
+        parts = Split(s, "/")
+        If UBound(parts) = 2 Then
+            If IsNumeric(parts(0)) And IsNumeric(parts(1)) And IsNumeric(parts(2)) Then
+                y = CLng(parts(0))
+                m = CLng(parts(1))
+                d = CLng(parts(2))
+
+                On Error GoTo DateErr
+                dt = DateSerial(y, m, d)
+                If Year(dt) <> y Or Month(dt) <> m Or Day(dt) <> d Then GoTo DateErr
+                On Error GoTo 0
+
+                NormalizeDateValue = Format$(dt, "yyyy-mm-dd")
+                Exit Function
+            End If
+        End If
+    End If
+
+    If IsDate(s) Then
+        NormalizeDateValue = Format$(CDate(s), "yyyy-mm-dd")
+        Exit Function
+    End If
+
+DateErr:
+    On Error GoTo 0
+    Err.Raise vbObjectError + 1301, , label & " の日付を解釈できません: [" & CStr(v) & "]"
+End Function
+
+Private Function NormalizeTimeValue(ByVal v As Variant, ByVal label As String) As String
+    Dim s As String
+    Dim hh As Long, nn As Long
+    Dim parts() As String
+
+    If IsEmpty(v) Or IsNull(v) Then
+        NormalizeTimeValue = ""
+        Exit Function
+    End If
+
+    If IsNumeric(v) Then
+        If CDbl(v) >= 0 And CDbl(v) < 1 Then
+            NormalizeTimeValue = Format$(CDbl(v), "hh:nn")
+            Exit Function
+        End If
+    End If
+
+    If IsDate(v) Then
+        NormalizeTimeValue = Format$(CDate(v), "hh:nn")
+        Exit Function
+    End If
+
+    s = Trim$(CStr(v))
+    If Len(s) = 0 Then
+        NormalizeTimeValue = ""
+        Exit Function
+    End If
+
+    s = Replace$(s, "：", ":")
+    s = Replace$(s, "時", ":")
+    s = Replace$(s, "分", "")
+    s = Replace$(s, "　", "")
+    s = Replace$(s, " ", "")
+
+    If InStr(s, ":") > 0 Then
+        parts = Split(s, ":")
+        If UBound(parts) = 1 Then
+            If IsNumeric(parts(0)) And IsNumeric(parts(1)) Then
+                hh = CLng(parts(0))
+                nn = CLng(parts(1))
+
+                If hh >= 0 And hh <= 23 And nn >= 0 And nn <= 59 Then
+                    NormalizeTimeValue = Right$("0" & CStr(hh), 2) & ":" & Right$("0" & CStr(nn), 2)
+                    Exit Function
+                End If
+            End If
+        End If
+    End If
+
+    If IsDate(s) Then
+        NormalizeTimeValue = Format$(CDate(s), "hh:nn")
+        Exit Function
+    End If
+
+    Err.Raise vbObjectError + 1302, , label & " の時刻を解釈できません: [" & CStr(v) & "]"
+End Function
+
+Private Function NormalizeNumberValue(ByVal v As Variant) As Long
+    Dim s As String
+
+    If IsEmpty(v) Or IsNull(v) Then
+        NormalizeNumberValue = 0
+        Exit Function
+    End If
+
+    s = Trim$(CStr(v))
+    If Len(s) = 0 Then
+        NormalizeNumberValue = 0
+        Exit Function
+    End If
+
+    If IsNumeric(v) Then
+        NormalizeNumberValue = CLng(v)
+    ElseIf IsNumeric(s) Then
+        NormalizeNumberValue = CLng(s)
+    Else
+        NormalizeNumberValue = 0
+    End If
+End Function
+
+Private Function ToJsString(ByVal dict As Object, ByVal key As String) As String
+    If dict.Exists(key) Then
+        ToJsString = """" & EscapeJsString(CStr(dict(key))) & """"
+    Else
+        ToJsString = """"""
+    End If
+End Function
+
+Private Function ToJsNumberString(ByVal dict As Object, ByVal key As String) As String
+    If dict.Exists(key) Then
+        ToJsNumberString = """" & CStr(dict(key)) & """"
+    Else
+        ToJsNumberString = """0"""
+    End If
+End Function
+
+Private Function EscapeJsString(ByVal s As String) As String
+    s = Replace$(s, "\", "\\")
+    s = Replace$(s, """", "\""")
+    s = Replace$(s, vbCrLf, "\n")
+    s = Replace$(s, vbCr, "\n")
+    s = Replace$(s, vbLf, "\n")
+    EscapeJsString = s
+End Function
+
+Private Function TrimSafe(ByVal v As Variant) As String
+    If IsEmpty(v) Or IsNull(v) Then
+        TrimSafe = ""
+    Else
+        TrimSafe = Trim$(CStr(v))
+    End If
+End Function
+
+Private Function IsRowCompletelyEmpty(ByVal ws As Worksheet, ByVal rowIndex As Long, ByVal lastCol As Long) As Boolean
+    Dim c As Long
+
+    For c = 1 To lastCol
+        If Len(Trim$(CStr(ws.Cells(rowIndex, c).Value))) > 0 Then
+            IsRowCompletelyEmpty = False
+            Exit Function
+        End If
+    Next c
+
+    IsRowCompletelyEmpty = True
+End Function
+
+Private Function BuildPath(ByVal basePath As String, ByVal relativePath As String) As String
+    If Right$(basePath, 1) = "\" Then
+        BuildPath = basePath & relativePath
+    Else
+        BuildPath = basePath & "\" & relativePath
+    End If
+End Function
+
+Private Sub EnsureParentFoldersExist(ByVal filePath As String)
+    Dim fso As Object
+    Dim parentPath As String
+    Dim parts() As String
+    Dim currentPath As String
+    Dim i As Long
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    parentPath = fso.GetParentFolderName(filePath)
+
+    If Len(parentPath) = 0 Then Exit Sub
+    If fso.FolderExists(parentPath) Then Exit Sub
+
+    parts = Split(parentPath, "\")
+
+    If InStr(parentPath, ":\") > 0 Then
+        currentPath = parts(0) & "\"
+        For i = 1 To UBound(parts)
+            If Len(parts(i)) > 0 Then
+                currentPath = currentPath & parts(i)
+                If Not fso.FolderExists(currentPath) Then
+                    fso.CreateFolder currentPath
+                End If
+                currentPath = currentPath & "\"
+            End If
+        Next i
+    Else
+        currentPath = ""
+        For i = 0 To UBound(parts)
+            If Len(parts(i)) > 0 Then
+                If Len(currentPath) = 0 Then
+                    currentPath = parts(i)
+                Else
+                    currentPath = currentPath & "\" & parts(i)
+                End If
+                If Not fso.FolderExists(currentPath) Then
+                    fso.CreateFolder currentPath
+                End If
+            End If
+        Next i
+    End If
+End Sub
+
+Private Sub WriteUtf8Text(ByVal filePath As String, ByVal textData As String)
+    Dim stm As Object
+
+    Set stm = CreateObject("ADODB.Stream")
+    stm.Type = 2
+    stm.Charset = "UTF-8"
+    stm.Open
+    stm.WriteText textData
+    stm.SaveToFile filePath, 2
+    stm.Close
+End Sub
