@@ -1,0 +1,629 @@
+Option Explicit
+
+' ============================================================
+' Excel対応履歴ビューア
+'   対応案件 / 対応履歴 シートから以下を出力する標準モジュール
+'
+' 出力先:
+'   02_export\meta.js
+'   02_export\cases.js
+'   02_export\histories.js
+'   03_app\data\meta.js
+'   03_app\data\cases.js
+'   03_app\data\histories.js
+'
+' シート構成:
+'   1行目: 日本語列名
+'   2行目: JavaScript用キー
+'   3行目以降: データ
+' ============================================================
+
+Private Const APP_NAME As String = "Excel対応履歴ビューア"
+Private Const APP_VERSION As String = "1.0.0"
+Private Const SHEET_CASES As String = "対応案件"
+Private Const SHEET_HISTORIES As String = "対応履歴"
+
+Public Sub ExportAppData()
+    On Error GoTo ErrHandler
+
+    Dim baseFolder As String
+    Dim exportFolder As String
+    Dim appDataFolder As String
+    Dim wsCases As Worksheet
+    Dim wsHistories As Worksheet
+    Dim warnings As Collection
+    Dim caseIds As Object
+    Dim caseCount As Long
+    Dim historyCount As Long
+    Dim metaJs As String
+    Dim casesJs As String
+    Dim historiesJs As String
+    Dim exportedAt As String
+
+    Set warnings = New Collection
+    Set caseIds = CreateObject("Scripting.Dictionary")
+
+    baseFolder = GetBaseFolder()
+    exportFolder = baseFolder & "\02_export"
+    appDataFolder = baseFolder & "\03_app\data"
+
+    EnsureFolderExists exportFolder
+    EnsureFolderExists appDataFolder
+
+    If Not SheetExists(SHEET_CASES) Then
+        Err.Raise vbObjectError + 1001, , "「対応案件」シートが存在しません。"
+    End If
+    If Not SheetExists(SHEET_HISTORIES) Then
+        Err.Raise vbObjectError + 1002, , "「対応履歴」シートが存在しません。"
+    End If
+
+    Set wsCases = ThisWorkbook.Worksheets(SHEET_CASES)
+    Set wsHistories = ThisWorkbook.Worksheets(SHEET_HISTORIES)
+
+    exportedAt = Format$(Now, "yyyy-mm-dd hh:nn:ss")
+    casesJs = BuildCasesJs(wsCases, warnings, caseIds, caseCount)
+    historiesJs = BuildHistoriesJs(wsHistories, warnings, caseIds, historyCount)
+    metaJs = BuildMetaJs(exportedAt, caseCount, historyCount)
+
+    WriteTextFile exportFolder & "\meta.js", metaJs
+    WriteTextFile exportFolder & "\cases.js", casesJs
+    WriteTextFile exportFolder & "\histories.js", historiesJs
+
+    CopyFileOverwrite exportFolder & "\meta.js", appDataFolder & "\meta.js"
+    CopyFileOverwrite exportFolder & "\cases.js", appDataFolder & "\cases.js"
+    CopyFileOverwrite exportFolder & "\histories.js", appDataFolder & "\histories.js"
+
+    ShowResultMessage caseCount, historyCount, warnings
+    Exit Sub
+
+ErrHandler:
+    MsgBox "出力を中止しました。" & vbCrLf & vbCrLf & Err.Description, vbCritical
+End Sub
+
+Private Function GetBaseFolder() As String
+    Dim workbookFolder As String
+
+    workbookFolder = ThisWorkbook.Path
+    If Len(workbookFolder) = 0 Then
+        Err.Raise vbObjectError + 1010, , "このExcelファイルを保存してから実行してください。"
+    End If
+
+    GetBaseFolder = GetParentFolder(workbookFolder)
+End Function
+
+Private Function GetParentFolder(ByVal folderPath As String) As String
+    Dim p As Long
+
+    p = InStrRev(folderPath, "\")
+    If p <= 1 Then
+        Err.Raise vbObjectError + 1011, , "親フォルダを取得できません: " & folderPath
+    End If
+
+    GetParentFolder = Left$(folderPath, p - 1)
+End Function
+
+Private Sub EnsureFolderExists(ByVal folderPath As String)
+    If Len(Dir$(folderPath, vbDirectory)) = 0 Then
+        Err.Raise vbObjectError + 1012, , "必要なフォルダが存在しません: " & folderPath
+    End If
+End Sub
+
+Private Function SheetExists(ByVal sheetName As String) As Boolean
+    Dim ws As Worksheet
+
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets(sheetName)
+    On Error GoTo 0
+
+    SheetExists = Not ws Is Nothing
+End Function
+
+Private Function BuildHeaderMap(ByVal ws As Worksheet, ByVal expectedKeys As Object, ByRef warnings As Collection) As Object
+    Dim map As Object
+    Dim lastCol As Long
+    Dim c As Long
+    Dim key As String
+
+    Set map = CreateObject("Scripting.Dictionary")
+    lastCol = ws.Cells(2, ws.Columns.Count).End(xlToLeft).Column
+
+    For c = 1 To lastCol
+        key = Trim$(CStr(ws.Cells(2, c).Value))
+        If Len(key) > 0 Then
+            If Not map.Exists(key) Then
+                map.Add key, c
+                If Not expectedKeys.Exists(key) Then
+                    AddWarning warnings, ws.Name & " 2行目：" & key & " は想定外のキーです"
+                End If
+            End If
+        End If
+    Next c
+
+    If map.Count = 0 Then
+        Err.Raise vbObjectError + 1020, , ws.Name & " シートの2行目にキーが1つも存在しません。"
+    End If
+
+    Set BuildHeaderMap = map
+End Function
+
+Private Function GetCellValueByKey(ByVal ws As Worksheet, ByVal rowIndex As Long, ByVal headerMap As Object, ByVal key As String) As Variant
+    If headerMap.Exists(key) Then
+        GetCellValueByKey = ws.Cells(rowIndex, CLng(headerMap(key))).Value
+    Else
+        GetCellValueByKey = ""
+    End If
+End Function
+
+Private Function BuildCasesJs(ByVal ws As Worksheet, ByRef warnings As Collection, ByVal caseIds As Object, ByRef caseCount As Long) As String
+    Dim headerMap As Object
+    Dim expectedKeys As Object
+    Dim lastRow As Long
+    Dim r As Long
+    Dim result As String
+    Dim firstItem As Boolean
+    Dim caseId As String
+
+    Set expectedKeys = ExpectedCaseKeys()
+    Set headerMap = BuildHeaderMap(ws, expectedKeys, warnings)
+    lastRow = LastDataRow(ws)
+
+    result = "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
+    result = result & "window.APP_DATA.cases = [" & vbCrLf
+
+    firstItem = True
+    caseCount = 0
+
+    For r = 3 To lastRow
+        If Not IsEmptyCaseRow(ws, r, headerMap) Then
+            If Not firstItem Then result = result & "," & vbCrLf
+            result = result & BuildCaseObject(ws, r, headerMap, warnings)
+
+            caseCount = caseCount + 1
+            firstItem = False
+
+            caseId = Trim$(CStr(GetCellValueByKey(ws, r, headerMap, "case_id")))
+            If Len(caseId) = 0 Then
+                AddWarning warnings, ws.Name & " " & r & "行目：case_id が空です"
+            ElseIf Not caseIds.Exists(caseId) Then
+                caseIds.Add caseId, True
+            End If
+        End If
+    Next r
+
+    result = result & vbCrLf & "];" & vbCrLf
+    BuildCasesJs = result
+End Function
+
+Private Function BuildHistoriesJs(ByVal ws As Worksheet, ByRef warnings As Collection, ByVal caseIds As Object, ByRef historyCount As Long) As String
+    Dim headerMap As Object
+    Dim expectedKeys As Object
+    Dim lastRow As Long
+    Dim r As Long
+    Dim result As String
+    Dim firstItem As Boolean
+    Dim historyId As String
+    Dim caseId As String
+
+    Set expectedKeys = ExpectedHistoryKeys()
+    Set headerMap = BuildHeaderMap(ws, expectedKeys, warnings)
+    lastRow = LastDataRow(ws)
+
+    result = "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
+    result = result & "window.APP_DATA.histories = [" & vbCrLf
+
+    firstItem = True
+    historyCount = 0
+
+    For r = 3 To lastRow
+        If Not IsEmptyHistoryRow(ws, r, headerMap) Then
+            If Not firstItem Then result = result & "," & vbCrLf
+            result = result & BuildHistoryObject(ws, r, headerMap, warnings)
+
+            historyCount = historyCount + 1
+            firstItem = False
+
+            historyId = Trim$(CStr(GetCellValueByKey(ws, r, headerMap, "history_id")))
+            caseId = Trim$(CStr(GetCellValueByKey(ws, r, headerMap, "case_id")))
+
+            If Len(historyId) = 0 Then
+                AddWarning warnings, ws.Name & " " & r & "行目：history_id が空です"
+            End If
+            If Len(caseId) > 0 And Not caseIds.Exists(caseId) Then
+                AddWarning warnings, ws.Name & " " & r & "行目：case_id が対応案件に存在しません"
+            End If
+        End If
+    Next r
+
+    result = result & vbCrLf & "];" & vbCrLf
+    BuildHistoriesJs = result
+End Function
+
+Private Function BuildCaseObject(ByVal ws As Worksheet, ByVal r As Long, ByVal headerMap As Object, ByRef warnings As Collection) As String
+    Dim s As String
+
+    s = "  {" & vbCrLf
+    s = s & JsLine("case_id", ToJsString(GetCellValueByKey(ws, r, headerMap, "case_id")), False)
+    s = s & JsLine("received_date", ToJsString(FormatDateValue(GetCellValueByKey(ws, r, headerMap, "received_date"), ws.Name, r, "received_date", warnings)), False)
+    s = s & JsLine("last_action_date", ToJsString(FormatDateValue(GetCellValueByKey(ws, r, headerMap, "last_action_date"), ws.Name, r, "last_action_date", warnings)), False)
+    s = s & JsLine("status", ToJsString(GetCellValueByKey(ws, r, headerMap, "status")), False)
+    s = s & JsLine("priority", ToJsString(GetCellValueByKey(ws, r, headerMap, "priority")), False)
+    s = s & JsLine("tags", ToJsTags(GetCellValueByKey(ws, r, headerMap, "tags"), ws.Name, r, warnings), False)
+    s = s & JsLine("person_id", ToJsString(GetCellValueByKey(ws, r, headerMap, "person_id")), False)
+    s = s & JsLine("person_name", ToJsString(GetCellValueByKey(ws, r, headerMap, "person_name")), False)
+    s = s & JsLine("person_kana", ToJsString(GetCellValueByKey(ws, r, headerMap, "person_kana")), False)
+    s = s & JsLine("contact_memo", ToJsString(GetCellValueByKey(ws, r, headerMap, "contact_memo")), False)
+    s = s & JsLine("area", ToJsString(GetCellValueByKey(ws, r, headerMap, "area")), False)
+    s = s & JsLine("title", ToJsString(GetCellValueByKey(ws, r, headerMap, "title")), False)
+    s = s & JsLine("summary", ToJsString(GetCellValueByKey(ws, r, headerMap, "summary")), False)
+    s = s & JsLine("department", ToJsString(GetCellValueByKey(ws, r, headerMap, "department")), False)
+    s = s & JsLine("owner", ToJsString(GetCellValueByKey(ws, r, headerMap, "owner")), False)
+    s = s & JsLine("sub_owner", ToJsString(GetCellValueByKey(ws, r, headerMap, "sub_owner")), False)
+    s = s & JsLine("due_date", ToJsString(FormatDateValue(GetCellValueByKey(ws, r, headerMap, "due_date"), ws.Name, r, "due_date", warnings)), False)
+    s = s & JsLine("completed_date", ToJsString(FormatDateValue(GetCellValueByKey(ws, r, headerMap, "completed_date"), ws.Name, r, "completed_date", warnings)), False)
+    s = s & JsLine("visibility", ToJsString(GetCellValueByKey(ws, r, headerMap, "visibility")), False)
+    s = s & JsLine("internal_memo", ToJsString(GetCellValueByKey(ws, r, headerMap, "internal_memo")), False)
+    s = s & JsLine("attachment_memo", ToJsString(GetCellValueByKey(ws, r, headerMap, "attachment_memo")), False)
+    s = s & JsLine("sort_order", ToJsNumberOrEmpty(GetCellValueByKey(ws, r, headerMap, "sort_order")), False)
+    s = s & JsLine("elapsed_days", ToJsNumberOrEmpty(GetCellValueByKey(ws, r, headerMap, "elapsed_days")), False)
+    s = s & JsLine("is_overdue", ToJsBoolean(GetCellValueByKey(ws, r, headerMap, "is_overdue")), False)
+    s = s & JsLine("is_open", ToJsBoolean(GetCellValueByKey(ws, r, headerMap, "is_open")), False)
+    s = s & JsLine("search_text", ToJsString(GetCellValueByKey(ws, r, headerMap, "search_text")), False)
+    s = s & JsLine("display_title", ToJsString(GetCellValueByKey(ws, r, headerMap, "display_title")), False)
+    s = s & JsLine("display_subtitle", ToJsString(GetCellValueByKey(ws, r, headerMap, "display_subtitle")), False)
+    s = s & JsLine("created_at", ToJsString(FormatDateTimeValue(GetCellValueByKey(ws, r, headerMap, "created_at"))), False)
+    s = s & JsLine("updated_at", ToJsString(FormatDateTimeValue(GetCellValueByKey(ws, r, headerMap, "updated_at"))), True)
+    s = s & "  }"
+
+    BuildCaseObject = s
+End Function
+
+Private Function BuildHistoryObject(ByVal ws As Worksheet, ByVal r As Long, ByVal headerMap As Object, ByRef warnings As Collection) As String
+    Dim s As String
+
+    s = "  {" & vbCrLf
+    s = s & JsLine("history_id", ToJsString(GetCellValueByKey(ws, r, headerMap, "history_id")), False)
+    s = s & JsLine("case_id", ToJsString(GetCellValueByKey(ws, r, headerMap, "case_id")), False)
+    s = s & JsLine("action_date", ToJsString(FormatDateValue(GetCellValueByKey(ws, r, headerMap, "action_date"), ws.Name, r, "action_date", warnings)), False)
+    s = s & JsLine("action_time", ToJsString(FormatTimeValue(GetCellValueByKey(ws, r, headerMap, "action_time"), ws.Name, r, "action_time", warnings)), False)
+    s = s & JsLine("action_type", ToJsString(GetCellValueByKey(ws, r, headerMap, "action_type")), False)
+    s = s & JsLine("staff", ToJsString(GetCellValueByKey(ws, r, headerMap, "staff")), False)
+    s = s & JsLine("department", ToJsString(GetCellValueByKey(ws, r, headerMap, "department")), False)
+    s = s & JsLine("counterparty", ToJsString(GetCellValueByKey(ws, r, headerMap, "counterparty")), False)
+    s = s & JsLine("content", ToJsString(GetCellValueByKey(ws, r, headerMap, "content")), False)
+    s = s & JsLine("next_action_date", ToJsString(FormatDateValue(GetCellValueByKey(ws, r, headerMap, "next_action_date"), ws.Name, r, "next_action_date", warnings)), False)
+    s = s & JsLine("next_action_content", ToJsString(GetCellValueByKey(ws, r, headerMap, "next_action_content")), False)
+    s = s & JsLine("attachment_memo", ToJsString(GetCellValueByKey(ws, r, headerMap, "attachment_memo")), False)
+    s = s & JsLine("internal_memo", ToJsString(GetCellValueByKey(ws, r, headerMap, "internal_memo")), False)
+    s = s & JsLine("created_at", ToJsString(FormatDateTimeValue(GetCellValueByKey(ws, r, headerMap, "created_at"))), False)
+    s = s & JsLine("updated_at", ToJsString(FormatDateTimeValue(GetCellValueByKey(ws, r, headerMap, "updated_at"))), True)
+    s = s & "  }"
+
+    BuildHistoryObject = s
+End Function
+
+Private Function BuildMetaJs(ByVal exportedAt As String, ByVal caseCount As Long, ByVal historyCount As Long) As String
+    Dim s As String
+
+    s = "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
+    s = s & "window.APP_DATA.meta = {" & vbCrLf
+    s = s & "  app_name: " & ToJsString(APP_NAME) & "," & vbCrLf
+    s = s & "  version: " & ToJsString(APP_VERSION) & "," & vbCrLf
+    s = s & "  exported_at: " & ToJsString(exportedAt) & "," & vbCrLf
+    s = s & "  case_count: " & CStr(caseCount) & "," & vbCrLf
+    s = s & "  history_count: " & CStr(historyCount) & vbCrLf
+    s = s & "};" & vbCrLf
+
+    BuildMetaJs = s
+End Function
+
+Private Function JsLine(ByVal key As String, ByVal jsValue As String, ByVal isLast As Boolean) As String
+    JsLine = "    " & key & ": " & jsValue
+    If Not isLast Then JsLine = JsLine & ","
+    JsLine = JsLine & vbCrLf
+End Function
+
+Private Function IsEmptyCaseRow(ByVal ws As Worksheet, ByVal rowIndex As Long, ByVal headerMap As Object) As Boolean
+    IsEmptyCaseRow = IsBlankValue(GetCellValueByKey(ws, rowIndex, headerMap, "case_id")) _
+        And IsBlankValue(GetCellValueByKey(ws, rowIndex, headerMap, "received_date")) _
+        And IsBlankValue(GetCellValueByKey(ws, rowIndex, headerMap, "person_name")) _
+        And IsBlankValue(GetCellValueByKey(ws, rowIndex, headerMap, "title")) _
+        And IsBlankValue(GetCellValueByKey(ws, rowIndex, headerMap, "summary"))
+End Function
+
+Private Function IsEmptyHistoryRow(ByVal ws As Worksheet, ByVal rowIndex As Long, ByVal headerMap As Object) As Boolean
+    IsEmptyHistoryRow = IsBlankValue(GetCellValueByKey(ws, rowIndex, headerMap, "history_id")) _
+        And IsBlankValue(GetCellValueByKey(ws, rowIndex, headerMap, "case_id")) _
+        And IsBlankValue(GetCellValueByKey(ws, rowIndex, headerMap, "action_date")) _
+        And IsBlankValue(GetCellValueByKey(ws, rowIndex, headerMap, "content"))
+End Function
+
+Private Function IsBlankValue(ByVal value As Variant) As Boolean
+    If IsError(value) Or IsNull(value) Or IsEmpty(value) Then
+        IsBlankValue = True
+    Else
+        IsBlankValue = (Len(Trim$(CStr(value))) = 0)
+    End If
+End Function
+
+Private Function FormatDateValue(ByVal value As Variant, ByVal sheetName As String, ByVal rowIndex As Long, ByVal key As String, ByRef warnings As Collection) As String
+    On Error GoTo InvalidDate
+
+    If IsBlankValue(value) Then
+        FormatDateValue = ""
+    ElseIf IsDate(value) Then
+        FormatDateValue = Format$(CDate(value), "yyyy-mm-dd")
+    Else
+        GoTo InvalidDate
+    End If
+    Exit Function
+
+InvalidDate:
+    FormatDateValue = ""
+    If Not IsBlankValue(value) Then
+        AddWarning warnings, sheetName & " " & rowIndex & "行目：" & key & " を日付として解釈できません"
+    End If
+End Function
+
+Private Function FormatTimeValue(ByVal value As Variant, ByVal sheetName As String, ByVal rowIndex As Long, ByVal key As String, ByRef warnings As Collection) As String
+    On Error GoTo InvalidTime
+
+    If IsBlankValue(value) Then
+        FormatTimeValue = ""
+    ElseIf IsDate(value) Then
+        FormatTimeValue = Format$(CDate(value), "hh:nn")
+    Else
+        GoTo InvalidTime
+    End If
+    Exit Function
+
+InvalidTime:
+    FormatTimeValue = ""
+    If Not IsBlankValue(value) Then
+        AddWarning warnings, sheetName & " " & rowIndex & "行目：" & key & " を時刻として解釈できません"
+    End If
+End Function
+
+Private Function FormatDateTimeValue(ByVal value As Variant) As String
+    On Error GoTo InvalidDateTime
+
+    If IsBlankValue(value) Then
+        FormatDateTimeValue = ""
+    ElseIf IsDate(value) Then
+        FormatDateTimeValue = Format$(CDate(value), "yyyy-mm-dd hh:nn:ss")
+    Else
+        FormatDateTimeValue = ""
+    End If
+    Exit Function
+
+InvalidDateTime:
+    FormatDateTimeValue = ""
+End Function
+
+Private Function ToJsString(ByVal value As Variant) As String
+    Dim s As String
+
+    If IsBlankValue(value) Then
+        ToJsString = """"""
+        Exit Function
+    End If
+
+    s = CStr(value)
+    s = Replace(s, "\", "\\")
+    s = Replace(s, """", "\""")
+    s = Replace(s, vbCrLf, "\n")
+    s = Replace(s, vbCr, "\n")
+    s = Replace(s, vbLf, "\n")
+
+    ToJsString = """" & s & """"
+End Function
+
+Private Function ToJsBoolean(ByVal value As Variant) As String
+    Dim s As String
+
+    If IsBlankValue(value) Then
+        ToJsBoolean = "false"
+        Exit Function
+    End If
+
+    s = LCase$(Trim$(CStr(value)))
+    If s = "1" Or s = "true" Or s = "○" Or s = "はい" Or s = "yes" Then
+        ToJsBoolean = "true"
+    Else
+        ToJsBoolean = "false"
+    End If
+End Function
+
+Private Function ToJsNumberOrEmpty(ByVal value As Variant) As String
+    Dim numberText As String
+
+    If IsBlankValue(value) Then
+        ToJsNumberOrEmpty = """"""
+    ElseIf IsNumeric(value) Then
+        numberText = Trim$(Str$(CDbl(value)))
+        ToJsNumberOrEmpty = Replace(numberText, ",", ".")
+    Else
+        ToJsNumberOrEmpty = """"""
+    End If
+End Function
+
+Private Function ToJsTags(ByVal value As Variant, ByVal sheetName As String, ByVal rowIndex As Long, ByRef warnings As Collection) As String
+    Dim s As String
+    Dim parts As Variant
+    Dim i As Long
+    Dim item As String
+    Dim result As String
+    Dim firstItem As Boolean
+
+    If IsBlankValue(value) Then
+        ToJsTags = "[]"
+        Exit Function
+    End If
+
+    s = CStr(value)
+    If InStr(s, "，") > 0 Or InStr(s, "、") > 0 Then
+        AddWarning warnings, sheetName & " " & rowIndex & "行目：tags に全角カンマが含まれていました"
+        s = Replace(s, "，", ",")
+        s = Replace(s, "、", ",")
+    End If
+
+    parts = Split(s, ",")
+    result = "["
+    firstItem = True
+
+    For i = LBound(parts) To UBound(parts)
+        item = Trim$(CStr(parts(i)))
+        If Len(item) > 0 Then
+            If Not firstItem Then result = result & ", "
+            result = result & ToJsString(item)
+            firstItem = False
+        End If
+    Next i
+
+    result = result & "]"
+    ToJsTags = result
+End Function
+
+Private Function LastDataRow(ByVal ws As Worksheet) As Long
+    Dim foundCell As Range
+
+    Set foundCell = ws.Cells.Find(What:="*", After:=ws.Cells(1, 1), LookIn:=xlFormulas, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlPrevious, MatchCase:=False)
+
+    If foundCell Is Nothing Then
+        LastDataRow = 2
+    ElseIf foundCell.Row < 2 Then
+        LastDataRow = 2
+    Else
+        LastDataRow = foundCell.Row
+    End If
+End Function
+
+Private Function ExpectedCaseKeys() As Object
+    Dim keys As Object
+
+    Set keys = CreateObject("Scripting.Dictionary")
+    AddKey keys, "case_id"
+    AddKey keys, "received_date"
+    AddKey keys, "last_action_date"
+    AddKey keys, "status"
+    AddKey keys, "priority"
+    AddKey keys, "tags"
+    AddKey keys, "person_id"
+    AddKey keys, "person_name"
+    AddKey keys, "person_kana"
+    AddKey keys, "contact_memo"
+    AddKey keys, "area"
+    AddKey keys, "title"
+    AddKey keys, "summary"
+    AddKey keys, "department"
+    AddKey keys, "owner"
+    AddKey keys, "sub_owner"
+    AddKey keys, "due_date"
+    AddKey keys, "completed_date"
+    AddKey keys, "visibility"
+    AddKey keys, "internal_memo"
+    AddKey keys, "attachment_memo"
+    AddKey keys, "sort_order"
+    AddKey keys, "elapsed_days"
+    AddKey keys, "is_overdue"
+    AddKey keys, "is_open"
+    AddKey keys, "search_text"
+    AddKey keys, "display_title"
+    AddKey keys, "display_subtitle"
+    AddKey keys, "created_at"
+    AddKey keys, "updated_at"
+
+    Set ExpectedCaseKeys = keys
+End Function
+
+Private Function ExpectedHistoryKeys() As Object
+    Dim keys As Object
+
+    Set keys = CreateObject("Scripting.Dictionary")
+    AddKey keys, "history_id"
+    AddKey keys, "case_id"
+    AddKey keys, "action_date"
+    AddKey keys, "action_time"
+    AddKey keys, "action_type"
+    AddKey keys, "staff"
+    AddKey keys, "department"
+    AddKey keys, "counterparty"
+    AddKey keys, "content"
+    AddKey keys, "next_action_date"
+    AddKey keys, "next_action_content"
+    AddKey keys, "attachment_memo"
+    AddKey keys, "internal_memo"
+    AddKey keys, "created_at"
+    AddKey keys, "updated_at"
+
+    Set ExpectedHistoryKeys = keys
+End Function
+
+Private Sub AddKey(ByVal keys As Object, ByVal key As String)
+    If Not keys.Exists(key) Then keys.Add key, True
+End Sub
+
+Private Sub WriteTextFile(ByVal filePath As String, ByVal content As String)
+    On Error GoTo WriteError
+
+    Dim stream As Object
+    Set stream = CreateObject("ADODB.Stream")
+
+    With stream
+        .Type = 2
+        .Charset = "UTF-8"
+        .Open
+        .WriteText content
+        .SaveToFile filePath, 2
+        .Close
+    End With
+    Exit Sub
+
+WriteError:
+    Err.Raise vbObjectError + 1030, , "ファイルを書き込めません: " & filePath & vbCrLf & Err.Description
+End Sub
+
+Private Sub CopyFileOverwrite(ByVal sourcePath As String, ByVal destPath As String)
+    On Error GoTo CopyError
+
+    Dim fso As Object
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    fso.CopyFile sourcePath, destPath, True
+    Exit Sub
+
+CopyError:
+    Err.Raise vbObjectError + 1031, , "ファイルをコピーできません: " & destPath & vbCrLf & Err.Description
+End Sub
+
+Private Sub AddWarning(ByRef warnings As Collection, ByVal message As String)
+    warnings.Add message
+End Sub
+
+Private Sub ShowResultMessage(ByVal caseCount As Long, ByVal historyCount As Long, ByVal warnings As Collection)
+    Dim msg As String
+    Dim i As Long
+    Dim maxWarnings As Long
+
+    msg = "出力が完了しました。" & vbCrLf & vbCrLf
+    msg = msg & "cases.js：" & caseCount & "件" & vbCrLf
+    msg = msg & "histories.js：" & historyCount & "件" & vbCrLf
+    msg = msg & "meta.js：出力済み" & vbCrLf & vbCrLf
+    msg = msg & "02_export に出力しました。" & vbCrLf
+    msg = msg & "03_app/data にコピーしました。" & vbCrLf & vbCrLf
+    msg = msg & "警告：" & warnings.Count & "件"
+
+    If warnings.Count > 0 Then
+        maxWarnings = warnings.Count
+        If maxWarnings > 10 Then maxWarnings = 10
+
+        For i = 1 To maxWarnings
+            msg = msg & vbCrLf & "- " & CStr(warnings(i))
+        Next i
+
+        If warnings.Count > 10 Then
+            msg = msg & vbCrLf & "ほか" & (warnings.Count - 10) & "件"
+        End If
+    End If
+
+    MsgBox msg, vbInformation
+End Sub

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Excel対応履歴ビューア</title>
+  <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>Excel対応履歴ビューア</h1>
+      <p>Excel正本から出力した対応履歴データを閲覧します</p>
+    </div>
+    <div id="exportInfo" class="export-info"></div>
+  </header>
+
+  <nav class="app-nav" aria-label="画面切り替え">
+    <button type="button" data-view="dashboard" class="active">ダッシュボード</button>
+    <button type="button" data-view="caseList">案件一覧</button>
+    <button type="button" data-view="personView">相談者ビュー</button>
+    <button type="button" data-view="calendar">カレンダー</button>
+    <button type="button" data-view="caseDetail" class="detail-nav" disabled>案件詳細</button>
+  </nav>
+
+  <main id="app" tabindex="-1"></main>
+
+  <footer class="app-footer">
+    <small>データ編集は Excel 正本で行ってください。</small>
+  </footer>
+
+  <script src="data/meta.js"></script>
+  <script src="data/cases.js"></script>
+  <script src="data/histories.js"></script>
+  <script src="js/core/utils.js"></script>
+  <script src="js/core/formatters.js"></script>
+  <script src="js/views/dashboard.js"></script>
+  <script src="js/views/case_list.js"></script>
+  <script src="js/views/case_detail.js"></script>
+  <script src="js/views/person_view.js"></script>
+  <script src="js/views/calendar_view.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
