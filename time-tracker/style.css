@@ -58,6 +58,31 @@ button:disabled {
   margin-bottom: 22px;
 }
 
+.header-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.help-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 1px solid #c9d9e8;
+  border-radius: 6px;
+  background: #eef4fa;
+  color: #17324d;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.help-link:hover {
+  background: #dfeefa;
+  border-color: #9fc3e4;
+}
+
 h1,
 h2,
 p {
@@ -474,6 +499,34 @@ h2 {
   border: 1px dashed var(--line);
   color: var(--muted);
   text-align: center;
+}
+
+.readme-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.readme-panel ol {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.readme-table {
+  width: 100%;
+  max-width: 560px;
+  border-collapse: collapse;
+}
+
+.readme-table th,
+.readme-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.readme-table th {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 @media (max-width: 960px) {
