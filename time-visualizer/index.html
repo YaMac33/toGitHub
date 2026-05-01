@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>業務時間可視化</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <h1>業務時間可視化</h1>
+        <p>time-tracker のCSVを読み込んで、業務カテゴリごとの時間を確認します。</p>
+      </div>
+      <div class="header-metrics">
+        <div>
+          <span>読込ファイル</span>
+          <strong id="fileCount">0</strong>
+        </div>
+        <div>
+          <span>対象ログ</span>
+          <strong id="recordCount">0</strong>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="import-panel">
+        <div class="import-copy">
+          <h2>CSVインポート</h2>
+          <p>複数CSVをまとめて選択できます。上限は100ファイルです。</p>
+        </div>
+        <label class="file-button" for="csvInput">CSVファイルを選択</label>
+        <input id="csvInput" type="file" accept=".csv,text/csv" multiple>
+        <button id="clearButton" type="button" class="secondary-button">読込データをクリア</button>
+      </section>
+
+      <section id="messagePanel" class="message-panel" hidden></section>
+
+      <section class="filter-panel">
+        <div class="filter-field">
+          <label for="fromDate">開始日</label>
+          <input id="fromDate" type="date">
+        </div>
+        <div class="filter-field">
+          <label for="toDate">終了日</label>
+          <input id="toDate" type="date">
+        </div>
+        <div class="filter-field">
+          <label for="categoryFilter">カテゴリ</label>
+          <select id="categoryFilter">
+            <option value="">すべて</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="statusFilter">状態</label>
+          <select id="statusFilter">
+            <option value="">すべて</option>
+            <option value="done">終了済み</option>
+            <option value="working">作業中</option>
+            <option value="paused">一時停止中</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="summary-grid">
+        <div class="summary-card">
+          <span>総実作業時間</span>
+          <strong id="totalWork">0時間00分</strong>
+        </div>
+        <div class="summary-card">
+          <span>総停止時間</span>
+          <strong id="totalPause">0時間00分</strong>
+        </div>
+        <div class="summary-card">
+          <span>1日平均</span>
+          <strong id="dailyAverage">0時間00分</strong>
+        </div>
+        <div class="summary-card">
+          <span>最多カテゴリ</span>
+          <strong id="topCategory">-</strong>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <section class="panel wide">
+          <div class="section-title-row">
+            <h2>日別の実作業時間</h2>
+            <span id="dailyRangeLabel">-</span>
+          </div>
+          <div id="dailyChart" class="daily-chart"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title-row">
+            <h2>カテゴリ別</h2>
+            <span>実作業時間</span>
+          </div>
+          <div id="categoryChart" class="bar-list"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title-row">
+            <h2>曜日別</h2>
+            <span>平均ではなく合計</span>
+          </div>
+          <div id="weekdayChart" class="bar-list compact"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title-row">
+            <h2>状態別</h2>
+            <span>件数</span>
+          </div>
+          <div id="statusChart" class="status-chart"></div>
+        </section>
+      </section>
+
+      <section class="panel">
+        <div class="section-title-row">
+          <h2>カテゴリ集計表</h2>
+          <span id="categoryTableCount">0件</span>
+        </div>
+        <div id="categoryTable" class="table-wrap"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title-row">
+          <h2>読み込みログ一覧</h2>
+          <span id="logTableCount">最新100件</span>
+        </div>
+        <div id="logTable" class="table-wrap"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
