@@ -52,6 +52,31 @@ button {
   margin-bottom: 18px;
 }
 
+.header-side {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.help-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 1px solid #c9d9e8;
+  border-radius: 6px;
+  background: #eef4fa;
+  color: #17324d;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.help-link:hover {
+  background: #dfeefa;
+  border-color: #9fc3e4;
+}
+
 h1,
 h2,
 p {
@@ -385,8 +410,21 @@ th {
   text-align: center;
 }
 
+.readme-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.readme-panel ol,
+.readme-panel ul {
+  margin: 0;
+  padding-left: 24px;
+}
+
 @media (max-width: 980px) {
   .app-header,
+  .header-side,
   .import-panel {
     align-items: stretch;
     flex-direction: column;

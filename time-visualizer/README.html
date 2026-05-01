@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>業務時間可視化 使い方</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <h1>業務時間可視化 使い方</h1>
+        <p>time-tracker から出力したCSVを集計・可視化する別アプリです。</p>
+      </div>
+      <div class="header-side">
+        <a class="help-link" href="index.html">アプリへ戻る</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel readme-panel">
+        <h2>概要</h2>
+        <p>このアプリは、time-tracker の「CSV出力」で作成したCSVファイルを読み込み、業務カテゴリごとの時間を確認するためのローカル用ツールです。</p>
+        <p>サーバーやログインは使いません。読み込んだCSVの内容は画面上で集計されます。</p>
+      </section>
+
+      <section class="panel readme-panel">
+        <h2>CSVの読み込み</h2>
+        <ol>
+          <li>「CSVファイルを選択」を押します。</li>
+          <li>time-tracker から出力したCSVファイルを選びます。</li>
+          <li>複数ファイルをまとめて選択できます。</li>
+          <li>読み込み後、各グラフと集計表が自動で更新されます。</li>
+        </ol>
+        <p>一度に読み込めるCSVファイルは最大100個です。</p>
+      </section>
+
+      <section class="panel readme-panel">
+        <h2>表示される集計</h2>
+        <ul>
+          <li>総実作業時間</li>
+          <li>総停止時間</li>
+          <li>1日平均</li>
+          <li>最多カテゴリ</li>
+          <li>日別の実作業時間</li>
+          <li>カテゴリ別の実作業時間</li>
+          <li>曜日別の実作業時間</li>
+          <li>状態別の件数</li>
+          <li>カテゴリ集計表</li>
+          <li>読み込みログ一覧</li>
+        </ul>
+      </section>
+
+      <section class="panel readme-panel">
+        <h2>絞り込み</h2>
+        <p>開始日、終了日、カテゴリ、状態で表示対象を絞り込めます。絞り込みを変更すると、グラフ・集計表・ログ一覧も同時に更新されます。</p>
+      </section>
+
+      <section class="panel readme-panel">
+        <h2>カテゴリ集計表</h2>
+        <p>カテゴリごとに、件数、実作業時間、停止時間、1件平均、構成比を表示します。</p>
+        <p>構成比は、絞り込み後の総実作業時間に対して、そのカテゴリが占める割合です。</p>
+      </section>
+
+      <section class="panel readme-panel">
+        <h2>注意点</h2>
+        <p>このアプリはCSVを読み込んで表示するだけで、time-tracker の localStorage データは変更しません。</p>
+        <p>画面を再読み込みすると、読み込んだCSVの状態はリセットされます。必要な場合は再度CSVを選択してください。</p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
