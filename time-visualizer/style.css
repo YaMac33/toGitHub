@@ -410,6 +410,25 @@ th {
   text-align: center;
 }
 
+.collapsible-data.is-collapsed .collapsible-extra {
+  display: none;
+}
+
+.collapse-toggle {
+  min-height: 38px;
+  margin-top: 12px;
+  padding: 7px 14px;
+  border: 1px solid #c9d9e8;
+  border-radius: 6px;
+  background: #fff;
+  color: #17324d;
+  font-weight: 700;
+}
+
+.collapse-toggle:hover {
+  background: #eef4fa;
+}
+
 .readme-panel {
   display: grid;
   gap: 10px;

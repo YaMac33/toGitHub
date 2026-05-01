@@ -108,6 +108,8 @@
     els.editCancelButton.addEventListener("click", closeEditPanel);
     els.editCategory.addEventListener("change", updateEditCustomState);
     els.historyList.addEventListener("click", handleHistoryAction);
+    els.todayList.addEventListener("click", handleCollapseToggle);
+    els.historyList.addEventListener("click", handleCollapseToggle);
     document.addEventListener("keydown", handleShortcut);
   }
 
@@ -329,14 +331,15 @@
       return;
     }
 
-    els.todayList.innerHTML = todayDone.map(function (log) {
-      return '<div class="log-item">' +
+    var items = todayDone.map(function (log, index) {
+      return '<div class="log-item ' + (index >= 3 ? "collapsible-extra" : "") + '">' +
         '<div class="log-time">' + escapeHtml(formatTimeRange(log)) + '</div>' +
         '<div class="log-category">' + escapeHtml(getDisplayCategory(log)) + '</div>' +
         '<div class="minutes">実作業 ' + escapeHtml(minutesText(log.work_minutes)) + '</div>' +
         '<div class="minutes">停止 ' + escapeHtml(minutesText(log.pause_minutes)) + '</div>' +
         '</div>';
     }).join("");
+    els.todayList.innerHTML = '<div id="todayRecordsCollapse" class="collapsible-data is-collapsed">' + items + "</div>" + renderCollapseButton("todayRecordsCollapse", todayDone.length);
   }
 
   function renderHistory(logs) {
@@ -349,11 +352,11 @@
       return;
     }
 
-    var rows = latest.map(function (log) {
+    var rows = latest.map(function (log, index) {
       var totals = calculateTimes(log, new Date());
       var workMinutes = log.status === "done" ? log.work_minutes : Math.round(totals.workSeconds / 60);
       var pauseMinutes = log.status === "done" ? log.pause_minutes : Math.round(totals.pauseSeconds / 60);
-      return "<tr>" +
+      return '<tr class="' + (index >= 3 ? "collapsible-extra" : "") + '">' +
         "<td>" + escapeHtml(log.work_date || "") + "</td>" +
         "<td>" + escapeHtml(formatTimeRange(log)) + "</td>" +
         "<td>" + escapeHtml(getDisplayCategory(log)) + "</td>" +
@@ -367,9 +370,30 @@
         "</tr>";
     }).join("");
 
-    els.historyList.innerHTML = '<table class="history-table">' +
+    els.historyList.innerHTML = '<div id="historyRecordsCollapse" class="collapsible-data is-collapsed"><table class="history-table">' +
       "<thead><tr><th>日付</th><th>時間帯</th><th>カテゴリ</th><th>状態</th><th>実作業</th><th>停止</th><th>操作</th></tr></thead>" +
-      "<tbody>" + rows + "</tbody></table>";
+      "<tbody>" + rows + "</tbody></table></div>" + renderCollapseButton("historyRecordsCollapse", latest.length);
+  }
+
+  function renderCollapseButton(targetId, totalCount) {
+    if (totalCount <= 3) {
+      return "";
+    }
+    return '<button type="button" class="collapse-toggle" data-collapse-target="' + escapeHtml(targetId) + '" data-total-count="' + escapeHtml(totalCount) + '">すべて表示（' + escapeHtml(totalCount - 3) + '件）</button>';
+  }
+
+  function handleCollapseToggle(event) {
+    var button = event.target.closest("button[data-collapse-target]");
+    if (!button) {
+      return;
+    }
+    var target = document.getElementById(button.dataset.collapseTarget);
+    if (!target) {
+      return;
+    }
+    var isCollapsed = target.classList.toggle("is-collapsed");
+    var totalCount = Number(button.dataset.totalCount) || 0;
+    button.textContent = isCollapsed ? "すべて表示（" + Math.max(0, totalCount - 3) + "件）" : "折りたたむ";
   }
 
   function handleHistoryAction(event) {

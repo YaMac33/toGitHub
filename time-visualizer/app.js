@@ -45,6 +45,8 @@
     els.toDate.addEventListener("change", render);
     els.categoryFilter.addEventListener("change", render);
     els.statusFilter.addEventListener("change", render);
+    els.categoryTable.addEventListener("click", handleCollapseToggle);
+    els.logTable.addEventListener("click", handleCollapseToggle);
   }
 
   function handleFiles(event) {
@@ -414,11 +416,11 @@
       return;
     }
 
-    var rows = entries.map(function (item) {
+    var rows = entries.map(function (item, index) {
       var share = totalWork ? Math.round((item.value / totalWork) * 1000) / 10 : 0;
       var count = countSummary[item.key] || 0;
       var average = count ? Math.round(item.value / count) : 0;
-      return "<tr>" +
+      return '<tr class="' + (index >= 3 ? "collapsible-extra" : "") + '">' +
         "<td>" + escapeHtml(item.key) + "</td>" +
         "<td>" + escapeHtml(String(count)) + "件</td>" +
         "<td>" + escapeHtml(formatMinutes(item.value)) + "</td>" +
@@ -428,7 +430,7 @@
         "</tr>";
     }).join("");
 
-    els.categoryTable.innerHTML = '<table><thead><tr><th>カテゴリ</th><th>件数</th><th>実作業時間</th><th>停止時間</th><th>1件平均</th><th>構成比</th></tr></thead><tbody>' + rows + "</tbody></table>";
+    els.categoryTable.innerHTML = '<div id="categorySummaryCollapse" class="collapsible-data is-collapsed"><table><thead><tr><th>カテゴリ</th><th>件数</th><th>実作業時間</th><th>停止時間</th><th>1件平均</th><th>構成比</th></tr></thead><tbody>' + rows + "</tbody></table></div>" + renderCollapseButton("categorySummaryCollapse", entries.length);
   }
 
   function renderLogTable(filtered) {
@@ -442,8 +444,8 @@
       return;
     }
 
-    var rows = sorted.map(function (record) {
-      return "<tr>" +
+    var rows = sorted.map(function (record, index) {
+      return '<tr class="' + (index >= 3 ? "collapsible-extra" : "") + '">' +
         "<td>" + escapeHtml(record.work_date || "") + "</td>" +
         "<td>" + escapeHtml(timeRange(record)) + "</td>" +
         "<td>" + escapeHtml(record.display_category) + "</td>" +
@@ -454,7 +456,28 @@
         "</tr>";
     }).join("");
 
-    els.logTable.innerHTML = '<table><thead><tr><th>日付</th><th>時間帯</th><th>カテゴリ</th><th>状態</th><th>実作業</th><th>停止</th><th>読込元</th></tr></thead><tbody>' + rows + "</tbody></table>";
+    els.logTable.innerHTML = '<div id="loadedLogsCollapse" class="collapsible-data is-collapsed"><table><thead><tr><th>日付</th><th>時間帯</th><th>カテゴリ</th><th>状態</th><th>実作業</th><th>停止</th><th>読込元</th></tr></thead><tbody>' + rows + "</tbody></table></div>" + renderCollapseButton("loadedLogsCollapse", sorted.length);
+  }
+
+  function renderCollapseButton(targetId, totalCount) {
+    if (totalCount <= 3) {
+      return "";
+    }
+    return '<button type="button" class="collapse-toggle" data-collapse-target="' + escapeHtml(targetId) + '" data-total-count="' + escapeHtml(totalCount) + '">すべて表示（' + escapeHtml(totalCount - 3) + '件）</button>';
+  }
+
+  function handleCollapseToggle(event) {
+    var button = event.target.closest("button[data-collapse-target]");
+    if (!button) {
+      return;
+    }
+    var target = document.getElementById(button.dataset.collapseTarget);
+    if (!target) {
+      return;
+    }
+    var isCollapsed = target.classList.toggle("is-collapsed");
+    var totalCount = Number(button.dataset.totalCount) || 0;
+    button.textContent = isCollapsed ? "すべて表示（" + Math.max(0, totalCount - 3) + "件）" : "折りたたむ";
   }
 
   function summarizeBy(list, key, valueKey) {
