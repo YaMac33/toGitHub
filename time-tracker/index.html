@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>業務時間記録</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <h1>業務時間記録</h1>
+        <p class="header-sub">個人用の業務時間ログ</p>
+      </div>
+      <div class="today-box">
+        <span>今日の日付</span>
+        <strong id="todayDate">----</strong>
+      </div>
+    </header>
+
+    <main>
+      <section class="section-panel">
+        <div class="section-title-row">
+          <h2>カテゴリ</h2>
+          <span class="hint">数字キー 1-0 でも開始できます</span>
+        </div>
+        <div id="categoryButtons" class="category-grid"></div>
+        <div id="otherInputPanel" class="other-panel" hidden>
+          <label for="otherCategoryInput">その他カテゴリ名</label>
+          <div class="other-input-row">
+            <input id="otherCategoryInput" type="text" autocomplete="off" placeholder="例：庁内調整">
+            <button id="otherStartButton" type="button">開始</button>
+            <button id="otherCancelButton" type="button" class="ghost-button">閉じる</button>
+          </div>
+          <p id="otherError" class="error-text" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="currentPanel" class="current-panel status-none">
+        <div class="section-title-row">
+          <h2>現在の状態</h2>
+          <span id="statusBadge" class="status-badge">未開始</span>
+        </div>
+        <div id="currentEmpty" class="empty-state">現在作業中または一時停止中の記録はありません。</div>
+        <div id="currentDetails" class="current-details" hidden>
+          <div class="current-main">
+            <span class="label">現在のカテゴリ</span>
+            <strong id="currentCategory">-</strong>
+          </div>
+          <div class="current-grid">
+            <div>
+              <span class="label">開始時刻</span>
+              <strong id="currentStart">-</strong>
+            </div>
+            <div>
+              <span class="label">現在の状態</span>
+              <strong id="currentStatus">-</strong>
+            </div>
+            <div>
+              <span class="label">実作業時間</span>
+              <strong id="currentWorkTime">00:00:00</strong>
+            </div>
+            <div>
+              <span class="label">停止時間</span>
+              <strong id="currentPauseTime">00:00:00</strong>
+            </div>
+            <div>
+              <span class="label">総経過時間</span>
+              <strong id="currentTotalTime">00:00:00</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="actions-panel">
+        <button id="pauseButton" type="button" class="action-button pause">停止</button>
+        <button id="resumeButton" type="button" class="action-button resume">再開</button>
+        <button id="endButton" type="button" class="action-button end">終了</button>
+        <span class="hint">S: 停止 / R: 再開 / E: 終了</span>
+      </section>
+
+      <section class="section-panel">
+        <div class="section-title-row">
+          <h2>本日の記録一覧</h2>
+          <span id="todayCount" class="count-label">0件</span>
+        </div>
+        <div id="todayList" class="log-list"></div>
+      </section>
+
+      <section class="section-panel">
+        <div class="section-title-row">
+          <h2>全履歴一覧</h2>
+          <span id="historyCount" class="count-label">最新50件</span>
+        </div>
+        <div id="historyList" class="history-table-wrap"></div>
+      </section>
+
+      <section class="utility-panel">
+        <button id="csvButton" type="button" class="utility-button">CSV出力</button>
+        <button id="deleteButton" type="button" class="utility-button danger">全データ削除</button>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
