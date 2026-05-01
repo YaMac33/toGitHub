@@ -415,7 +415,7 @@
     }
 
     var rows = entries.map(function (item) {
-      var share = totalWork ? Math.round((item.value / totalWork) * 10) / 10 : 0;
+      var share = totalWork ? Math.round((item.value / totalWork) * 1000) / 10 : 0;
       var count = countSummary[item.key] || 0;
       var average = count ? Math.round(item.value / count) : 0;
       return "<tr>" +
