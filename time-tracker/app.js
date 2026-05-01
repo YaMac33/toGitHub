@@ -16,12 +16,12 @@
     "0": "その他"
   };
   var timerId = null;
-
   var els = {};
 
   document.addEventListener("DOMContentLoaded", function () {
     cacheElements();
     buildCategoryButtons();
+    buildEditCategoryOptions();
     bindEvents();
     renderFromStorage();
     startTimer();
@@ -54,6 +54,19 @@
     els.historyCount = document.getElementById("historyCount");
     els.csvButton = document.getElementById("csvButton");
     els.deleteButton = document.getElementById("deleteButton");
+    els.editPanel = document.getElementById("editPanel");
+    els.editForm = document.getElementById("editForm");
+    els.editLogId = document.getElementById("editLogId");
+    els.editLogLabel = document.getElementById("editLogLabel");
+    els.editCategory = document.getElementById("editCategory");
+    els.editCustomCategory = document.getElementById("editCustomCategory");
+    els.editStartedAt = document.getElementById("editStartedAt");
+    els.editEndedAt = document.getElementById("editEndedAt");
+    els.editStatus = document.getElementById("editStatus");
+    els.editWorkMinutes = document.getElementById("editWorkMinutes");
+    els.editPauseMinutes = document.getElementById("editPauseMinutes");
+    els.editError = document.getElementById("editError");
+    els.editCancelButton = document.getElementById("editCancelButton");
   }
 
   function buildCategoryButtons() {
@@ -71,6 +84,12 @@
     });
   }
 
+  function buildEditCategoryOptions() {
+    els.editCategory.innerHTML = categories.map(function (category) {
+      return '<option value="' + escapeHtml(category) + '">' + escapeHtml(category) + "</option>";
+    }).join("");
+  }
+
   function bindEvents() {
     els.otherStartButton.addEventListener("click", startOtherCategory);
     els.otherCancelButton.addEventListener("click", hideOtherInput);
@@ -85,6 +104,10 @@
     els.endButton.addEventListener("click", endCurrentLog);
     els.csvButton.addEventListener("click", exportCsv);
     els.deleteButton.addEventListener("click", deleteAllData);
+    els.editForm.addEventListener("submit", saveEditedLog);
+    els.editCancelButton.addEventListener("click", closeEditPanel);
+    els.editCategory.addEventListener("change", updateEditCustomState);
+    els.historyList.addEventListener("click", handleHistoryAction);
     document.addEventListener("keydown", handleShortcut);
   }
 
@@ -175,17 +198,13 @@
       started_at: nowText,
       ended_at: "",
       status: "working",
-      segments: [
-        {
-          start_at: nowText,
-          end_at: ""
-        }
-      ],
+      segments: [{ start_at: nowText, end_at: "" }],
       work_minutes: "",
       pause_minutes: ""
     });
 
     saveLogs(logs);
+    closeEditPanel();
     renderFromStorage();
   }
 
@@ -210,10 +229,7 @@
       return;
     }
     current.segments = normalizeSegments(current.segments);
-    current.segments.push({
-      start_at: formatDateTime(new Date()),
-      end_at: ""
-    });
+    current.segments.push({ start_at: formatDateTime(new Date()), end_at: "" });
     current.status = "working";
     saveLogs(logs);
     renderFromStorage();
@@ -261,7 +277,7 @@
       return null;
     }
     activeLogs.sort(function (a, b) {
-      return parseDateTime(b.started_at).getTime() - parseDateTime(a.started_at).getTime();
+      return safeTime(parseDateTime(b.started_at)) - safeTime(parseDateTime(a.started_at));
     });
     return activeLogs[0];
   }
@@ -278,14 +294,12 @@
     }
 
     var totals = calculateTimes(current, new Date());
-    var displayCategory = getDisplayCategory(current);
-
     els.currentPanel.classList.add(current.status === "working" ? "status-working" : "status-paused");
     els.statusBadge.classList.add(current.status);
     els.statusBadge.textContent = statusLabel(current.status);
     els.currentEmpty.hidden = true;
     els.currentDetails.hidden = false;
-    els.currentCategory.textContent = displayCategory;
+    els.currentCategory.textContent = getDisplayCategory(current);
     els.currentStart.textContent = current.started_at || "-";
     els.currentStatus.textContent = statusLabel(current.status);
     els.currentWorkTime.textContent = formatDuration(totals.workSeconds);
@@ -295,9 +309,8 @@
 
   function renderControls(current) {
     var status = current ? current.status : "";
-    var categoryDisabled = false;
     Array.prototype.forEach.call(els.categoryButtons.querySelectorAll("button"), function (button) {
-      button.disabled = categoryDisabled;
+      button.disabled = false;
     });
     els.pauseButton.disabled = status !== "working";
     els.resumeButton.disabled = status !== "paused";
@@ -347,12 +360,177 @@
         '<td><span class="status-text ' + escapeHtml(log.status || "") + '">' + escapeHtml(statusLabel(log.status)) + "</span></td>" +
         "<td>" + escapeHtml(minutesText(workMinutes)) + "</td>" +
         "<td>" + escapeHtml(minutesText(pauseMinutes)) + "</td>" +
+        '<td class="history-actions">' +
+        '<button type="button" class="table-button" data-action="edit" data-log-id="' + escapeHtml(log.log_id) + '">編集</button>' +
+        '<button type="button" class="table-button danger" data-action="delete" data-log-id="' + escapeHtml(log.log_id) + '">削除</button>' +
+        "</td>" +
         "</tr>";
     }).join("");
 
     els.historyList.innerHTML = '<table class="history-table">' +
-      "<thead><tr><th>日付</th><th>時間帯</th><th>カテゴリ</th><th>状態</th><th>実作業</th><th>停止</th></tr></thead>" +
+      "<thead><tr><th>日付</th><th>時間帯</th><th>カテゴリ</th><th>状態</th><th>実作業</th><th>停止</th><th>操作</th></tr></thead>" +
       "<tbody>" + rows + "</tbody></table>";
+  }
+
+  function handleHistoryAction(event) {
+    var button = event.target.closest("button[data-action]");
+    if (!button) {
+      return;
+    }
+    var action = button.dataset.action;
+    var logId = button.dataset.logId;
+    if (action === "edit") {
+      openEditPanel(logId);
+    } else if (action === "delete") {
+      deleteOneLog(logId);
+    }
+  }
+
+  function openEditPanel(logId) {
+    var log = findLogById(logId);
+    if (!log) {
+      return;
+    }
+    var totals = calculateTimes(log, new Date());
+    var workMinutes = log.status === "done" ? log.work_minutes : Math.round(totals.workSeconds / 60);
+    var pauseMinutes = log.status === "done" ? log.pause_minutes : Math.round(totals.pauseSeconds / 60);
+
+    els.editError.textContent = "";
+    els.editPanel.hidden = false;
+    els.editLogId.value = log.log_id;
+    els.editLogLabel.textContent = log.log_id;
+    els.editCategory.value = categories.indexOf(log.work_category) >= 0 ? log.work_category : "その他";
+    els.editCustomCategory.value = log.work_category_custom || "";
+    els.editStartedAt.value = toDatetimeLocalValue(log.started_at);
+    els.editEndedAt.value = toDatetimeLocalValue(log.ended_at);
+    els.editStatus.value = log.status || "done";
+    els.editWorkMinutes.value = minutesInputValue(workMinutes);
+    els.editPauseMinutes.value = minutesInputValue(pauseMinutes);
+    updateEditCustomState();
+    els.editPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function closeEditPanel() {
+    if (!els.editPanel) {
+      return;
+    }
+    els.editPanel.hidden = true;
+    els.editForm.reset();
+    els.editError.textContent = "";
+  }
+
+  function updateEditCustomState() {
+    var isOther = els.editCategory.value === "その他";
+    els.editCustomCategory.disabled = !isOther;
+    if (!isOther) {
+      els.editCustomCategory.value = "";
+    }
+  }
+
+  function saveEditedLog(event) {
+    event.preventDefault();
+    var logs = loadLogs();
+    var log = logs.filter(function (item) {
+      return item.log_id === els.editLogId.value;
+    })[0];
+    if (!log) {
+      els.editError.textContent = "対象の記録が見つかりません。";
+      return;
+    }
+
+    var category = els.editCategory.value;
+    var customCategory = els.editCustomCategory.value.trim();
+    var status = els.editStatus.value;
+    var started = fromDatetimeLocalValue(els.editStartedAt.value);
+    var ended = fromDatetimeLocalValue(els.editEndedAt.value);
+    var workMinutes = numberOrNull(els.editWorkMinutes.value);
+    var pauseMinutes = numberOrNull(els.editPauseMinutes.value);
+
+    if (category === "その他" && !customCategory) {
+      els.editError.textContent = "その他のカテゴリ名を入力してください。";
+      return;
+    }
+    if (!isFinite(started.getTime())) {
+      els.editError.textContent = "開始日時を正しく入力してください。";
+      return;
+    }
+    if (status === "done" && !isFinite(ended.getTime())) {
+      els.editError.textContent = "終了済みにする場合は終了日時を入力してください。";
+      return;
+    }
+    if (isFinite(ended.getTime()) && ended.getTime() < started.getTime()) {
+      els.editError.textContent = "終了日時は開始日時以降にしてください。";
+      return;
+    }
+
+    var totalMinutes = isFinite(ended.getTime()) ? Math.max(0, Math.round((ended.getTime() - started.getTime()) / 60000)) : null;
+    if (workMinutes === null) {
+      workMinutes = totalMinutes !== null ? totalMinutes : 0;
+    }
+    if (pauseMinutes === null) {
+      pauseMinutes = totalMinutes !== null ? Math.max(0, totalMinutes - workMinutes) : 0;
+    }
+    if (totalMinutes !== null && workMinutes + pauseMinutes > totalMinutes) {
+      els.editError.textContent = "実作業時間と停止時間の合計が総経過時間を超えています。";
+      return;
+    }
+
+    log.work_date = formatDate(started);
+    log.work_category = category;
+    log.work_category_custom = category === "その他" ? customCategory : "";
+    log.started_at = formatDateTime(started);
+    log.status = status;
+    log.ended_at = status === "done" ? formatDateTime(ended) : "";
+    log.work_minutes = status === "done" ? workMinutes : "";
+    log.pause_minutes = status === "done" ? pauseMinutes : "";
+    log.segments = buildSegmentsFromEdit(started, ended, status, workMinutes);
+
+    saveLogs(logs);
+    closeEditPanel();
+    renderFromStorage();
+  }
+
+  function deleteOneLog(logId) {
+    var log = findLogById(logId);
+    if (!log) {
+      return;
+    }
+    if (!confirm("選択した記録を削除します。元に戻せません。よろしいですか？")) {
+      return;
+    }
+    var logs = loadLogs().filter(function (item) {
+      return item.log_id !== logId;
+    });
+    saveLogs(logs);
+    if (els.editLogId.value === logId) {
+      closeEditPanel();
+    }
+    renderFromStorage();
+  }
+
+  function findLogById(logId) {
+    return loadLogs().filter(function (log) {
+      return log.log_id === logId;
+    })[0] || null;
+  }
+
+  function buildSegmentsFromEdit(started, ended, status, workMinutes) {
+    var startText = formatDateTime(started);
+    if (status === "working") {
+      return [{ start_at: startText, end_at: "" }];
+    }
+    if (status === "paused") {
+      var pauseEnd = addMinutes(started, Math.max(0, workMinutes || 0));
+      return [{ start_at: startText, end_at: formatDateTime(pauseEnd) }];
+    }
+    if (!workMinutes) {
+      return [];
+    }
+    var segmentEnd = addMinutes(started, workMinutes);
+    if (isFinite(ended.getTime()) && segmentEnd.getTime() > ended.getTime()) {
+      segmentEnd = ended;
+    }
+    return [{ start_at: startText, end_at: formatDateTime(segmentEnd) }];
   }
 
   // 時間計算処理。segments は実作業時間のみなので、停止時間は総経過から差し引いて求める。
@@ -371,10 +549,9 @@
       }
     });
 
-    var pauseSeconds = Math.max(0, totalSeconds - workSeconds);
     return {
       workSeconds: workSeconds,
-      pauseSeconds: pauseSeconds,
+      pauseSeconds: Math.max(0, totalSeconds - workSeconds),
       totalSeconds: totalSeconds
     };
   }
@@ -406,13 +583,14 @@
       return;
     }
     saveLogs([]);
+    closeEditPanel();
     renderFromStorage();
   }
 
   function handleShortcut(event) {
     var target = event.target;
     var tagName = target && target.tagName ? target.tagName.toLowerCase() : "";
-    if (tagName === "input" || tagName === "textarea" || target.isContentEditable) {
+    if (tagName === "input" || tagName === "textarea" || tagName === "select" || target.isContentEditable) {
       return;
     }
 
@@ -491,24 +669,53 @@
     return isFinite(number) ? String(number) + "分" : "";
   }
 
+  function minutesInputValue(value) {
+    var number = Number(value);
+    return isFinite(number) ? String(Math.max(0, Math.round(number))) : "";
+  }
+
+  function numberOrNull(value) {
+    if (value === "") {
+      return null;
+    }
+    var number = Number(value);
+    return isFinite(number) && number >= 0 ? Math.round(number) : null;
+  }
+
   function createLogId(date) {
     return formatIdTimestamp(date) + "-" + Math.random().toString(36).slice(2, 8);
   }
 
   function parseDateTime(value) {
-    if (!value || typeof value !== "string") {
-      return new Date(NaN);
-    }
-    var parts = value.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
+    var parts = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
     if (!parts) {
       return new Date(NaN);
     }
     return new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]), Number(parts[4]), Number(parts[5]), Number(parts[6]));
   }
 
+  function fromDatetimeLocalValue(value) {
+    var parts = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+    if (!parts) {
+      return new Date(NaN);
+    }
+    return new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]), Number(parts[4]), Number(parts[5]), Number(parts[6] || 0));
+  }
+
+  function toDatetimeLocalValue(value) {
+    if (!value) {
+      return "";
+    }
+    return value.replace(" ", "T");
+  }
+
   function safeTime(date) {
     var time = date instanceof Date ? date.getTime() : NaN;
     return isFinite(time) ? time : 0;
+  }
+
+  function addMinutes(date, minutes) {
+    return new Date(date.getTime() + Math.max(0, Number(minutes) || 0) * 60000);
   }
 
   function formatDateTime(date) {

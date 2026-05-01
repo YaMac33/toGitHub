@@ -96,6 +96,53 @@
         <div id="historyList" class="history-table-wrap"></div>
       </section>
 
+      <section id="editPanel" class="edit-panel" hidden>
+        <div class="section-title-row">
+          <h2>履歴の編集</h2>
+          <span id="editLogLabel" class="count-label">-</span>
+        </div>
+        <form id="editForm" class="edit-form">
+          <input id="editLogId" type="hidden">
+          <div class="form-field">
+            <label for="editCategory">カテゴリ</label>
+            <select id="editCategory"></select>
+          </div>
+          <div class="form-field">
+            <label for="editCustomCategory">その他カテゴリ名</label>
+            <input id="editCustomCategory" type="text" autocomplete="off">
+          </div>
+          <div class="form-field">
+            <label for="editStartedAt">開始日時</label>
+            <input id="editStartedAt" type="datetime-local" step="1" required>
+          </div>
+          <div class="form-field">
+            <label for="editEndedAt">終了日時</label>
+            <input id="editEndedAt" type="datetime-local" step="1">
+          </div>
+          <div class="form-field">
+            <label for="editStatus">状態</label>
+            <select id="editStatus">
+              <option value="done">終了済み</option>
+              <option value="working">作業中</option>
+              <option value="paused">一時停止中</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="editWorkMinutes">実作業時間（分）</label>
+            <input id="editWorkMinutes" type="number" min="0" step="1">
+          </div>
+          <div class="form-field">
+            <label for="editPauseMinutes">停止時間（分）</label>
+            <input id="editPauseMinutes" type="number" min="0" step="1">
+          </div>
+          <p id="editError" class="error-text" aria-live="polite"></p>
+          <div class="edit-actions">
+            <button type="submit" class="utility-button">保存</button>
+            <button id="editCancelButton" type="button" class="utility-button neutral">キャンセル</button>
+          </div>
+        </form>
+      </section>
+
       <section class="utility-panel">
         <button id="csvButton" type="button" class="utility-button">CSV出力</button>
         <button id="deleteButton" type="button" class="utility-button danger">全データ削除</button>

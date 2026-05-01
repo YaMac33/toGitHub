@@ -30,7 +30,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -102,7 +103,8 @@ h2 {
 .section-panel,
 .current-panel,
 .actions-panel,
-.utility-panel {
+.utility-panel,
+.edit-panel {
   margin-top: 16px;
   padding: 20px;
   border: 1px solid var(--line);
@@ -335,7 +337,7 @@ h2 {
 .history-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 860px;
+  min-width: 980px;
 }
 
 .history-table th,
@@ -372,6 +374,78 @@ h2 {
   color: var(--paused);
 }
 
+.history-actions {
+  white-space: nowrap;
+}
+
+.table-button {
+  min-height: 32px;
+  margin-right: 6px;
+  padding: 4px 11px;
+  border: 1px solid #b9c8d8;
+  border-radius: 6px;
+  background: #fff;
+  color: #17324d;
+  font-weight: 700;
+}
+
+.table-button:hover {
+  background: #eef4fa;
+}
+
+.table-button.danger {
+  border-color: #f0b8b1;
+  color: var(--danger);
+}
+
+.edit-panel {
+  border-left: 5px solid var(--primary);
+}
+
+.edit-form {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.form-field {
+  display: grid;
+  gap: 6px;
+}
+
+.form-field label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form-field input,
+.form-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.form-field input:disabled {
+  background: #eef1f5;
+  color: var(--muted);
+}
+
+.edit-form .error-text {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.edit-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .utility-button {
   min-width: 128px;
   padding: 0 18px;
@@ -389,6 +463,12 @@ h2 {
   color: var(--danger);
 }
 
+.utility-button.neutral {
+  background: #fff;
+  border-color: var(--line);
+  color: var(--text);
+}
+
 .empty-list {
   padding: 18px;
   border: 1px dashed var(--line);
@@ -402,6 +482,10 @@ h2 {
   }
 
   .current-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .edit-form {
     grid-template-columns: repeat(2, 1fr);
   }
 
