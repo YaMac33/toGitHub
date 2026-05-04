@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDF書き込みビューアー</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-toolbar" aria-label="PDF操作ツールバー">
+    <label class="file-button">
+      PDF選択
+      <input id="pdfFileInput" type="file" accept="application/pdf">
+    </label>
+
+    <div class="toolbar-group" aria-label="ページ移動">
+      <button id="prevPageButton" type="button">前へ</button>
+      <span id="pageStatus" class="page-status">未読込</span>
+      <button id="nextPageButton" type="button">次へ</button>
+    </div>
+
+    <div class="toolbar-group" aria-label="表示倍率">
+      <button id="zoomOutButton" type="button">縮小</button>
+      <span id="zoomStatus" class="zoom-status">100%</span>
+      <button id="zoomInButton" type="button">拡大</button>
+    </div>
+
+    <div class="toolbar-group" aria-label="履歴操作">
+      <button id="undoButton" type="button">元に戻す</button>
+      <button id="redoButton" type="button">やり直し</button>
+    </div>
+
+    <div class="toolbar-group" aria-label="注釈ツール">
+      <button id="penToolButton" class="active" type="button">描画</button>
+      <button id="textToolButton" type="button">テキスト</button>
+      <button id="eraserToolButton" type="button">消しゴム</button>
+    </div>
+
+    <label class="compact-field">
+      線
+      <select id="strokeShapeSelect">
+        <option value="free">自由線</option>
+        <option value="line">直線</option>
+      </select>
+    </label>
+
+    <label class="compact-field">
+      種類
+      <select id="drawingKindSelect">
+        <option value="pen">ペン</option>
+        <option value="marker">マーカー</option>
+      </select>
+    </label>
+
+    <label class="compact-field">
+      消し方
+      <select id="eraserModeSelect">
+        <option value="object">オブジェクト</option>
+        <option value="partial">通った部分</option>
+      </select>
+    </label>
+
+    <label class="compact-field">
+      色
+      <input id="penColorInput" type="color" value="#d7263d">
+    </label>
+
+    <label class="compact-field width-field">
+      太さ
+      <input id="penWidthInput" type="range" min="1" max="30" value="4">
+      <span id="penWidthStatus">4</span>
+    </label>
+
+    <div class="toolbar-group">
+      <button id="clearPageButton" type="button">現在ページをクリア</button>
+      <button id="savePdfButton" class="primary-button" type="button">保存</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <p id="messageArea" class="message-area">PDFを選択してください。注釈はPDF本文を直接変更せず、保存時に焼き込みます。</p>
+
+    <section class="viewer-shell" aria-label="PDF表示エリア">
+      <div id="pageLayer" class="page-layer">
+        <canvas id="pdfCanvas" class="pdf-canvas"></canvas>
+        <canvas id="annotationCanvas" class="annotation-canvas"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <div id="textEditor" class="text-editor" hidden>
+    <input id="textEditorInput" type="text" placeholder="テキストを入力">
+    <button id="textConfirmButton" type="button">確定</button>
+    <button id="textDeleteButton" class="danger-button" type="button">削除</button>
+    <button id="textCancelButton" type="button">取消</button>
+  </div>
+
+  <script src="lib/pdfjs/pdf.min.js"></script>
+  <script src="lib/pdf-lib/pdf-lib.min.js"></script>
+  <script src="app.js"></script>
+
+  <!--
+    CDNで一時的に試す場合の例です。本番利用では上のローカル lib 配下の読み込みを使ってください。
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  -->
+</body>
+</html>
