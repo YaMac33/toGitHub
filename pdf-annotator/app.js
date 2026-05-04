@@ -29,6 +29,12 @@
     isDrawing: false,
     isErasing: false,
     hasErasedInGesture: false,
+    touchPointers: new Map(),
+    isTouchGesture: false,
+    gestureStartDistance: 0,
+    gestureStartScale: 1.2,
+    gestureLastCenter: null,
+    gestureZoomFrame: null,
     activeStroke: null,
     pendingTextPosition: null,
     editingTextIndex: null,
@@ -61,6 +67,7 @@
     clearButton: document.getElementById("clearPageButton"),
     saveButton: document.getElementById("savePdfButton"),
     messageArea: document.getElementById("messageArea"),
+    viewerShell: document.getElementById("viewerShell"),
     pageLayer: document.getElementById("pageLayer"),
     pdfCanvas: document.getElementById("pdfCanvas"),
     annotationCanvas: document.getElementById("annotationCanvas"),
@@ -282,6 +289,15 @@
       return;
     }
 
+    if (event.pointerType === "touch") {
+      state.touchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (state.touchPointers.size >= 2) {
+        event.preventDefault();
+        startTouchGesture();
+        return;
+      }
+    }
+
     const point = getNormalizedPointFromEvent(event);
 
     if (state.tool === "eraser") {
@@ -300,6 +316,15 @@
   }
 
   function handlePointerMove(event) {
+    if (event.pointerType === "touch" && state.touchPointers.has(event.pointerId)) {
+      state.touchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (state.isTouchGesture) {
+        event.preventDefault();
+        updateTouchGesture();
+        return;
+      }
+    }
+
     const point = getNormalizedPointFromEvent(event);
 
     if (state.isErasing) {
@@ -319,6 +344,15 @@
   }
 
   function finishPointerAction(event) {
+    if (event.pointerType === "touch") {
+      state.touchPointers.delete(event.pointerId);
+      if (state.isTouchGesture) {
+        event.preventDefault();
+        if (state.touchPointers.size < 2) finishTouchGesture();
+        return;
+      }
+    }
+
     if (state.isErasing) {
       finishErasing(event);
       return;
@@ -335,6 +369,105 @@
     state.activeStroke = null;
     redrawAnnotationCanvas();
     updateToolbarState();
+  }
+
+  function startTouchGesture() {
+    cancelActiveAnnotationForTouchGesture();
+    releaseTouchPointerCaptures();
+    hideTextEditor(false);
+    state.isTouchGesture = true;
+
+    const gesture = getTouchGestureInfo();
+    state.gestureStartDistance = gesture.distance;
+    state.gestureStartScale = state.scale;
+    state.gestureLastCenter = gesture.center;
+  }
+
+  function updateTouchGesture() {
+    if (state.touchPointers.size < 2 || !state.gestureLastCenter) return;
+
+    const gesture = getTouchGestureInfo();
+    const deltaX = gesture.center.x - state.gestureLastCenter.x;
+    const deltaY = gesture.center.y - state.gestureLastCenter.y;
+
+    // 2本指で同じ方向へ動かした場合は、表示エリアをスクロールしてページを移動します。
+    elements.viewerShell.scrollLeft -= deltaX;
+    elements.viewerShell.scrollTop -= deltaY;
+    state.gestureLastCenter = gesture.center;
+
+    // 2本指の距離が変わった場合はピンチ拡大・縮小として扱います。
+    if (state.gestureStartDistance > 0) {
+      const nextScale = clamp(
+        state.gestureStartScale * (gesture.distance / state.gestureStartDistance),
+        state.minScale,
+        state.maxScale
+      );
+
+      if (Math.abs(nextScale - state.scale) >= 0.03) {
+        scheduleTouchZoom(nextScale);
+      }
+    }
+  }
+
+  function finishTouchGesture() {
+    state.isTouchGesture = false;
+    state.gestureStartDistance = 0;
+    state.gestureLastCenter = null;
+    state.activeStroke = null;
+    state.isDrawing = false;
+    state.isErasing = false;
+    updateToolbarState();
+  }
+
+  function getTouchGestureInfo() {
+    const points = Array.from(state.touchPointers.values()).slice(0, 2);
+    const first = points[0];
+    const second = points[1] || points[0];
+    const center = {
+      x: (first.x + second.x) / 2,
+      y: (first.y + second.y) / 2
+    };
+    const distance = Math.hypot(second.x - first.x, second.y - first.y);
+    return { center, distance };
+  }
+
+  function scheduleTouchZoom(nextScale) {
+    state.scale = Number(nextScale.toFixed(2));
+    if (state.gestureZoomFrame) return;
+
+    state.gestureZoomFrame = requestAnimationFrame(() => {
+      state.gestureZoomFrame = null;
+      renderCurrentPage();
+    });
+  }
+
+  function cancelActiveAnnotationForTouchGesture() {
+    if (!state.isDrawing && !state.isErasing) return;
+
+    if (state.undoStack.length > 0) {
+      const snapshot = state.undoStack.pop();
+      state.annotationsByPage = snapshot.annotationsByPage;
+      state.nextOrder = snapshot.nextOrder;
+    }
+
+    state.isDrawing = false;
+    state.isErasing = false;
+    state.hasErasedInGesture = false;
+    state.activeStroke = null;
+    redrawAnnotationCanvas();
+    updateToolbarState();
+  }
+
+  function releaseTouchPointerCaptures() {
+    state.touchPointers.forEach((point, pointerId) => {
+      try {
+        if (elements.annotationCanvas.hasPointerCapture(pointerId)) {
+          elements.annotationCanvas.releasePointerCapture(pointerId);
+        }
+      } catch (error) {
+        // capture が無い状態なら何もしません。
+      }
+    });
   }
 
   function startDrawing(event, point) {
