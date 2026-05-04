@@ -290,6 +290,7 @@
     }
 
     if (event.pointerType === "touch") {
+      capturePointer(event);
       state.touchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (state.touchPointers.size >= 2) {
         event.preventDefault();
@@ -373,7 +374,7 @@
 
   function startTouchGesture() {
     cancelActiveAnnotationForTouchGesture();
-    releaseTouchPointerCaptures();
+    captureTouchPointers();
     hideTextEditor(false);
     state.isTouchGesture = true;
 
@@ -416,6 +417,8 @@
     state.activeStroke = null;
     state.isDrawing = false;
     state.isErasing = false;
+    releaseTouchPointerCaptures();
+    state.touchPointers.clear();
     updateToolbarState();
   }
 
@@ -456,6 +459,28 @@
     state.activeStroke = null;
     redrawAnnotationCanvas();
     updateToolbarState();
+  }
+
+  function capturePointer(event) {
+    try {
+      if (!elements.annotationCanvas.hasPointerCapture(event.pointerId)) {
+        elements.annotationCanvas.setPointerCapture(event.pointerId);
+      }
+    } catch (error) {
+      // capture できない状態なら通常のイベント処理に任せます。
+    }
+  }
+
+  function captureTouchPointers() {
+    state.touchPointers.forEach((point, pointerId) => {
+      try {
+        if (!elements.annotationCanvas.hasPointerCapture(pointerId)) {
+          elements.annotationCanvas.setPointerCapture(pointerId);
+        }
+      } catch (error) {
+        // すでに終了した pointer は無視します。
+      }
+    });
   }
 
   function releaseTouchPointerCaptures() {

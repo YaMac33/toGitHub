@@ -145,8 +145,11 @@ button.active {
 }
 
 .viewer-shell {
-  min-height: calc(100vh - 140px);
+  height: calc(100vh - 140px);
+  min-height: 360px;
   overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: none;
   padding: 28px;
   border: 1px solid var(--line);
   border-radius: 8px;
