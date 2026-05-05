@@ -425,6 +425,132 @@
     "explanation": "妖滴（要件⇔適格）＝総合・受入、包結（方式⇔結合）＝外部設計、醤油（詳細⇔単体）＝内部設計の語呂",
     "published": true,
     "link": "https://docs.google.com/document/d/1jG9NaYDRoDbFSWPcpnfKzzUQ3-LcrnFIEacLVUFG6fY/edit?usp=drivesdk"
+  },
+  {
+    "id": "dhcp-01",
+    "question": "IPアドレスを自動割り当てするプロトコル → ？",
+    "answer": [
+      "DHCP"
+    ],
+    "explanation": "端末に自動でIPアドレスなどの設定情報を配布する",
+    "published": true
+  },
+  {
+    "id": "dns-01",
+    "question": "ドメイン名とIPアドレスを変換 → ？",
+    "answer": [
+      "DNS"
+    ],
+    "explanation": "名前解決を行うシステム。UDP/TCPのポート53を使用",
+    "published": true
+  },
+  {
+    "id": "default-gateway-01",
+    "question": "他ネットワークへの出口となる装置のIP → ？",
+    "answer": [
+      "デフォルトゲートウェイ"
+    ],
+    "explanation": "自ネットワーク外へ通信する際に最初に経由するルータ等のアドレス",
+    "published": true
+  },
+
+  // --- 追加データ：セキュリティ ---
+  {
+    "id": "sql-injection-01",
+    "question": "DB操作言語を注入して情報を盗む攻撃 → ？",
+    "answer": [
+      "SQLインジェクション"
+    ],
+    "explanation": "入力フォーム等に不正なSQL文を混入させ、DBを不正操作する攻撃",
+    "published": true
+  },
+  {
+    "id": "cross-site-scripting-01",
+    "question": "スクリプトを埋め込み偽画面を表示させる攻撃 → ？",
+    "answer": [
+      "XSS",
+      "クロスサイトスクリプティング"
+    ],
+    "explanation": "脆弱なWebサイトを介し、閲覧者のブラウザで悪意あるスクリプトを実行させる",
+    "published": true
+  },
+  {
+    "id": "ids-ips-01",
+    "question": "不正侵入を「検知」するのがIDSなら、「防御」するのは？",
+    "answer": [
+      "IPS"
+    ],
+    "explanation": "Intrusion Prevention System。不正侵入を検知し、遮断まで行う",
+    "published": true
+  },
+
+  // --- 追加データ：ストラテジ・マネジメント ---
+  {
+    "id": "swot-analysis-01",
+    "question": "強み・弱み・機会・脅威で分析 → ？",
+    "answer": [
+      "SWOT分析"
+    ],
+    "explanation": "内部環境と外部環境をプラス・マイナス面で評価する手法",
+    "published": true
+  },
+  {
+    "id": "critical-path-01",
+    "question": "プロジェクトの全工程で余裕のない経路 → ？",
+    "answer": [
+      "クリティカルパス"
+    ],
+    "explanation": "最長経路であり、この遅れがプロジェクト全体の遅れに直結する",
+    "published": true
+  },
+  {
+    "id": "slm-01",
+    "question": "サービスの品質を維持・改善する活動 → ？",
+    "answer": [
+      "SLM",
+      "サービスレベル管理"
+    ],
+    "explanation": "SLA(合意)に基づき、PDCAを回してサービス品質を管理すること",
+    "published": true
+  },
+
+  // --- 追加データ：テクノロジ（計算・基礎理論） ---
+  {
+    "id": "bit-byte-01",
+    "question": "1バイト → 何ビット？",
+    "answer": [
+      "8ビット",
+      "8"
+    ],
+    "explanation": "情報の最小単位ビットが8個集まって1バイトとなる",
+    "published": true
+  },
+  {
+    "id": "mtbf-01",
+    "question": "故障から次の故障までの平均時間 → ？",
+    "answer": [
+      "MTBF"
+    ],
+    "explanation": "平均故障間隔。値が大きいほど信頼性が高い",
+    "published": true
+  },
+  {
+    "id": "mttr-01",
+    "question": "修理にかかる平均時間 → ？",
+    "answer": [
+      "MTTR"
+    ],
+    "explanation": "平均修復時間。値が小さいほど保守性が高い",
+    "published": true
+  },
+  {
+    "id": "acid-01",
+    "question": "トランザクションの4特性 → ？",
+    "answer": [
+      "ACID特性"
+    ],
+    "explanation": "原子性・一貫性・独立性・永続性の4つを指す",
+    "published": true
   }
 ]
 ;
