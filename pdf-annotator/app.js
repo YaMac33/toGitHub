@@ -1,3 +1,10 @@
+// ======================================
+// PDF Annotator Web App
+// Author: YaMac33
+// Source: 未定
+// License: Personal Use / No Redistribution
+// ======================================
+
 (function () {
   "use strict";
 
