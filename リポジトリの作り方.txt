@@ -8,10 +8,13 @@
 3. GitHubに対象のリポジトリを作成して、リポジトリのURLをコピーする
 
 4. コピーしたURLをoriginとして登録する
-   git remote add origin URL
+   git remote add origin (URL)
 
 5. ファイルをステージングする
    git add .
 
 6. コミットする
    git commit -m "作成"
+
+7. プッシュする
+   git push
