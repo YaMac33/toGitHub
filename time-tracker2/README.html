@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>業務時間記録 使い方</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <h1>業務時間記録 使い方</h1>
+        <p class="header-sub">ローカルPCで使う個人用の業務時間記録アプリです。</p>
+      </div>
+      <div class="header-side">
+        <a class="help-link" href="index.html">アプリへ戻る</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="section-panel readme-panel">
+        <h2>基本操作</h2>
+        <ol>
+          <li>業務カテゴリのボタンを押すと、その業務の記録が開始されます。</li>
+          <li>作業を中断するときは「停止」を押します。</li>
+          <li>作業を再開するときは「再開」を押します。</li>
+          <li>作業が終わったら「終了」を押します。</li>
+        </ol>
+        <p>同時に作業中にできる記録は1件だけです。別のカテゴリを押すと、現在の記録は自動で終了し、新しいカテゴリの記録が開始されます。</p>
+      </section>
+
+      <section class="section-panel readme-panel">
+        <h2>その他カテゴリ</h2>
+        <p>「その他」を押すとカテゴリ名の入力欄が表示されます。入力後に「開始」を押すか、Enterキーで開始できます。</p>
+      </section>
+
+      <section class="section-panel readme-panel">
+        <h2>履歴の編集と削除</h2>
+        <p>「全履歴一覧」の各行にある「編集」から、カテゴリ、開始日時、終了日時、状態、実作業時間、停止時間を修正できます。</p>
+        <p>「削除」を押すと、その1件だけを削除できます。削除前に確認メッセージが表示されます。</p>
+      </section>
+
+      <section class="section-panel readme-panel">
+        <h2>CSV出力</h2>
+        <p>「CSV出力」を押すと、ブラウザに保存されている全ログをCSVファイルとして出力します。CSVはUTF-8 BOM付きなので、Excelでも文字化けしにくい形式です。</p>
+      </section>
+
+      <section class="section-panel readme-panel">
+        <h2>保存場所</h2>
+        <p>記録データはブラウザの localStorage に保存されます。サーバーやログインは使いません。</p>
+        <p>ブラウザのデータ削除や「全データ削除」を行うと記録は消えます。必要に応じてCSV出力でバックアップしてください。</p>
+      </section>
+
+      <section class="section-panel readme-panel">
+        <h2>キーボードショートカット</h2>
+        <table class="readme-table">
+          <thead>
+            <tr>
+              <th>キー</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>会議を開始</td></tr>
+            <tr><td>2</td><td>打合せを開始</td></tr>
+            <tr><td>3</td><td>議会対応を開始</td></tr>
+            <tr><td>4</td><td>窓口対応を開始</td></tr>
+            <tr><td>5</td><td>電話対応を開始</td></tr>
+            <tr><td>6</td><td>資料作成を開始</td></tr>
+            <tr><td>7</td><td>作業を開始</td></tr>
+            <tr><td>8</td><td>訪問を開始</td></tr>
+            <tr><td>9</td><td>現場を開始</td></tr>
+            <tr><td>0</td><td>その他を開始</td></tr>
+            <tr><td>S</td><td>停止</td></tr>
+            <tr><td>R</td><td>再開</td></tr>
+            <tr><td>E</td><td>終了</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
