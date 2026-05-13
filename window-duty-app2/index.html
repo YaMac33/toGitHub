@@ -11,6 +11,9 @@
     <header class="app-header">
       <h1>窓口受付当番表作成アプリ</h1>
       <p>平日のA〜D枠を、職員ごとの総回数・枠別回数・月別調整ルールを見ながら自動割当します。</p>
+      <nav class="page-nav" aria-label="ページ移動">
+        <a href="README.html">READMEを見る</a>
+      </nav>
     </header>
 
     <main class="layout">
@@ -70,6 +73,13 @@
             </div>
             <button id="swapCellsBtn" type="button" class="primary">選択した2枠を入れ替え</button>
             <button id="clearSwapSelectionBtn" type="button">選択解除</button>
+          </div>
+          <div class="form-row cell-edit-form">
+            <label class="field">
+              <span>選択中の1枠目をこの職員に変更</span>
+              <select id="cellEditStaffSelect"></select>
+            </label>
+            <button id="replaceCellStaffBtn" type="button" class="primary">名前を書き換え</button>
           </div>
         </div>
 

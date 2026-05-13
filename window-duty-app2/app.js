@@ -44,6 +44,8 @@
     elements.swapSecondLabel = document.getElementById("swapSecondLabel");
     elements.swapCellsBtn = document.getElementById("swapCellsBtn");
     elements.clearSwapSelectionBtn = document.getElementById("clearSwapSelectionBtn");
+    elements.cellEditStaffSelect = document.getElementById("cellEditStaffSelect");
+    elements.replaceCellStaffBtn = document.getElementById("replaceCellStaffBtn");
 
     elements.ruleMonthLabel = document.getElementById("ruleMonthLabel");
     elements.ruleStaffSelect = document.getElementById("ruleStaffSelect");
@@ -84,6 +86,7 @@
     elements.scheduleTableBody.addEventListener("click", handleScheduleCellClick);
     elements.swapCellsBtn.addEventListener("click", swapSelectedCells);
     elements.clearSwapSelectionBtn.addEventListener("click", clearSwapSelection);
+    elements.replaceCellStaffBtn.addEventListener("click", replaceSelectedCellStaff);
     elements.addRuleBtn.addEventListener("click", addMonthlyRule);
     elements.addVacationBtn.addEventListener("click", addVacation);
     elements.addHolidayBtn.addEventListener("click", addHoliday);
@@ -282,13 +285,15 @@
   function renderStaffSelects() {
     renderStaffSelect(elements.vacationStaffSelect, "職員データがありません");
     renderStaffSelect(elements.ruleStaffSelect, "職員データがありません");
+    renderStaffSelect(elements.cellEditStaffSelect, "職員データがありません", { activeOnly: true });
   }
 
-  function renderStaffSelect(select, emptyText) {
+  function renderStaffSelect(select, emptyText, options = {}) {
     const current = select.value;
     select.innerHTML = "";
+    const staffList = options.activeOnly ? getActiveStaff() : state.staff;
 
-    if (state.staff.length === 0) {
+    if (staffList.length === 0) {
       const option = document.createElement("option");
       option.value = "";
       option.textContent = emptyText;
@@ -296,14 +301,14 @@
       return;
     }
 
-    state.staff.forEach((staff) => {
+    staffList.forEach((staff) => {
       const option = document.createElement("option");
       option.value = staff.staff_id;
       option.textContent = `${staff.name}（${typeLabel(staff.type)}）`;
       select.appendChild(option);
     });
 
-    if (state.staff.some((staff) => staff.staff_id === current)) {
+    if (staffList.some((staff) => staff.staff_id === current)) {
       select.value = current;
     }
   }
@@ -370,6 +375,62 @@
     showMessage(`${firstLabel} と ${secondLabel} を入れ替えました。`, "success");
   }
 
+  function replaceSelectedCellStaff() {
+    if (state.schedule.length === 0) {
+      showMessage("書き換えできる当番表がありません。先に自動作成してください。", "error");
+      return;
+    }
+
+    if (swapSelection.length === 0) {
+      showMessage("書き換える当番表内の名前を1つ選択してください。", "error");
+      return;
+    }
+
+    const targetCell = swapSelection[0];
+    const newStaffId = elements.cellEditStaffSelect.value;
+    const newStaff = findStaff(newStaffId);
+
+    if (!newStaff || !newStaff.active) {
+      showMessage("変更先の職員を選択してください。", "error");
+      return;
+    }
+
+    const currentStaffId = getCellStaffId(state.schedule, targetCell);
+    if (currentStaffId === newStaffId) {
+      showMessage("現在と同じ職員が選択されています。", "error");
+      return;
+    }
+
+    const replacedSchedule = replaceCellStaff(state.schedule, targetCell, newStaffId);
+    const validation = validateSchedule(replacedSchedule);
+    if (!validation.valid) {
+      showMessage(`書き換えできません。${validation.message}`, "error");
+      return;
+    }
+
+    const oldLabel = formatCellLabel({ ...targetCell, staffId: currentStaffId });
+    state.schedule = replacedSchedule;
+    swapSelection.length = 0;
+    saveState();
+    renderSchedule();
+    renderSwapSelection();
+    renderBalance();
+    showMessage(`${oldLabel} を ${newStaff.name}さんに書き換えました。`, "success");
+  }
+
+  function replaceCellStaff(schedule, cell, newStaffId) {
+    return schedule.map((day) => {
+      if (day.date !== cell.date) return day;
+      return {
+        ...day,
+        assignments: {
+          ...day.assignments,
+          [cell.slot]: newStaffId
+        }
+      };
+    });
+  }
+
   function swapTwoCells(schedule, first, second) {
     const firstStaffId = getCellStaffId(schedule, first);
     const secondStaffId = getCellStaffId(schedule, second);
@@ -396,6 +457,9 @@
   function renderSwapSelection() {
     elements.swapFirstLabel.textContent = swapSelection[0] ? formatCellLabel(swapSelection[0]) : "未選択";
     elements.swapSecondLabel.textContent = swapSelection[1] ? formatCellLabel(swapSelection[1]) : "未選択";
+    if (swapSelection[0] && findStaff(swapSelection[0].staffId)) {
+      elements.cellEditStaffSelect.value = swapSelection[0].staffId;
+    }
   }
 
   function formatCellLabel(cell) {
@@ -861,15 +925,26 @@
     const projectedTotal = total + 1;
     const projectedSlot = slotCount + 1;
 
-    const totalDistance = Math.abs(projectedTotal - targetTotal) * 9;
-    const slotDistance = Math.abs(projectedSlot - target.slotTarget) * 18;
+    const totalNeed = targetTotal - total;
+    const slotNeed = target.slotTarget - slotCount;
+    const totalPriority = -totalNeed * 30;
+    const slotPriority = -slotNeed * 20;
+    const totalDistanceAfterAssign = Math.abs(projectedTotal - targetTotal) * 4;
+    const slotDistanceAfterAssign = Math.abs(projectedSlot - target.slotTarget) * 8;
     const slotOverage = Math.max(0, projectedSlot - Math.ceil(target.slotTarget)) * 35;
     const totalOverage = Math.max(0, projectedTotal - Math.ceil(targetTotal)) * 15;
     const mondayFridayPenalty = isMondayOrFriday(dateInfo.weekdayIndex)
       ? countMondayFridayAssignments(staff.staff_id, context) * 18
       : 0;
 
-    return totalDistance + slotDistance + slotOverage + totalOverage + mondayFridayPenalty + Math.random();
+    return totalPriority +
+      slotPriority +
+      totalDistanceAfterAssign +
+      slotDistanceAfterAssign +
+      slotOverage +
+      totalOverage +
+      mondayFridayPenalty +
+      Math.random();
   }
 
   function recordAssignment(context, staffId, slot, dateInfo) {

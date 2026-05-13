@@ -96,6 +96,55 @@ button.danger:hover {
   color: var(--muted);
 }
 
+.page-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.page-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--primary);
+  font-weight: 700;
+  padding: 8px 14px;
+  text-decoration: none;
+}
+
+.page-nav a:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.readme-content h2 {
+  margin: 0 0 10px;
+  font-size: 1.18rem;
+}
+
+.readme-content h3 {
+  margin: 16px 0 6px;
+  font-size: 1rem;
+}
+
+.readme-content p {
+  margin: 8px 0;
+}
+
+.readme-content ul,
+.readme-content ol {
+  margin: 8px 0 0;
+  padding-left: 1.4rem;
+}
+
+.readme-content li {
+  margin: 5px 0;
+}
+
 .layout {
   display: grid;
   gap: 18px;
@@ -203,6 +252,13 @@ button.danger:hover {
 
 .swap-chip strong {
   font-size: 0.95rem;
+}
+
+.cell-edit-form {
+  grid-template-columns: minmax(240px, 1fr) max-content;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
 .schedule-cell-button {
@@ -436,6 +492,7 @@ tbody tr:last-child td {
   .form-row,
   .monthly-rule-form,
   .swap-selection,
+  .cell-edit-form,
   .holiday-form,
   .add-staff-form {
     grid-template-columns: 1fr;
