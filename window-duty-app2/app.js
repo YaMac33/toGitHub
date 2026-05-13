@@ -9,6 +9,7 @@
   const FRIDAY = 5;
 
   const elements = {};
+  const swapSelection = [];
 
   const state = {
     staff: [],
@@ -39,6 +40,10 @@
     elements.messageArea = document.getElementById("messageArea");
     elements.scheduleTableBody = document.getElementById("scheduleTableBody");
     elements.scheduleLabel = document.getElementById("scheduleLabel");
+    elements.swapFirstLabel = document.getElementById("swapFirstLabel");
+    elements.swapSecondLabel = document.getElementById("swapSecondLabel");
+    elements.swapCellsBtn = document.getElementById("swapCellsBtn");
+    elements.clearSwapSelectionBtn = document.getElementById("clearSwapSelectionBtn");
 
     elements.ruleMonthLabel = document.getElementById("ruleMonthLabel");
     elements.ruleStaffSelect = document.getElementById("ruleStaffSelect");
@@ -76,6 +81,9 @@
     elements.generateBtn.addEventListener("click", handleGenerate);
     elements.regenerateBtn.addEventListener("click", handleGenerate);
     elements.csvBtn.addEventListener("click", exportCsv);
+    elements.scheduleTableBody.addEventListener("click", handleScheduleCellClick);
+    elements.swapCellsBtn.addEventListener("click", swapSelectedCells);
+    elements.clearSwapSelectionBtn.addEventListener("click", clearSwapSelection);
     elements.addRuleBtn.addEventListener("click", addMonthlyRule);
     elements.addVacationBtn.addEventListener("click", addVacation);
     elements.addHolidayBtn.addEventListener("click", addHoliday);
@@ -124,6 +132,7 @@
     renderHolidays();
     renderMonthlyRules();
     renderSchedule();
+    renderSwapSelection();
     renderBalance();
   }
 
@@ -297,6 +306,165 @@
     if (state.staff.some((staff) => staff.staff_id === current)) {
       select.value = current;
     }
+  }
+
+  function handleScheduleCellClick(event) {
+    const button = event.target.closest(".schedule-cell-button");
+    if (!button) return;
+
+    const date = button.dataset.date;
+    const slot = button.dataset.slot;
+    const staffId = button.dataset.staffId;
+    const key = cellKey(date, slot);
+    const existingIndex = swapSelection.findIndex((cell) => cell.key === key);
+
+    if (existingIndex >= 0) {
+      swapSelection.splice(existingIndex, 1);
+    } else {
+      if (swapSelection.length >= 2) swapSelection.shift();
+      swapSelection.push({ key, date, slot, staffId });
+    }
+
+    renderSchedule();
+    renderSwapSelection();
+  }
+
+  function swapSelectedCells() {
+    if (state.schedule.length === 0) {
+      showMessage("入れ替えできる当番表がありません。先に自動作成してください。", "error");
+      return;
+    }
+
+    if (swapSelection.length !== 2) {
+      showMessage("当番表内の名前を2つ選択してください。", "error");
+      return;
+    }
+
+    const [first, second] = swapSelection;
+    if (first.key === second.key) {
+      showMessage("別々の枠を選択してください。", "error");
+      return;
+    }
+
+    if (getCellStaffId(state.schedule, first) === getCellStaffId(state.schedule, second)) {
+      showMessage("同じ職員同士のため、入れ替えは不要です。", "error");
+      return;
+    }
+
+    const swappedSchedule = swapTwoCells(state.schedule, first, second);
+
+    const validation = validateSchedule(swappedSchedule);
+    if (!validation.valid) {
+      showMessage(`入れ替えできません。${validation.message}`, "error");
+      return;
+    }
+
+    state.schedule = swappedSchedule;
+    const firstLabel = formatCellLabel(first);
+    const secondLabel = formatCellLabel(second);
+    swapSelection.length = 0;
+    saveState();
+    renderSchedule();
+    renderSwapSelection();
+    renderBalance();
+    showMessage(`${firstLabel} と ${secondLabel} を入れ替えました。`, "success");
+  }
+
+  function swapTwoCells(schedule, first, second) {
+    const firstStaffId = getCellStaffId(schedule, first);
+    const secondStaffId = getCellStaffId(schedule, second);
+
+    return schedule.map((day) => {
+      const assignments = { ...day.assignments };
+      if (day.date === first.date) assignments[first.slot] = secondStaffId;
+      if (day.date === second.date) assignments[second.slot] = firstStaffId;
+      return { ...day, assignments };
+    });
+  }
+
+  function getCellStaffId(schedule, cell) {
+    const day = schedule.find((item) => item.date === cell.date);
+    return day ? day.assignments[cell.slot] : "";
+  }
+
+  function clearSwapSelection() {
+    swapSelection.length = 0;
+    renderSchedule();
+    renderSwapSelection();
+  }
+
+  function renderSwapSelection() {
+    elements.swapFirstLabel.textContent = swapSelection[0] ? formatCellLabel(swapSelection[0]) : "未選択";
+    elements.swapSecondLabel.textContent = swapSelection[1] ? formatCellLabel(swapSelection[1]) : "未選択";
+  }
+
+  function formatCellLabel(cell) {
+    return `${cell.date} ${cell.slot} ${staffName(cell.staffId)}`;
+  }
+
+  function cellKey(date, slot) {
+    return `${date}-${slot}`;
+  }
+
+  function validateSchedule(schedule) {
+    const weekdaySlotHistory = new Map();
+    let previousDay = null;
+
+    for (const day of schedule) {
+      const assignedToday = new Set();
+
+      for (const slot of SLOTS) {
+        const staffId = day.assignments[slot];
+        const staff = findStaff(staffId);
+
+        if (!staff || !staff.active) {
+          return {
+            valid: false,
+            message: `${day.date} ${slot}枠の職員がactiveではありません。`
+          };
+        }
+
+        if (isOnVacation(staffId, day.date)) {
+          return {
+            valid: false,
+            message: `${day.date}は${staff.name}さんの休暇日です。`
+          };
+        }
+
+        if (assignedToday.has(staffId)) {
+          return {
+            valid: false,
+            message: `${day.date}に${staff.name}さんが複数枠へ入っています。`
+          };
+        }
+        assignedToday.add(staffId);
+
+        if (previousDay && previousDay.assignments[slot] === staffId) {
+          return {
+            valid: false,
+            message: `${staff.name}さんが${slot}枠で連続しています。`
+          };
+        }
+
+        const historyKey = `${day.weekdayIndex}-${slot}`;
+        const used = weekdaySlotHistory.get(historyKey) || new Set();
+        if (used.has(staffId)) {
+          return {
+            valid: false,
+            message: `${staff.name}さんが同じ曜日・同じ${slot}枠に複数回入っています。`
+          };
+        }
+
+        if (!weekdaySlotHistory.has(historyKey)) {
+          weekdaySlotHistory.set(historyKey, new Set());
+        }
+        weekdaySlotHistory.get(historyKey).add(staffId);
+      }
+
+      previousDay = day;
+    }
+
+    return { valid: true, message: "" };
   }
 
   function addMonthlyRule() {
@@ -528,6 +696,7 @@
     }
 
     state.schedule = result.schedule;
+    swapSelection.length = 0;
     saveState();
     renderSchedule();
     renderBalance();
@@ -773,6 +942,8 @@
     if (state.schedule.length === 0) {
       elements.scheduleLabel.textContent = "未作成";
       elements.scheduleTableBody.innerHTML = `<tr><td colspan="6" class="empty-cell">対象月を選択して当番表を作成してください。</td></tr>`;
+      swapSelection.length = 0;
+      renderSwapSelection();
       return;
     }
 
@@ -784,10 +955,34 @@
       row.innerHTML = `
         <td>${escapeHtml(day.date)}</td>
         <td>${escapeHtml(day.weekday)}</td>
-        ${SLOTS.map((slot) => `<td>${escapeHtml(staffName(day.assignments[slot]))}</td>`).join("")}
+        ${SLOTS.map((slot) => renderScheduleCell(day, slot)).join("")}
       `;
       elements.scheduleTableBody.appendChild(row);
     });
+    renderSwapSelection();
+  }
+
+  function renderScheduleCell(day, slot) {
+    const staffId = day.assignments[slot];
+    const selectedClass = isCellSelected(day.date, slot) ? " selected" : "";
+    const label = `${day.date} ${slot} ${staffName(staffId)}`;
+    return `
+      <td>
+        <button
+          type="button"
+          class="schedule-cell-button${selectedClass}"
+          data-date="${escapeHtml(day.date)}"
+          data-slot="${escapeHtml(slot)}"
+          data-staff-id="${escapeHtml(staffId)}"
+          aria-label="${escapeHtml(label)}"
+        >${escapeHtml(staffName(staffId))}</button>
+      </td>
+    `;
+  }
+
+  function isCellSelected(date, slot) {
+    const key = cellKey(date, slot);
+    return swapSelection.some((cell) => cell.key === key);
   }
 
   function renderBalance() {
@@ -829,6 +1024,16 @@
     });
 
     return stats;
+  }
+
+  function getAssignedStaffIds() {
+    const staffIds = new Set();
+    state.schedule.forEach((day) => {
+      SLOTS.forEach((slot) => {
+        if (day.assignments[slot]) staffIds.add(day.assignments[slot]);
+      });
+    });
+    return [...staffIds].sort((a, b) => staffName(a).localeCompare(staffName(b), "ja"));
   }
 
   function createEmptyStats() {

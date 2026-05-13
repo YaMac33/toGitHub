@@ -54,6 +54,25 @@
 
         <div id="messageArea" class="message-area" role="status" aria-live="polite"></div>
 
+        <div class="swap-panel" aria-labelledby="swap-title">
+          <div>
+            <h3 id="swap-title">手動入れ替え</h3>
+            <p class="section-note">当番表内の名前を2つ選択し、その2枠だけを入れ替えます。</p>
+          </div>
+          <div class="swap-selection">
+            <div class="swap-chip">
+              <span>1枠目</span>
+              <strong id="swapFirstLabel">未選択</strong>
+            </div>
+            <div class="swap-chip">
+              <span>2枠目</span>
+              <strong id="swapSecondLabel">未選択</strong>
+            </div>
+            <button id="swapCellsBtn" type="button" class="primary">選択した2枠を入れ替え</button>
+            <button id="clearSwapSelectionBtn" type="button">選択解除</button>
+          </div>
+        </div>
+
         <div class="table-wrap schedule-table-wrap">
           <table class="schedule-table">
             <thead>

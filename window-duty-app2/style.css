@@ -164,6 +164,67 @@ button.danger:hover {
   grid-template-columns: minmax(180px, 1fr) minmax(140px, 180px) minmax(220px, 1.4fr) max-content;
 }
 
+.swap-panel {
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.swap-panel h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.swap-selection {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) max-content max-content;
+  gap: 10px;
+  align-items: end;
+  margin-top: 12px;
+}
+
+.swap-chip {
+  display: grid;
+  gap: 3px;
+  min-height: 58px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 8px 10px;
+}
+
+.swap-chip span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.swap-chip strong {
+  font-size: 0.95rem;
+}
+
+.schedule-cell-button {
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 8px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.schedule-cell-button:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.schedule-cell-button.selected {
+  border-color: var(--primary);
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
 .holiday-form {
   grid-template-columns: minmax(160px, 220px) minmax(180px, 1fr) max-content;
 }
@@ -374,6 +435,7 @@ tbody tr:last-child td {
   .action-panel,
   .form-row,
   .monthly-rule-form,
+  .swap-selection,
   .holiday-form,
   .add-staff-form {
     grid-template-columns: 1fr;
