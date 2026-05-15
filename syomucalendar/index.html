@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>スケジュール</title>
+  <link rel="stylesheet" href="app/lib/fullcalendar/index.global.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <h1>スケジュール</h1>
+        <p>Excel正本から出力されたスケジュールデータを閲覧します</p>
+      </div>
+      <nav class="header-actions" aria-label="画面切替">
+        <a href="#calendar" class="nav-button" id="calendarViewLink">カレンダー</a>
+        <a href="#history" class="nav-button" id="historyViewLink">変更・取消履歴</a>
+        <a href="README.html" class="nav-button">使い方</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="errorMessage" class="error-message" hidden>
+        スケジュールデータを読み込めませんでした。
+      </section>
+
+      <section id="calendarScreen" class="screen">
+        <section class="panel calendar-panel" aria-label="カレンダー">
+          <div id="calendar"></div>
+          <div class="calendar-tools">
+            <details class="tool-details">
+              <summary>フィルター</summary>
+              <div class="tool-body">
+                <div class="filters-grid">
+                  <label>
+                    <span>キーワード</span>
+                    <input type="search" id="keywordFilter" placeholder="行事名・場所・担当者など">
+                  </label>
+                  <label>
+                    <span>状態</span>
+                    <select id="statusFilter">
+                      <option value="">すべて</option>
+                      <option value="active">有効</option>
+                      <option value="cancelled">取消</option>
+                      <option value="changed">変更済</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>区分</span>
+                    <select id="categoryFilter">
+                      <option value="">すべて</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>担当者</span>
+                    <select id="staffFilter">
+                      <option value="">すべて</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>文書</span>
+                    <select id="documentFilter">
+                      <option value="">すべて</option>
+                      <option value="要">要</option>
+                      <option value="不要">不要</option>
+                      <option value="済">済</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>挨拶</span>
+                    <select id="greetingFilter">
+                      <option value="">すべて</option>
+                      <option value="要">要</option>
+                      <option value="不要">不要</option>
+                      <option value="済">済</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="filter-actions">
+                  <label class="checkbox-row">
+                    <input type="checkbox" id="showHistoryFilter">
+                    <span>取消・変更履歴を表示する</span>
+                  </label>
+                  <button type="button" class="text-button" id="resetFilters">リセット</button>
+                </div>
+              </div>
+            </details>
+
+            <details class="tool-details">
+              <summary>集計</summary>
+              <div class="summary-grid" id="summaryCards" aria-label="集計"></div>
+            </details>
+          </div>
+        </section>
+
+        <details class="panel overview-panel" id="overviewDetails" aria-label="日別一覧">
+          <summary class="overview-summary">
+            <span>日別一覧</span>
+            <span id="overviewCount" class="muted">0件</span>
+          </summary>
+          <div id="overviewList" class="day-overview-list empty-state">予定はありません。</div>
+        </details>
+      </section>
+
+      <section id="historyScreen" class="screen" hidden>
+        <section class="panel history-panel" aria-label="変更・取消履歴">
+          <div class="section-title">
+            <h2>変更・取消履歴</h2>
+            <a href="#calendar" class="text-button link-button">カレンダーへ戻る</a>
+          </div>
+          <div id="historyCount" class="muted history-total">0件</div>
+          <div id="historyList" class="history-list empty-state">履歴はありません。</div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="detailModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div>
+          <span id="modalStatus" class="badge">有効</span>
+          <h2 id="modalTitle">予定詳細</h2>
+        </div>
+        <button type="button" class="icon-button" id="closeModal" aria-label="閉じる">×</button>
+      </div>
+      <div id="modalBody" class="detail-grid"></div>
+    </div>
+  </div>
+
+  <script src="app/lib/fullcalendar/index.global.min.js"></script>
+  <script src="app/data/schedules/schedules.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 window.APP_DATA.schedules = [
   {
     schedule_id: "SCH-20260601-001",
-    schedule_date: "2026-06-01",
+    schedule_date: "2026-06-02",
     chair_movement: "出席",
     vice_chair_movement: "",
     attendant: "佐藤",
@@ -79,10 +79,10 @@ window.APP_DATA.schedules = [
   },
   {
     schedule_id: "SCH-20260603-001",
-    schedule_date: "2026-06-03",
+    schedule_date: "2026-06-04",
     chair_movement: "出席",
     vice_chair_movement: "出席",
-    attendant: "佐藤、鈴木",
+    attendant: "局長",
     driver_name: "田中",
     outsource_start_time: "0.375",
     outsource_end_time: "0.75",
@@ -120,7 +120,7 @@ window.APP_DATA.schedules = [
     schedule_date: "2026-06-04",
     chair_movement: "出席",
     vice_chair_movement: "",
-    attendant: "佐藤",
+    attendant: "次長",
     driver_name: "高橋",
     outsource_start_time: "0.75",
     outsource_end_time: "0.875",
