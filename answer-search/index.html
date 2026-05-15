@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>一般質問 答弁検索システム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="app/css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="app-kicker">General Question Answer Search</p>
+      <h1>一般質問 答弁検索システム</h1>
+      <p class="app-lead">議員・部署・定例会・答弁種別・処理結果・フリーワードから検索できます。</p>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section class="search-panel">
+      <div class="search-grid">
+        <label>
+          <span>フリーワード</span>
+          <input type="search" id="keywordInput" placeholder="例：救急隊、保護者対応、火災">
+        </label>
+
+        <label>
+          <span>議員名</span>
+          <select id="memberFilter">
+            <option value="">すべて</option>
+          </select>
+        </label>
+
+        <label>
+          <span>部名</span>
+          <select id="departmentFilter">
+            <option value="">すべて</option>
+          </select>
+        </label>
+
+        <label>
+          <span>課名</span>
+          <select id="sectionFilter">
+            <option value="">すべて</option>
+          </select>
+        </label>
+
+        <label>
+          <span>回</span>
+          <select id="sessionFilter">
+            <option value="">すべて</option>
+          </select>
+        </label>
+
+        <label>
+          <span>答弁種別</span>
+          <select id="answerTypeFilter">
+            <option value="">すべて</option>
+          </select>
+        </label>
+
+        <label>
+          <span>処理結果</span>
+          <select id="processResultFilter">
+            <option value="">すべて</option>
+          </select>
+        </label>
+
+        <label>
+          <span>表示対象</span>
+          <select id="displayModeFilter">
+            <option value="all">本答弁・再質問・要望を表示</option>
+            <option value="rootOnly">本答弁のみ表示</option>
+            <option value="hasChildren">再質問・要望ありのみ表示</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="search-actions">
+        <button type="button" id="resetButton">条件をクリア</button>
+        <p id="resultCount" class="result-count">0件</p>
+      </div>
+    </section>
+
+    <section id="results" class="results"></section>
+  </main>
+
+  <script src="app/data/answers/answers.js"></script>
+  <script src="app/js/app.js"></script>
+</body>
+</html>
