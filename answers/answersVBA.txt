@@ -1,0 +1,298 @@
+Option Explicit
+
+'==================================================
+' 標準形Excel → answers.js 出力
+'
+' 前提：
+' 1行目：日本語列名
+' 2行目：英語列名
+' 3行目以降：データ
+'
+' 出力：
+' app/data/answers/answers.js
+'==================================================
+
+Public Sub ExportAnswersJs()
+
+    Dim ws As Worksheet
+    Dim headerMap As Object
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim r As Long
+    Dim c As Long
+
+    Dim keys As Variant
+    Dim outputPath As String
+    Dim text As String
+    Dim line As String
+    Dim value As Variant
+    Dim key As Variant
+
+    Set ws = ActiveSheet
+
+    Set headerMap = CreateObject("Scripting.Dictionary")
+    lastCol = ws.Cells(2, ws.Columns.Count).End(xlToLeft).Column
+
+    ' 2行目の英語列名を読む
+    For c = 1 To lastCol
+        If Trim(CStr(ws.Cells(2, c).Value)) <> "" Then
+            headerMap(Trim(CStr(ws.Cells(2, c).Value))) = c
+        End If
+    Next c
+
+    keys = Array( _
+        "answer_id", _
+        "parent_answer_id", _
+        "root_answer_id", _
+        "answer_level", _
+        "session_raw", _
+        "notice_no", _
+        "member_name", _
+        "party_name", _
+        "department_name", _
+        "section_name", _
+        "item_title", _
+        "category", _
+        "major_item", _
+        "middle_item", _
+        "minor_item", _
+        "answer_type", _
+        "question_summary", _
+        "answer_summary", _
+        "future_policy", _
+        "process_result", _
+        "session_type_code", _
+        "era_code", _
+        "wareki_year", _
+        "session_no", _
+        "notice_no_code", _
+        "major_no", _
+        "middle_no", _
+        "minor_no", _
+        "followup_no", _
+        "sort_order", _
+        "search_text", _
+        "note" _
+    )
+
+    If Not ValidateHeaders(headerMap, keys) Then
+        Exit Sub
+    End If
+
+    lastRow = ws.Cells(ws.Rows.Count, headerMap("answer_id")).End(xlUp).Row
+
+    text = ""
+    text = text & "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
+    text = text & "window.APP_DATA.answers = [" & vbCrLf
+
+    For r = 3 To lastRow
+
+        If Trim(CStr(ws.Cells(r, headerMap("answer_id")).Value)) = "" Then
+            GoTo ContinueLoop
+        End If
+
+        text = text & "  {" & vbCrLf
+
+        For Each key In keys
+
+            value = GetCellValue(ws, headerMap, r, CStr(key))
+
+            ' search_text が空欄なら自動生成
+            If CStr(key) = "search_text" Then
+                If Trim(CStr(value)) = "" Then
+                    value = BuildSearchText(ws, headerMap, r)
+                End If
+            End If
+
+            line = "    " & CStr(key) & ": " & ToJsValue(CStr(key), value)
+
+            If CStr(key) <> keys(UBound(keys)) Then
+                line = line & ","
+            End If
+
+            text = text & line & vbCrLf
+        Next key
+
+        text = text & "  }"
+
+        If r < lastRow Then
+            text = text & ","
+        End If
+
+        text = text & vbCrLf
+
+ContinueLoop:
+    Next r
+
+    text = text & "];" & vbCrLf
+
+    outputPath = ThisWorkbook.Path & Application.PathSeparator & "app" & Application.PathSeparator & "data" & Application.PathSeparator & "answers" & Application.PathSeparator & "answers.js"
+
+    EnsureFolderExists ThisWorkbook.Path & Application.PathSeparator & "app"
+    EnsureFolderExists ThisWorkbook.Path & Application.PathSeparator & "app" & Application.PathSeparator & "data"
+    EnsureFolderExists ThisWorkbook.Path & Application.PathSeparator & "app" & Application.PathSeparator & "data" & Application.PathSeparator & "answers"
+
+    WriteTextFileUtf8 outputPath, text
+
+    MsgBox "answers.js を出力しました。" & vbCrLf & outputPath, vbInformation
+
+End Sub
+
+'==================================================
+' 必須ヘッダー確認
+'==================================================
+Private Function ValidateHeaders(ByVal headerMap As Object, ByVal keys As Variant) As Boolean
+
+    Dim key As Variant
+    Dim missing As String
+
+    missing = ""
+
+    For Each key In keys
+        If Not headerMap.Exists(CStr(key)) Then
+            missing = missing & CStr(key) & vbCrLf
+        End If
+    Next key
+
+    If missing <> "" Then
+        MsgBox "2行目に以下の英語列名がありません。" & vbCrLf & vbCrLf & missing, vbExclamation
+        ValidateHeaders = False
+    Else
+        ValidateHeaders = True
+    End If
+
+End Function
+
+'==================================================
+' セル値取得
+'==================================================
+Private Function GetCellValue( _
+    ByVal ws As Worksheet, _
+    ByVal headerMap As Object, _
+    ByVal rowNumber As Long, _
+    ByVal key As String _
+) As Variant
+
+    If headerMap.Exists(key) Then
+        GetCellValue = ws.Cells(rowNumber, headerMap(key)).Value
+    Else
+        GetCellValue = ""
+    End If
+
+End Function
+
+'==================================================
+' JS値に変換
+'==================================================
+Private Function ToJsValue(ByVal key As String, ByVal value As Variant) As String
+
+    Dim s As String
+    s = CStr(value)
+
+    ' 数値として出したい列
+    If key = "answer_level" Or key = "notice_no" Or key = "sort_order" Then
+        If Trim(s) = "" Then
+            ToJsValue = "0"
+        ElseIf IsNumeric(s) Then
+            ToJsValue = CStr(CLng(s))
+        Else
+            ToJsValue = """" & EscapeJsString(s) & """"
+        End If
+    Else
+        ToJsValue = """" & EscapeJsString(s) & """"
+    End If
+
+End Function
+
+'==================================================
+' JS文字列エスケープ
+'==================================================
+Private Function EscapeJsString(ByVal s As String) As String
+
+    s = Replace(s, "\", "\\")
+    s = Replace(s, """", "\""")
+    s = Replace(s, vbCrLf, "\n")
+    s = Replace(s, vbCr, "\n")
+    s = Replace(s, vbLf, "\n")
+    s = Replace(s, vbTab, "\t")
+
+    EscapeJsString = s
+
+End Function
+
+'==================================================
+' 検索用テキスト自動生成
+'==================================================
+Private Function BuildSearchText( _
+    ByVal ws As Worksheet, _
+    ByVal headerMap As Object, _
+    ByVal rowNumber As Long _
+) As String
+
+    Dim targetKeys As Variant
+    Dim key As Variant
+    Dim parts As String
+    Dim v As String
+
+    targetKeys = Array( _
+        "session_raw", _
+        "notice_no", _
+        "member_name", _
+        "party_name", _
+        "department_name", _
+        "section_name", _
+        "item_title", _
+        "category", _
+        "major_item", _
+        "middle_item", _
+        "minor_item", _
+        "answer_type", _
+        "question_summary", _
+        "answer_summary", _
+        "future_policy", _
+        "process_result" _
+    )
+
+    parts = ""
+
+    For Each key In targetKeys
+        v = Trim(CStr(GetCellValue(ws, headerMap, rowNumber, CStr(key))))
+        If v <> "" Then
+            parts = parts & " " & v
+        End If
+    Next key
+
+    BuildSearchText = Trim(parts)
+
+End Function
+
+'==================================================
+' フォルダ作成
+'==================================================
+Private Sub EnsureFolderExists(ByVal folderPath As String)
+
+    If Dir(folderPath, vbDirectory) = "" Then
+        MkDir folderPath
+    End If
+
+End Sub
+
+'==================================================
+' UTF-8でテキスト出力
+'==================================================
+Private Sub WriteTextFileUtf8(ByVal filePath As String, ByVal content As String)
+
+    Dim stream As Object
+
+    Set stream = CreateObject("ADODB.Stream")
+
+    With stream
+        .Type = 2
+        .Charset = "UTF-8"
+        .Open
+        .WriteText content
+        .SaveToFile filePath, 2
+        .Close
+    End With
+
+End Sub
