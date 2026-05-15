@@ -2,6 +2,9 @@
   "use strict";
 
   const answers = (window.APP_DATA && window.APP_DATA.answers) || [];
+  const state = {
+    expandedRoots: new Set()
+  };
 
   const els = {
     keyword: document.getElementById("keywordInput"),
@@ -87,36 +90,44 @@
       els.answerType.value = "";
       els.processResult.value = "";
       els.displayMode.value = "all";
+      state.expandedRoots.clear();
+      render();
+      els.keyword.focus();
+    });
+
+    els.results.addEventListener("click", event => {
+      const button = event.target.closest("[data-toggle-root]");
+      if (!button) return;
+
+      const rootId = button.dataset.toggleRoot;
+      if (state.expandedRoots.has(rootId)) {
+        state.expandedRoots.delete(rootId);
+      } else {
+        state.expandedRoots.add(rootId);
+      }
+
       render();
     });
   }
 
   function render() {
     const filteredRows = answers.filter(matchesFilters);
-    const groups = buildGroups(filteredRows);
-    const displayGroups = filterGroupsByDisplayMode(groups);
+    const groups = filterGroupsByDisplayMode(buildGroups(filteredRows));
+    const totalChildren = groups.reduce((sum, group) => sum + group.children.length, 0);
 
-    els.resultCount.textContent = `${displayGroups.length}件`;
+    els.resultCount.textContent = `${groups.length}項目 / ${totalChildren}件の再質問・要望`;
 
-    if (displayGroups.length === 0) {
-      els.results.innerHTML = `<div class="empty">該当する答弁はありません。</div>`;
+    if (answers.length === 0) {
+      els.results.innerHTML = '<div class="empty">答弁データが読み込まれていません。</div>';
       return;
     }
 
-    els.results.innerHTML = displayGroups.map(renderGroup).join("");
+    if (groups.length === 0) {
+      els.results.innerHTML = '<div class="empty">該当する答弁はありません。</div>';
+      return;
+    }
 
-    els.results.querySelectorAll("[data-toggle-id]").forEach(button => {
-      button.addEventListener("click", () => {
-        const id = button.dataset.toggleId;
-        const target = document.querySelector(`[data-child-list-id="${cssEscape(id)}"]`);
-        if (!target) return;
-
-        target.classList.toggle("is-hidden");
-        button.textContent = target.classList.contains("is-hidden")
-          ? "再質問・要望を表示"
-          : "再質問・要望を閉じる";
-      });
-    });
+    els.results.innerHTML = groups.map(renderGroup).join("");
   }
 
   function matchesFilters(item) {
@@ -131,14 +142,12 @@
       }
     }
 
-    if (!matchesValue(item.member_name, els.member.value)) return false;
-    if (!matchesValue(item.department_name, els.department.value)) return false;
-    if (!matchesValue(item.section_name, els.section.value)) return false;
-    if (!matchesValue(item.session_raw, els.session.value)) return false;
-    if (!matchesValue(item.answer_type, els.answerType.value)) return false;
-    if (!matchesValue(item.process_result, els.processResult.value)) return false;
-
-    return true;
+    return matchesValue(item.member_name, els.member.value) &&
+      matchesValue(item.department_name, els.department.value) &&
+      matchesValue(item.section_name, els.section.value) &&
+      matchesValue(item.session_raw, els.session.value) &&
+      matchesValue(item.answer_type, els.answerType.value) &&
+      matchesValue(item.process_result, els.processResult.value);
   }
 
   function matchesValue(actual, expected) {
@@ -147,60 +156,46 @@
   }
 
   function buildGroups(rows) {
-    const rowIdSet = new Set(rows.map(row => row.answer_id));
-    const rootIdSet = new Set(rows.map(row => row.root_answer_id));
+    const hitIds = new Set(rows.map(row => row.answer_id));
+    const rootIds = new Set(rows.map(row => row.root_answer_id || row.answer_id));
+    const groups = new Map();
 
-    // 再質問だけがヒットした場合でも、親の本答弁を表示する
-    const relatedRows = answers.filter(row => {
-      return rowIdSet.has(row.answer_id) || rootIdSet.has(row.root_answer_id);
-    });
+    answers
+      .filter(row => hitIds.has(row.answer_id) || rootIds.has(row.root_answer_id || row.answer_id))
+      .forEach(row => {
+        const rootId = row.root_answer_id || row.answer_id;
 
-    const map = new Map();
+        if (!groups.has(rootId)) {
+          groups.set(rootId, {
+            rootId,
+            root: null,
+            children: [],
+            hitIds
+          });
+        }
 
-    relatedRows.forEach(row => {
-      const rootId = row.root_answer_id || row.answer_id;
+        const group = groups.get(rootId);
+        if (row.answer_level === 0 || row.answer_id === rootId) {
+          group.root = row;
+        } else {
+          group.children.push(row);
+        }
+      });
 
-      if (!map.has(rootId)) {
-        map.set(rootId, {
-          rootId,
-          root: null,
-          children: [],
-          hit: false
-        });
-      }
-
-      const group = map.get(rootId);
-
-      if (row.answer_level === 0 || row.answer_id === rootId) {
-        group.root = row;
-      } else {
-        group.children.push(row);
-      }
-
-      if (rows.some(hitRow => hitRow.answer_id === row.answer_id)) {
-        group.hit = true;
-      }
-    });
-
-    const groups = [...map.values()]
+    return [...groups.values()]
       .filter(group => group.root)
       .map(group => {
         group.children.sort((a, b) => a.sort_order - b.sort_order);
         return group;
       })
       .sort((a, b) => a.root.sort_order - b.root.sort_order);
-
-    return groups;
   }
 
   function filterGroupsByDisplayMode(groups) {
     const mode = els.displayMode.value;
 
     if (mode === "rootOnly") {
-      return groups.map(group => ({
-        ...group,
-        children: []
-      }));
+      return groups.map(group => ({ ...group, children: [] }));
     }
 
     if (mode === "hasChildren") {
@@ -213,36 +208,37 @@
   function renderGroup(group) {
     const root = group.root;
     const children = group.children;
-    const childListId = `children-${root.answer_id}`;
+    const isExpanded = state.expandedRoots.has(group.rootId);
     const keyword = els.keyword.value.trim();
+    const childSummary = children.length > 0 ? `${children.length}件の再質問・要望` : "再質問・要望なし";
 
     return `
       <article class="answer-card">
         <header class="card-header">
-          <div class="card-title-row">
-            <div>
-              <h2 class="card-title">${escapeHtml(root.item_title || "項目名なし")}</h2>
-              <div class="meta">
-                ${badge(root.session_raw)}
-                ${badge(root.member_name)}
-                ${badge(`${root.department_name || ""} ${root.section_name || ""}`.trim())}
-                ${badge(root.category)}
-                ${resultBadge(root.process_result)}
-              </div>
+          <div>
+            <h2 class="card-title">${highlightText(root.item_title || "項目名なし", keyword)}</h2>
+            <div class="meta">
+              ${badge(root.session_raw)}
+              ${badge(root.member_name)}
+              ${badge(joinValues(root.department_name, root.section_name))}
+              ${badge(joinValues(root.major_item, root.middle_item, root.minor_item))}
+              ${badge(root.category)}
+              ${resultBadge(root.process_result)}
             </div>
           </div>
+          <span class="child-count">${childSummary}</span>
         </header>
 
         <div class="card-body">
-          ${renderBlock(root, true, keyword)}
+          ${renderBlock(root, true, keyword, group.hitIds.has(root.answer_id))}
 
           ${children.length > 0 ? `
             <div class="children">
-              <button class="toggle-button" type="button" data-toggle-id="${escapeHtml(childListId)}">
-                再質問・要望を表示
+              <button class="toggle-button" type="button" data-toggle-root="${escapeHtml(group.rootId)}" aria-expanded="${isExpanded}">
+                ${isExpanded ? "再質問・要望を閉じる" : "再質問・要望を表示"}
               </button>
-              <div class="child-list is-hidden" data-child-list-id="${escapeHtml(childListId)}">
-                ${children.map(child => renderBlock(child, false, keyword)).join("")}
+              <div class="child-list ${isExpanded ? "" : "is-hidden"}">
+                ${children.map(child => renderBlock(child, false, keyword, group.hitIds.has(child.answer_id))).join("")}
               </div>
             </div>
           ` : ""}
@@ -251,35 +247,36 @@
     `;
   }
 
-  function renderBlock(item, isRoot, keyword) {
+  function renderBlock(item, isRoot, keyword, isHit) {
+    const questionLabel = item.answer_type === "要望" ? "要望" : "質問・要望要旨";
+
     return `
-      <section class="block ${isRoot ? "root" : ""}">
+      <section class="block ${isRoot ? "root" : ""} ${isHit ? "hit" : ""}">
         <div class="block-title">
-          <strong>${escapeHtml(item.answer_type || "")}</strong>
-          <span class="badge">${escapeHtml(item.answer_id || "")}</span>
+          <strong>${escapeHtml(item.answer_type || "-")}</strong>
+          <span class="badge id-badge">${escapeHtml(item.answer_id || "-")}</span>
         </div>
 
-        <div class="block-section">
-          <h4>${item.answer_type === "要望" ? "要望" : "質問・要望要旨"}</h4>
-          <p>${highlight(escapeHtml(item.question_summary || "-"), keyword)}</p>
-        </div>
-
-        <div class="block-section">
-          <h4>答弁要旨</h4>
-          <p>${highlight(escapeHtml(item.answer_summary || "-"), keyword)}</p>
-        </div>
-
-        <div class="block-section">
-          <h4>今後の処理方針</h4>
-          <p>${highlight(escapeHtml(item.future_policy || "-"), keyword)}</p>
-        </div>
-
-        <div class="block-section">
-          <h4>処理結果</h4>
-          <p>${escapeHtml(item.process_result || "-")}</p>
-        </div>
+        ${renderSection(questionLabel, item.question_summary, keyword)}
+        ${renderSection("答弁要旨", item.answer_summary, keyword)}
+        ${renderSection("今後の処理方針", item.future_policy, keyword)}
+        ${renderSection("処理結果", item.process_result, keyword)}
       </section>
     `;
+  }
+
+  function renderSection(title, value, keyword) {
+    return `
+      <div class="block-section">
+        <h3>${escapeHtml(title)}</h3>
+        <p>${highlightText(cleanValue(value), keyword)}</p>
+      </div>
+    `;
+  }
+
+  function cleanValue(value) {
+    const text = String(value ?? "").trim();
+    return text || "-";
   }
 
   function badge(text) {
@@ -288,7 +285,7 @@
   }
 
   function resultBadge(value) {
-    const text = String(value || "-");
+    const text = cleanValue(value);
     let className = "badge result-none";
 
     if (text === "済") {
@@ -298,6 +295,10 @@
     }
 
     return `<span class="${className}">${escapeHtml(text)}</span>`;
+  }
+
+  function joinValues(...values) {
+    return values.map(value => String(value || "").trim()).filter(Boolean).join(" ");
   }
 
   function buildSearchText(item) {
@@ -323,25 +324,22 @@
 
   function normalizeText(value) {
     return String(value || "")
-      .toLowerCase()
+      .toLocaleLowerCase("ja")
+      .normalize("NFKC")
       .replace(/\s+/g, " ")
       .trim();
   }
 
-  function highlight(html, keyword) {
+  function highlightText(value, keyword) {
+    const escaped = escapeHtml(value);
     const words = normalizeText(keyword).split(/\s+/).filter(Boolean);
-    if (words.length === 0) return html;
+    if (words.length === 0) return escaped;
 
-    let result = html;
-
-    words.forEach(word => {
-      const escapedWord = escapeRegExp(escapeHtml(word));
-      if (!escapedWord) return;
-      const reg = new RegExp(`(${escapedWord})`, "gi");
-      result = result.replace(reg, "<mark>$1</mark>");
-    });
-
-    return result;
+    return words.reduce((html, word) => {
+      const pattern = escapeRegExp(escapeHtml(word));
+      if (!pattern) return html;
+      return html.replace(new RegExp(`(${pattern})`, "gi"), "<mark>$1</mark>");
+    }, escaped);
   }
 
   function escapeHtml(value) {
@@ -355,13 +353,5 @@
 
   function escapeRegExp(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
-  function cssEscape(value) {
-    if (window.CSS && typeof window.CSS.escape === "function") {
-      return window.CSS.escape(value);
-    }
-
-    return String(value).replace(/"/g, '\\"');
   }
 })();

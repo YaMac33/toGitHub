@@ -11,16 +11,16 @@
     <div>
       <p class="app-kicker">General Question Answer Search</p>
       <h1>一般質問 答弁検索システム</h1>
-      <p class="app-lead">議員・部署・定例会・答弁種別・処理結果・フリーワードから検索できます。</p>
+      <p class="app-lead">議員、部課、会期、答弁種別、処理結果、キーワードから一般質問の答弁を検索できます。</p>
     </div>
   </header>
 
   <main class="app-main">
-    <section class="search-panel">
+    <section class="search-panel" aria-label="検索条件">
       <div class="search-grid">
         <label>
-          <span>フリーワード</span>
-          <input type="search" id="keywordInput" placeholder="例：救急隊、保護者対応、火災">
+          <span>キーワード</span>
+          <input type="search" id="keywordInput" placeholder="例: 救急隊 保護者対応 火災">
         </label>
 
         <label>
@@ -68,7 +68,7 @@
         <label>
           <span>表示対象</span>
           <select id="displayModeFilter">
-            <option value="all">本答弁・再質問・要望を表示</option>
+            <option value="all">本答弁と再質問・要望を表示</option>
             <option value="rootOnly">本答弁のみ表示</option>
             <option value="hasChildren">再質問・要望ありのみ表示</option>
           </select>
@@ -81,10 +81,10 @@
       </div>
     </section>
 
-    <section id="results" class="results"></section>
+    <section id="results" class="results" aria-live="polite"></section>
   </main>
 
-  <script src="app/data/answers/answers.js"></script>
+  <script src="data/answers/answers.js"></script>
   <script src="app/js/app.js"></script>
 </body>
 </html>

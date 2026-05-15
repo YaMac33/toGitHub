@@ -10,7 +10,7 @@ Option Explicit
 '
 ' 出力：
 ' ブックと同じ階層に
-' app/data/answers/answers.js
+' data/answers/answers.js
 ' を作成する
 '==================================================
 
@@ -104,11 +104,10 @@ Public Sub ExportAnswersJs()
 
     jsText = jsText & vbCrLf & "];" & vbCrLf
 
-    outputPath = ThisWorkbook.Path & Application.PathSeparator & "app" & Application.PathSeparator & "data" & Application.PathSeparator & "answers" & Application.PathSeparator & "answers.js"
+    outputPath = ThisWorkbook.Path & Application.PathSeparator & "data" & Application.PathSeparator & "answers" & Application.PathSeparator & "answers.js"
 
-    EnsureFolderExists ThisWorkbook.Path & Application.PathSeparator & "app"
-    EnsureFolderExists ThisWorkbook.Path & Application.PathSeparator & "app" & Application.PathSeparator & "data"
-    EnsureFolderExists ThisWorkbook.Path & Application.PathSeparator & "app" & Application.PathSeparator & "data" & Application.PathSeparator & "answers"
+    EnsureFolderExists ThisWorkbook.Path & Application.PathSeparator & "data"
+    EnsureFolderExists ThisWorkbook.Path & Application.PathSeparator & "data" & Application.PathSeparator & "answers"
 
     WriteTextFileUtf8 outputPath, jsText
 
