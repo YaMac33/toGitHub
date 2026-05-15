@@ -1,0 +1,201 @@
+Option Explicit
+
+Public Sub ExportSchedulesJs()
+
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    Dim outputPath As String
+    outputPath = ThisWorkbook.Path & "\app\data\schedules\schedules.js"
+
+    Dim lastRow As Long
+    Dim lastCol As Long
+
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastCol = ws.Cells(2, ws.Columns.Count).End(xlToLeft).Column
+
+    If lastRow < 3 Then
+        MsgBox "出力対象データがありません。3行目以降にデータを入力してください。", vbExclamation
+        Exit Sub
+    End If
+
+    Dim keys() As String
+    ReDim keys(1 To lastCol)
+
+    Dim col As Long
+    For col = 1 To lastCol
+        keys(col) = Trim(CStr(ws.Cells(2, col).Value))
+    Next col
+
+    Dim js As String
+    js = "window.APP_DATA = window.APP_DATA || {};" & vbCrLf
+    js = js & vbCrLf
+    js = js & "window.APP_DATA.schedules = [" & vbCrLf
+
+    Dim row As Long
+    Dim isFirstRecord As Boolean
+    isFirstRecord = True
+
+    For row = 3 To lastRow
+
+        If Trim(CStr(ws.Cells(row, 1).Value)) <> "" Then
+
+            If isFirstRecord = False Then
+                js = js & "," & vbCrLf
+            End If
+
+            js = js & "  {" & vbCrLf
+
+            For col = 1 To lastCol
+
+                If keys(col) <> "" Then
+
+                    js = js & "    " & keys(col) & ": " & ToJsValue(keys(col), ws.Cells(row, col).Value)
+
+                    If col < lastCol Then
+                        js = js & ","
+                    End If
+
+                    js = js & vbCrLf
+
+                End If
+
+            Next col
+
+            js = js & "  }"
+
+            isFirstRecord = False
+
+        End If
+
+    Next row
+
+    js = js & vbCrLf & "];" & vbCrLf
+
+    EnsureFolderExists ThisWorkbook.Path & "\app\data\schedules"
+    WriteUtf8Text outputPath, js
+
+    MsgBox "schedules.js を出力しました。" & vbCrLf & outputPath, vbInformation
+
+End Sub
+
+Private Function ToJsValue(ByVal key As String, ByVal value As Variant) As String
+
+    If IsEmpty(value) Or Trim(CStr(value)) = "" Then
+        ToJsValue = """"""
+        Exit Function
+    End If
+
+    Select Case key
+
+        Case "outsource_hours", _
+             "basic_operation_flag", _
+             "holiday_operation_hours", _
+             "overtime_operation_hours", _
+             "overnight_operation_flag", _
+             "sort_order"
+
+            ToJsValue = NormalizeNumber(value)
+
+        Case "schedule_date", _
+             "entered_date", _
+             "reply_date", _
+             "updated_at"
+
+            ToJsValue = """" & NormalizeDate(value) & """"
+
+        Case "outsource_start_time", _
+             "outsource_end_time", _
+             "driver_leave_time", _
+             "in_time", _
+             "out_time", _
+             "event_start_time", _
+             "event_end_time"
+
+            ToJsValue = """" & NormalizeTime(value) & """"
+
+        Case Else
+
+            ToJsValue = """" & EscapeJsString(CStr(value)) & """"
+
+    End Select
+
+End Function
+
+Private Function NormalizeNumber(ByVal value As Variant) As String
+
+    If IsNumeric(value) Then
+        NormalizeNumber = Replace(CStr(value), ",", "")
+    Else
+        NormalizeNumber = "0"
+    End If
+
+End Function
+
+Private Function NormalizeDate(ByVal value As Variant) As String
+
+    If IsDate(value) Then
+        NormalizeDate = Format(CDate(value), "yyyy-mm-dd")
+    Else
+        NormalizeDate = EscapeJsString(CStr(value))
+    End If
+
+End Function
+
+Private Function NormalizeTime(ByVal value As Variant) As String
+
+    If IsDate(value) Then
+        NormalizeTime = Format(CDate(value), "hh:mm")
+    Else
+        NormalizeTime = EscapeJsString(CStr(value))
+    End If
+
+End Function
+
+Private Function EscapeJsString(ByVal text As String) As String
+
+    text = Replace(text, "\", "\\")
+    text = Replace(text, """", "\""")
+    text = Replace(text, vbCrLf, "\n")
+    text = Replace(text, vbCr, "\n")
+    text = Replace(text, vbLf, "\n")
+
+    EscapeJsString = text
+
+End Function
+
+Private Sub WriteUtf8Text(ByVal filePath As String, ByVal text As String)
+
+    Dim stream As Object
+    Set stream = CreateObject("ADODB.Stream")
+
+    With stream
+        .Type = 2
+        .Charset = "UTF-8"
+        .Open
+        .WriteText text
+        .SaveToFile filePath, 2
+        .Close
+    End With
+
+End Sub
+
+Private Sub EnsureFolderExists(ByVal folderPath As String)
+
+    Dim fso As Object
+    Set fso = CreateObject("Scripting.FileSystemObject")
+
+    If fso.FolderExists(folderPath) Then Exit Sub
+
+    Dim parentPath As String
+    parentPath = fso.GetParentFolderName(folderPath)
+
+    If parentPath <> "" Then
+        If Not fso.FolderExists(parentPath) Then
+            EnsureFolderExists parentPath
+        End If
+    End If
+
+    fso.CreateFolder folderPath
+
+End Sub
