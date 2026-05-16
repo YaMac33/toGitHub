@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>使い方 - スケジュール</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <h1>使い方</h1>
+        <p>スケジュール閲覧アプリの操作と配置ルール</p>
+      </div>
+      <nav class="header-actions" aria-label="画面切替">
+        <a href="index.html#overview" class="nav-button">日別一覧</a>
+        <a href="index.html#calendar" class="nav-button">カレンダー</a>
+        <a href="index.html#history" class="nav-button">変更・取消履歴</a>
+        <a href="README.html" class="nav-button active">使い方</a>
+      </nav>
+    </header>
+
+    <main class="readme-page">
+      <section class="panel">
+        <h2>概要</h2>
+        <p>このアプリは、Excel正本からVBAで出力されたスケジュールデータを読み込み、オフラインで閲覧するためのHTMLアプリです。データの追加・編集は行わず、Excel側を正本として扱います。</p>
+      </section>
+
+      <section class="panel">
+        <h2>ファイル配置</h2>
+        <pre class="code-block">/project-root/
+  index.html
+  README.html
+  style.css
+  app.js
+  /app/
+    /data/
+      /schedules/
+        schedules.js
+    /lib/
+      /fullcalendar/
+        index.global.min.css
+        index.global.min.js</pre>
+        <p><code>index.html</code> をブラウザで開くと、<code>app/data/schedules/schedules.js</code> の予定データを読み込みます。</p>
+      </section>
+
+      <section class="panel">
+        <h2>基本操作</h2>
+        <div class="readme-list">
+          <div><strong>月・週・日切替</strong><span>カレンダー右上の「月」「週」「日」で表示を切り替えます。</span></div>
+          <div><strong>予定詳細</strong><span>カレンダー上の予定、または日別一覧のカードをクリックすると詳細モーダルを表示します。</span></div>
+          <div><strong>日別一覧</strong><span>ヘッダーの「日別一覧」から別画面として開き、日付ごとの予定を横長カードで確認します。</span></div>
+          <div><strong>フィルター</strong><span>必要なときだけ「フィルター」を開き、キーワードや状態、担当者などで絞り込みます。</span></div>
+          <div><strong>集計</strong><span>必要なときだけ「集計」を開き、件数や運行時間の合計を確認します。</span></div>
+          <div><strong>変更・取消履歴</strong><span>ヘッダーの「変更・取消履歴」から別画面として確認します。</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>データ更新</h2>
+        <p>ExcelからVBAで新しい <code>schedules.js</code> を出力し、既存の <code>app/data/schedules/schedules.js</code> を置き換えてください。ブラウザを再読み込みすると更新後の予定が表示されます。</p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
