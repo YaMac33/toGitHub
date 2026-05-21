@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base target="_top">
+  <title>予約状況</title>
+  <?!= include('Style'); ?>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Reservation Calendar</p>
+        <h1>予約状況</h1>
+      </div>
+      <button type="button" class="ghost-button" id="refreshButton">更新</button>
+    </header>
+
+    <section class="toolbar" aria-label="表示切替">
+      <div class="segmented" role="group" aria-label="カレンダー表示">
+        <button type="button" data-view="dayGridMonth" class="view-button is-active">月</button>
+        <button type="button" data-view="timeGridWeek" class="view-button">週</button>
+        <button type="button" data-view="timeGridDay" class="view-button">日</button>
+        <button type="button" data-view="listTable" class="view-button">一覧</button>
+      </div>
+
+      <div class="filters">
+        <label>
+          <span>利用場所</span>
+          <select id="locationFilter">
+            <option value="">すべて</option>
+          </select>
+        </label>
+        <label>
+          <span>開始日</span>
+          <input type="date" id="dateFromFilter">
+        </label>
+        <label>
+          <span>終了日</span>
+          <input type="date" id="dateToFilter">
+        </label>
+      </div>
+    </section>
+
+    <section id="messageArea" class="message" hidden></section>
+
+    <main class="main-layout">
+      <section id="calendarPanel" class="calendar-panel" aria-label="カレンダー">
+        <div id="calendar"></div>
+      </section>
+
+      <section id="listPanel" class="list-panel" aria-label="予約一覧" hidden>
+        <div class="list-header">
+          <div>
+            <h2>予約一覧</h2>
+            <p id="listCount" class="muted">0件</p>
+          </div>
+          <div class="segmented compact" role="group" aria-label="一覧表示粒度">
+            <button type="button" data-list-mode="simple" class="list-mode-button">簡易</button>
+            <button type="button" data-list-mode="standard" class="list-mode-button is-active">標準</button>
+            <button type="button" data-list-mode="detail" class="list-mode-button">詳細</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="reservation-table">
+            <thead id="reservationTableHead"></thead>
+            <tbody id="reservationTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="detail-panel" id="detailPanel" aria-label="予約詳細">
+        <h2>詳細</h2>
+        <div id="detailBody" class="detail-body muted">カレンダー上の予定を選択すると概要を表示します。</div>
+      </aside>
+    </main>
+
+    <footer class="app-footer">
+      <span id="generatedAt">最終更新: -</span>
+    </footer>
+  </div>
+
+  <script>
+    window.RESERVATION_INITIAL_PAYLOAD = <?!= initialPayload ?>;
+  </script>
+  <?!= include('Script'); ?>
+</body>
+</html>

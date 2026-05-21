@@ -1,0 +1,335 @@
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f7f8f6;
+    --surface: #ffffff;
+    --surface-soft: #eef4f1;
+    --line: #d8ded9;
+    --text: #202420;
+    --muted: #667067;
+    --accent: #236a5b;
+    --accent-strong: #174d42;
+    --accent-soft: #dceee9;
+    --warning: #9a5b00;
+    --shadow: 0 16px 40px rgba(25, 36, 32, 0.08);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+
+  .app-shell {
+    width: min(1180px, calc(100% - 28px));
+    margin: 0 auto;
+    padding: 20px 0 24px;
+  }
+
+  .app-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .eyebrow {
+    margin: 0 0 2px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  h1,
+  h2 {
+    margin: 0;
+    letter-spacing: 0;
+  }
+
+  h1 {
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 17px;
+    line-height: 1.4;
+  }
+
+  .toolbar,
+  .calendar-panel,
+  .list-panel,
+  .detail-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: end;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+
+  .segmented {
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(56px, auto);
+    gap: 2px;
+    padding: 3px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    width: max-content;
+  }
+
+  .segmented.compact {
+    grid-auto-columns: minmax(48px, auto);
+  }
+
+  .view-button,
+  .list-mode-button,
+  .ghost-button {
+    min-height: 36px;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .view-button,
+  .list-mode-button {
+    padding: 0 13px;
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .view-button.is-active,
+  .list-mode-button.is-active {
+    background: var(--accent);
+    color: #ffffff;
+  }
+
+  .ghost-button {
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--accent-strong);
+    font-weight: 700;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(150px, 180px) minmax(150px, 180px);
+    gap: 10px;
+    align-items: end;
+  }
+
+  label {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  label span {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  select,
+  input[type="date"] {
+    min-height: 38px;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #ffffff;
+    color: var(--text);
+    padding: 0 10px;
+  }
+
+  .message {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid #e3c37a;
+    border-radius: 8px;
+    background: #fff7df;
+    color: var(--warning);
+  }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 14px;
+    align-items: start;
+  }
+
+  .calendar-panel,
+  .list-panel,
+  .detail-panel {
+    padding: 14px;
+  }
+
+  #calendar {
+    min-height: 620px;
+  }
+
+  .fc {
+    --fc-border-color: #d8ded9;
+    --fc-button-bg-color: var(--accent);
+    --fc-button-border-color: var(--accent);
+    --fc-button-hover-bg-color: var(--accent-strong);
+    --fc-button-hover-border-color: var(--accent-strong);
+    --fc-today-bg-color: rgba(35, 106, 91, 0.09);
+    color: var(--text);
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 20px;
+    letter-spacing: 0;
+  }
+
+  .fc-event {
+    border-radius: 5px;
+    border: 0;
+    background: var(--accent);
+    padding: 1px 2px;
+  }
+
+  .list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+
+  .reservation-table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    background: #ffffff;
+  }
+
+  .reservation-table th,
+  .reservation-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+    white-space: normal;
+  }
+
+  .reservation-table th {
+    background: var(--surface-soft);
+    color: var(--accent-strong);
+    font-size: 12px;
+  }
+
+  .reservation-table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .detail-panel {
+    position: sticky;
+    top: 12px;
+  }
+
+  .detail-body {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .detail-row {
+    display: grid;
+    gap: 2px;
+  }
+
+  .detail-row strong {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .app-footer {
+    display: flex;
+    justify-content: flex-end;
+    color: var(--muted);
+    font-size: 12px;
+    padding-top: 12px;
+  }
+
+  @media (max-width: 900px) {
+    .toolbar,
+    .main-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .filters {
+      grid-template-columns: 1fr;
+    }
+
+    .detail-panel {
+      position: static;
+    }
+
+    #calendar {
+      min-height: 540px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .app-shell {
+      width: min(100% - 18px, 1180px);
+      padding-top: 12px;
+    }
+
+    .app-header,
+    .list-header {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .segmented {
+      width: 100%;
+      grid-auto-columns: 1fr;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+  }
+</style>
+
