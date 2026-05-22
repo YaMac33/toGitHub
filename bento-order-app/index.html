@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>弁当注文システム</title>
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <div>
+          <p class="site-label">Department Bento Order</p>
+          <h1>弁当注文システム</h1>
+          <p class="site-lead">
+            注文・変更・キャンセルの締切は、受取日前日の正午までです。
+          </p>
+          <p class="site-note">
+            受取日ごとに締切日時が設定されている場合は、その締切日時を優先します。
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="guide" aria-labelledby="guide-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Guide</p>
+            <h2 id="guide-title">利用案内</h2>
+          </div>
+        </div>
+        <ul class="guide-list">
+          <li>部署単位で注文してください。</li>
+          <li>注文者名とメールアドレスを入力してください。</li>
+          <li>注文内容は送信前に必ず確認してください。</li>
+          <li>注文受付後、確認メールに注文内容と合計金額が表示されます。</li>
+          <li>変更・キャンセルには注文IDが必要です。</li>
+          <li>締切後の注文・変更・キャンセルは原則として無効です。</li>
+          <li>このページは権限設定を行わないため、名前とメールアドレスで管理者が目視確認します。</li>
+        </ul>
+      </section>
+
+      <nav class="tabs" id="tab-menu" role="tablist" aria-label="画面切り替え"></nav>
+
+      <div id="message-region" class="message-region" aria-live="polite"></div>
+      <div id="error-region" class="message-region"></div>
+
+      <div id="tab-panel" class="tab-panel" role="tabpanel"></div>
+    </main>
+
+    <div id="modal-root"></div>
+
+    <script src="js/config.example.js"></script>
+    <script src="js/formatters.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/validators.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
