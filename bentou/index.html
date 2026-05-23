@@ -515,6 +515,21 @@
       font-size: 0.95rem;
     }
 
+    .order-status-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .order-status-content {
+      margin-top: 18px;
+    }
+
+    .order-status-content[hidden] {
+      display: none;
+    }
+
     .order-filter-row {
       display: grid;
       grid-template-columns: minmax(180px, 280px);
@@ -666,6 +681,11 @@
         flex-direction: column;
       }
 
+      .order-status-actions {
+        width: 100%;
+        flex-direction: column;
+      }
+
       .order-filter-row {
         grid-template-columns: 1fr;
       }
@@ -770,78 +790,84 @@
           <h2 id="orderStatusTitle">現在の注文状況</h2>
           <p id="ordersUpdatedAt" class="order-status-meta"></p>
         </div>
+        <div class="order-status-actions">
+          <button type="button" id="toggleOrderStatusButton" class="button button-secondary" aria-expanded="false" aria-controls="orderStatusContent">注文状況を表示</button>
+        </div>
+      </div>
+
+      <div id="orderStatusContent" class="order-status-content" hidden>
         <button type="button" id="refreshOrdersButton" class="button button-secondary">最新の状態に更新</button>
-      </div>
 
-      <p id="ordersStatusMessage" class="message message-info" role="status" aria-live="polite">注文状況を読み込み中です。</p>
+        <p id="ordersStatusMessage" class="message message-info" role="status" aria-live="polite">注文状況を読み込み中です。</p>
 
-      <div class="order-filter-row">
-        <label for="departmentFilter">部署フィルター</label>
-        <select id="departmentFilter">
-          <option value="all">すべて</option>
-        </select>
-      </div>
-
-      <div class="summary-list order-summary-list" aria-live="polite">
-        <p class="summary-line">合計数量：<strong id="currentOrderQuantityText">0個</strong></p>
-        <p class="summary-line">参考合計金額：<strong id="currentOrderAmountText">0円</strong></p>
-        <p class="summary-line">注文行数：<strong id="currentOrderLineCountText">0行</strong></p>
-      </div>
-
-      <p id="ordersEmptyMessage" class="order-empty" hidden>現在表示できる注文はありません。</p>
-
-      <div class="order-table-block">
-        <p class="order-table-title">メニュー別集計</p>
-        <div class="table-scroll">
-          <table class="order-table">
-            <thead>
-              <tr>
-                <th scope="col">メニュー</th>
-                <th scope="col">サイズ</th>
-                <th scope="col">数量</th>
-                <th scope="col">金額</th>
-              </tr>
-            </thead>
-            <tbody id="menuAggregateBody"></tbody>
-          </table>
+        <div class="order-filter-row">
+          <label for="departmentFilter">部署フィルター</label>
+          <select id="departmentFilter">
+            <option value="all">すべて</option>
+          </select>
         </div>
-      </div>
 
-      <div class="order-table-block">
-        <p class="order-table-title">部署別集計</p>
-        <div class="table-scroll">
-          <table class="order-table">
-            <thead>
-              <tr>
-                <th scope="col">部署</th>
-                <th scope="col">メニュー</th>
-                <th scope="col">サイズ</th>
-                <th scope="col">数量</th>
-                <th scope="col">金額</th>
-              </tr>
-            </thead>
-            <tbody id="departmentAggregateBody"></tbody>
-          </table>
+        <div class="summary-list order-summary-list" aria-live="polite">
+          <p class="summary-line">合計数量：<strong id="currentOrderQuantityText">0個</strong></p>
+          <p class="summary-line">参考合計金額：<strong id="currentOrderAmountText">0円</strong></p>
+          <p class="summary-line">注文行数：<strong id="currentOrderLineCountText">0行</strong></p>
         </div>
-      </div>
 
-      <div class="order-table-block">
-        <p class="order-table-title">注文一覧</p>
-        <div class="table-scroll">
-          <table class="order-table">
-            <thead>
-              <tr>
-                <th scope="col">タイムスタンプ</th>
-                <th scope="col">部署</th>
-                <th scope="col">メニュー</th>
-                <th scope="col">サイズ</th>
-                <th scope="col">単価</th>
-                <th scope="col">数量</th>
-                <th scope="col">小計</th>
-              </tr>
-            </thead>
-            <tbody id="currentOrdersBody"></tbody>
-          </table>
+        <p id="ordersEmptyMessage" class="order-empty" hidden>現在表示できる注文はありません。</p>
+
+        <div class="order-table-block">
+          <p class="order-table-title">メニュー別集計</p>
+          <div class="table-scroll">
+            <table class="order-table">
+              <thead>
+                <tr>
+                  <th scope="col">メニュー</th>
+                  <th scope="col">サイズ</th>
+                  <th scope="col">数量</th>
+                  <th scope="col">金額</th>
+                </tr>
+              </thead>
+              <tbody id="menuAggregateBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="order-table-block">
+          <p class="order-table-title">部署別集計</p>
+          <div class="table-scroll">
+            <table class="order-table">
+              <thead>
+                <tr>
+                  <th scope="col">部署</th>
+                  <th scope="col">メニュー</th>
+                  <th scope="col">サイズ</th>
+                  <th scope="col">数量</th>
+                  <th scope="col">金額</th>
+                </tr>
+              </thead>
+              <tbody id="departmentAggregateBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="order-table-block">
+          <p class="order-table-title">注文一覧</p>
+          <div class="table-scroll">
+            <table class="order-table">
+              <thead>
+                <tr>
+                  <th scope="col">タイムスタンプ</th>
+                  <th scope="col">部署</th>
+                  <th scope="col">メニュー</th>
+                  <th scope="col">サイズ</th>
+                  <th scope="col">単価</th>
+                  <th scope="col">数量</th>
+                  <th scope="col">小計</th>
+                </tr>
+              </thead>
+              <tbody id="currentOrdersBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -883,6 +909,8 @@
     const showConfirmButton = document.getElementById("showConfirmButton");
     const sendButton = document.getElementById("sendButton");
     const editButton = document.getElementById("editButton");
+    const toggleOrderStatusButton = document.getElementById("toggleOrderStatusButton");
+    const orderStatusContent = document.getElementById("orderStatusContent");
     const refreshOrdersButton = document.getElementById("refreshOrdersButton");
     const departmentFilter = document.getElementById("departmentFilter");
     const ordersStatusMessage = document.getElementById("ordersStatusMessage");
@@ -985,6 +1013,12 @@
       ordersStatusMessage.textContent = message;
       ordersStatusMessage.className = "message message-" + type;
       ordersStatusMessage.hidden = false;
+    }
+
+    function setOrderStatusExpanded(expanded) {
+      orderStatusContent.hidden = !expanded;
+      toggleOrderStatusButton.setAttribute("aria-expanded", expanded ? "true" : "false");
+      toggleOrderStatusButton.textContent = expanded ? "注文状況を閉じる" : "注文状況を表示";
     }
 
     function normalizePublishedOrder(row) {
@@ -1966,6 +2000,10 @@
       showConfirmButton.focus();
     });
 
+    toggleOrderStatusButton.addEventListener("click", () => {
+      setOrderStatusExpanded(orderStatusContent.hidden);
+    });
+
     refreshOrdersButton.addEventListener("click", () => {
       loadCurrentOrders();
     });
@@ -2018,6 +2056,7 @@
 
     async function initialize() {
       showConfirmButton.disabled = true;
+      setOrderStatusExpanded(false);
       showMenuLoading();
       const ordersPromise = loadCurrentOrders();
       await loadMasterData();
