@@ -210,6 +210,11 @@
       align-items: flex-start;
     }
 
+    .menu-row.is-expanded {
+      background: #f7fbff;
+      border-color: #b9cde1;
+    }
+
     .menu-name {
       margin: 0;
       font-weight: 800;
@@ -219,6 +224,21 @@
       margin: 4px 0 0;
       color: var(--color-muted);
       font-size: 0.95rem;
+    }
+
+    .menu-selected-summary {
+      margin: 8px 0 0;
+      color: var(--color-primary-dark);
+      font-weight: 800;
+    }
+
+    .menu-selected-summary[hidden] {
+      display: none;
+    }
+
+    .menu-toggle-button {
+      flex: 0 0 auto;
+      min-width: 112px;
     }
 
     .menu-sub-label {
@@ -681,6 +701,8 @@
 
     let pendingData = null;
     let isSending = false;
+    const expandedMenus = new Set();
+    const quantities = {};
 
     function formatYen(amount) {
       return new Intl.NumberFormat("ja-JP").format(amount) + "円";
@@ -692,6 +714,52 @@
 
     function findSizeOption(sizeName) {
       return SIZE_OPTIONS.find((option) => option.name === sizeName);
+    }
+
+    function getItemKey(menuName, sizeName) {
+      return menuName + "__" + (sizeName || "");
+    }
+
+    function getQuantityValue(menuName, sizeName) {
+      const key = getItemKey(menuName, sizeName);
+      return Object.prototype.hasOwnProperty.call(quantities, key) ? quantities[key] : "0";
+    }
+
+    function getQuantity(menuName, sizeName) {
+      const quantity = Number(getQuantityValue(menuName, sizeName));
+      return Number.isFinite(quantity) && Number.isInteger(quantity) && quantity >= 0 ? quantity : 0;
+    }
+
+    function setQuantityValue(menuName, sizeName, value) {
+      quantities[getItemKey(menuName, sizeName)] = String(value);
+    }
+
+    function setQuantity(menuName, sizeName, quantity) {
+      setQuantityValue(menuName, sizeName, Math.max(0, quantity));
+    }
+
+    function clearQuantities() {
+      Object.keys(quantities).forEach((key) => {
+        delete quantities[key];
+      });
+    }
+
+    function getMenuVariants(menuItem) {
+      if (menuItem.sizeEnabled) {
+        return SIZE_OPTIONS.map((option) => ({
+          size: option.name,
+          sizeLabel: option.name,
+          adjustment: option.adjustment
+        }));
+      }
+
+      return [
+        {
+          size: "",
+          sizeLabel: "サイズ対象外",
+          adjustment: 0
+        }
+      ];
     }
 
     function toBoolean(value, defaultValue) {
@@ -815,8 +883,12 @@
       menuRows.replaceChildren();
 
       MENU_ITEMS.forEach((item, menuIndex) => {
+        const isExpanded = expandedMenus.has(item.name);
         const row = document.createElement("div");
         row.className = "menu-row";
+        if (isExpanded) {
+          row.classList.add("is-expanded");
+        }
 
         const header = document.createElement("div");
         header.className = "menu-card-header";
@@ -831,84 +903,174 @@
         price.className = "menu-price";
         price.textContent = "参考基本単価：" + formatYen(item.basePrice);
 
-        info.append(name, price);
-        header.appendChild(info);
+        const selectedSummary = document.createElement("p");
+        selectedSummary.className = "menu-selected-summary";
+        selectedSummary.dataset.menuName = item.name;
+
+        info.append(name, price, selectedSummary);
+
+        const toggleButton = document.createElement("button");
+        toggleButton.type = "button";
+        toggleButton.className = "button button-secondary menu-toggle-button";
+        toggleButton.dataset.menuName = item.name;
+        toggleButton.disabled = isSending;
+        toggleButton.textContent = isExpanded ? "閉じる" : hasSelectedQuantity(item) ? "開く" : "選択する";
+
+        header.append(info, toggleButton);
 
         const variantList = document.createElement("div");
         variantList.className = "size-variant-list";
 
-        const variants = item.sizeEnabled ? SIZE_OPTIONS : [{ name: "", adjustment: 0 }];
+        if (isExpanded) {
+          const variants = getMenuVariants(item);
 
-        variants.forEach((option, sizeIndex) => {
-          const variantRow = document.createElement("div");
-          variantRow.className = "size-variant-row";
+          variants.forEach((option, sizeIndex) => {
+            const variantRow = document.createElement("div");
+            variantRow.className = "size-variant-row";
 
-          const variantInfo = document.createElement("div");
+            const variantInfo = document.createElement("div");
 
-          const variantName = document.createElement("p");
-          variantName.className = "size-variant-name";
-          variantName.textContent = item.sizeEnabled ? option.name : "サイズ対象外";
+            const variantName = document.createElement("p");
+            variantName.className = "size-variant-name";
+            variantName.textContent = option.sizeLabel;
 
-          const variantNote = document.createElement("p");
-          variantNote.className = "size-variant-note";
-          variantNote.textContent = item.sizeEnabled ? "サイズ加算：" + getAdjustmentText(option.adjustment) : "サイズ：対象外";
+            const variantNote = document.createElement("p");
+            variantNote.className = "size-variant-note";
+            variantNote.textContent = item.sizeEnabled ? "サイズ加算：" + getAdjustmentText(option.adjustment) : "サイズ：対象外";
 
-          variantInfo.append(variantName, variantNote);
+            variantInfo.append(variantName, variantNote);
 
-          const amount = document.createElement("p");
-          amount.id = "amount-" + menuIndex + "-" + sizeIndex;
-          amount.className = "row-amount";
-          amount.textContent = "参考単価：" + formatYen(item.basePrice + option.adjustment) + " / 小計：0円";
+            const amount = document.createElement("p");
+            amount.id = "amount-" + menuIndex + "-" + sizeIndex;
+            amount.className = "row-amount";
+            amount.textContent = "参考単価：" + formatYen(item.basePrice + option.adjustment) + " / 小計：0円";
 
-          const control = document.createElement("div");
-          control.className = "quantity-control";
+            const control = document.createElement("div");
+            control.className = "quantity-control";
 
-          const inputId = "quantity-" + menuIndex + "-" + sizeIndex;
+            const inputId = "quantity-" + menuIndex + "-" + sizeIndex;
 
-          const sizeLabel = item.sizeEnabled ? option.name : "サイズ対象外";
+            const sizeLabel = option.sizeLabel;
 
-          const minusButton = document.createElement("button");
-          minusButton.type = "button";
-          minusButton.className = "quantity-button";
-          minusButton.textContent = "-";
-          minusButton.setAttribute("aria-label", item.name + " " + sizeLabel + "を1個減らす");
-          minusButton.dataset.action = "decrease";
-          minusButton.dataset.target = inputId;
+            const minusButton = document.createElement("button");
+            minusButton.type = "button";
+            minusButton.className = "quantity-button";
+            minusButton.textContent = "-";
+            minusButton.setAttribute("aria-label", item.name + " " + sizeLabel + "を1個減らす");
+            minusButton.dataset.action = "decrease";
+            minusButton.dataset.target = inputId;
+            minusButton.dataset.menuName = item.name;
+            minusButton.dataset.size = option.size;
 
-          const input = document.createElement("input");
-          input.type = "number";
-          input.id = inputId;
-          input.className = "quantity-input";
-          input.min = "0";
-          input.step = "1";
-          input.value = "0";
-          input.inputMode = "numeric";
-          input.dataset.menuName = item.name;
-          input.dataset.size = item.sizeEnabled ? option.name : "";
-          input.dataset.sizeEnabled = item.sizeEnabled ? "true" : "false";
-          input.dataset.amountTarget = amount.id;
-          input.setAttribute("aria-label", item.name + " " + sizeLabel + "の数量");
+            const input = document.createElement("input");
+            input.type = "number";
+            input.id = inputId;
+            input.className = "quantity-input";
+            input.min = "0";
+            input.step = "1";
+            input.value = getQuantityValue(item.name, option.size);
+            input.inputMode = "numeric";
+            input.dataset.menuName = item.name;
+            input.dataset.size = option.size;
+            input.dataset.sizeEnabled = item.sizeEnabled ? "true" : "false";
+            input.dataset.amountTarget = amount.id;
+            input.setAttribute("aria-label", item.name + " " + sizeLabel + "の数量");
 
-          const plusButton = document.createElement("button");
-          plusButton.type = "button";
-          plusButton.className = "quantity-button";
-          plusButton.textContent = "+";
-          plusButton.setAttribute("aria-label", item.name + " " + sizeLabel + "を1個増やす");
-          plusButton.dataset.action = "increase";
-          plusButton.dataset.target = inputId;
+            const plusButton = document.createElement("button");
+            plusButton.type = "button";
+            plusButton.className = "quantity-button";
+            plusButton.textContent = "+";
+            plusButton.setAttribute("aria-label", item.name + " " + sizeLabel + "を1個増やす");
+            plusButton.dataset.action = "increase";
+            plusButton.dataset.target = inputId;
+            plusButton.dataset.menuName = item.name;
+            plusButton.dataset.size = option.size;
 
-          control.append(minusButton, input, plusButton);
-          variantRow.append(variantInfo, amount, control);
-          variantList.appendChild(variantRow);
-        });
+            control.append(minusButton, input, plusButton);
+            variantRow.append(variantInfo, amount, control);
+            variantList.appendChild(variantRow);
+          });
+        }
 
         row.append(header, variantList);
         menuRows.appendChild(row);
       });
+
+      updateMenuCardSummaries();
     }
 
     function getQuantityInputs() {
       return Array.from(menuRows.querySelectorAll(".quantity-input"));
+    }
+
+    function getAllOrderEntries() {
+      return MENU_ITEMS.flatMap((menuItem) => {
+        return getMenuVariants(menuItem).map((variant) => {
+          const value = getQuantityValue(menuItem.name, variant.size);
+          const quantity = Number(value);
+          const pricing = getPricing(menuItem.name, variant.size, quantity);
+
+          return {
+            menu: menuItem.name,
+            size: menuItem.sizeEnabled ? variant.size : "",
+            value,
+            quantity,
+            sizeEnabled: menuItem.sizeEnabled,
+            ...pricing
+          };
+        });
+      });
+    }
+
+    function getQuantityEntries() {
+      return getAllOrderEntries();
+    }
+
+    function getMenuSelectedEntries(menuItem) {
+      return getAllOrderEntries().filter((item) => {
+        return item.menu === menuItem.name && Number.isFinite(item.quantity) && Number.isInteger(item.quantity) && item.quantity > 0;
+      });
+    }
+
+    function hasSelectedQuantity(menuItem) {
+      return getMenuSelectedEntries(menuItem).length > 0;
+    }
+
+    function renderMenuSummary(menuItem) {
+      const selectedEntries = getMenuSelectedEntries(menuItem);
+
+      if (selectedEntries.length === 0) {
+        return "";
+      }
+
+      const summaryText = selectedEntries.map((item) => {
+        const sizeText = item.sizeEnabled ? item.size : "";
+        return sizeText ? sizeText + " " + item.quantity + "個" : item.quantity + "個";
+      }).join("、");
+      const subtotal = selectedEntries.reduce((sum, item) => sum + item.subtotal, 0);
+
+      return "選択中：" + summaryText + " / 小計" + formatYen(subtotal);
+    }
+
+    function updateMenuCardSummaries() {
+      MENU_ITEMS.forEach((menuItem) => {
+        const summary = Array.from(menuRows.querySelectorAll(".menu-selected-summary"))
+          .find((element) => element.dataset.menuName === menuItem.name);
+        const toggleButton = Array.from(menuRows.querySelectorAll(".menu-toggle-button"))
+          .find((element) => element.dataset.menuName === menuItem.name);
+        const text = renderMenuSummary(menuItem);
+        const expanded = expandedMenus.has(menuItem.name);
+
+        if (summary) {
+          summary.textContent = text;
+          summary.hidden = !text;
+        }
+
+        if (toggleButton) {
+          toggleButton.textContent = expanded ? "閉じる" : text ? "開く" : "選択する";
+          toggleButton.disabled = isSending;
+        }
+      });
     }
 
     function getAdjustmentText(adjustment) {
@@ -943,29 +1105,6 @@
         subtotal: unitPrice * safeQuantity,
         sizeLabel: menuItem.sizeEnabled ? sizeName : "サイズ対象外"
       };
-    }
-
-    function getQuantityEntries() {
-      return getQuantityInputs().map((input) => {
-        const value = input.value.trim();
-        const menuName = input.dataset.menuName;
-        const menuItem = findMenuItem(menuName);
-        const sizeEnabled = input.dataset.sizeEnabled === "true";
-        const size = sizeEnabled ? input.dataset.size : "";
-        const quantity = Number(value);
-        const pricing = getPricing(menuName, size, quantity);
-
-        return {
-          input,
-          menu: menuName,
-          size,
-          value,
-          quantity,
-          sizeEnabled: Boolean(menuItem && menuItem.sizeEnabled && sizeEnabled),
-          amountTarget: input.dataset.amountTarget,
-          ...pricing
-        };
-      });
     }
 
     function getSelectedItems() {
@@ -1035,14 +1174,20 @@
     }
 
     function updateRowAmounts() {
-      getQuantityEntries().forEach((item) => {
-        const amount = document.getElementById(item.amountTarget);
+      getQuantityInputs().forEach((input) => {
+        const menuName = input.dataset.menuName;
+        const size = input.dataset.size || "";
+        const quantity = Number(getQuantityValue(menuName, size));
+        const pricing = getPricing(menuName, size, quantity);
+        const menuItem = findMenuItem(menuName);
+        const amount = document.getElementById(input.dataset.amountTarget);
+
         if (!amount) {
           return;
         }
 
-        const sizeText = item.sizeEnabled ? " / サイズ加算：" + getAdjustmentText(item.adjustment) : " / サイズ対象外";
-        amount.textContent = "参考単価：" + formatYen(item.unitPrice) + sizeText + " / 小計：" + formatYen(item.subtotal);
+        const sizeText = menuItem && menuItem.sizeEnabled ? " / サイズ加算：" + getAdjustmentText(pricing.adjustment) : " / サイズ対象外";
+        amount.textContent = "参考単価：" + formatYen(pricing.unitPrice) + sizeText + " / 小計：" + formatYen(pricing.subtotal);
       });
     }
 
@@ -1074,6 +1219,7 @@
       renderItemList(selectedItemsList, displayItems, "まだメニューが選択されていません。");
       updateRowAmounts();
       updateQuantityButtonStates();
+      updateMenuCardSummaries();
     }
 
     function setStatus(message, type) {
@@ -1125,11 +1271,27 @@
       } else if (!name.value.trim()) {
         name.focus();
       } else if (invalidQuantity) {
-        invalidQuantity.input.focus();
+        expandedMenus.add(invalidQuantity.menu);
+        buildMenuRows();
+
+        const input = getQuantityInputs().find((quantityInput) => {
+          return quantityInput.dataset.menuName === invalidQuantity.menu && (quantityInput.dataset.size || "") === invalidQuantity.size;
+        });
+
+        if (input) {
+          input.focus();
+        }
       } else {
         const firstQuantityInput = getQuantityInputs()[0];
         if (firstQuantityInput) {
           firstQuantityInput.focus();
+        } else if (MENU_ITEMS[0]) {
+          expandedMenus.add(MENU_ITEMS[0].name);
+          buildMenuRows();
+          const input = getQuantityInputs()[0];
+          if (input) {
+            input.focus();
+          }
         }
       }
     }
@@ -1225,13 +1387,14 @@
       sendButton.disabled = sending;
       editButton.disabled = sending;
       updateQuantityButtonStates();
+      updateMenuCardSummaries();
     }
 
     function resetFormState() {
       form.reset();
-      getQuantityInputs().forEach((input) => {
-        input.value = "0";
-      });
+      clearQuantities();
+      expandedMenus.clear();
+      buildMenuRows();
       closeConfirmation();
       updateSummary();
       clearErrors();
@@ -1245,13 +1408,27 @@
     }
 
     function changeQuantity(input, amount) {
-      const current = Number(input.value);
+      const menuName = input.dataset.menuName;
+      const size = input.dataset.size || "";
+      const current = Number(getQuantityValue(menuName, size));
       const safeCurrent = Number.isFinite(current) && Number.isInteger(current) && current >= 0 ? current : 0;
       const nextValue = Math.max(0, safeCurrent + amount);
 
-      input.value = String(nextValue);
+      setQuantity(menuName, size, nextValue);
+      input.value = getQuantityValue(menuName, size);
       updateSummary();
       closeConfirmationAfterEdit();
+    }
+
+    function toggleMenu(menuName) {
+      if (expandedMenus.has(menuName)) {
+        expandedMenus.delete(menuName);
+      } else {
+        expandedMenus.add(menuName);
+      }
+
+      buildMenuRows();
+      updateSummary();
     }
 
     form.addEventListener("submit", (event) => {
@@ -1276,6 +1453,12 @@
         return;
       }
 
+      const toggleButton = event.target.closest(".menu-toggle-button");
+      if (toggleButton) {
+        toggleMenu(toggleButton.dataset.menuName);
+        return;
+      }
+
       const button = event.target.closest(".quantity-button");
       if (!button) {
         return;
@@ -1291,11 +1474,21 @@
       input.focus();
     });
 
-    menuRows.addEventListener("input", () => {
+    menuRows.addEventListener("input", (event) => {
+      if (!(event.target instanceof HTMLInputElement) || !event.target.classList.contains("quantity-input")) {
+        return;
+      }
+
+      setQuantityValue(event.target.dataset.menuName, event.target.dataset.size || "", event.target.value);
       updateSummary();
     });
 
-    menuRows.addEventListener("change", () => {
+    menuRows.addEventListener("change", (event) => {
+      if (!(event.target instanceof HTMLInputElement) || !event.target.classList.contains("quantity-input")) {
+        return;
+      }
+
+      setQuantityValue(event.target.dataset.menuName, event.target.dataset.size || "", event.target.value);
       updateSummary();
     });
 
