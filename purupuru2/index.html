@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>弁当注文フォーム</title>
+  <style>
+    :root {
+      --color-bg: #f4f7fb;
+      --color-surface: #ffffff;
+      --color-surface-soft: #eef4fb;
+      --color-border: #d7e0ea;
+      --color-text: #1f2937;
+      --color-muted: #667085;
+      --color-primary: #1d5d9b;
+      --color-primary-dark: #164a7c;
+      --color-success: #0f766e;
+      --color-success-bg: #e6f6f3;
+      --color-error: #b42318;
+      --color-error-bg: #fff1f0;
+      --color-warning: #8a5a00;
+      --color-warning-bg: #fff7df;
+      --shadow-card: 0 14px 36px rgba(31, 41, 55, 0.08);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    .page-header {
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .container {
+      width: min(100% - 32px, 920px);
+      margin: 0 auto;
+    }
+
+    .page-header .container {
+      padding: 28px 0 24px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--color-primary);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    h1,
+    h2,
+    legend {
+      margin: 0;
+      line-height: 1.3;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+    }
+
+    h2,
+    legend {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .lead {
+      margin: 10px 0 0;
+      color: var(--color-muted);
+    }
+
+    main.container {
+      padding: 28px 0 48px;
+    }
+
+    .form-shell,
+    .summary-panel,
+    .confirmation-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+    }
+
+    .form-shell {
+      padding: 24px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field-full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      color: var(--color-text);
+      font-weight: 700;
+    }
+
+    .required {
+      color: var(--color-error);
+      font-weight: 700;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid #bfccd9;
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--color-text);
+      padding: 11px 12px;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    textarea {
+      min-height: 112px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus,
+    button:focus-visible {
+      outline: 3px solid rgba(29, 93, 155, 0.22);
+      outline-offset: 2px;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(29, 93, 155, 0.12);
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--color-muted);
+      font-size: 0.92rem;
+    }
+
+    .menu-order-panel {
+      margin: 4px 0 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .menu-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .menu-order-hint {
+      margin-top: 6px;
+      margin-bottom: 14px;
+    }
+
+    .menu-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      background: #fbfdff;
+    }
+
+    .menu-name {
+      margin: 0;
+      font-weight: 800;
+    }
+
+    .menu-price {
+      margin: 4px 0 0;
+      color: var(--color-muted);
+      font-size: 0.95rem;
+    }
+
+    .quantity-control {
+      display: grid;
+      grid-template-columns: 48px 76px 48px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .quantity-button {
+      width: 48px;
+      min-height: 48px;
+      border: 1px solid #9db0c3;
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--color-primary-dark);
+      font-size: 1.25rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .quantity-button:hover:not(:disabled) {
+      background: var(--color-surface-soft);
+      border-color: var(--color-primary);
+    }
+
+    .quantity-input {
+      min-height: 48px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .summary-panel {
+      margin-top: 20px;
+      padding: 20px;
+      box-shadow: none;
+    }
+
+    .summary-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px 18px;
+      margin: 16px 0 0;
+    }
+
+    .summary-line {
+      margin: 0;
+      color: var(--color-muted);
+    }
+
+    .summary-line strong {
+      color: var(--color-text);
+      font-weight: 800;
+    }
+
+    .detail-block {
+      margin-top: 18px;
+    }
+
+    .detail-title {
+      margin: 0 0 8px;
+      color: var(--color-text);
+      font-weight: 800;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .detail-item-name {
+      font-weight: 800;
+    }
+
+    .detail-item-meta {
+      flex: 0 0 auto;
+      color: var(--color-muted);
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .detail-empty {
+      margin: 0;
+      color: var(--color-muted);
+    }
+
+    .actions,
+    .confirmation-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .button {
+      min-height: 48px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 12px 18px;
+      font-weight: 800;
+      transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+    }
+
+    .button-primary {
+      background: var(--color-primary);
+      color: #ffffff;
+    }
+
+    .button-primary:hover:not(:disabled) {
+      background: var(--color-primary-dark);
+    }
+
+    .button-secondary {
+      background: #ffffff;
+      border-color: #9db0c3;
+      color: var(--color-primary-dark);
+    }
+
+    .button-secondary:hover:not(:disabled) {
+      background: var(--color-surface-soft);
+      border-color: var(--color-primary);
+    }
+
+    .message {
+      margin: 18px 0 0;
+      border-radius: 6px;
+      padding: 14px 16px;
+      font-weight: 700;
+    }
+
+    .message[hidden] {
+      display: none;
+    }
+
+    .message-info {
+      background: var(--color-warning-bg);
+      color: var(--color-warning);
+      border: 1px solid #f0d88f;
+    }
+
+    .message-success {
+      background: var(--color-success-bg);
+      color: var(--color-success);
+      border: 1px solid #a8ddd5;
+    }
+
+    .message-error {
+      background: var(--color-error-bg);
+      color: var(--color-error);
+      border: 1px solid #f0b8b3;
+    }
+
+    .message p {
+      margin: 0;
+    }
+
+    .message ul {
+      margin: 8px 0 0;
+      padding-left: 1.2em;
+    }
+
+    .confirmation-panel {
+      margin-top: 22px;
+      padding: 24px;
+    }
+
+    .confirmation-panel[hidden] {
+      display: none;
+    }
+
+    .confirmation-grid {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 0;
+      margin: 18px 0 0;
+      border-top: 1px solid var(--color-border);
+      border-left: 1px solid var(--color-border);
+    }
+
+    .confirmation-grid dt,
+    .confirmation-grid dd {
+      margin: 0;
+      padding: 12px 14px;
+      border-right: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+      min-height: 48px;
+    }
+
+    .confirmation-grid dt {
+      background: #f7f9fc;
+      color: var(--color-muted);
+      font-weight: 800;
+    }
+
+    .confirmation-grid dd {
+      background: #ffffff;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 720px) {
+      .container {
+        width: min(100% - 24px, 920px);
+      }
+
+      .page-header .container {
+        padding: 22px 0 20px;
+      }
+
+      main.container {
+        padding-top: 20px;
+      }
+
+      h1 {
+        font-size: 1.55rem;
+      }
+
+      .form-shell,
+      .summary-panel,
+      .confirmation-panel {
+        padding: 18px;
+      }
+
+      .form-grid,
+      .summary-list {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-row {
+        grid-template-columns: 1fr;
+      }
+
+      .quantity-control {
+        grid-template-columns: 56px minmax(80px, 1fr) 56px;
+      }
+
+      .quantity-button {
+        width: 56px;
+      }
+
+      .detail-item {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .detail-item-meta {
+        text-align: left;
+      }
+
+      .actions,
+      .confirmation-actions {
+        flex-direction: column;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .confirmation-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .confirmation-grid dt {
+        border-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="container">
+      <p class="eyebrow">職場内注文受付</p>
+      <h1>弁当注文フォーム</h1>
+      <p class="lead">注文内容を入力し、送信前に確認してください。</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <form id="orderForm" class="form-shell" novalidate>
+      <div class="form-grid">
+        <div class="field">
+          <label for="department">部署 <span class="required">必須</span></label>
+          <input type="text" id="department" name="department" autocomplete="organization" required>
+        </div>
+
+        <div class="field">
+          <label for="name">名前 <span class="required">必須</span></label>
+          <input type="text" id="name" name="name" autocomplete="name" required>
+        </div>
+
+        <div class="field field-full">
+          <label for="contact">連絡先</label>
+          <input type="text" id="contact" name="contact" inputmode="text" autocomplete="email" aria-describedby="contactHint">
+          <p id="contactHint" class="hint">電話番号またはメールアドレスを入力できます。</p>
+        </div>
+
+        <fieldset class="menu-order-panel field-full" aria-describedby="menuOrderHint">
+          <legend>メニュー注文 <span class="required">必須</span></legend>
+          <p id="menuOrderHint" class="hint menu-order-hint">注文するメニューの数量を入力してください。数量が0のメニューは送信されません。</p>
+          <div id="menuRows" class="menu-list"></div>
+        </fieldset>
+
+        <div class="field field-full">
+          <label for="note">備考</label>
+          <textarea id="note" name="note" rows="4"></textarea>
+        </div>
+      </div>
+
+      <section class="summary-panel" aria-labelledby="summaryTitle" aria-live="polite">
+        <h2 id="summaryTitle">入力補助</h2>
+        <div class="summary-list">
+          <p class="summary-line">選択中メニュー数：<strong id="selectedMenuCountText">0種類</strong></p>
+          <p class="summary-line">合計数量：<strong id="totalQuantityText">0個</strong></p>
+          <p class="summary-line">参考合計：<strong id="grandTotalText">0円</strong></p>
+        </div>
+        <div class="detail-block">
+          <p class="detail-title">注文内容：</p>
+          <div id="selectedItemsList"></div>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button type="submit" id="showConfirmButton" class="button button-primary">入力内容を確認する</button>
+      </div>
+    </form>
+
+    <div id="errorBox" class="message message-error" role="alert" hidden></div>
+    <p id="statusMessage" class="message message-info" role="status" aria-live="polite" hidden></p>
+
+    <section id="confirmationPanel" class="confirmation-panel" aria-labelledby="confirmationTitle" tabindex="-1" hidden>
+      <h2 id="confirmationTitle">送信前の確認</h2>
+      <dl class="confirmation-grid">
+        <dt>部署</dt>
+        <dd id="confirmDepartment"></dd>
+
+        <dt>名前</dt>
+        <dd id="confirmName"></dd>
+
+        <dt>連絡先</dt>
+        <dd id="confirmContact"></dd>
+
+        <dt>備考</dt>
+        <dd id="confirmNote"></dd>
+
+        <dt>注文明細</dt>
+        <dd id="confirmItems"></dd>
+
+        <dt>合計数量</dt>
+        <dd id="confirmTotalQuantity"></dd>
+
+        <dt>参考合計金額</dt>
+        <dd id="confirmGrandTotal"></dd>
+      </dl>
+
+      <div class="confirmation-actions">
+        <button type="button" id="sendButton" class="button button-primary">この内容で送信</button>
+        <button type="button" id="editButton" class="button button-secondary">修正する</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyPS7Gti66wy-MyL_CPNOssYsGYAMKZOER3BD4ejTiPZDLE5I_3cT0E3I6HHYZw5Oev/exec";
+
+    const MENU_ITEMS = [
+      { name: "鮭弁当", price: 500 },
+      { name: "のり弁当", price: 450 },
+      { name: "唐揚げ弁当", price: 550 },
+      { name: "幕の内弁当", price: 600 }
+    ];
+
+    const form = document.getElementById("orderForm");
+    const menuRows = document.getElementById("menuRows");
+    const selectedMenuCountText = document.getElementById("selectedMenuCountText");
+    const totalQuantityText = document.getElementById("totalQuantityText");
+    const grandTotalText = document.getElementById("grandTotalText");
+    const selectedItemsList = document.getElementById("selectedItemsList");
+    const errorBox = document.getElementById("errorBox");
+    const statusMessage = document.getElementById("statusMessage");
+    const confirmationPanel = document.getElementById("confirmationPanel");
+    const showConfirmButton = document.getElementById("showConfirmButton");
+    const sendButton = document.getElementById("sendButton");
+    const editButton = document.getElementById("editButton");
+
+    let pendingData = null;
+    let isSending = false;
+
+    function formatYen(amount) {
+      return new Intl.NumberFormat("ja-JP").format(amount) + "円";
+    }
+
+    function findMenuItem(menuName) {
+      return MENU_ITEMS.find((item) => item.name === menuName);
+    }
+
+    function buildMenuRows() {
+      menuRows.replaceChildren();
+
+      MENU_ITEMS.forEach((item, index) => {
+        const row = document.createElement("div");
+        row.className = "menu-row";
+
+        const info = document.createElement("div");
+
+        const name = document.createElement("p");
+        name.className = "menu-name";
+        name.textContent = item.name;
+
+        const price = document.createElement("p");
+        price.className = "menu-price";
+        price.textContent = "参考単価：" + formatYen(item.price);
+
+        info.append(name, price);
+
+        const control = document.createElement("div");
+        control.className = "quantity-control";
+
+        const inputId = "quantity-" + index;
+
+        const minusButton = document.createElement("button");
+        minusButton.type = "button";
+        minusButton.className = "quantity-button";
+        minusButton.textContent = "-";
+        minusButton.setAttribute("aria-label", item.name + "を1個減らす");
+        minusButton.dataset.action = "decrease";
+        minusButton.dataset.target = inputId;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.id = inputId;
+        input.className = "quantity-input";
+        input.min = "0";
+        input.step = "1";
+        input.value = "0";
+        input.inputMode = "numeric";
+        input.dataset.menuName = item.name;
+        input.dataset.price = String(item.price);
+        input.setAttribute("aria-label", item.name + "の数量");
+
+        const plusButton = document.createElement("button");
+        plusButton.type = "button";
+        plusButton.className = "quantity-button";
+        plusButton.textContent = "+";
+        plusButton.setAttribute("aria-label", item.name + "を1個増やす");
+        plusButton.dataset.action = "increase";
+        plusButton.dataset.target = inputId;
+
+        control.append(minusButton, input, plusButton);
+        row.append(info, control);
+        menuRows.appendChild(row);
+      });
+    }
+
+    function getQuantityInputs() {
+      return Array.from(menuRows.querySelectorAll(".quantity-input"));
+    }
+
+    function getQuantityEntries() {
+      return getQuantityInputs().map((input) => {
+        const value = input.value.trim();
+        return {
+          input,
+          menu: input.dataset.menuName,
+          price: Number(input.dataset.price),
+          value,
+          quantity: Number(value)
+        };
+      });
+    }
+
+    function getSelectedItems() {
+      return getQuantityEntries()
+        .filter((item) => Number.isFinite(item.quantity) && Number.isInteger(item.quantity) && item.quantity > 0)
+        .map((item) => ({
+          menu: item.menu,
+          quantity: item.quantity
+        }));
+    }
+
+    function calculateTotalQuantity(items) {
+      return items.reduce((sum, item) => sum + item.quantity, 0);
+    }
+
+    function calculateGrandTotal(items) {
+      return items.reduce((sum, item) => {
+        const menuItem = findMenuItem(item.menu);
+        return menuItem ? sum + menuItem.price * item.quantity : sum;
+      }, 0);
+    }
+
+    function renderItemList(container, items, emptyText) {
+      container.replaceChildren();
+
+      if (items.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "detail-empty";
+        empty.textContent = emptyText;
+        container.appendChild(empty);
+        return;
+      }
+
+      const list = document.createElement("ul");
+      list.className = "detail-list";
+
+      items.forEach((item) => {
+        const menuItem = findMenuItem(item.menu);
+        const lineTotal = menuItem ? menuItem.price * item.quantity : 0;
+
+        const listItem = document.createElement("li");
+        listItem.className = "detail-item";
+
+        const itemName = document.createElement("span");
+        itemName.className = "detail-item-name";
+        itemName.textContent = item.menu;
+
+        const itemMeta = document.createElement("span");
+        itemMeta.className = "detail-item-meta";
+        itemMeta.textContent = item.quantity + "個 " + formatYen(lineTotal);
+
+        listItem.append(itemName, itemMeta);
+        list.appendChild(listItem);
+      });
+
+      container.appendChild(list);
+    }
+
+    function updateQuantityButtonStates() {
+      getQuantityInputs().forEach((input) => {
+        const quantity = Number(input.value);
+        const minusButton = menuRows.querySelector('[data-action="decrease"][data-target="' + input.id + '"]');
+        const plusButton = menuRows.querySelector('[data-action="increase"][data-target="' + input.id + '"]');
+
+        if (minusButton) {
+          minusButton.disabled = isSending || !Number.isFinite(quantity) || quantity <= 0;
+        }
+
+        if (plusButton) {
+          plusButton.disabled = isSending;
+        }
+      });
+    }
+
+    function updateSummary() {
+      const items = getSelectedItems();
+      const totalQuantity = calculateTotalQuantity(items);
+      const grandTotal = calculateGrandTotal(items);
+
+      selectedMenuCountText.textContent = items.length + "種類";
+      totalQuantityText.textContent = totalQuantity + "個";
+      grandTotalText.textContent = formatYen(grandTotal);
+      renderItemList(selectedItemsList, items, "まだメニューが選択されていません。");
+      updateQuantityButtonStates();
+    }
+
+    function setStatus(message, type) {
+      statusMessage.textContent = message;
+      statusMessage.className = "message message-" + type;
+      statusMessage.hidden = false;
+    }
+
+    function clearStatus() {
+      statusMessage.textContent = "";
+      statusMessage.hidden = true;
+    }
+
+    function clearErrors() {
+      errorBox.replaceChildren();
+      errorBox.hidden = true;
+    }
+
+    function showErrors(errors) {
+      errorBox.replaceChildren();
+
+      const title = document.createElement("p");
+      title.textContent = "入力内容を確認してください。";
+      errorBox.appendChild(title);
+
+      const list = document.createElement("ul");
+      errors.forEach((error) => {
+        const item = document.createElement("li");
+        item.textContent = error;
+        list.appendChild(item);
+      });
+      errorBox.appendChild(list);
+      errorBox.hidden = false;
+    }
+
+    function focusFirstInvalidField() {
+      const department = form.elements["department"];
+      const name = form.elements["name"];
+      const invalidQuantity = getQuantityEntries().find((item) => {
+        if (!item.value) {
+          return true;
+        }
+
+        return !Number.isFinite(item.quantity) || item.quantity < 0 || !Number.isInteger(item.quantity);
+      });
+
+      if (!department.value.trim()) {
+        department.focus();
+      } else if (!name.value.trim()) {
+        name.focus();
+      } else if (invalidQuantity) {
+        invalidQuantity.input.focus();
+      } else {
+        const firstQuantityInput = getQuantityInputs()[0];
+        if (firstQuantityInput) {
+          firstQuantityInput.focus();
+        }
+      }
+    }
+
+    function validateForm() {
+      const department = form.elements["department"].value.trim();
+      const name = form.elements["name"].value.trim();
+      const contact = form.elements["contact"].value.trim();
+      const note = form.elements["note"].value.trim();
+      const quantityEntries = getQuantityEntries();
+      const items = getSelectedItems();
+      const errors = [];
+      let hasQuantityError = false;
+
+      if (!department) {
+        errors.push("部署を入力してください。");
+      }
+
+      if (!name) {
+        errors.push("名前を入力してください。");
+      }
+
+      quantityEntries.forEach((item) => {
+        if (!item.value) {
+          errors.push(item.menu + "の数量を数値で入力してください。");
+          hasQuantityError = true;
+        } else if (!Number.isFinite(item.quantity)) {
+          errors.push(item.menu + "の数量を数値で入力してください。");
+          hasQuantityError = true;
+        } else if (item.quantity < 0) {
+          errors.push(item.menu + "の数量は0以上で入力してください。");
+          hasQuantityError = true;
+        } else if (!Number.isInteger(item.quantity)) {
+          errors.push(item.menu + "の数量は整数で入力してください。");
+          hasQuantityError = true;
+        }
+      });
+
+      if (!hasQuantityError && items.length === 0) {
+        errors.push("1つ以上のメニューで数量を1以上にしてください。");
+      }
+
+      return {
+        isValid: errors.length === 0,
+        errors,
+        data: {
+          department,
+          name,
+          contact,
+          note,
+          items
+        }
+      };
+    }
+
+    function setConfirmationText(id, value, fallback) {
+      document.getElementById(id).textContent = value || fallback;
+    }
+
+    function renderConfirmation(data) {
+      const totalQuantity = calculateTotalQuantity(data.items);
+      const grandTotal = calculateGrandTotal(data.items);
+
+      setConfirmationText("confirmDepartment", data.department, "未入力");
+      setConfirmationText("confirmName", data.name, "未入力");
+      setConfirmationText("confirmContact", data.contact, "なし");
+      setConfirmationText("confirmNote", data.note, "なし");
+      renderItemList(document.getElementById("confirmItems"), data.items, "注文明細がありません。");
+      setConfirmationText("confirmTotalQuantity", totalQuantity + "個", "0個");
+      setConfirmationText("confirmGrandTotal", formatYen(grandTotal), "0円");
+    }
+
+    function showConfirmation(data) {
+      pendingData = data;
+      renderConfirmation(data);
+      confirmationPanel.hidden = false;
+      setStatus("内容を確認してください。", "info");
+      confirmationPanel.focus();
+    }
+
+    function closeConfirmation() {
+      pendingData = null;
+      confirmationPanel.hidden = true;
+    }
+
+    function setSending(sending) {
+      isSending = sending;
+      showConfirmButton.disabled = sending;
+      sendButton.disabled = sending;
+      editButton.disabled = sending;
+      updateQuantityButtonStates();
+    }
+
+    function resetFormState() {
+      form.reset();
+      getQuantityInputs().forEach((input) => {
+        input.value = "0";
+      });
+      closeConfirmation();
+      updateSummary();
+      clearErrors();
+    }
+
+    function closeConfirmationAfterEdit() {
+      if (!confirmationPanel.hidden) {
+        closeConfirmation();
+        clearStatus();
+      }
+    }
+
+    function changeQuantity(input, amount) {
+      const current = Number(input.value);
+      const safeCurrent = Number.isFinite(current) && Number.isInteger(current) && current >= 0 ? current : 0;
+      const nextValue = Math.max(0, safeCurrent + amount);
+
+      input.value = String(nextValue);
+      updateSummary();
+      closeConfirmationAfterEdit();
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      clearErrors();
+      clearStatus();
+
+      const result = validateForm();
+
+      if (!result.isValid) {
+        closeConfirmation();
+        showErrors(result.errors);
+        focusFirstInvalidField();
+        return;
+      }
+
+      showConfirmation(result.data);
+    });
+
+    menuRows.addEventListener("click", (event) => {
+      if (!(event.target instanceof Element)) {
+        return;
+      }
+
+      const button = event.target.closest(".quantity-button");
+      if (!button) {
+        return;
+      }
+
+      const input = document.getElementById(button.dataset.target);
+      if (!input) {
+        return;
+      }
+
+      const amount = button.dataset.action === "increase" ? 1 : -1;
+      changeQuantity(input, amount);
+      input.focus();
+    });
+
+    menuRows.addEventListener("input", () => {
+      updateSummary();
+    });
+
+    form.addEventListener("input", closeConfirmationAfterEdit);
+    form.addEventListener("change", closeConfirmationAfterEdit);
+
+    editButton.addEventListener("click", () => {
+      closeConfirmation();
+      clearStatus();
+      showConfirmButton.focus();
+    });
+
+    sendButton.addEventListener("click", async () => {
+      if (!pendingData) {
+        return;
+      }
+
+      const data = pendingData;
+
+      setSending(true);
+      clearErrors();
+      setStatus("送信中です...", "info");
+
+      try {
+        const response = await fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          throw new Error("HTTP status: " + response.status);
+        }
+
+        resetFormState();
+        setStatus("送信しました", "success");
+      } catch (error) {
+        setStatus("送信に失敗しました。時間をおいて再度お試しください。", "error");
+        console.error(error);
+      } finally {
+        setSending(false);
+      }
+    });
+
+    buildMenuRows();
+    updateSummary();
+  </script>
+</body>
+</html>
