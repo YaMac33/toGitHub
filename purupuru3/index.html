@@ -645,9 +645,9 @@
   </main>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyPS7Gti66wy-MyL_CPNOssYsGYAMKZOER3BD4ejTiPZDLE5I_3cT0E3I6HHYZw5Oev/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyODQlIqCmhYWb6s073dgk0qMhtDTX_7RgU3z9TEUqsfCCPi8xTyPSCPcF9gv_UeUuY/exec";
 
-    const MENU_ITEMS = [
+    const DEFAULT_MENU_ITEMS = [
       { name: "鮭弁当", basePrice: 500, sizeEnabled: true },
       { name: "のり弁当", basePrice: 450, sizeEnabled: true },
       { name: "唐揚げ弁当", basePrice: 550, sizeEnabled: true },
@@ -656,12 +656,15 @@
       { name: "味噌汁", basePrice: 100, sizeEnabled: false }
     ];
 
-    const SIZE_OPTIONS = [
+    const DEFAULT_SIZE_OPTIONS = [
       { name: "小盛", adjustment: -50 },
       { name: "普通", adjustment: 0 },
       { name: "大盛", adjustment: 100 },
       { name: "特盛", adjustment: 200 }
     ];
+
+    let MENU_ITEMS = DEFAULT_MENU_ITEMS.map((item) => ({ ...item }));
+    let SIZE_OPTIONS = DEFAULT_SIZE_OPTIONS.map((item) => ({ ...item }));
 
     const form = document.getElementById("orderForm");
     const menuRows = document.getElementById("menuRows");
@@ -689,6 +692,123 @@
 
     function findSizeOption(sizeName) {
       return SIZE_OPTIONS.find((option) => option.name === sizeName);
+    }
+
+    function toBoolean(value, defaultValue) {
+      if (value === undefined || value === null || value === "") {
+        return defaultValue;
+      }
+
+      if (value === true || value === false) {
+        return value;
+      }
+
+      const text = String(value).trim().toUpperCase();
+      return text === "TRUE" || text === "1" || text === "YES" || text === "有効" || text === "表示";
+    }
+
+    function toNumber(value, defaultValue) {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : defaultValue;
+    }
+
+    function normalizeMenuItem(row) {
+      if (Array.isArray(row)) {
+        return {
+          name: String(row[0] || "").trim(),
+          basePrice: toNumber(row[1], 0),
+          sizeEnabled: toBoolean(row[2], false),
+          visible: toBoolean(row[3], false)
+        };
+      }
+
+      return {
+        name: String(row.name || row.menu || row["メニュー"] || "").trim(),
+        basePrice: toNumber(row.basePrice ?? row["基本単価"], 0),
+        sizeEnabled: toBoolean(row.sizeEnabled ?? row["サイズ変更対象"], false),
+        visible: toBoolean(row.visible ?? row["表示"], true)
+      };
+    }
+
+    function normalizeSizeOption(row) {
+      if (Array.isArray(row)) {
+        return {
+          name: String(row[0] || "").trim(),
+          adjustment: toNumber(row[1], 0),
+          visible: toBoolean(row[2], false),
+          order: toNumber(row[3], 0)
+        };
+      }
+
+      return {
+        name: String(row.name || row.size || row["サイズ"] || "").trim(),
+        adjustment: toNumber(row.adjustment ?? row["加算額"], 0),
+        visible: toBoolean(row.visible ?? row["表示"], true),
+        order: toNumber(row.order ?? row["並び順"], 0)
+      };
+    }
+
+    function getMasterDataUrl() {
+      const separator = GAS_URL.includes("?") ? "&" : "?";
+      return GAS_URL + separator + "action=masters";
+    }
+
+    function showMenuLoading() {
+      menuRows.replaceChildren();
+
+      const loading = document.createElement("p");
+      loading.className = "detail-empty";
+      loading.textContent = "メニュー情報を読み込み中です。";
+      menuRows.appendChild(loading);
+    }
+
+    async function loadMasterData() {
+      try {
+        const response = await fetch(getMasterDataUrl(), {
+          method: "GET",
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error("HTTP status: " + response.status);
+        }
+
+        const payload = await response.json();
+        const root = payload.data || payload;
+        const menuSource = root.menus || root.menuItems || [];
+        const sizeSource = root.sizeOptions || root.sizes || [];
+
+        const menus = menuSource
+          .map(normalizeMenuItem)
+          .filter((item) => item.name && item.visible)
+          .map((item) => ({
+            name: item.name,
+            basePrice: item.basePrice,
+            sizeEnabled: item.sizeEnabled
+          }));
+
+        const sizeOptions = sizeSource
+          .map(normalizeSizeOption)
+          .filter((item) => item.name && item.visible)
+          .sort((a, b) => a.order - b.order)
+          .map((item) => ({
+            name: item.name,
+            adjustment: item.adjustment
+          }));
+
+        if (menus.length === 0) {
+          throw new Error("表示できるメニューがありません。");
+        }
+
+        MENU_ITEMS = menus;
+
+        if (sizeOptions.length > 0) {
+          SIZE_OPTIONS = sizeOptions;
+        }
+      } catch (error) {
+        setStatus("メニュー情報を取得できなかったため、初期メニューを表示しています。", "info");
+        console.error(error);
+      }
     }
 
     function buildMenuRows() {
@@ -1219,8 +1339,16 @@
       }
     });
 
-    buildMenuRows();
-    updateSummary();
+    async function initialize() {
+      showConfirmButton.disabled = true;
+      showMenuLoading();
+      await loadMasterData();
+      buildMenuRows();
+      updateSummary();
+      showConfirmButton.disabled = false;
+    }
+
+    initialize();
   </script>
 </body>
 </html>
