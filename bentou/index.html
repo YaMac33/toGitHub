@@ -603,6 +603,96 @@
       white-space: nowrap;
     }
 
+
+    body {
+      padding-bottom: 108px;
+    }
+
+    .page-header {
+      background:
+        radial-gradient(circle at top left, rgba(29, 93, 155, 0.18), transparent 28rem),
+        linear-gradient(135deg, #ffffff 0%, #eef6ff 100%);
+    }
+
+    .form-shell,
+    .summary-panel,
+    .confirmation-panel,
+    .order-status-panel {
+      backdrop-filter: blur(10px);
+    }
+
+    .menu-row {
+      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .menu-row:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(31, 41, 55, 0.08);
+    }
+
+    .floating-cart {
+      position: fixed;
+      right: max(16px, calc((100vw - 980px) / 2));
+      bottom: 16px;
+      left: max(16px, calc((100vw - 980px) / 2));
+      z-index: 30;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.68);
+      border-radius: 18px;
+      background: rgba(17, 24, 39, 0.92);
+      color: #ffffff;
+      box-shadow: 0 22px 56px rgba(15, 23, 42, 0.28);
+      backdrop-filter: blur(16px);
+    }
+
+    .floating-cart-title {
+      margin: 0 0 4px;
+      color: rgba(255, 255, 255, 0.76);
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+
+    .floating-cart-main {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      align-items: baseline;
+      margin: 0;
+      font-weight: 800;
+    }
+
+    .floating-cart-main strong {
+      font-size: 1.28rem;
+    }
+
+    .floating-cart-sub {
+      margin: 4px 0 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.88rem;
+    }
+
+    .floating-cart-button {
+      min-width: 150px;
+      border: 0;
+      border-radius: 999px;
+      background: #ffffff;
+      color: var(--color-primary-dark);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .floating-cart-button:hover:not(:disabled) {
+      background: #eaf3ff;
+    }
+
+    .order-filter-row {
+      grid-template-columns: repeat(2, minmax(180px, 280px));
+      align-items: end;
+    }
+
     @media (max-width: 860px) {
       .size-variant-row {
         grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
@@ -689,6 +779,18 @@
       .order-filter-row {
         grid-template-columns: 1fr;
       }
+
+      .floating-cart {
+        grid-template-columns: 1fr;
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        padding: 14px;
+      }
+
+      .floating-cart-button {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -697,7 +799,20 @@
     <div class="container">
       <p class="eyebrow">職場内注文受付</p>
       <h1>弁当注文フォーム</h1>
-      <p class="lead">注文内容を入力し、送信前に確認してください。</p>
+      <p class="lead">
+  注文内容を入力し、送信前に確認してください。<br>
+  ・注文の締切は、受取日前日の12:00（正午）です。<br>
+  ・注文できるのは、「管理人と個人LINEで連絡が取れる方」かつ「PayPayで支払いできる方」のみです。<br>
+  条件に当てはまらない注文は、入力されていても削除し、注文は行いません。<br>
+  ・料金は先払いです。<br>
+  ・入力された情報は、管理人のみが閲覧できるGoogleスプレッドシートに保存されます。<br>
+  ・個人情報の入力に不安がある場合は、管理人が入力者を認識できる書き方でも大丈夫です。<br>
+  ただし、部署名はこのページ上にそのまま表示されるため、極端にわかりづらい表記や変わった表記は避けてください。<br>
+  なお、なりすまし防止のため、入力後にLINEで確認の連絡を入れます。<br>
+  それに対して反応がない場合、その注文は行いません。<br>
+  ・都合により、指定日の注文受付を中止する場合があります。<br>
+  その際はできるだけ前日中に連絡します。返金はPayPayで対応します。
+</p>
     </div>
   </header>
 
@@ -801,10 +916,18 @@
         <p id="ordersStatusMessage" class="message message-info" role="status" aria-live="polite">注文状況を読み込み中です。</p>
 
         <div class="order-filter-row">
-          <label for="departmentFilter">部署フィルター</label>
-          <select id="departmentFilter">
-            <option value="all">すべて</option>
-          </select>
+          <div class="field">
+            <label for="departmentFilter">部署フィルター</label>
+            <select id="departmentFilter">
+              <option value="all">すべて</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="menuFilter">メニューフィルター</label>
+            <select id="menuFilter">
+              <option value="all">すべて</option>
+            </select>
+          </div>
         </div>
 
         <div class="summary-list order-summary-list" aria-live="polite">
@@ -814,41 +937,6 @@
         </div>
 
         <p id="ordersEmptyMessage" class="order-empty" hidden>現在表示できる注文はありません。</p>
-
-        <div class="order-table-block">
-          <p class="order-table-title">メニュー別集計</p>
-          <div class="table-scroll">
-            <table class="order-table">
-              <thead>
-                <tr>
-                  <th scope="col">メニュー</th>
-                  <th scope="col">サイズ</th>
-                  <th scope="col">数量</th>
-                  <th scope="col">金額</th>
-                </tr>
-              </thead>
-              <tbody id="menuAggregateBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="order-table-block">
-          <p class="order-table-title">部署別集計</p>
-          <div class="table-scroll">
-            <table class="order-table">
-              <thead>
-                <tr>
-                  <th scope="col">部署</th>
-                  <th scope="col">メニュー</th>
-                  <th scope="col">サイズ</th>
-                  <th scope="col">数量</th>
-                  <th scope="col">金額</th>
-                </tr>
-              </thead>
-              <tbody id="departmentAggregateBody"></tbody>
-            </table>
-          </div>
-        </div>
 
         <div class="order-table-block">
           <p class="order-table-title">注文一覧</p>
@@ -872,6 +960,18 @@
       </div>
     </section>
   </main>
+
+  <aside id="floatingCart" class="floating-cart" aria-live="polite" aria-label="現在の注文合計">
+    <div>
+      <p class="floating-cart-title">現在の入力内容</p>
+      <p class="floating-cart-main">
+        <span><strong id="floatingTotalQuantityText">0個</strong></span>
+        <span>参考合計 <strong id="floatingGrandTotalText">0円</strong></span>
+      </p>
+      <p id="floatingSelectedText" class="floating-cart-sub">まだメニューが選択されていません。</p>
+    </div>
+    <button type="button" id="floatingConfirmButton" class="button floating-cart-button">確認へ進む</button>
+  </aside>
 
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxLU5fTH1oN5BKtBXpcs4io844_sQZ1O-8-X7F7VIMylD0r2dpqe-2A8mScZZyIs1Xm/exec";
@@ -913,6 +1013,7 @@
     const orderStatusContent = document.getElementById("orderStatusContent");
     const refreshOrdersButton = document.getElementById("refreshOrdersButton");
     const departmentFilter = document.getElementById("departmentFilter");
+    const menuFilter = document.getElementById("menuFilter");
     const ordersStatusMessage = document.getElementById("ordersStatusMessage");
     const ordersUpdatedAt = document.getElementById("ordersUpdatedAt");
     const currentOrderQuantityText = document.getElementById("currentOrderQuantityText");
@@ -922,12 +1023,23 @@
     const menuAggregateBody = document.getElementById("menuAggregateBody");
     const departmentAggregateBody = document.getElementById("departmentAggregateBody");
     const currentOrdersBody = document.getElementById("currentOrdersBody");
+    const floatingTotalQuantityText = document.getElementById("floatingTotalQuantityText");
+    const floatingGrandTotalText = document.getElementById("floatingGrandTotalText");
+    const floatingSelectedText = document.getElementById("floatingSelectedText");
+    const floatingConfirmButton = document.getElementById("floatingConfirmButton");
 
     let pendingData = null;
     let isSending = false;
     let currentOrders = [];
     const expandedMenus = new Set();
     const quantities = {};
+
+    function withScrollPreserved(callback) {
+      const x = window.scrollX;
+      const y = window.scrollY;
+      callback();
+      window.requestAnimationFrame(() => window.scrollTo(x, y));
+    }
 
     function formatYen(amount) {
       return new Intl.NumberFormat("ja-JP").format(amount) + "円";
@@ -1061,14 +1173,38 @@
       departmentFilter.value = departments.includes(previousValue) ? previousValue : "all";
     }
 
+    function updateMenuFilterOptions() {
+      const previousValue = menuFilter.value || "all";
+      const menus = Array.from(new Set(currentOrders.map((order) => order.menu)))
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "ja"));
+
+      menuFilter.replaceChildren();
+
+      const allOption = document.createElement("option");
+      allOption.value = "all";
+      allOption.textContent = "すべて";
+      menuFilter.appendChild(allOption);
+
+      menus.forEach((menu) => {
+        const option = document.createElement("option");
+        option.value = menu;
+        option.textContent = menu;
+        menuFilter.appendChild(option);
+      });
+
+      menuFilter.value = menus.includes(previousValue) ? previousValue : "all";
+    }
+
     function getFilteredCurrentOrders() {
       const selectedDepartment = departmentFilter.value || "all";
+      const selectedMenu = menuFilter.value || "all";
 
-      if (selectedDepartment === "all") {
-        return currentOrders;
-      }
-
-      return currentOrders.filter((order) => order.department === selectedDepartment);
+      return currentOrders.filter((order) => {
+        const matchesDepartment = selectedDepartment === "all" || order.department === selectedDepartment;
+        const matchesMenu = selectedMenu === "all" || order.menu === selectedMenu;
+        return matchesDepartment && matchesMenu;
+      });
     }
 
     function calculatePublishedOrderTotals(orders) {
@@ -1163,28 +1299,10 @@
     function renderCurrentOrders() {
       const filteredOrders = getFilteredCurrentOrders();
       const totals = calculatePublishedOrderTotals(filteredOrders);
-      const menuRowsData = aggregateMenuOrders(filteredOrders);
-      const departmentRowsData = aggregateDepartmentOrders(filteredOrders);
-
       currentOrderQuantityText.textContent = formatQuantity(totals.quantity);
       currentOrderAmountText.textContent = formatYen(totals.amount);
       currentOrderLineCountText.textContent = totals.lines + "行";
       ordersEmptyMessage.hidden = filteredOrders.length > 0;
-
-      renderTableRows(menuAggregateBody, menuRowsData, (row) => [
-        { text: row.menu },
-        { text: getSizeDisplay(row.size) },
-        { text: formatQuantity(row.quantity), isNumber: true },
-        { text: formatYen(row.amount), isNumber: true }
-      ]);
-
-      renderTableRows(departmentAggregateBody, departmentRowsData, (row) => [
-        { text: row.department },
-        { text: row.menu },
-        { text: getSizeDisplay(row.size) },
-        { text: formatQuantity(row.quantity), isNumber: true },
-        { text: formatYen(row.amount), isNumber: true }
-      ]);
 
       renderTableRows(currentOrdersBody, filteredOrders, (row) => [
         { text: row.timestamp },
@@ -1222,12 +1340,14 @@
 
         currentOrders = orders.map(normalizePublishedOrder);
         updateDepartmentFilterOptions();
+        updateMenuFilterOptions();
         renderCurrentOrders();
         ordersUpdatedAt.textContent = data.updatedAt ? "更新日時：" + data.updatedAt : "";
         setOrdersStatus("注文状況を更新しました。", "success");
       } catch (error) {
         currentOrders = [];
         updateDepartmentFilterOptions();
+        updateMenuFilterOptions();
         renderCurrentOrders();
         ordersUpdatedAt.textContent = "";
 
@@ -1715,6 +1835,11 @@
       selectedMenuCountText.textContent = items.length + "種類";
       totalQuantityText.textContent = totalQuantity + "個";
       grandTotalText.textContent = formatYen(grandTotal);
+      floatingTotalQuantityText.textContent = totalQuantity + "個";
+      floatingGrandTotalText.textContent = formatYen(grandTotal);
+      floatingSelectedText.textContent = displayItems.length > 0
+        ? displayItems.map((item) => item.menu + (item.size ? "（" + item.size + "）" : "") + " " + item.quantity + "個").join("、")
+        : "まだメニューが選択されていません。";
       renderItemList(selectedItemsList, displayItems, "まだメニューが選択されていません。");
       updateRowAmounts();
       updateQuantityButtonStates();
@@ -1766,9 +1891,9 @@
       });
 
       if (!department.value.trim()) {
-        department.focus();
+        department.focus({ preventScroll: true });
       } else if (!name.value.trim()) {
-        name.focus();
+        name.focus({ preventScroll: true });
       } else if (invalidQuantity) {
         expandedMenus.add(invalidQuantity.menu);
         buildMenuRows();
@@ -1778,18 +1903,18 @@
         });
 
         if (input) {
-          input.focus();
+          input.focus({ preventScroll: true });
         }
       } else {
         const firstQuantityInput = getQuantityInputs()[0];
         if (firstQuantityInput) {
-          firstQuantityInput.focus();
+          firstQuantityInput.focus({ preventScroll: true });
         } else if (MENU_ITEMS[0]) {
           expandedMenus.add(MENU_ITEMS[0].name);
           buildMenuRows();
           const input = getQuantityInputs()[0];
           if (input) {
-            input.focus();
+            input.focus({ preventScroll: true });
           }
         }
       }
@@ -1872,7 +1997,8 @@
       renderConfirmation(data);
       confirmationPanel.hidden = false;
       setStatus("内容を確認してください。", "info");
-      confirmationPanel.focus();
+      confirmationPanel.focus({ preventScroll: true });
+      confirmationPanel.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function closeConfirmation() {
@@ -1885,6 +2011,7 @@
       showConfirmButton.disabled = sending;
       sendButton.disabled = sending;
       editButton.disabled = sending;
+      floatingConfirmButton.disabled = sending;
       updateQuantityButtonStates();
       updateMenuCardSummaries();
     }
@@ -1920,14 +2047,16 @@
     }
 
     function toggleMenu(menuName) {
-      if (expandedMenus.has(menuName)) {
-        expandedMenus.delete(menuName);
-      } else {
-        expandedMenus.add(menuName);
-      }
+      withScrollPreserved(() => {
+        if (expandedMenus.has(menuName)) {
+          expandedMenus.delete(menuName);
+        } else {
+          expandedMenus.add(menuName);
+        }
 
-      buildMenuRows();
-      updateSummary();
+        buildMenuRows();
+        updateSummary();
+      });
     }
 
     form.addEventListener("submit", (event) => {
@@ -1970,7 +2099,6 @@
 
       const amount = button.dataset.action === "increase" ? 1 : -1;
       changeQuantity(input, amount);
-      input.focus();
     });
 
     menuRows.addEventListener("input", (event) => {
@@ -2010,6 +2138,14 @@
 
     departmentFilter.addEventListener("change", () => {
       renderCurrentOrders();
+    });
+
+    menuFilter.addEventListener("change", () => {
+      renderCurrentOrders();
+    });
+
+    floatingConfirmButton.addEventListener("click", () => {
+      showConfirmButton.click();
     });
 
     sendButton.addEventListener("click", async () => {
