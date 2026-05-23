@@ -1164,7 +1164,7 @@
       const filteredOrders = getFilteredCurrentOrders();
       const totals = calculatePublishedOrderTotals(filteredOrders);
       const menuRowsData = aggregateMenuOrders(filteredOrders);
-      const departmentRowsData = aggregateDepartmentOrders(currentOrders);
+      const departmentRowsData = aggregateDepartmentOrders(filteredOrders);
 
       currentOrderQuantityText.textContent = formatQuantity(totals.quantity);
       currentOrderAmountText.textContent = formatYen(totals.amount);
