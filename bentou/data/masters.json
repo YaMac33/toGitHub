@@ -1,0 +1,72 @@
+{
+  "menus": [
+    {
+      "name": "鮭弁当",
+      "basePrice": 500,
+      "sizeEnabled": true,
+      "visible": true
+    },
+    {
+      "name": "まんぷくまるはん弁当",
+      "basePrice": 450,
+      "sizeEnabled": true,
+      "visible": true
+    },
+    {
+      "name": "唐揚げ弁当",
+      "basePrice": 550,
+      "sizeEnabled": true,
+      "visible": true
+    },
+    {
+      "name": "幕の内弁当",
+      "basePrice": 600,
+      "sizeEnabled": true,
+      "visible": true
+    },
+    {
+      "name": "お茶",
+      "basePrice": 120,
+      "sizeEnabled": false,
+      "visible": true
+    },
+    {
+      "name": "味噌汁",
+      "basePrice": 100,
+      "sizeEnabled": false,
+      "visible": true
+    },
+    {
+      "name": "ハラミ",
+      "basePrice": 500,
+      "sizeEnabled": true,
+      "visible": true
+    }
+  ],
+  "sizeOptions": [
+    {
+      "name": "小盛",
+      "adjustment": -50,
+      "visible": true,
+      "order": 1
+    },
+    {
+      "name": "普通",
+      "adjustment": 0,
+      "visible": true,
+      "order": 2
+    },
+    {
+      "name": "大盛",
+      "adjustment": 100,
+      "visible": true,
+      "order": 3
+    },
+    {
+      "name": "特盛",
+      "adjustment": 200,
+      "visible": true,
+      "order": 4
+    }
+  ]
+}
