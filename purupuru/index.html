@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>注文フォーム</title>
+</head>
+<body>
+
+  <h1>注文フォーム</h1>
+
+  <form id="orderForm">
+    <div>
+      <label>部署</label>
+      <input type="text" name="department" required>
+    </div>
+
+    <div>
+      <label>名前</label>
+      <input type="text" name="name" required>
+    </div>
+
+    <div>
+      <label>メニュー</label>
+      <input type="text" name="menu" required>
+    </div>
+
+    <div>
+      <label>単価</label>
+      <input type="number" name="unitPrice" required>
+    </div>
+
+    <div>
+      <label>数量</label>
+      <input type="number" name="quantity" required>
+    </div>
+
+    <div>
+      <label>備考</label>
+      <textarea name="note"></textarea>
+    </div>
+
+    <button type="submit">送信</button>
+  </form>
+
+  <p id="message"></p>
+
+  <script>
+    const GAS_URL = 'ここにGASのWebアプリURLを入れる';
+
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData(form);
+
+      const data = {
+        department: formData.get('department'),
+        name: formData.get('name'),
+        menu: formData.get('menu'),
+        unitPrice: formData.get('unitPrice'),
+        quantity: formData.get('quantity'),
+        note: formData.get('note')
+      };
+
+      const message = document.getElementById('message');
+      message.textContent = '送信中...';
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+
+        if (result.ok) {
+          message.textContent = '送信しました';
+          form.reset();
+        } else {
+          message.textContent = '送信に失敗しました';
+        }
+
+      } catch (error) {
+        message.textContent = '通信エラーが発生しました';
+        console.error(error);
+      }
+    });
+  </script>
+
+</body>
+</html>
