@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -20,18 +21,24 @@
     </div>
 
     <div>
-      <label>メニュー</label>
-      <input type="text" name="menu" required>
+      <label>連絡先</label>
+      <input type="text" name="contact" placeholder="電話番号またはメールアドレス">
     </div>
 
     <div>
-      <label>単価</label>
-      <input type="number" name="unitPrice" required>
+      <label>メニュー</label>
+      <select name="menu" required>
+        <option value="">選択してください</option>
+        <option value="鮭弁当">鮭弁当</option>
+        <option value="のり弁当">のり弁当</option>
+        <option value="唐揚げ弁当">唐揚げ弁当</option>
+        <option value="幕の内弁当">幕の内弁当</option>
+      </select>
     </div>
 
     <div>
       <label>数量</label>
-      <input type="number" name="quantity" required>
+      <input type="number" name="quantity" min="1" required>
     </div>
 
     <div>
@@ -56,8 +63,8 @@
       const data = {
         department: formData.get('department'),
         name: formData.get('name'),
+        contact: formData.get('contact'),
         menu: formData.get('menu'),
-        unitPrice: formData.get('unitPrice'),
         quantity: formData.get('quantity'),
         note: formData.get('note')
       };
