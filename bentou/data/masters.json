@@ -111,109 +111,109 @@
     {
       "name": "まんぷく（カルビ）弁当",
       "basePrice": 1300,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷくネギ塩弁当",
       "basePrice": 1350,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷく焼肉弁当",
       "basePrice": 1300,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷく豚カルビ弁当",
       "basePrice": 1850,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷく厚切りタン塩弁当",
       "basePrice": 2800,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷくまるはん弁当",
       "basePrice": 1350,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷく豚キムチ弁",
       "basePrice": 1850,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷくプルコギ弁",
       "basePrice": 1350,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷくホルモン弁当",
       "basePrice": 1950,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷくタン塩弁当",
       "basePrice": 2250,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷく上カルビ弁",
       "basePrice": 2450,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷく上ハラミ弁当",
       "basePrice": 2600,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷくホルモンミックス弁当",
       "basePrice": 2000,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷく上ミノ弁当",
       "basePrice": 1950,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷく上ロース弁",
       "basePrice": 2250,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷく特上カルビ弁当",
       "basePrice": 2700,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷくミックス弁当",
       "basePrice": 2150,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     },
     {
       "name": "まんぷく中落ちカルビ弁当",
       "basePrice": 2100,
-      "sizeEnabled": true,
+      "sizeEnabled": false,
       "visible": true
     }
   ],
