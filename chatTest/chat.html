@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>匿名チャット</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --danger: #dc2626;
+      --shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.14), transparent 32%),
+        var(--bg);
+    }
+
+    .app {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(229, 231, 235, 0.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.14);
+    }
+
+    .chat-panel {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(229, 231, 235, 0.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 520px;
+    }
+
+    .toolbar {
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(248, 250, 252, 0.86);
+    }
+
+    .toolbar-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .toolbar-title {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .toolbar-note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .refresh-button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .refresh-button:hover {
+      background: #f9fafb;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
+
+    .empty {
+      margin: auto;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .message-card {
+      max-width: 78%;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      line-height: 1.65;
+      word-break: break-word;
+    }
+
+    .message-card.mine {
+      margin-left: auto;
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .message-meta {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .message-name {
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .message-text {
+      white-space: pre-wrap;
+      font-size: 15px;
+    }
+
+    .composer {
+      border-top: 1px solid var(--line);
+      padding: 14px;
+      background: rgba(248, 250, 252, 0.95);
+    }
+
+    .name-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .name-row label {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .name-input {
+      width: 220px;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+      background: #fff;
+      outline: none;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    textarea {
+      flex: 1;
+      min-height: 54px;
+      max-height: 140px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 15px;
+      line-height: 1.6;
+      outline: none;
+      background: #fff;
+      font-family: inherit;
+    }
+
+    textarea:focus,
+    .name-input:focus {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .send-button {
+      min-width: 96px;
+      border: none;
+      border-radius: 14px;
+      padding: 13px 16px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .send-button:hover {
+      background: var(--primary-dark);
+    }
+
+    .send-button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .composer-footer {
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .error {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        padding: 10px;
+      }
+
+      .chat-panel {
+        min-height: calc(100vh - 170px);
+      }
+
+      .message-card {
+        max-width: 92%;
+      }
+
+      .input-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .send-button {
+        width: 100%;
+      }
+
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <div class="header-top">
+        <div>
+          <h1>匿名チャット</h1>
+          <p class="subtitle">
+            20秒ごとに新着を確認します。投稿直後はすぐに反映されます。
+          </p>
+        </div>
+        <div class="status-pill">
+          <span class="dot"></span>
+          <span id="connectionStatus">準備中</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="chat-panel">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="toolbar-title">チャット</div>
+          <div class="toolbar-note" id="lastUpdated">まだ取得していません</div>
+        </div>
+        <button type="button" class="refresh-button" id="refreshButton">手動更新</button>
+      </div>
+
+      <div class="messages" id="messages">
+        <div class="empty">メッセージを読み込んでいます。</div>
+      </div>
+
+      <form class="composer" id="chatForm">
+        <div class="name-row">
+          <label for="displayName">表示名</label>
+          <input
+            id="displayName"
+            class="name-input"
+            type="text"
+            maxlength="20"
+            placeholder="匿名さん"
+            autocomplete="nickname"
+          />
+        </div>
+
+        <div class="input-row">
+          <textarea
+            id="messageInput"
+            maxlength="200"
+            placeholder="メッセージを入力してください（200文字以内）"
+          ></textarea>
+          <button type="submit" class="send-button" id="sendButton">送信</button>
+        </div>
+
+        <div class="composer-footer">
+          <span id="notice">5秒以内の連続投稿はできません。</span>
+          <span id="charCount">0 / 200</span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz00LnvA-8MDONfx82uZfrpaRwEvydICxU_0j3JgLqOIVDUKaocwlhF3Dt2ZRA0nbwn/exec';
+
+    const POLL_INTERVAL_MS = 20000;
+    const FULL_SYNC_EVERY = 10;
+    const MAX_MESSAGE_LENGTH = 200;
+
+    const elements = {
+      messages: document.getElementById('messages'),
+      chatForm: document.getElementById('chatForm'),
+      displayName: document.getElementById('displayName'),
+      messageInput: document.getElementById('messageInput'),
+      sendButton: document.getElementById('sendButton'),
+      refreshButton: document.getElementById('refreshButton'),
+      charCount: document.getElementById('charCount'),
+      notice: document.getElementById('notice'),
+      lastUpdated: document.getElementById('lastUpdated'),
+      connectionStatus: document.getElementById('connectionStatus')
+    };
+
+    const state = {
+      clientId: getOrCreateClientId(),
+      messages: [],
+      lastMessageId: '',
+      isLoading: false,
+      isSending: false,
+      pollTimer: null,
+      pollCount: 0
+    };
+
+    initialize();
+
+    function initialize() {
+      const savedName = localStorage.getItem('chat_display_name') || '匿名さん';
+      elements.displayName.value = savedName;
+
+      elements.messageInput.addEventListener('input', updateCharCount);
+      elements.displayName.addEventListener('change', saveDisplayName);
+      elements.chatForm.addEventListener('submit', handleSubmit);
+      elements.refreshButton.addEventListener('click', () => fetchMessages({ fullSync: true }));
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      updateCharCount();
+      fetchMessages({ fullSync: true });
+      startPolling();
+    }
+
+    function startPolling() {
+      stopPolling();
+
+      state.pollTimer = setInterval(() => {
+        if (document.hidden) return;
+
+        state.pollCount += 1;
+
+        const shouldFullSync = state.pollCount % FULL_SYNC_EVERY === 0;
+        fetchMessages({ fullSync: shouldFullSync });
+      }, POLL_INTERVAL_MS);
+    }
+
+    function stopPolling() {
+      if (state.pollTimer) {
+        clearInterval(state.pollTimer);
+        state.pollTimer = null;
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (!document.hidden) {
+        fetchMessages({ fullSync: true });
+        startPolling();
+      }
+    }
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+
+      if (state.isSending) return;
+
+      const displayName = sanitizeText(elements.displayName.value) || '匿名さん';
+      const message = sanitizeText(elements.messageInput.value);
+
+      clearNotice();
+
+      if (!message) {
+        showNotice('メッセージを入力してください。', true);
+        return;
+      }
+
+      if (message.length > MAX_MESSAGE_LENGTH) {
+        showNotice('メッセージは200文字以内で入力してください。', true);
+        return;
+      }
+
+      saveDisplayName();
+
+      state.isSending = true;
+      elements.sendButton.disabled = true;
+      elements.sendButton.textContent = '送信中...';
+
+      try {
+        const result = await callGas({
+          action: 'postMessage',
+          clientId: state.clientId,
+          displayName: displayName,
+          message: message
+        });
+
+        if (!result.ok) {
+          showNotice(result.message || '投稿に失敗しました。', true);
+          return;
+        }
+
+        elements.messageInput.value = '';
+        updateCharCount();
+
+        if (result.posted) {
+          mergeMessages([result.posted]);
+          renderMessages();
+          scrollToBottom();
+        }
+
+        await fetchMessages({ fullSync: false });
+        showNotice('投稿しました。', false);
+
+      } catch (error) {
+        showNotice('通信に失敗しました。時間をおいて再度お試しください。', true);
+
+      } finally {
+        state.isSending = false;
+        elements.sendButton.disabled = false;
+        elements.sendButton.textContent = '送信';
+      }
+    }
+
+    async function fetchMessages(options = {}) {
+      if (state.isLoading) return;
+
+      const fullSync = Boolean(options.fullSync);
+
+      state.isLoading = true;
+      setConnectionStatus('更新中');
+
+      try {
+        const params = {
+          action: 'getMessages'
+        };
+
+        if (!fullSync && state.lastMessageId) {
+          params.lastMessageId = state.lastMessageId;
+        }
+
+        const result = await callGas(params);
+
+        if (!result.ok) {
+          setConnectionStatus('取得失敗');
+          showNotice(result.message || 'メッセージ取得に失敗しました。', true);
+          return;
+        }
+
+        const received = Array.isArray(result.messages) ? result.messages : [];
+
+        if (fullSync) {
+          state.messages = received;
+        } else {
+          mergeMessages(received);
+        }
+
+        updateLastMessageId();
+        renderMessages();
+        updateLastUpdated();
+        setConnectionStatus('接続中');
+
+        if (fullSync || received.length > 0) {
+          scrollToBottom();
+        }
+
+      } catch (error) {
+        setConnectionStatus('通信失敗');
+        showNotice('通信に失敗しました。', true);
+
+      } finally {
+        state.isLoading = false;
+      }
+    }
+
+    function callGas(params) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'jsonpCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+
+        const query = new URLSearchParams({
+          ...params,
+          callback: callbackName
+        });
+
+        const script = document.createElement('script');
+        script.src = GAS_URL + '?' + query.toString();
+
+        const timeoutId = setTimeout(() => {
+          cleanup();
+          reject(new Error('timeout'));
+        }, 15000);
+
+        window[callbackName] = function(data) {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = function() {
+          cleanup();
+          reject(new Error('script error'));
+        };
+
+        function cleanup() {
+          clearTimeout(timeoutId);
+          delete window[callbackName];
+
+          if (script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+        }
+
+        document.body.appendChild(script);
+      });
+    }
+
+    function mergeMessages(newMessages) {
+      const map = new Map();
+
+      state.messages.forEach(message => {
+        if (message.message_id) {
+          map.set(message.message_id, message);
+        }
+      });
+
+      newMessages.forEach(message => {
+        if (message && message.message_id) {
+          map.set(message.message_id, message);
+        }
+      });
+
+      state.messages = Array.from(map.values())
+        .sort((a, b) => String(a.message_id).localeCompare(String(b.message_id)))
+        .slice(-30);
+    }
+
+    function updateLastMessageId() {
+      if (state.messages.length === 0) {
+        state.lastMessageId = '';
+        return;
+      }
+
+      state.lastMessageId = state.messages[state.messages.length - 1].message_id || '';
+    }
+
+    function renderMessages() {
+      if (state.messages.length === 0) {
+        elements.messages.innerHTML = '<div class="empty">まだメッセージはありません。</div>';
+        return;
+      }
+
+      elements.messages.innerHTML = state.messages.map(message => {
+        const isMine = message.client_id === state.clientId;
+
+        return `
+          <article class="message-card ${isMine ? 'mine' : ''}">
+            <div class="message-meta">
+              <span class="message-name">${escapeHtml(message.display_name || '匿名さん')}</span>
+              <span>${escapeHtml(formatDisplayTime(message.created_at || ''))}</span>
+            </div>
+            <div class="message-text">${escapeHtml(message.message || '')}</div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function scrollToBottom() {
+      requestAnimationFrame(() => {
+        elements.messages.scrollTop = elements.messages.scrollHeight;
+      });
+    }
+
+    function updateCharCount() {
+      const length = elements.messageInput.value.length;
+      elements.charCount.textContent = `${length} / ${MAX_MESSAGE_LENGTH}`;
+
+      if (length > MAX_MESSAGE_LENGTH) {
+        elements.charCount.classList.add('error');
+      } else {
+        elements.charCount.classList.remove('error');
+      }
+    }
+
+    function saveDisplayName() {
+      const name = sanitizeText(elements.displayName.value) || '匿名さん';
+      elements.displayName.value = name;
+      localStorage.setItem('chat_display_name', name);
+    }
+
+    function updateLastUpdated() {
+      const now = new Date();
+      const text = now.toLocaleTimeString('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+
+      elements.lastUpdated.textContent = `最終更新：${text}`;
+    }
+
+    function setConnectionStatus(text) {
+      elements.connectionStatus.textContent = text;
+    }
+
+    function showNotice(text, isError) {
+      elements.notice.textContent = text;
+      elements.notice.classList.toggle('error', Boolean(isError));
+    }
+
+    function clearNotice() {
+      elements.notice.textContent = '5秒以内の連続投稿はできません。';
+      elements.notice.classList.remove('error');
+    }
+
+    function getOrCreateClientId() {
+      const key = 'chat_client_id';
+      const existing = localStorage.getItem(key);
+
+      if (existing) {
+        return existing;
+      }
+
+      const id = 'client_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
+      localStorage.setItem(key, id);
+      return id;
+    }
+
+    function sanitizeText(value) {
+      return String(value || '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .trim();
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatDisplayTime(value) {
+      const text = String(value || '').trim();
+
+      if (!text) return '';
+
+      const match = text.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
+
+      if (!match) {
+        return text;
+      }
+
+      return `${match[2]}/${match[3]} ${match[4]}:${match[5]}`;
+    }
+  </script>
+</body>
+</html>
