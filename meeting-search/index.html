@@ -13,14 +13,13 @@
       <p class="eyebrow">Meeting Records Search</p>
       <h1>会議録横断検索システム</h1>
       <p class="lead">
-        recordsフォルダ内の会議録テキストを読み込み、キーワードで横断検索します。
+        会議録のtxtファイルを読み込み、キーワードで横断検索します。
       </p>
     </header>
 
     <main>
       <section class="card">
         <h2>1. 会議録ファイルを読み込む</h2>
-
         <p class="note">
           recordsフォルダ内の .txt ファイルを複数選択してください。
         </p>
@@ -32,7 +31,7 @@
           multiple
         />
 
-        <div class="status" id="loadStatus">
+        <div id="loadStatus" class="status">
           まだファイルは読み込まれていません。
         </div>
       </section>
@@ -55,11 +54,16 @@
         </p>
       </section>
 
-      <section class="card">
-        <h2>検索結果</h2>
+      <section id="resultsSection" class="card">
+        <h2>3. 検索結果</h2>
         <div id="resultArea" class="result-area">
           <p class="empty">検索結果はここに表示されます。</p>
         </div>
+      </section>
+
+      <section id="fullTextSection" class="card full-text-section hidden">
+        <h2>4. 全文表示</h2>
+        <div id="fullTextArea"></div>
       </section>
     </main>
   </div>
