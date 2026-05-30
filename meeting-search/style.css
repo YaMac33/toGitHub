@@ -6,6 +6,9 @@
   --line: #d8dee6;
   --primary: #1f5f8b;
   --primary-dark: #16496d;
+  --subtle: #eef6fb;
+  --danger: #8b1f1f;
+  --danger-bg: #fff1f1;
   --mark: #fff3a3;
 }
 
@@ -27,7 +30,7 @@ body {
 }
 
 .page {
-  max-width: 960px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 32px 20px 48px;
 }
@@ -84,7 +87,7 @@ input[type="file"] {
 .status {
   margin-top: 12px;
   padding: 10px 12px;
-  background: #eef6fb;
+  background: var(--subtle);
   border-left: 4px solid var(--primary);
   border-radius: 8px;
   color: var(--primary-dark);
@@ -106,18 +109,36 @@ input[type="search"] {
 }
 
 button {
-  padding: 12px 20px;
+  padding: 10px 16px;
   border: none;
   border-radius: 10px;
   background: var(--primary);
   color: #ffffff;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
 }
 
 button:hover {
   background: var(--primary-dark);
+}
+
+button.secondary {
+  background: #e2e8f0;
+  color: var(--text);
+}
+
+button.secondary:hover {
+  background: #cbd5e1;
+}
+
+button.danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+button.danger:hover {
+  background: #ffdede;
 }
 
 .result-area {
@@ -140,6 +161,7 @@ button:hover {
 
 .result-item:first-of-type {
   border-top: none;
+  padding-top: 0;
 }
 
 .result-title {
@@ -155,17 +177,67 @@ button:hover {
 }
 
 .snippet {
-  margin: 0;
+  margin: 0 0 12px;
   padding: 12px;
   background: #f8fafc;
   border-radius: 10px;
   white-space: pre-wrap;
 }
 
+.result-actions,
+.full-text-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toggle-results {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.full-text-section {
+  border: 2px solid var(--primary);
+}
+
+.full-text-header {
+  margin-bottom: 16px;
+  padding: 14px;
+  background: var(--subtle);
+  border-radius: 10px;
+}
+
+.full-text-title {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.full-text-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.full-text-body {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.9;
+}
+
 mark {
   background: var(--mark);
   padding: 0 2px;
   border-radius: 3px;
+}
+
+.hidden {
+  display: none;
 }
 
 @media (max-width: 640px) {
@@ -183,5 +255,10 @@ mark {
 
   button {
     width: 100%;
+  }
+
+  .result-actions,
+  .full-text-actions {
+    flex-direction: column;
   }
 }
