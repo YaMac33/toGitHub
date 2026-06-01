@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>会議録横断検索システム</title>
+  <style>
+    :root {
+  --primary:        #1a4a7a;
+  --primary-mid:    #2563ab;
+  --primary-subtle: #eff6ff;
+  --primary-border: #bfdbfe;
+
+  --bg:        #f1f5f9;
+  --card:      #ffffff;
+  --text:      #0f172a;
+  --text-mid:  #374151;
+  --muted:     #64748b;
+  --line:      #e2e8f0;
+  --line-soft: #f1f5f9;
+
+  --danger:    #991b1b;
+  --danger-bg: #fef2f2;
+  --danger-border: #fca5a5;
+
+  --mark:        #fef08a;
+  --mark-active: #fbbf24;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Yu Gothic", "YuGothic", "Meiryo", system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.75;
+  font-size: 0.97rem;
+}
+
+/* ================================================================
+   サイトヘッダー（全幅・紺グラデーション）
+   ================================================================ */
+
+.site-header {
+  background: linear-gradient(135deg, #12335a 0%, #1e4f88 100%);
+  color: #fff;
+  padding: 28px 0 24px;
+}
+
+.site-header__inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 1.8rem;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.lead {
+  margin: 0;
+  font-size: 0.88rem;
+  opacity: 0.8;
+}
+
+.site-header__badges {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badge--offline  { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.28); }
+.badge--security { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.15); }
+
+/* ================================================================
+   ページ本体
+   ================================================================ */
+
+.page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px 24px 48px;
+}
+
+/* ================================================================
+   カード
+   ================================================================ */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(15,23,42,0.05);
+}
+
+h2 {
+  margin: 0 0 16px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.note {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.87rem;
+}
+
+/* ================================================================
+   ドロップゾーン
+   ================================================================ */
+
+.drop-zone {
+  padding: 28px 20px;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  background: #fafcfe;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.drop-zone:hover,
+.drop-zone:focus-visible {
+  border-color: var(--primary-mid);
+  background: var(--primary-subtle);
+  outline: none;
+}
+
+.drop-zone.is-dragover {
+  border-color: var(--primary-mid);
+  background: var(--primary-subtle);
+  box-shadow: inset 0 0 0 3px rgba(37,99,171,0.1);
+}
+
+.drop-zone__icon {
+  display: block;
+  margin: 0 auto 10px;
+  color: var(--primary-mid);
+  opacity: 0.7;
+}
+
+.drop-zone__text {
+  margin: 0 0 4px;
+  font-weight: 700;
+  font-size: 0.93rem;
+}
+
+.drop-zone__sub {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.drop-zone__buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.file-button {
+  display: inline-block;
+  padding: 9px 22px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.file-button:hover { background: var(--primary-mid); }
+
+.file-button--secondary {
+  background: #e2e8f0;
+  color: var(--text-mid);
+}
+.file-button--secondary:hover { background: #cbd5e1; }
+
+.status {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: var(--primary-subtle);
+  border-left: 4px solid var(--primary-mid);
+  border-radius: 8px;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+/* ================================================================
+   検索
+   ================================================================ */
+
+.search-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+input[type="search"] {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--text);
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input[type="search"]:focus {
+  outline: none;
+  border-color: var(--primary-mid);
+  box-shadow: 0 0 0 3px rgba(37,99,171,0.12);
+}
+
+.search-options {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: flex-start;
+}
+
+.search-mode {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-mode__label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text-mid);
+}
+
+.radio-label input { accent-color: var(--primary-mid); }
+
+.search-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+  padding-top: 2px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--line-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-family: "Consolas", "Courier New", monospace;
+  color: var(--text-mid);
+  line-height: 1.4;
+}
+
+/* ================================================================
+   ボタン
+   ================================================================ */
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+button:hover { background: var(--primary-mid); }
+button:active { transform: scale(0.98); }
+
+button.secondary {
+  background: #e2e8f0;
+  color: var(--text-mid);
+}
+button.secondary:hover { background: #cbd5e1; }
+
+button.danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+button.danger:hover { background: #fee2e2; }
+
+select {
+  padding: 7px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--text);
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--primary-mid);
+}
+
+/* ================================================================
+   検索結果セクション
+   ================================================================ */
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.results-header h2 { margin-bottom: 0; }
+
+.results-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.result-area {
+  min-height: 60px;
+  margin-top: 16px;
+}
+
+.empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 40px 0;
+  font-size: 0.93rem;
+}
+
+/* 件数カウンタ行 */
+.result-counter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid var(--line);
+}
+
+.result-count-text {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.result-count-text strong {
+  font-size: 1.05rem;
+  color: var(--primary);
+}
+
+.btn-print {
+  font-size: 0.78rem;
+  padding: 6px 12px;
+}
+
+/* ================================================================
+   検索結果カード
+   ================================================================ */
+
+.result-item {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.result-item:last-of-type { border-bottom: none; }
+
+.result-item__head { margin-bottom: 10px; }
+
+.result-title {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.result-item__sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+
+.result-filename {
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-family: "Consolas", "Courier New", monospace;
+}
+
+/* ヒット数インジケータ */
+.hit-indicator {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.hit-bar {
+  width: 72px;
+  height: 5px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.hit-bar__fill {
+  height: 100%;
+  background: linear-gradient(to right, var(--primary-mid), #60a5fa);
+  border-radius: 3px;
+  min-width: 4px;
+  transition: width 0.3s ease;
+}
+
+.hit-count {
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+/* スニペット */
+blockquote.snippet {
+  margin: 0 0 8px;
+  padding: 9px 14px;
+  background: var(--line-soft);
+  border-left: 3px solid var(--primary-border);
+  border-radius: 0 8px 8px 0;
+  white-space: pre-wrap;
+  font-size: 0.86rem;
+  line-height: 1.7;
+  color: var(--text-mid);
+  overflow-wrap: anywhere;
+}
+
+.result-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-fulltext {
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+  font-size: 0.83rem;
+  padding: 7px 16px;
+}
+.btn-fulltext:hover {
+  background: var(--primary-border);
+}
+
+/* ================================================================
+   展開ボタン
+   ================================================================ */
+
+.expand-wrap {
+  padding: 20px 0 4px;
+  border-top: 1px dashed var(--line);
+  margin-top: 8px;
+  text-align: center;
+}
+
+.btn-expand {
+  background: transparent;
+  border: 2px solid var(--primary-mid);
+  color: var(--primary-mid);
+  padding: 10px 32px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+}
+.btn-expand:hover { background: var(--primary-subtle); }
+
+.btn-expand--collapse {
+  border-color: var(--muted);
+  color: var(--muted);
+}
+.btn-expand--collapse:hover { background: var(--line-soft); }
+
+/* ================================================================
+   全文表示
+   ================================================================ */
+
+.full-text-section {
+  border: 2px solid var(--primary-mid);
+}
+
+.full-text-header {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--primary-subtle);
+  border-radius: 10px;
+  border: 1px solid var(--primary-border);
+}
+
+
+.full-text-title {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.full-text-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-family: "Consolas", "Courier New", monospace;
+}
+
+.match-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.match-nav button {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+}
+
+.match-counter {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.86rem;
+  min-width: 72px;
+  text-align: center;
+  background: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--primary-border);
+}
+
+.full-text-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.full-text-body {
+  padding: 20px;
+  background: #fafcfe;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 2;
+  font-size: 0.93rem;
+}
+
+mark {
+  background: var(--mark);
+  padding: 0 2px;
+  border-radius: 3px;
+  scroll-margin-top: 100px;
+}
+
+mark.is-active {
+  background: var(--mark-active);
+  box-shadow: 0 0 0 2px rgba(251,191,36,0.5);
+}
+
+/* ================================================================
+   フッター
+   ================================================================ */
+
+.site-footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.76rem;
+  padding: 24px 0 8px;
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+}
+
+.site-footer p { margin: 0 0 4px; }
+
+.footer-hint { opacity: 0.75; }
+
+/* ================================================================
+   ユーティリティ
+   ================================================================ */
+
+.hidden { display: none !important; }
+.text-muted { color: var(--muted); }
+
+/* ================================================================
+   印刷
+   ================================================================ */
+
+@media print {
+  .site-header   { background: none; color: var(--text); padding: 12px 0; }
+  .site-header__badges { display: none; }
+  #loadSection, .search-options, .results-controls,
+  .result-actions, .expand-wrap, .btn-print,
+  .full-text-actions, .match-nav, .full-text-section,
+  .site-footer { display: none !important; }
+
+  .page { padding: 0 0 24px; }
+  .card { box-shadow: none; border-color: #ccc; margin-bottom: 12px; }
+  .result-item { break-inside: avoid; }
+  blockquote.snippet { background: none; border-left-color: #999; }
+  .btn-expand { display: none; }
+}
+
+/* ================================================================
+   レスポンシブ（スマートフォン）
+   ================================================================ */
+
+@media (max-width: 640px) {
+  .site-header__inner { flex-direction: column; gap: 10px; }
+  .site-header__badges { flex-direction: row; }
+  h1 { font-size: 1.45rem; }
+
+  .page { padding: 16px 14px 36px; }
+
+  .search-row { flex-direction: column; }
+  .search-row button { width: 100%; }
+
+  .results-header { flex-direction: column; align-items: flex-start; }
+  .results-controls { width: 100%; }
+
+  .result-item__sub { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .hit-indicator { display: none; }
+
+  .full-text-actions { flex-direction: column; }
+  .match-nav button { padding: 8px 12px; }
+}
+  </style>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <div class="site-header__text">
+        <p class="eyebrow">Meeting Records Search</p>
+        <h1>会議録横断検索システム</h1>
+        <p class="lead">複数の会議録 txt ファイルをブラウザで読み込み、キーワードで横断検索します。</p>
+      </div>
+      <div class="site-header__badges">
+        <span class="badge badge--offline">● オフライン動作</span>
+        <span class="badge badge--security">外部送信なし</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <main>
+
+      <!-- 1. ファイル読み込み -->
+      <section class="card" id="loadSection">
+        <h2><span class="step-num">1</span>会議録ファイルを読み込む</h2>
+        <p class="note">.txt ファイルまたはフォルダを選択するか、下のエリアにドラッグ＆ドロップしてください。</p>
+
+        <div id="dropZone" class="drop-zone" tabindex="0" role="button"
+             aria-label="ここにファイルやフォルダをドラッグ＆ドロップ、またはクリックして選択">
+          <svg class="drop-zone__icon" xmlns="http://www.w3.org/2000/svg" width="42" height="42"
+               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            <line x1="12" y1="11" x2="12" y2="17"/>
+            <polyline points="9 14 12 17 15 14"/>
+          </svg>
+          <p class="drop-zone__text">.txt ファイルやフォルダをドラッグ＆ドロップ</p>
+          <p class="drop-zone__sub">または</p>
+          <div class="drop-zone__buttons">
+            <label class="file-button">
+              ファイルを選択
+              <input id="fileInput" type="file" accept=".txt,text/plain" multiple hidden />
+            </label>
+            <label class="file-button file-button--secondary">
+              フォルダを選択
+              <input id="folderInput" type="file" webkitdirectory multiple hidden />
+            </label>
+          </div>
+        </div>
+
+        <div id="loadStatus" class="status" aria-live="polite" aria-atomic="true">
+          まだファイルは読み込まれていません。
+        </div>
+      </section>
+
+      <!-- 2. キーワード検索 -->
+      <section class="card">
+        <h2><span class="step-num">2</span>キーワード検索</h2>
+        <div class="search-row">
+          <input id="searchInput" type="search"
+                 placeholder='例：DX 効率化　　"フレーズ"で完全一致　-語で除外'
+                 autocomplete="off" spellcheck="false" aria-label="検索キーワード" />
+          <button id="searchButton" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            検索
+          </button>
+          <button id="clearButton" type="button" class="secondary">クリア</button>
+        </div>
+        <div class="search-options">
+          <fieldset class="search-mode">
+            <legend class="search-mode__label">検索モード：</legend>
+            <label class="radio-label">
+              <input type="radio" name="searchMode" value="and" checked />
+              AND（すべて含む）
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="searchMode" value="or" />
+              OR（いずれか含む）
+            </label>
+          </fieldset>
+          <p class="search-hint">
+            <kbd>"フレーズ"</kbd> で完全一致検索　<kbd>-語</kbd> でその語を含む文書を除外　スペース区切りで複数指定
+          </p>
+        </div>
+      </section>
+
+      <!-- 3. 検索結果 -->
+      <section id="resultsSection" class="card">
+        <div class="results-header">
+          <h2><span class="step-num">3</span>検索結果</h2>
+          <div class="results-controls hidden" id="resultsControls">
+            <label class="filter-label" for="sortSelect">並び替え</label>
+            <select id="sortSelect" aria-label="並び替え順">
+              <option value="relevance">関連度順</option>
+              <option value="filename">ファイル名順</option>
+            </select>
+          </div>
+        </div>
+        <div id="resultArea" class="result-area" aria-live="polite" aria-atomic="false">
+          <p class="empty">検索結果はここに表示されます。</p>
+        </div>
+      </section>
+
+      <!-- 4. 全文表示 -->
+      <section id="fullTextSection" class="card full-text-section hidden">
+        <h2><span class="step-num">4</span>全文表示</h2>
+        <div id="fullTextArea"></div>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <p>会議録横断検索システム — すべての処理はブラウザ内で完結し、外部サーバーへの通信は行いません。</p>
+      <p class="footer-hint">
+        キーボード：<kbd>Enter</kbd> 検索　<kbd>Esc</kbd> 全文を閉じる　<kbd>← →</kbd> マッチ間移動
+      </p>
+    </footer>
+  </div>
+<script>
+  const fileInput = document.getElementById("fileInput");
+const folderInput = document.getElementById("folderInput");
+const dropZone = document.getElementById("dropZone");
+const loadStatus = document.getElementById("loadStatus");
+const searchInput = document.getElementById("searchInput");
+const searchButton = document.getElementById("searchButton");
+const clearButton = document.getElementById("clearButton");
+const resultArea = document.getElementById("resultArea");
+const resultsSection = document.getElementById("resultsSection");
+const resultsControls = document.getElementById("resultsControls");
+const fullTextSection = document.getElementById("fullTextSection");
+const fullTextArea = document.getElementById("fullTextArea");
+const sortSelect = document.getElementById("sortSelect");
+
+let records = [];
+let currentResults = [];
+let filteredResults = [];
+let currentKeywords = [];
+let isExpandedResults = false;
+
+let matchElements = [];
+let currentMatchIndex = -1;
+
+const INITIAL_RESULT_LIMIT = 3;
+const MAX_SNIPPETS = 3;
+const SNIPPET_MARGIN = 100;
+
+/* ============================================================
+   ファイル読み込み
+   ============================================================ */
+
+fileInput.addEventListener("change", (event) => {
+  loadFiles(Array.from(event.target.files || []));
+  event.target.value = "";
+});
+
+folderInput.addEventListener("change", (event) => {
+  loadFiles(Array.from(event.target.files || []));
+  event.target.value = "";
+});
+
+dropZone.addEventListener("click", (event) => {
+  if (event.target.closest(".file-button")) return;
+  fileInput.click();
+});
+
+dropZone.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    fileInput.click();
+  }
+});
+
+["dragenter", "dragover"].forEach((type) => {
+  dropZone.addEventListener(type, (event) => {
+    event.preventDefault();
+    dropZone.classList.add("is-dragover");
+  });
+});
+
+["dragleave", "dragend"].forEach((type) => {
+  dropZone.addEventListener(type, (event) => {
+    event.preventDefault();
+    dropZone.classList.remove("is-dragover");
+  });
+});
+
+dropZone.addEventListener("drop", async (event) => {
+  event.preventDefault();
+  dropZone.classList.remove("is-dragover");
+  loadStatus.textContent = "読み込み中...";
+  const files = await getFilesFromDataTransfer(event.dataTransfer);
+  loadFiles(files);
+});
+
+async function getFilesFromDataTransfer(dataTransfer) {
+  const items = dataTransfer.items;
+  if (items && items.length && typeof items[0].webkitGetAsEntry === "function") {
+    const entries = [];
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry();
+      if (entry) entries.push(entry);
+    }
+    const collected = [];
+    for (const entry of entries) await traverseEntry(entry, collected);
+    return collected;
+  }
+  return Array.from(dataTransfer.files || []);
+}
+
+function traverseEntry(entry, output) {
+  return new Promise((resolve) => {
+    if (entry.isFile) {
+      entry.file((file) => { output.push(file); resolve(); }, () => resolve());
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const readBatch = () => {
+        reader.readEntries(async (batch) => {
+          if (!batch.length) { resolve(); return; }
+          for (const child of batch) await traverseEntry(child, output);
+          readBatch();
+        }, () => resolve());
+      };
+      readBatch();
+    } else {
+      resolve();
+    }
+  });
+}
+
+async function loadFiles(files) {
+  records = [];
+  currentResults = [];
+  filteredResults = [];
+  currentKeywords = [];
+  isExpandedResults = false;
+
+  closeFullText();
+  resultArea.innerHTML = '<p class="empty">検索結果はここに表示されます。</p>';
+  resultsControls.classList.add("hidden");
+
+  if (files.length === 0) {
+    loadStatus.textContent = "まだファイルは読み込まれていません。";
+    return;
+  }
+
+  const textFiles = files.filter((f) => f.name.toLowerCase().endsWith(".txt"));
+
+  if (textFiles.length === 0) {
+    loadStatus.textContent = ".txt ファイルが選択されていません。";
+    return;
+  }
+
+  loadStatus.textContent = `読み込み中... (0 / ${textFiles.length})`;
+
+  const seen = new Set();
+  let done = 0;
+
+  for (const file of textFiles) {
+    const pathKey = `${file.webkitRelativePath || file.name}_${file.size}`;
+    if (seen.has(pathKey)) { done++; continue; }
+    seen.add(pathKey);
+
+    try {
+      const text = await readFileAsText(file);
+      records.push({
+        id: createRecordId(pathKey, text),
+        fileName: file.name,
+        title: extractTitle(file.name),
+        text,
+      });
+    } catch (err) {
+      console.error(`${file.name} の読み込みに失敗しました。`, err);
+    }
+
+    done++;
+    loadStatus.textContent = `読み込み中... (${done} / ${textFiles.length})`;
+  }
+
+  records.sort((a, b) => a.fileName.localeCompare(b.fileName, "ja", { numeric: true }));
+
+  loadStatus.textContent = `${records.length} 件の会議録を読み込みました。`;
+
+  if (searchInput.value.trim()) searchRecords();
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file, "UTF-8");
+  });
+}
+
+// ファイル名から表示用タイトルを取得
+// 「YYYY-MM-DD_タイトル.txt」形式なら日付部分を除いたタイトルを返す
+function extractTitle(fileName) {
+  const base = fileName.replace(/\.txt$/i, "");
+  const m = base.match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);
+  return m ? m[2] : base;
+}
+
+/* ============================================================
+   検索
+   ============================================================ */
+
+searchButton.addEventListener("click", () => searchRecords());
+
+clearButton.addEventListener("click", () => {
+  searchInput.value = "";
+  currentKeywords = [];
+  currentResults = [];
+  filteredResults = [];
+  closeFullText();
+  resultArea.innerHTML = '<p class="empty">検索結果はここに表示されます。</p>';
+  resultsControls.classList.add("hidden");
+  searchInput.focus();
+});
+
+searchInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") searchRecords();
+});
+
+let searchTimer = null;
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => searchRecords(), 250);
+});
+
+sortSelect.addEventListener("change", () => {
+  isExpandedResults = false;
+  applySort();
+  renderResults();
+});
+
+// クォート・カギカッコのフレーズ検索、-語 での除外に対応
+function parseQuery(raw) {
+  const normalized = raw.replace(/　/g, " ").trim();
+  const phrases = [];
+  const keywords = [];
+  const excludes = [];
+
+  let remaining = normalized.replace(
+    /[""「]([^""」]+)[""」]/g,
+    (_, p) => { if (p.trim()) phrases.push(p.trim()); return " "; }
+  );
+
+  remaining.split(/\s+/).forEach((w) => {
+    const t = w.trim();
+    if (!t) return;
+    if (t.startsWith("-") && t.length > 1) {
+      excludes.push(t.slice(1));
+    } else {
+      keywords.push(t);
+    }
+  });
+
+  return { phrases, keywords, excludes };
+}
+
+function searchRecords() {
+  closeFullText();
+
+  if (records.length === 0) {
+    resultArea.innerHTML = '<p class="empty">先に会議録ファイルを読み込んでください。</p>';
+    resultsControls.classList.add("hidden");
+    return;
+  }
+
+  const rawKeyword = searchInput.value.trim();
+  if (!rawKeyword) {
+    resultArea.innerHTML = '<p class="empty">検索キーワードを入力してください。</p>';
+    resultsControls.classList.add("hidden");
+    return;
+  }
+
+  const searchMode =
+    document.querySelector('input[name="searchMode"]:checked')?.value || "and";
+  const { phrases, keywords, excludes } = parseQuery(rawKeyword);
+
+  currentKeywords = [...phrases, ...keywords];
+  const allInclude = [...phrases, ...keywords];
+
+  currentResults = records
+    .map((record) => {
+      const textLower = record.text.toLowerCase();
+
+      let matched;
+      if (allInclude.length === 0) {
+        matched = true;
+      } else if (searchMode === "or") {
+        matched = allInclude.some((t) => textLower.includes(t.toLowerCase()));
+      } else {
+        matched = allInclude.every((t) => textLower.includes(t.toLowerCase()));
+      }
+
+      if (matched && excludes.length > 0) {
+        matched = !excludes.some((ex) => textLower.includes(ex.toLowerCase()));
+      }
+
+      if (!matched) return null;
+
+      const positions = findMatchPositions(record.text, currentKeywords);
+      const titlePositions = findMatchPositions(record.title, currentKeywords);
+      const hitCount = positions.length;
+      const score = titlePositions.length * 10 + hitCount;
+
+      return {
+        ...record,
+        hitCount,
+        score,
+        snippets: buildSnippets(record.text, positions, MAX_SNIPPETS, SNIPPET_MARGIN),
+      };
+    })
+    .filter(Boolean);
+
+  resultsControls.classList.remove("hidden");
+  isExpandedResults = false;
+  applySort();
+  renderResults();
+}
+
+function applySort() {
+  const sort = sortSelect.value;
+  filteredResults = [...currentResults];
+
+  if (sort === "filename") {
+    filteredResults.sort((a, b) =>
+      a.fileName.localeCompare(b.fileName, "ja", { numeric: true })
+    );
+  } else {
+    filteredResults.sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.fileName.localeCompare(b.fileName, "ja", { numeric: true })
+    );
+  }
+}
+
+/* ============================================================
+   検索結果の描画
+   ============================================================ */
+
+function renderResults() {
+  if (filteredResults.length === 0) {
+    resultArea.innerHTML = '<p class="empty">該当する会議録は見つかりませんでした。</p>';
+    return;
+  }
+
+  const visibleResults = isExpandedResults
+    ? filteredResults
+    : filteredResults.slice(0, INITIAL_RESULT_LIMIT);
+
+  const hiddenCount = Math.max(0, filteredResults.length - INITIAL_RESULT_LIMIT);
+  const totalHits = filteredResults.reduce((s, r) => s + r.hitCount, 0);
+
+  const itemsHtml = visibleResults.map((r) => buildResultItemHtml(r)).join("");
+
+  let expandHtml = "";
+  if (!isExpandedResults && hiddenCount > 0) {
+    expandHtml = `
+      <div class="expand-wrap">
+        <button type="button" class="btn-expand" data-action="expand-results">
+          さらに ${hiddenCount} 件を表示する ▼
+        </button>
+      </div>`;
+  } else if (isExpandedResults && filteredResults.length > INITIAL_RESULT_LIMIT) {
+    expandHtml = `
+      <div class="expand-wrap">
+        <button type="button" class="btn-expand btn-expand--collapse" data-action="collapse-results">
+          表示を閉じる ▲
+        </button>
+      </div>`;
+  }
+
+  resultArea.innerHTML = `
+    <div class="result-counter">
+      <span class="result-count-text">
+        <strong>${filteredResults.length}</strong> 件見つかりました — キーワード一致 ${totalHits} 箇所
+      </span>
+      <button type="button" class="secondary btn-print" data-action="print-results">印刷</button>
+    </div>
+    ${itemsHtml}
+    ${expandHtml}
+  `;
+}
+
+function buildResultItemHtml(record) {
+  const barWidthPct = Math.min(100, Math.round((Math.min(record.hitCount, 20) / 20) * 100));
+
+  const snippetsHtml = record.snippets
+    .map(
+      (s) =>
+        `<blockquote class="snippet">${highlightKeywords(
+          escapeHtml(s),
+          currentKeywords
+        )}</blockquote>`
+    )
+    .join("");
+
+  return `
+    <article class="result-item">
+      <div class="result-item__head">
+        <h3 class="result-title">${highlightKeywords(
+          escapeHtml(record.title),
+          currentKeywords
+        )}</h3>
+        <div class="result-item__sub">
+          <span class="result-filename">${escapeHtml(record.fileName)}</span>
+          <span class="hit-indicator" title="${record.hitCount}箇所でキーワードに一致">
+            <span class="hit-bar">
+              <span class="hit-bar__fill" style="width:${barWidthPct}%"></span>
+            </span>
+            <span class="hit-count">${record.hitCount} 件一致</span>
+          </span>
+        </div>
+      </div>
+      ${snippetsHtml}
+      <div class="result-actions">
+        <button type="button" class="btn-fulltext" data-action="show-full-text"
+                data-record-id="${escapeHtml(record.id)}">全文を表示 →</button>
+      </div>
+    </article>
+  `;
+}
+
+resultArea.addEventListener("click", (event) => {
+  if (!(event.target instanceof HTMLElement)) return;
+  const btn = event.target.closest("[data-action]");
+  if (!btn) return;
+
+  switch (btn.dataset.action) {
+    case "expand-results":
+      isExpandedResults = true;
+      renderResults();
+      break;
+    case "collapse-results":
+      isExpandedResults = false;
+      renderResults();
+      resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      break;
+    case "show-full-text":
+      showFullText(btn.dataset.recordId);
+      break;
+    case "print-results":
+      window.print();
+      break;
+  }
+});
+
+/* ============================================================
+   全文表示
+   ============================================================ */
+
+fullTextArea.addEventListener("click", (event) => {
+  if (!(event.target instanceof HTMLElement)) return;
+  const btn = event.target.closest("[data-action]");
+  if (!btn) return;
+
+  switch (btn.dataset.action) {
+    case "close-full-text":  closeFullText(); scrollToResults(); break;
+    case "back-to-results":  scrollToResults(); break;
+    case "prev-match":       goToMatch(currentMatchIndex - 1); break;
+    case "next-match":       goToMatch(currentMatchIndex + 1); break;
+  }
+});
+
+function showFullText(recordId) {
+  const record = records.find((r) => r.id === recordId);
+  if (!record) return;
+
+  const fullText = highlightKeywords(escapeHtml(record.text), currentKeywords);
+  const hasKw = currentKeywords.length > 0;
+
+  const navHtml = hasKw
+    ? `<div class="match-nav">
+        <button type="button" class="secondary" data-action="prev-match">◀ 前</button>
+        <span id="matchCounter" class="match-counter">- / -</span>
+        <button type="button" class="secondary" data-action="next-match">次 ▶</button>
+      </div>`
+    : "";
+
+  const actionsHtml = `
+    <div class="full-text-actions">
+      <button type="button" class="secondary" data-action="back-to-results">← 検索結果に戻る</button>
+      <button type="button" class="danger" data-action="close-full-text">✕ 閉じる</button>
+    </div>`;
+
+  fullTextArea.innerHTML = `
+    <div class="full-text-header">
+      <p class="full-text-title">${escapeHtml(record.title)}</p>
+      <p class="full-text-meta">${escapeHtml(record.fileName)}</p>
+      ${navHtml}
+    </div>
+    ${actionsHtml}
+    <div class="full-text-body">${fullText}</div>
+    ${actionsHtml}
+  `;
+
+  fullTextSection.classList.remove("hidden");
+  matchElements = Array.from(fullTextArea.querySelectorAll(".full-text-body mark"));
+  currentMatchIndex = -1;
+  updateMatchCounter();
+  fullTextSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (matchElements.length > 0) goToMatch(0);
+}
+
+function goToMatch(index) {
+  if (matchElements.length === 0) return;
+  const total = matchElements.length;
+  const next = ((index % total) + total) % total;
+  if (currentMatchIndex >= 0 && matchElements[currentMatchIndex]) {
+    matchElements[currentMatchIndex].classList.remove("is-active");
+  }
+  currentMatchIndex = next;
+  const el = matchElements[currentMatchIndex];
+  el.classList.add("is-active");
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  updateMatchCounter();
+}
+
+function updateMatchCounter() {
+  const el = document.getElementById("matchCounter");
+  if (!el) return;
+  el.textContent =
+    matchElements.length === 0
+      ? "一致なし"
+      : `${currentMatchIndex + 1} / ${matchElements.length}`;
+}
+
+function closeFullText() {
+  fullTextArea.innerHTML = "";
+  fullTextSection.classList.add("hidden");
+  matchElements = [];
+  currentMatchIndex = -1;
+}
+
+function scrollToResults() {
+  resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !fullTextSection.classList.contains("hidden")) {
+    closeFullText();
+    scrollToResults();
+    return;
+  }
+  if (
+    !fullTextSection.classList.contains("hidden") &&
+    document.activeElement?.tagName !== "INPUT" &&
+    document.activeElement?.tagName !== "SELECT"
+  ) {
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      goToMatch(currentMatchIndex + 1);
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      goToMatch(currentMatchIndex - 1);
+    }
+  }
+});
+
+/* ============================================================
+   ユーティリティ
+   ============================================================ */
+
+function findMatchPositions(text, keywords) {
+  const valid = keywords.filter(Boolean);
+  if (!valid.length) return [];
+  const pattern = valid
+    .slice()
+    .sort((a, b) => b.length - a.length)
+    .map(escapeRegExp)
+    .join("|");
+  const regex = new RegExp(pattern, "gi");
+  const positions = [];
+  let m;
+  let guard = 0;
+  while ((m = regex.exec(text)) !== null) {
+    positions.push({ index: m.index, length: m[0].length });
+    if (m.index === regex.lastIndex) regex.lastIndex++;
+    if (++guard > 50000) break;
+  }
+  return positions;
+}
+
+function buildSnippets(text, positions, maxSnippets, margin) {
+  const snippets = [];
+  let lastEnd = -1;
+  for (const pos of positions) {
+    if (snippets.length >= maxSnippets) break;
+    const start = Math.max(0, pos.index - margin);
+    if (start <= lastEnd) continue;
+    const end = Math.min(text.length, pos.index + pos.length + margin);
+    const prefix = start > 0 ? "…" : "";
+    const suffix = end < text.length ? "…" : "";
+    snippets.push(prefix + text.slice(start, end).replace(/\s+/g, " ").trim() + suffix);
+    lastEnd = end;
+  }
+  return snippets;
+}
+
+function highlightKeywords(escapedText, keywords) {
+  let result = escapedText;
+  const sorted = [...keywords].filter(Boolean).sort((a, b) => b.length - a.length);
+  for (const kw of sorted) {
+    const escaped = escapeHtml(kw);
+    const regex = new RegExp(`(${escapeRegExp(escaped)})`, "gi");
+    result = result.replace(regex, "<mark>$1</mark>");
+  }
+  return result;
+}
+
+function createRecordId(pathKey, text) {
+  let hash = 0;
+  const src = `${pathKey}_${text.length}`;
+  for (let i = 0; i < src.length; i++) {
+    hash = (hash << 5) - hash + src.charCodeAt(i);
+    hash |= 0;
+  }
+  return `${pathKey}_${Math.abs(hash)}`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+</script>
+</body>
+</html>
