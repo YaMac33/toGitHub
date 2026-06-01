@@ -59,6 +59,11 @@
         </div>
       </section>
 
+      <!-- 読み込み統計 -->
+      <section id="statsSection" class="card stats-card hidden" aria-live="polite">
+        <div id="statsArea"></div>
+      </section>
+
       <!-- 2. キーワード検索 -->
       <section class="card">
         <h2><span class="step-num">2</span>キーワード検索</h2>
@@ -99,10 +104,15 @@
         <div class="results-header">
           <h2><span class="step-num">3</span>検索結果</h2>
           <div class="results-controls hidden" id="resultsControls">
+            <label class="filter-label" for="deptFilter">担当課</label>
+            <select id="deptFilter" aria-label="担当課でフィルタ">
+              <option value="">すべて</option>
+            </select>
             <label class="filter-label" for="sortSelect">並び替え</label>
             <select id="sortSelect" aria-label="並び替え順">
               <option value="relevance">関連度順</option>
-              <option value="filename">ファイル名順</option>
+              <option value="date-desc">日付（新→旧）</option>
+              <option value="date-asc">日付（旧→新）</option>
             </select>
           </div>
         </div>

@@ -10,6 +10,9 @@ const resultsSection = document.getElementById("resultsSection");
 const resultsControls = document.getElementById("resultsControls");
 const fullTextSection = document.getElementById("fullTextSection");
 const fullTextArea = document.getElementById("fullTextArea");
+const statsSection = document.getElementById("statsSection");
+const statsArea = document.getElementById("statsArea");
+const deptFilter = document.getElementById("deptFilter");
 const sortSelect = document.getElementById("sortSelect");
 
 let records = [];
@@ -117,6 +120,7 @@ async function loadFiles(files) {
 
   closeFullText();
   resultArea.innerHTML = '<p class="empty">検索結果はここに表示されます。</p>';
+  statsSection.classList.add("hidden");
   resultsControls.classList.add("hidden");
 
   if (files.length === 0) {
@@ -143,10 +147,13 @@ async function loadFiles(files) {
 
     try {
       const text = await readFileAsText(file);
+      const meta = extractMeta(text, file.name);
       records.push({
         id: createRecordId(pathKey, text),
         fileName: file.name,
-        title: extractTitle(file.name),
+        title: meta.title,
+        date: meta.date,
+        department: meta.department,
         text,
       });
     } catch (err) {
@@ -161,6 +168,8 @@ async function loadFiles(files) {
 
   loadStatus.textContent = `${records.length} 件の会議録を読み込みました。`;
 
+  renderStats();
+
   if (searchInput.value.trim()) searchRecords();
 }
 
@@ -173,12 +182,87 @@ function readFileAsText(file) {
   });
 }
 
-// ファイル名から表示用タイトルを取得
-// 「YYYY-MM-DD_タイトル.txt」形式なら日付部分を除いたタイトルを返す
-function extractTitle(fileName) {
+/* ============================================================
+   メタ情報抽出
+   ============================================================ */
+
+function extractMeta(text, fileName) {
+  const titleFromText = getLineValue(text, "会議名");
+  const dateFromText = getLineValue(text, "開催日");
+  const deptFromText = getLineValue(text, "担当課");
+
   const base = fileName.replace(/\.txt$/i, "");
+  let dateFromFile = "";
+  let titleFromFile = base;
+
   const m = base.match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);
-  return m ? m[2] : base;
+  if (m) { dateFromFile = m[1]; titleFromFile = m[2]; }
+
+  return {
+    title: titleFromText || titleFromFile,
+    date: dateFromText || dateFromFile || "",
+    department: deptFromText || "",
+  };
+}
+
+function getLineValue(text, label) {
+  const regex = new RegExp(`^${escapeRegExp(label)}[：:](.+)$`, "m");
+  const m = text.match(regex);
+  return m ? m[1].trim() : "";
+}
+
+/* ============================================================
+   統計パネル
+   ============================================================ */
+
+function renderStats() {
+  if (records.length === 0) { statsSection.classList.add("hidden"); return; }
+
+  statsSection.classList.remove("hidden");
+
+  const dates = records.map((r) => r.date).filter(Boolean).sort();
+  const depts = [...new Set(records.map((r) => r.department).filter(Boolean))].sort();
+
+  const dateRangeHtml =
+    dates.length > 1
+      ? `${formatDate(dates[0])} ～ ${formatDate(dates[dates.length - 1])}`
+      : dates.length === 1
+      ? formatDate(dates[0])
+      : "―";
+
+  const deptTagsHtml =
+    depts.length > 0
+      ? depts
+          .map(
+            (d) =>
+              `<span class="dept-tag dept-color-${getDeptColorIndex(d)}">${escapeHtml(d)}</span>`
+          )
+          .join("")
+      : '<span class="text-muted">―</span>';
+
+  statsArea.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-box">
+        <span class="stat-num">${records.length}</span>
+        <span class="stat-label">会議録ファイル</span>
+      </div>
+      <div class="stat-sep" aria-hidden="true"></div>
+      <div class="stat-box">
+        <span class="stat-num">${depts.length}</span>
+        <span class="stat-label">担当課</span>
+      </div>
+      <div class="stat-sep" aria-hidden="true"></div>
+      <div class="stat-box stat-box--wide">
+        <span class="stat-label">開催期間</span>
+        <span class="stat-range">${dateRangeHtml}</span>
+      </div>
+    </div>
+    ${
+      depts.length > 0
+        ? `<div class="stats-depts"><span class="stat-label">担当課一覧：</span><span class="dept-tags">${deptTagsHtml}</span></div>`
+        : ""
+    }
+  `;
 }
 
 /* ============================================================
@@ -208,24 +292,31 @@ searchInput.addEventListener("input", () => {
   searchTimer = setTimeout(() => searchRecords(), 250);
 });
 
-sortSelect.addEventListener("change", () => {
+deptFilter.addEventListener("change", () => {
   isExpandedResults = false;
-  applySort();
+  applyFilterAndSort();
   renderResults();
 });
 
-// クォート・カギカッコのフレーズ検索、-語 での除外に対応
+sortSelect.addEventListener("change", () => {
+  isExpandedResults = false;
+  applyFilterAndSort();
+  renderResults();
+});
+
 function parseQuery(raw) {
   const normalized = raw.replace(/　/g, " ").trim();
   const phrases = [];
   const keywords = [];
   const excludes = [];
 
+  // クォート・カギカッコのフレーズを先に抽出
   let remaining = normalized.replace(
     /[""「]([^""」]+)[""」]/g,
     (_, p) => { if (p.trim()) phrases.push(p.trim()); return " "; }
   );
 
+  // 残りをスペースで分割してキーワード／除外語に振り分け
   remaining.split(/\s+/).forEach((w) => {
     const t = w.trim();
     if (!t) return;
@@ -266,6 +357,7 @@ function searchRecords() {
     .map((record) => {
       const textLower = record.text.toLowerCase();
 
+      // 含む条件（AND/OR）
       let matched;
       if (allInclude.length === 0) {
         matched = true;
@@ -275,6 +367,7 @@ function searchRecords() {
         matched = allInclude.every((t) => textLower.includes(t.toLowerCase()));
       }
 
+      // 除外条件（モードに関係なく AND NOT）
       if (matched && excludes.length > 0) {
         matched = !excludes.some((ex) => textLower.includes(ex.toLowerCase()));
       }
@@ -295,19 +388,41 @@ function searchRecords() {
     })
     .filter(Boolean);
 
+  updateDeptFilterOptions();
   resultsControls.classList.remove("hidden");
   isExpandedResults = false;
-  applySort();
+  applyFilterAndSort();
   renderResults();
 }
 
-function applySort() {
-  const sort = sortSelect.value;
-  filteredResults = [...currentResults];
+function updateDeptFilterOptions() {
+  const prev = deptFilter.value;
+  const depts = [...new Set(currentResults.map((r) => r.department).filter(Boolean))].sort();
+  deptFilter.innerHTML = '<option value="">すべての担当課</option>';
+  for (const d of depts) {
+    const opt = document.createElement("option");
+    opt.value = d;
+    opt.textContent = d;
+    if (d === prev) opt.selected = true;
+    deptFilter.appendChild(opt);
+  }
+}
 
-  if (sort === "filename") {
-    filteredResults.sort((a, b) =>
-      a.fileName.localeCompare(b.fileName, "ja", { numeric: true })
+function applyFilterAndSort() {
+  const dept = deptFilter.value;
+  const sort = sortSelect.value;
+
+  filteredResults = dept
+    ? currentResults.filter((r) => r.department === dept)
+    : [...currentResults];
+
+  if (sort === "date-desc") {
+    filteredResults.sort(
+      (a, b) => (b.date || "").localeCompare(a.date || "") || b.score - a.score
+    );
+  } else if (sort === "date-asc") {
+    filteredResults.sort(
+      (a, b) => (a.date || "").localeCompare(b.date || "") || b.score - a.score
     );
   } else {
     filteredResults.sort(
@@ -324,7 +439,11 @@ function applySort() {
 
 function renderResults() {
   if (filteredResults.length === 0) {
-    resultArea.innerHTML = '<p class="empty">該当する会議録は見つかりませんでした。</p>';
+    const msg =
+      currentResults.length > 0
+        ? "選択した絞り込み条件に該当する会議録はありませんでした。"
+        : "該当する会議録は見つかりませんでした。";
+    resultArea.innerHTML = `<p class="empty">${msg}</p>`;
     return;
   }
 
@@ -335,7 +454,14 @@ function renderResults() {
   const hiddenCount = Math.max(0, filteredResults.length - INITIAL_RESULT_LIMIT);
   const totalHits = filteredResults.reduce((s, r) => s + r.hitCount, 0);
 
-  const itemsHtml = visibleResults.map((r) => buildResultItemHtml(r)).join("");
+  const dept = deptFilter.value;
+  const counterText = dept
+    ? `「${escapeHtml(dept)}」で <strong>${filteredResults.length}</strong> 件（全 ${currentResults.length} 件中）`
+    : `<strong>${filteredResults.length}</strong> 件見つかりました — キーワード一致 ${totalHits} 箇所`;
+
+  const itemsHtml = visibleResults
+    .map((record) => buildResultItemHtml(record))
+    .join("");
 
   let expandHtml = "";
   if (!isExpandedResults && hiddenCount > 0) {
@@ -356,9 +482,7 @@ function renderResults() {
 
   resultArea.innerHTML = `
     <div class="result-counter">
-      <span class="result-count-text">
-        <strong>${filteredResults.length}</strong> 件見つかりました — キーワード一致 ${totalHits} 箇所
-      </span>
+      <span class="result-count-text">${counterText}</span>
       <button type="button" class="secondary btn-print" data-action="print-results">印刷</button>
     </div>
     ${itemsHtml}
@@ -367,6 +491,13 @@ function renderResults() {
 }
 
 function buildResultItemHtml(record) {
+  const dateHtml = record.date
+    ? `<span class="result-date">${escapeHtml(formatDate(record.date))}</span>`
+    : "";
+  const deptHtml = record.department
+    ? `<span class="dept-tag dept-color-${getDeptColorIndex(record.department)}">${escapeHtml(record.department)}</span>`
+    : "";
+
   const barWidthPct = Math.min(100, Math.round((Math.min(record.hitCount, 20) / 20) * 100));
 
   const snippetsHtml = record.snippets
@@ -382,16 +513,12 @@ function buildResultItemHtml(record) {
   return `
     <article class="result-item">
       <div class="result-item__head">
-        <h3 class="result-title">${highlightKeywords(
-          escapeHtml(record.title),
-          currentKeywords
-        )}</h3>
+        <div class="result-badges">${dateHtml}${deptHtml}</div>
+        <h3 class="result-title">${highlightKeywords(escapeHtml(record.title), currentKeywords)}</h3>
         <div class="result-item__sub">
           <span class="result-filename">${escapeHtml(record.fileName)}</span>
           <span class="hit-indicator" title="${record.hitCount}箇所でキーワードに一致">
-            <span class="hit-bar">
-              <span class="hit-bar__fill" style="width:${barWidthPct}%"></span>
-            </span>
+            <span class="hit-bar"><span class="hit-bar__fill" style="width:${barWidthPct}%"></span></span>
             <span class="hit-count">${record.hitCount} 件一致</span>
           </span>
         </div>
@@ -450,6 +577,13 @@ function showFullText(recordId) {
   const record = records.find((r) => r.id === recordId);
   if (!record) return;
 
+  const dateHtml = record.date
+    ? `<span class="result-date">${escapeHtml(formatDate(record.date))}</span>`
+    : "";
+  const deptHtml = record.department
+    ? `<span class="dept-tag dept-color-${getDeptColorIndex(record.department)}">${escapeHtml(record.department)}</span>`
+    : "";
+
   const fullText = highlightKeywords(escapeHtml(record.text), currentKeywords);
   const hasKw = currentKeywords.length > 0;
 
@@ -469,6 +603,7 @@ function showFullText(recordId) {
 
   fullTextArea.innerHTML = `
     <div class="full-text-header">
+      <div class="full-text-badges">${dateHtml}${deptHtml}</div>
       <p class="full-text-title">${escapeHtml(record.title)}</p>
       <p class="full-text-meta">${escapeHtml(record.fileName)}</p>
       ${navHtml}
@@ -479,7 +614,9 @@ function showFullText(recordId) {
   `;
 
   fullTextSection.classList.remove("hidden");
-  matchElements = Array.from(fullTextArea.querySelectorAll(".full-text-body mark"));
+  matchElements = Array.from(
+    fullTextArea.querySelectorAll(".full-text-body mark")
+  );
   currentMatchIndex = -1;
   updateMatchCounter();
   fullTextSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -526,11 +663,7 @@ document.addEventListener("keydown", (event) => {
     scrollToResults();
     return;
   }
-  if (
-    !fullTextSection.classList.contains("hidden") &&
-    document.activeElement?.tagName !== "INPUT" &&
-    document.activeElement?.tagName !== "SELECT"
-  ) {
+  if (!fullTextSection.classList.contains("hidden") && document.activeElement?.tagName !== "INPUT") {
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
       event.preventDefault();
       goToMatch(currentMatchIndex + 1);
@@ -590,6 +723,20 @@ function highlightKeywords(escapedText, keywords) {
     result = result.replace(regex, "<mark>$1</mark>");
   }
   return result;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[1]}年${parseInt(m[2])}月${parseInt(m[3])}日`;
+  return dateStr;
+}
+
+const DEPT_COLOR_COUNT = 7;
+function getDeptColorIndex(dept) {
+  let h = 0;
+  for (let i = 0; i < dept.length; i++) h = (h * 31 + dept.charCodeAt(i)) & 0xffff;
+  return (h % DEPT_COLOR_COUNT) + 1;
 }
 
 function createRecordId(pathKey, text) {
