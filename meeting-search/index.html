@@ -8,64 +8,134 @@
   <script src="app.js" defer></script>
 </head>
 <body>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <div class="site-header__text">
+        <p class="eyebrow">Meeting Records Search</p>
+        <h1>会議録横断検索システム</h1>
+        <p class="lead">複数の会議録 txt ファイルをブラウザで読み込み、キーワードで横断検索します。</p>
+      </div>
+      <div class="site-header__badges">
+        <span class="badge badge--offline">● オフライン動作</span>
+        <span class="badge badge--security">外部送信なし</span>
+      </div>
+    </div>
+  </header>
+
   <div class="page">
-    <header class="header">
-      <p class="eyebrow">Meeting Records Search</p>
-      <h1>会議録横断検索システム</h1>
-      <p class="lead">
-        会議録のtxtファイルを読み込み、キーワードで横断検索します。
-      </p>
-    </header>
-
     <main>
-      <section class="card">
-        <h2>1. 会議録ファイルを読み込む</h2>
-        <p class="note">
-          recordsフォルダ内の .txt ファイルを複数選択してください。
-        </p>
 
-        <input
-          id="fileInput"
-          type="file"
-          accept=".txt,text/plain"
-          multiple
-        />
+      <!-- 1. ファイル読み込み -->
+      <section class="card" id="loadSection">
+        <h2><span class="step-num">1</span>会議録ファイルを読み込む</h2>
+        <p class="note">.txt ファイルまたはフォルダを選択するか、下のエリアにドラッグ＆ドロップしてください。</p>
 
-        <div id="loadStatus" class="status">
+        <div id="dropZone" class="drop-zone" tabindex="0" role="button"
+             aria-label="ここにファイルやフォルダをドラッグ＆ドロップ、またはクリックして選択">
+          <svg class="drop-zone__icon" xmlns="http://www.w3.org/2000/svg" width="42" height="42"
+               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            <line x1="12" y1="11" x2="12" y2="17"/>
+            <polyline points="9 14 12 17 15 14"/>
+          </svg>
+          <p class="drop-zone__text">.txt ファイルやフォルダをドラッグ＆ドロップ</p>
+          <p class="drop-zone__sub">または</p>
+          <div class="drop-zone__buttons">
+            <label class="file-button">
+              ファイルを選択
+              <input id="fileInput" type="file" accept=".txt,text/plain" multiple hidden />
+            </label>
+            <label class="file-button file-button--secondary">
+              フォルダを選択
+              <input id="folderInput" type="file" webkitdirectory multiple hidden />
+            </label>
+          </div>
+        </div>
+
+        <div id="loadStatus" class="status" aria-live="polite" aria-atomic="true">
           まだファイルは読み込まれていません。
         </div>
       </section>
 
-      <section class="card">
-        <h2>2. キーワード検索</h2>
-
-        <div class="search-row">
-          <input
-            id="searchInput"
-            type="search"
-            placeholder="例：DX 会議録"
-            autocomplete="off"
-          />
-          <button id="searchButton" type="button">検索</button>
-        </div>
-
-        <p class="note">
-          スペース区切りで複数キーワードを入力すると、AND検索になります。
-        </p>
+      <!-- 読み込み統計 -->
+      <section id="statsSection" class="card stats-card hidden" aria-live="polite">
+        <div id="statsArea"></div>
       </section>
 
+      <!-- 2. キーワード検索 -->
+      <section class="card">
+        <h2><span class="step-num">2</span>キーワード検索</h2>
+        <div class="search-row">
+          <input id="searchInput" type="search"
+                 placeholder='例：DX 効率化　　"フレーズ"で完全一致　-語で除外'
+                 autocomplete="off" spellcheck="false" aria-label="検索キーワード" />
+          <button id="searchButton" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            検索
+          </button>
+          <button id="clearButton" type="button" class="secondary">クリア</button>
+        </div>
+        <div class="search-options">
+          <fieldset class="search-mode">
+            <legend class="search-mode__label">検索モード：</legend>
+            <label class="radio-label">
+              <input type="radio" name="searchMode" value="and" checked />
+              AND（すべて含む）
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="searchMode" value="or" />
+              OR（いずれか含む）
+            </label>
+          </fieldset>
+          <p class="search-hint">
+            <kbd>"フレーズ"</kbd> で完全一致検索　<kbd>-語</kbd> でその語を含む文書を除外　スペース区切りで複数指定
+          </p>
+        </div>
+      </section>
+
+      <!-- 3. 検索結果 -->
       <section id="resultsSection" class="card">
-        <h2>3. 検索結果</h2>
-        <div id="resultArea" class="result-area">
+        <div class="results-header">
+          <h2><span class="step-num">3</span>検索結果</h2>
+          <div class="results-controls hidden" id="resultsControls">
+            <label class="filter-label" for="deptFilter">担当課</label>
+            <select id="deptFilter" aria-label="担当課でフィルタ">
+              <option value="">すべて</option>
+            </select>
+            <label class="filter-label" for="sortSelect">並び替え</label>
+            <select id="sortSelect" aria-label="並び替え順">
+              <option value="relevance">関連度順</option>
+              <option value="date-desc">日付（新→旧）</option>
+              <option value="date-asc">日付（旧→新）</option>
+            </select>
+          </div>
+        </div>
+        <div id="resultArea" class="result-area" aria-live="polite" aria-atomic="false">
           <p class="empty">検索結果はここに表示されます。</p>
         </div>
       </section>
 
+      <!-- 4. 全文表示 -->
       <section id="fullTextSection" class="card full-text-section hidden">
-        <h2>4. 全文表示</h2>
+        <h2><span class="step-num">4</span>全文表示</h2>
         <div id="fullTextArea"></div>
       </section>
+
     </main>
+
+    <footer class="site-footer">
+      <p>会議録横断検索システム — すべての処理はブラウザ内で完結し、外部サーバーへの通信は行いません。</p>
+      <p class="footer-hint">
+        キーボード：<kbd>Enter</kbd> 検索　<kbd>Esc</kbd> 全文を閉じる　<kbd>← →</kbd> マッチ間移動
+      </p>
+    </footer>
   </div>
+
 </body>
 </html>

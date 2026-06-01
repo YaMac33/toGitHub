@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>会議録横断検索システム</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <p class="eyebrow">Meeting Records Search</p>
+      <h1>会議録横断検索システム</h1>
+      <p class="lead">
+        会議録のtxtファイルを読み込み、キーワードで横断検索します。
+      </p>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>1. 会議録ファイルを読み込む</h2>
+        <p class="note">
+          recordsフォルダ内の .txt ファイルを複数選択してください。
+        </p>
+
+        <input
+          id="fileInput"
+          type="file"
+          accept=".txt,text/plain"
+          multiple
+        />
+
+        <div id="loadStatus" class="status">
+          まだファイルは読み込まれていません。
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. キーワード検索</h2>
+
+        <div class="search-row">
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="例：DX 会議録"
+            autocomplete="off"
+          />
+          <button id="searchButton" type="button">検索</button>
+        </div>
+
+        <p class="note">
+          スペース区切りで複数キーワードを入力すると、AND検索になります。
+        </p>
+      </section>
+
+      <section id="resultsSection" class="card">
+        <h2>3. 検索結果</h2>
+        <div id="resultArea" class="result-area">
+          <p class="empty">検索結果はここに表示されます。</p>
+        </div>
+      </section>
+
+      <section id="fullTextSection" class="card full-text-section hidden">
+        <h2>4. 全文表示</h2>
+        <div id="fullTextArea"></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
