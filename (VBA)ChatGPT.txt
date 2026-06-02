@@ -1,0 +1,598 @@
+Option Explicit
+
+Public Sub CreateSlidesFromHtmlReference()
+
+    Dim pres As Presentation
+    Set pres = Presentations.Add
+
+    With pres.PageSetup
+        .SlideWidth = 960
+        .SlideHeight = 540
+    End With
+
+    ' 1
+    AddTitleSlide pres, _
+        "生成AI・HTML・簡易Webアプリ活用に関する実験結果の共有", _
+        "LGWAN環境下でも活用できる可能性のある" & vbCrLf & _
+        "業務効率化・資料作成・簡易ツール化の実験報告", _
+        "専門知識のない職員にも伝わるよう、実験結果・課題・活用可能性を整理", _
+        "生成AI、特にLLMをうまく活用できれば、地方自治体の業務においても業務効率化につなげられる可能性があります。一方で、自治体業務ではLGWAN環境、情報セキュリティ、端末制限、マクロ制限、インターネット接続の制約があります。本資料は、HTML、CSS、JavaScript、VBA、GitHub、GAS、AIエージェント等を試した結果を共有するものです。"
+
+    ' 2
+    AddAgendaSlide pres
+
+    ' 3
+    AddTwoCardSlide pres, "背景・目的", "DX推進の検討材料", _
+        "考えたこと", "生成AI、特にLLMをうまく活用できれば、自治体業務でも業務効率化につなげられる可能性がある。", _
+        "実験の視点", "AIを最大限活用するにはどうすればよいか" & vbCrLf & "AI活用の可能性を広げるには何を知っておくべきか" & vbCrLf & "LGWAN環境でも使える方法はあるか", _
+        "本資料は、個人で試した内容を庁内共有向けに整理したものです。実運用には情報管理部門との調整が必要です。", _
+        "今回は、AIを最大限活用するにはどうすればよいか、AI活用の可能性を広げるには何を知っておくべきかという観点から実験を行いました。今後のDX推進や業務効率化の検討材料として共有します。"
+
+    ' 4
+    AddThreeCardSlide pres, "今回の実験で分かった重要ポイント", "結論", _
+        Array("AIは便利だが揺れる", "オフラインでもできる", "属人化に注意"), _
+        Array("回答が毎回少し変わるため、正確性が必要な処理は仕組み化が必要。", "HTML・CSS・JavaScriptなら、LGWAN環境でも活用できる可能性がある。", "保守が必要なアプリを専門知識なしで作り込むのはリスクが高い。"), _
+        Array("primary", "green", "accent"), _
+        "今回の実験で分かった主なことは三つです。AIは便利ですが回答に揺れがあります。一方で、HTML等を使えばオフラインでもできることがあります。ただし、長期的に運用するものは属人化に注意が必要です。"
+
+    ' 5
+    AddTwoCardSlide pres, "AIだけに業務処理を任せる難しさ", "回答の揺れ", _
+        "AIに任せきる場合", "同じ質問でも回答が変わる" & vbCrLf & "表現や判断に揺れが出る" & vbCrLf & "規定どおりの出力を保証しにくい", _
+        "業務利用に向く形", "決められた情報を入力する" & vbCrLf & "決められた形式で出力する" & vbCrLf & "検索・閲覧はできるが、勝手に編集できない", _
+        "AIは「最終処理」よりも、仕組みづくり・コード作成・資料作成の補助に使う方が現実的です。", _
+        "生成AIは非常に便利ですが、同じ質問でも回答が少しずつ変わることがあります。正確性や再現性が求められる自治体業務では、AIに毎回判断させるより、決められた入力を決められた形式で出力する仕組みを作る方が適しています。"
+
+    ' 6
+    AddBulletSlide pres, "LGWAN環境では「ほぼオフライン前提」で考える", "制約の整理", _
+        "LGWAN環境内ではインターネットへ直接接続できないため、半分オフラインのような感覚で考える必要があります。", _
+        Array("ZIPファイルの直接ダウンロードは不可", "外部ライブラリの読み込みは難しい", "ただし、HTMLファイルをブラウザで開くことは可能"), _
+        "LGWAN環境内ではインターネットに直接接続できないため、オフラインに近い環境として考える必要があります。しかし、ブラウザでHTMLファイルを開いて閲覧することは可能であり、通常のWebページに近い感覚で表示できます。"
+
+    ' 7
+    AddThreeCardSlide pres, "オフラインでも意外とできることが多い", "HTML活用", _
+        Array("閲覧系", "検索系", "入力・出力系"), _
+        Array("業務マニュアル" & vbCrLf & "制度説明資料" & vbCrLf & "研修用スライド", "会議録検索" & vbCrLf & "通知文検索" & vbCrLf & "FAQ検索", "定型文生成" & vbCrLf & "CSV出力" & vbCrLf & "PDFへの書き込み補助"), _
+        Array("primary", "green", "accent"), _
+        "LGWAN環境だから何もできないというわけではありません。HTML、CSS、JavaScriptを使えば、閲覧専用資料、検索できる資料、簡易的な入力・出力ツールなどを作成できる可能性があります。"
+
+    ' 8
+    AddThreeCardSlide pres, "HTML・CSS・JavaScriptの役割", "専門用語の補足", _
+        Array("HTML", "CSS", "JavaScript"), _
+        Array("画面に表示する内容を作るもの。Webページの土台。", "色、余白、文字サイズ、レイアウトなど見た目を整えるもの。", "検索、表示切替、ボタン操作など画面上の動きを作るもの。"), _
+        Array("primary", "accent", "green"), _
+        "HTMLは画面に表示する内容、CSSは見た目、JavaScriptは動きを担当します。これらを1つのHTMLファイルにまとめることで、ブラウザでそのまま表示・利用できる簡易Webアプリのように使えます。"
+
+    ' 9
+    AddComparisonSlide pres
+
+    ' 10
+    AddBulletSlide pres, "HTMLスライドとPowerPoint資料作成への応用", "資料作成", _
+        "HTMLを使えば、ブラウザで表示できるスライドを作成できます。ただし、生成後にPowerPointのように直感的に編集しにくい点があります。", _
+        Array("HTMLで見栄えのよいスライドを作成できる", "生成後に直感的に編集しにくい", "同じ雰囲気のPowerPointを作るVBAをAIに生成させる", "最後はPowerPoint上で人が微調整する"), _
+        "HTMLスライドはデザインの自由度が高い一方、PowerPointのような編集には向きません。そこで、HTMLの雰囲気をもとにVBAコードを生成し、PowerPoint資料として作成する方法を試しました。"
+
+    ' 11
+    AddFlowSlide pres, "AIを使った資料作成の流れ", "手順", _
+        Array("プロンプト生成", "HTML生成", "VBA化", "微調整"), _
+        Array("まずAIに目的に合ったプロンプト文を作らせる。", "生成したプロンプトでHTMLスライドのコードを作成。", "HTMLの雰囲気をPowerPointに変換するVBAを生成。", "PowerPoint上で人が内容や配置を調整する。"), _
+        "いきなり完成物を依頼するより、まずプロンプト自体をAIに作らせると安定しやすいです。プロンプト生成、HTML生成、VBA化、微調整という段階を踏むことで、一定の完成度の資料を作りやすくなりました。"
+
+    ' 12
+    AddTwoCardSlide pres, "VS Code・AIエージェントによるコーディング支援", "開発補助", _
+        "できたこと", "HTMLベースの簡易Webアプリ開発" & vbCrLf & "AIに質問しながらコード修正" & vbCrLf & "GitHubへの反映作業", _
+        "使った知識は限定的", "git add ." & vbCrLf & "git commit -m ""メッセージ""" & vbCrLf & "git push", _
+        "高度な知識がなくても試せる一方で、コードを読めないまま進めることには限界があります。", _
+        "VS CodeとAIエージェントを使うことで、HTMLベースの簡易Webアプリ開発を効率的に進められました。実際に使ったコマンドは限られていますが、AIに聞きながら進めることでGitHubへの反映まで試すことができました。"
+
+    ' 13
+    AddTwoCardSlide pres, "GitHubを使ったコード共有・公開", "コード管理", _
+        "GitHubとは", "ソースコードを保存・共有・共同開発するためのWebサービス。公開設定にすれば、ログインなしでコードを確認できる場合があります。", _
+        "今回の使い方", "VS Codeで作成したコードをGitHubへ送信" & vbCrLf & "GitHub上の各ファイルからコードをコピー" & vbCrLf & "LGWAN環境内で簡易アプリを再構築", _
+        "手作業が多く、ファイル数が多いと煩雑。GitHubに置く情報の内容にも注意が必要です。", _
+        "VS Code単体ではコードをWeb上に公開できないため、GitHubと連携しました。GitHub上のファイルからコードをコピーし、LGWAN環境内に持ち込むことで、簡易的なHTMLアプリを構築できました。"
+
+    ' 14
+    AddBulletSlide pres, "Google Apps Scriptを使った自動化の可能性", "GAS", _
+        "Googleアカウントを利用できる環境があれば、Googleフォーム・スプレッドシート・GASを連携できます。", _
+        Array("フォーム回答をスプレッドシートに自動反映", "行追加をきっかけにGASを実行", "通知や外部サービス連携も可能", "GitHub Actionsとの連携も実験できた"), _
+        "Google Apps Scriptは、Googleフォームやスプレッドシートと連携できるクラウド上のプログラミング環境です。フォーム入力をきっかけに処理を動かし、通知や外部サービス連携を行うことができます。"
+
+    ' 15
+    AddFlowSlide pres, "試した自動化の流れ", "仕組み", _
+        Array("Googleフォーム入力", "スプレッドシート反映", "GAS実行", "GitHub連携"), _
+        Array("公共PCなどからフォームに必要情報を入力。", "回答内容が行として自動追加される。", "行追加をトリガーにスクリプトが動作。", "認証情報を使ってファイル作成などを実行。"), _
+        "実験では、Googleフォームに入力された内容をスプレッドシートに反映し、行追加をトリガーにGASを実行し、GitHub側へ連携する流れを試しました。ただし、仕組みは複雑で一般職員が通常業務で扱うには学習コストが高いです。"
+
+    ' 16
+    AddTwoCardSlide pres, "セキュリティ上の課題", "最重要", _
+        "リスクが高い運用", "LGWAN内のテキストをネット側へ出す" & vbCrLf & "共有リンクを「全員編集可」にする" & vbCrLf & "個人アカウントで実験的に運用する", _
+        "必要な対応", "情報管理部門との事前調整" & vbCrLf & "扱える情報範囲の明確化" & vbCrLf & "組織としての正式な運用ルール", _
+        "実験としては可能でも、実運用では個人判断ではなく、組織的な確認と承認が必要です。", _
+        "今回試した方法の中には、インターネット側とLGWAN側の情報の行き来が発生するものがあります。これはセキュリティ上のリスクが高く、実際に組織的に活用する場合には、情報管理部門との相談と正式なルール整備が必要です。"
+
+    ' 17
+    AddRiskSlide pres
+
+    ' 18
+    AddFourCardSlide pres, "自治体業務で活用しやすい分野", "活用候補", _
+        Array("閲覧専用資料", "検索できる資料", "定型入力・出力", "資料作成補助"), _
+        Array("業務マニュアル、手順書、制度説明資料など。", "会議録、通知文、FAQ、過去の照会回答など。", "CSV出力、定型文作成、報告様式の補助など。", "研修資料、説明資料、提案資料、報告資料など。"), _
+        "今回の経験から、閲覧専用資料、検索できる資料、定型入力・定型出力ツール、資料作成補助は比較的活用しやすい分野だと感じました。特に編集させたくないが見やすく探しやすくしたい資料はHTML化と相性が良いです。"
+
+    ' 19
+    AddTwoCardSlide pres, "組織として活用する場合に必要なもの", "環境整備", _
+        "アカウント・環境", "組織用Googleアカウント" & vbCrLf & "組織用GitHubアカウント" & vbCrLf & "組織用AIサービスアカウント" & vbCrLf & "VS Code等のコード編集環境", _
+        "ルール・体制", "AI利用ルール" & vbCrLf & "データ移動ルール" & vbCrLf & "コード管理ルール" & vbCrLf & "保守・引き継ぎ体制", _
+        "個人の試行錯誤ではなく、組織として管理できる形にすることが重要です。", _
+        "個人アカウントや個人の試行錯誤だけで進めるには限界があります。組織としてAIや簡易アプリ開発を活用するのであれば、アカウント、開発環境、利用ルール、保守体制を整える必要があります。"
+
+    ' 20
+    AddThreeCardSlide pres, "まとめ", "要点", _
+        Array("AIの使いどころ", "LGWAN内でも可能性あり", "実運用は慎重に"), _
+        Array("最終処理よりも、資料作成・コード作成・仕組みづくりの補助に向いている。", "HTML・CSS・JavaScriptを使えば、オフライン前提でも簡易ツール化できる。", "セキュリティ、属人化、保守体制の課題を整理してから進める必要がある。"), _
+        Array("primary", "green", "red"), _
+        "今回の実験を通じて、生成AIやHTML、JavaScript、VBA、GitHub、GASなどを組み合わせることで、自治体業務の効率化につながる可能性があることが分かりました。一方で、AIの回答の揺れ、セキュリティ、属人化、保守体制には十分な注意が必要です。"
+
+    ' 21
+    AddFlowSlide pres, "次のアクション", "進め方", _
+        Array("小さく試す", "情報管理部門に相談", "共通ルール化", "横展開を検討"), _
+        Array("閲覧専用資料や検索ツールなど、リスクの低い用途から始める。", "データの扱い、持ち込み、アカウント利用の可否を確認する。", "個人運用ではなく、組織として管理できる形に整える。", "効果が見込める業務から、庁内展開や研修に活用する。"), _
+        "今後は、まずリスクの低い用途から小さく試し、情報管理部門に相談しながら共通ルールを整えることが重要です。その上で、効果が見込める業務から庁内展開を検討する流れが現実的です。"
+
+    ' 22
+    AddClosingSlide pres
+
+    MsgBox "スライド作成が完了しました。", vbInformation
+
+End Sub
+
+Private Sub AddTitleSlide(ByVal pres As Presentation, ByVal titleText As String, ByVal subTitle As String, ByVal noteText As String, ByVal speakerNote As String)
+    Dim sld As Slide
+    Set sld = pres.Slides.Add(pres.Slides.Count + 1, ppLayoutBlank)
+    ApplyBaseDesign sld
+
+    AddTextBox sld, "Information Sharing / DX Trial Report", 70, 110, 760, 24, 13, RGB(31, 95, 139), True
+    AddTextBox sld, titleText, 70, 145, 800, 120, 35, RGB(23, 63, 95), True
+    AddTextBox sld, subTitle, 70, 275, 770, 80, 22, RGB(51, 65, 85), False
+
+    AddAccentNote sld, noteText, 70, 380, 720, 58
+    AddSpeakerNotes sld, speakerNote
+End Sub
+
+Private Sub AddAgendaSlide(ByVal pres As Presentation)
+    Dim sld As Slide
+    Set sld = pres.Slides.Add(pres.Slides.Count + 1, ppLayoutBlank)
+    ApplyBaseDesign sld
+    AddHeader sld, "Agenda", "本資料の流れ", "全体像"
+
+    Dim items As Variant
+    items = Array("背景・目的", "実験から分かったこと", "HTML・JavaScript活用", "資料作成への応用", "AIエージェントとGitHub", "GASによる自動化", "注意点・リスク", "まとめ・次のアクション")
+
+    Dim i As Long, x As Single, y As Single
+    For i = 0 To 7
+        x = 80 + (i Mod 2) * 400
+        y = 145 + Int(i / 2) * 72
+        AddAgendaItem sld, CStr(i + 1), CStr(items(i)), x, y
+    Next i
+
+    AddSpeakerNotes sld, "本資料では、背景と目的から始め、今回の実験で分かったこと、HTMLやJavaScriptの活用、資料作成への応用、AIエージェントやGitHub、GASによる自動化、注意点とリスク、最後にまとめと次のアクションを整理します。"
+End Sub
+
+Private Sub AddTwoCardSlide(ByVal pres As Presentation, ByVal titleText As String, ByVal badgeText As String, _
+                            ByVal card1Title As String, ByVal card1Body As String, _
+                            ByVal card2Title As String, ByVal card2Body As String, _
+                            ByVal noteBoxText As String, ByVal speakerNote As String)
+    Dim sld As Slide
+    Set sld = pres.Slides.Add(pres.Slides.Count + 1, ppLayoutBlank)
+    ApplyBaseDesign sld
+    AddHeader sld, "", titleText, badgeText
+
+    AddCard sld, card1Title, card1Body, 70, 145, 395, 210, "primary"
+    AddCard sld, card2Title, card2Body, 495, 145, 395, 210, "white"
+
+    If Len(noteBoxText) > 0 Then
+        AddNoteBox sld, noteBoxText, 70, 385, 820, 70
+    End If
+
+    AddSpeakerNotes sld, speakerNote
+End Sub
+
+Private Sub AddThreeCardSlide(ByVal pres As Presentation, ByVal titleText As String, ByVal badgeText As String, _
+                              ByVal cardTitles As Variant, ByVal cardBodies As Variant, ByVal cardStyles As Variant, _
+                              ByVal speakerNote As String)
+    Dim sld As Slide
+    Set sld = pres.Slides.Add(pres.Slides.Count + 1, ppLayoutBlank)
+    ApplyBaseDesign sld
+    AddHeader sld, "", titleText, badgeText
+
+    Dim i As Long
+    For i = 0 To 2
+        AddNumberCard sld, CStr(i + 1), CStr(cardTitles(i)), CStr(cardBodies(i)), 70 + i * 285, 170, 260, 230, CStr(cardStyles(i))
+    Next i
+
+    AddSpeakerNotes sld, speakerNote
+End Sub
+
+Private Sub AddFourCardSlide(ByVal pres As Presentation, ByVal titleText As String, ByVal badgeText As String, _
+                             ByVal cardTitles As Variant, ByVal cardBodies As Variant, ByVal speakerNote As String)
+    Dim sld As Slide
+    Set sld = pres.Slides.Add(pres.Slides.Count + 1, ppLayoutBlank)
+    ApplyBaseDesign sld
+    AddHeader sld, "", titleText, badgeText
+
+    Dim styles As Variant
+    styles = Array("primary", "green", "accent", "white")
+
+    Dim i As Long
+    For i = 0 To 3
+        AddCard sld, CStr(cardTitles(i)), CStr(cardBodies(i)), 55 + i * 220, 175, 205, 210, CStr(styles(i))
+    Next i
+
+    AddNoteBox sld, "特に「編集させたくないが、見やすく・探しやすくしたい資料」はHTML化と相性が良い。", 75, 420, 810, 60
+    AddSpeakerNotes sld, speakerNote
+End Sub
+
+Private Sub AddBulletSlide(ByVal pres As Presentation, ByVal titleText As String, ByVal badgeText As String, _
+                           ByVal leadText As String, ByVal bullets As Variant, ByVal speakerNote As String)
+    Dim sld As Slide
+    Set sld = pres.Slides.Add(pres.Slides.Count + 1, ppLayoutBlank)
+    ApplyBaseDesign sld
+    AddHeader sld, "", titleText, badgeText
+
+    AddTextBox sld, leadText, 70, 145, 780, 80, 20, RGB(31, 41, 55), False
+    AddBulletList sld, bullets, 95, 255, 720, 190, 21
+    AddSpeakerNotes sld, speakerNote
+End Sub
+
+Private Sub AddFlowSlide(ByVal pres As Presentation, ByVal titleText As String, ByVal badgeText As String, _
+                         ByVal stepTitles As Variant, ByVal stepBodies As Variant, ByVal speakerNote As String)
+    Dim sld As Slide
+    Set sld = pres.Slides.Add(pres.Slides.Count + 1, ppLayoutBlank)
+    ApplyBaseDesign sld
+    AddHeader sld, "", titleText, badgeText
+
+    Dim i As Long, x As Single
+    For i = 0 To 3
+        x = 55 + i * 225
+        AddFlowStep sld, CStr(i + 1), CStr(stepTitles(i)), CStr(stepBodies(i)), x, 190, 200, 190
+        If i < 3 Then AddArrow sld, x + 200, 270
+    Next i
+
+    AddSpeakerNotes sld, speakerNote
+End Sub
+
+Private Sub AddComparisonSlide(ByVal pres As Presentation)
+    Dim sld As Slide
+    Set sld = pres.Slides.Add(pres.Slides.Count + 1, ppLayoutBlank)
+    ApplyBaseDesign sld
+    AddHeader sld, "Can / Cannot", "できること・できないこと", "整理"
+
+    Dim tbl As Shape
+    Set tbl = sld.Shapes.AddTable(4, 3, 60, 145, 840, 280)
+
+    With tbl.Table
+        .Cell(1, 1).Shape.TextFrame.TextRange.Text = "区分"
+        .Cell(1, 2).Shape.TextFrame.TextRange.Text = "できること"
+        .Cell(1, 3).Shape.TextFrame.TextRange.Text = "難しいこと"
+
+        .Cell(2, 1).Shape.TextFrame.TextRange.Text = "HTMLアプリ"
+        .Cell(2, 2).Shape.TextFrame.TextRange.Text = "閲覧、検索、画面上の入力、CSV・テキスト出力"
+        .Cell(2, 3).Shape.TextFrame.TextRange.Text = "Word・Excelファイルへの直接書き込み"
+
+        .Cell(3, 1).Shape.TextFrame.TextRange.Text = "データ保持"
+        .Cell(3, 2).Shape.TextFrame.TextRange.Text = "同じ端末・同じブラウザ内での一時保存"
+        .Cell(3, 3).Shape.TextFrame.TextRange.Text = "複数端末・複数職員での安定した共有"
+
+        .Cell(4, 1).Shape.TextFrame.TextRange.Text = "PDF"
+        .Cell(4, 2).Shape.TextFrame.TextRange.Text = "読み込み、画面上での書き込み、書き込み後の出力"
+        .Cell(4, 3).Shape.TextFrame.TextRange.Text = "高度な編集や複雑な帳票処理"
+    End With
+
+    FormatTable tbl
+    AddSpeakerNotes sld, "HTML、CSS、JavaScriptだけでは、WordやExcelファイルを直接作成したり、既存のOfficeファイルへ直接書き込んだりすることは基本的にできません。一方で、CSVやテキスト出力、同じブラウザ内での一時保存、PDFへの書き込み補助などは可能性があります。"
+End Sub
+
+Private Sub AddRiskSlide(ByVal pres As Presentation)
+    Dim sld As Slide
+    Set sld = pres.Slides.Add(pres.Slides.Count + 1, ppLayoutBlank)
+    ApplyBaseDesign sld
+    AddHeader sld, "Risk", "内製化で注意すべきこと", "属人化"
+
+    AddIconItem sld, "!", "コードが読めないと保守が難しい", "AIに毎回全文を渡す必要があり、どこを直しているか把握しにくい。", 80, 150
+    AddIconItem sld, "!", "継続的な運用が必要なアプリには不向き", "担当者が異動した場合、仕組みが維持できなくなる可能性がある。", 80, 250
+    AddIconItem sld, "!", "便利さとリスクはセット", "作れることと、業務で安全に使えることは分けて考える必要がある。", 80, 350
+
+    AddSpeakerNotes sld, "AIを使えば簡易的なものは作れますが、長期的に使うシステムを安易に内製化すると属人化するリスクが高いです。作れることと、業務で安全に継続利用できることは分けて考える必要があります。"
+End Sub
+
+Private Sub AddClosingSlide(ByVal pres As Presentation)
+    Dim sld As Slide
+    Set sld = pres.Slides.Add(pres.Slides.Count + 1, ppLayoutBlank)
+    ApplyBaseDesign sld
+
+    AddTextBox sld, "Closing", 90, 115, 760, 24, 13, RGB(31, 95, 139), True
+    AddTextBox sld, "実験結果を、業務効率化の検討材料へ", 90, 155, 780, 70, 31, RGB(23, 63, 95), True
+    AddTextBox sld, "LGWAN環境でも、HTMLやAIをうまく使えば、" & vbCrLf & _
+                    "資料作成・検索・定型処理の効率化につながる可能性があります。", _
+                    90, 250, 780, 90, 22, RGB(31, 41, 55), False
+    AddNoteBox sld, "ただし、実運用ではセキュリティ・保守・属人化への配慮が不可欠です。", 110, 380, 740, 70
+
+    AddSpeakerNotes sld, "今回の実験結果が、LGWAN環境内で行う必要がある地方自治体業務のDX推進や、業務効率化の検討につながれば幸いです。ただし、実運用ではセキュリティ、保守、属人化への配慮が不可欠です。"
+End Sub
+
+Private Sub ApplyBaseDesign(ByVal sld As Slide)
+    sld.Background.Fill.ForeColor.RGB = RGB(246, 248, 251)
+
+    Dim bg As Shape
+    Set bg = sld.Shapes.AddShape(msoShapeRectangle, 18, 18, 924, 504)
+    With bg
+        .Fill.ForeColor.RGB = RGB(255, 255, 255)
+        .Line.ForeColor.RGB = RGB(216, 224, 232)
+        .Line.Weight = 1
+        .ZOrder msoSendToBack
+    End With
+
+    Dim circle As Shape
+    Set circle = sld.Shapes.AddShape(msoShapeOval, 805, 405, 190, 190)
+    With circle
+        .Fill.ForeColor.RGB = RGB(232, 242, 248)
+        .Line.Visible = msoFalse
+        .ZOrder msoSendToBack
+    End With
+End Sub
+
+Private Sub AddHeader(ByVal sld As Slide, ByVal eyebrow As String, ByVal titleText As String, ByVal badgeText As String)
+    If Len(eyebrow) > 0 Then
+        AddTextBox sld, eyebrow, 60, 45, 500, 18, 11, RGB(31, 95, 139), True
+    End If
+
+    AddTextBox sld, titleText, 60, 65, 700, 55, 25, RGB(23, 63, 95), True
+
+    If Len(badgeText) > 0 Then
+        Dim badge As Shape
+        Set badge = sld.Shapes.AddShape(msoShapeRoundedRectangle, 780, 62, 110, 30)
+        With badge
+            .Fill.ForeColor.RGB = RGB(232, 242, 248)
+            .Line.Visible = msoFalse
+            .TextFrame.TextRange.Text = badgeText
+            .TextFrame.TextRange.Font.Size = 10
+            .TextFrame.TextRange.Font.Bold = msoTrue
+            .TextFrame.TextRange.Font.Color.RGB = RGB(23, 63, 95)
+            .TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignCenter
+            .TextFrame.VerticalAnchor = msoAnchorMiddle
+        End With
+    End If
+End Sub
+
+Private Sub AddTextBox(ByVal sld As Slide, ByVal txt As String, ByVal x As Single, ByVal y As Single, _
+                       ByVal w As Single, ByVal h As Single, ByVal fontSize As Single, _
+                       ByVal fontColor As Long, ByVal isBold As Boolean)
+    Dim shp As Shape
+    Set shp = sld.Shapes.AddTextbox(msoTextOrientationHorizontal, x, y, w, h)
+    With shp.TextFrame
+        .MarginLeft = 0
+        .MarginRight = 0
+        .MarginTop = 0
+        .MarginBottom = 0
+        .WordWrap = msoTrue
+        .AutoSize = ppAutoSizeNone
+        .TextRange.Text = txt
+        With .TextRange.Font
+            .NameFarEast = "Yu Gothic"
+            .Name = "Yu Gothic"
+            .Size = fontSize
+            .Color.RGB = fontColor
+            .Bold = IIf(isBold, msoTrue, msoFalse)
+        End With
+        .TextRange.ParagraphFormat.SpaceAfter = 4
+    End With
+End Sub
+
+Private Sub AddCard(ByVal sld As Slide, ByVal titleText As String, ByVal bodyText As String, _
+                    ByVal x As Single, ByVal y As Single, ByVal w As Single, ByVal h As Single, _
+                    ByVal styleName As String)
+    Dim shp As Shape
+    Set shp = sld.Shapes.AddShape(msoShapeRoundedRectangle, x, y, w, h)
+    With shp
+        .Fill.ForeColor.RGB = StyleFill(styleName)
+        .Line.ForeColor.RGB = RGB(216, 224, 232)
+        .Line.Weight = 1
+    End With
+
+    AddTextBox sld, titleText, x + 18, y + 18, w - 36, 30, 17, RGB(23, 63, 95), True
+    AddTextBox sld, bodyText, x + 18, y + 58, w - 36, h - 70, 15.5, RGB(31, 41, 55), False
+End Sub
+
+Private Sub AddNumberCard(ByVal sld As Slide, ByVal numText As String, ByVal titleText As String, ByVal bodyText As String, _
+                          ByVal x As Single, ByVal y As Single, ByVal w As Single, ByVal h As Single, _
+                          ByVal styleName As String)
+    AddCard sld, titleText, bodyText, x, y, w, h, styleName
+
+    Dim num As Shape
+    Set num = sld.Shapes.AddShape(msoShapeOval, x + 18, y + 18, 32, 32)
+    With num
+        .Fill.ForeColor.RGB = RGB(31, 95, 139)
+        .Line.Visible = msoFalse
+        .TextFrame.TextRange.Text = numText
+        .TextFrame.TextRange.Font.Size = 13
+        .TextFrame.TextRange.Font.Bold = msoTrue
+        .TextFrame.TextRange.Font.Color.RGB = RGB(255, 255, 255)
+        .TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignCenter
+        .TextFrame.VerticalAnchor = msoAnchorMiddle
+    End With
+
+    sld.Shapes(sld.Shapes.Count - 1).Top = y + 58
+End Sub
+
+Private Sub AddNoteBox(ByVal sld As Slide, ByVal txt As String, ByVal x As Single, ByVal y As Single, ByVal w As Single, ByVal h As Single)
+    Dim box As Shape
+    Set box = sld.Shapes.AddShape(msoShapeRoundedRectangle, x, y, w, h)
+    With box
+        .Fill.ForeColor.RGB = RGB(232, 242, 248)
+        .Line.Visible = msoFalse
+    End With
+
+    Dim bar As Shape
+    Set bar = sld.Shapes.AddShape(msoShapeRectangle, x, y, 7, h)
+    With bar
+        .Fill.ForeColor.RGB = RGB(31, 95, 139)
+        .Line.Visible = msoFalse
+    End With
+
+    AddTextBox sld, txt, x + 20, y + 13, w - 35, h - 18, 15.5, RGB(23, 63, 95), True
+End Sub
+
+Private Sub AddAccentNote(ByVal sld As Slide, ByVal txt As String, ByVal x As Single, ByVal y As Single, ByVal w As Single, ByVal h As Single)
+    Dim box As Shape
+    Set box = sld.Shapes.AddShape(msoShapeRoundedRectangle, x, y, w, h)
+    With box
+        .Fill.ForeColor.RGB = RGB(255, 244, 220)
+        .Line.Visible = msoFalse
+    End With
+
+    Dim bar As Shape
+    Set bar = sld.Shapes.AddShape(msoShapeRectangle, x, y, 7, h)
+    With bar
+        .Fill.ForeColor.RGB = RGB(183, 121, 31)
+        .Line.Visible = msoFalse
+    End With
+
+    AddTextBox sld, txt, x + 18, y + 12, w - 30, h - 15, 14.5, RGB(95, 65, 13), True
+End Sub
+
+Private Sub AddBulletList(ByVal sld As Slide, ByVal bullets As Variant, ByVal x As Single, ByVal y As Single, _
+                          ByVal w As Single, ByVal h As Single, ByVal fontSize As Single)
+    Dim txt As String
+    Dim i As Long
+    For i = LBound(bullets) To UBound(bullets)
+        txt = txt & "・" & CStr(bullets(i))
+        If i < UBound(bullets) Then txt = txt & vbCrLf
+    Next i
+
+    AddTextBox sld, txt, x, y, w, h, fontSize, RGB(31, 41, 55), False
+End Sub
+
+Private Sub AddAgendaItem(ByVal sld As Slide, ByVal numText As String, ByVal txt As String, ByVal x As Single, ByVal y As Single)
+    Dim box As Shape
+    Set box = sld.Shapes.AddShape(msoShapeRoundedRectangle, x, y, 350, 50)
+    With box
+        .Fill.ForeColor.RGB = RGB(255, 255, 255)
+        .Line.ForeColor.RGB = RGB(216, 224, 232)
+    End With
+
+    Dim num As Shape
+    Set num = sld.Shapes.AddShape(msoShapeOval, x + 15, y + 10, 30, 30)
+    With num
+        .Fill.ForeColor.RGB = RGB(31, 95, 139)
+        .Line.Visible = msoFalse
+        .TextFrame.TextRange.Text = numText
+        .TextFrame.TextRange.Font.Size = 12
+        .TextFrame.TextRange.Font.Bold = msoTrue
+        .TextFrame.TextRange.Font.Color.RGB = RGB(255, 255, 255)
+        .TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignCenter
+        .TextFrame.VerticalAnchor = msoAnchorMiddle
+    End With
+
+    AddTextBox sld, txt, x + 60, y + 14, 270, 30, 15, RGB(31, 41, 55), True
+End Sub
+
+Private Sub AddFlowStep(ByVal sld As Slide, ByVal numText As String, ByVal titleText As String, ByVal bodyText As String, _
+                        ByVal x As Single, ByVal y As Single, ByVal w As Single, ByVal h As Single)
+    Dim box As Shape
+    Set box = sld.Shapes.AddShape(msoShapeRoundedRectangle, x, y, w, h)
+    With box
+        .Fill.ForeColor.RGB = RGB(255, 255, 255)
+        .Line.ForeColor.RGB = RGB(216, 224, 232)
+    End With
+
+    Dim num As Shape
+    Set num = sld.Shapes.AddShape(msoShapeOval, x + 16, y + 18, 32, 32)
+    With num
+        .Fill.ForeColor.RGB = RGB(31, 95, 139)
+        .Line.Visible = msoFalse
+        .TextFrame.TextRange.Text = numText
+        .TextFrame.TextRange.Font.Size = 13
+        .TextFrame.TextRange.Font.Bold = msoTrue
+        .TextFrame.TextRange.Font.Color.RGB = RGB(255, 255, 255)
+        .TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignCenter
+        .TextFrame.VerticalAnchor = msoAnchorMiddle
+    End With
+
+    AddTextBox sld, titleText, x + 18, y + 65, w - 36, 30, 15.5, RGB(23, 63, 95), True
+    AddTextBox sld, bodyText, x + 18, y + 102, w - 36, h - 112, 12.5, RGB(31, 41, 55), False
+End Sub
+
+Private Sub AddArrow(ByVal sld As Slide, ByVal x As Single, ByVal y As Single)
+    AddTextBox sld, "›", x + 3, y - 18, 30, 40, 28, RGB(31, 95, 139), True
+End Sub
+
+Private Sub AddIconItem(ByVal sld As Slide, ByVal iconText As String, ByVal titleText As String, ByVal bodyText As String, ByVal x As Single, ByVal y As Single)
+    Dim box As Shape
+    Set box = sld.Shapes.AddShape(msoShapeRoundedRectangle, x, y, 800, 74)
+    With box
+        .Fill.ForeColor.RGB = RGB(255, 255, 255)
+        .Line.ForeColor.RGB = RGB(216, 224, 232)
+    End With
+
+    Dim icon As Shape
+    Set icon = sld.Shapes.AddShape(msoShapeRoundedRectangle, x + 18, y + 16, 42, 42)
+    With icon
+        .Fill.ForeColor.RGB = RGB(232, 242, 248)
+        .Line.Visible = msoFalse
+        .TextFrame.TextRange.Text = iconText
+        .TextFrame.TextRange.Font.Size = 18
+        .TextFrame.TextRange.Font.Bold = msoTrue
+        .TextFrame.TextRange.Font.Color.RGB = RGB(23, 63, 95)
+        .TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignCenter
+        .TextFrame.VerticalAnchor = msoAnchorMiddle
+    End With
+
+    AddTextBox sld, titleText, x + 78, y + 13, 680, 24, 16, RGB(23, 63, 95), True
+    AddTextBox sld, bodyText, x + 78, y + 39, 680, 24, 13.5, RGB(31, 41, 55), False
+End Sub
+
+Private Sub FormatTable(ByVal tbl As Shape)
+    Dim r As Long, c As Long
+
+    For r = 1 To 4
+        For c = 1 To 3
+            With tbl.Table.Cell(r, c).Shape
+                .Fill.ForeColor.RGB = IIf(r = 1, RGB(232, 242, 248), RGB(255, 255, 255))
+                .Line.ForeColor.RGB = RGB(216, 224, 232)
+                With .TextFrame.TextRange.Font
+                    .NameFarEast = "Yu Gothic"
+                    .Name = "Yu Gothic"
+                    .Size = IIf(r = 1, 13.5, 12.5)
+                    .Bold = IIf(r = 1 Or c = 1, msoTrue, msoFalse)
+                    .Color.RGB = IIf(r = 1, RGB(23, 63, 95), RGB(31, 41, 55))
+                End With
+                .TextFrame.MarginLeft = 8
+                .TextFrame.MarginRight = 8
+                .TextFrame.MarginTop = 6
+                .TextFrame.MarginBottom = 6
+                .TextFrame.WordWrap = msoTrue
+            End With
+        Next c
+    Next r
+End Sub
+
+Private Function StyleFill(ByVal styleName As String) As Long
+    Select Case LCase(styleName)
+        Case "primary"
+            StyleFill = RGB(232, 242, 248)
+        Case "accent"
+            StyleFill = RGB(255, 244, 220)
+        Case "green"
+            StyleFill = RGB(232, 246, 239)
+        Case "red"
+            StyleFill = RGB(253, 236, 236)
+        Case Else
+            StyleFill = RGB(255, 255, 255)
+    End Select
+End Function
+
+Private Sub AddSpeakerNotes(ByVal sld As Slide, ByVal noteText As String)
+    On Error Resume Next
+    sld.NotesPage.Shapes.Placeholders(2).TextFrame.TextRange.Text = noteText
+    On Error GoTo 0
+End Sub

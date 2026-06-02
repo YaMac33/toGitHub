@@ -1,0 +1,909 @@
+```vba
+'==================================================================
+' HTMLスライドを参考に、落ち着いた行政・企業内資料向けの
+' PowerPointスライドを自動生成するマクロ
+'  メイン実行マクロ : CreateSlidesFromHtmlReference
+'  ・PowerPoint VBA単体で完結（Excel・外部ライブラリ不要）
+'  ・標準モジュールに貼り付けて実行してください
+'  ・各スライドのノート欄に「読み原稿」を自動設定します
+'==================================================================
+Option Explicit
+
+'------------------------------------------------------------------
+' レイアウト定数（16:9 / 960pt × 540pt を基準）
+'------------------------------------------------------------------
+Private Const SLIDE_W As Single = 960
+Private Const SLIDE_H As Single = 540
+Private Const MARGIN As Single = 54          ' 左右の余白
+Private Const CONTENT_TOP As Single = 124    ' 本文開始位置（ヘッダー下）
+
+'------------------------------------------------------------------
+' 配色（紺・青・グレー基調の落ち着いた配色）
+'  ※RGBは定数化できないため、モジュール変数として初期化します
+'------------------------------------------------------------------
+Private mInk As Long          ' 基本文字色
+Private mMuted As Long         ' 補足文字色
+Private mLine As Long          ' 枠線
+Private mPrimary As Long       ' メインカラー（青）
+Private mPrimaryDark As Long   ' 濃い紺
+Private mPrimarySoft As Long   ' 淡い青背景
+Private mAccent As Long        ' アクセント（金茶）
+Private mAccentSoft As Long
+Private mGreen As Long
+Private mGreenSoft As Long
+Private mRed As Long
+Private mRedSoft As Long
+Private mPaper As Long          ' カード背景（白）
+Private mSlideBg As Long        ' スライド背景（淡い色）
+
+Private mJpFont As String       ' 使用フォント
+Private mPres As Presentation   ' 作成中のプレゼンテーション
+
+'==================================================================
+' メイン実行マクロ
+'==================================================================
+Public Sub CreateSlidesFromHtmlReference()
+    Dim sld As Slide
+
+    ' --- 色・フォントの初期化 ---
+    InitColors
+    mJpFont = "Yu Gothic"   ' 環境に無い場合は "Meiryo" 等に変更してください
+
+    ' --- 新規プレゼンテーションを作成し、16:9に設定 ---
+    Set mPres = Application.Presentations.Add(msoTrue)
+    mPres.PageSetup.SlideSize = ppSlideSizeOnScreen16x9   ' 13.333in × 7.5in (960×540pt)
+
+    '==============================================================
+    ' 1枚目：表紙スライド
+    '==============================================================
+    Set sld = NewSlide()
+    BuildTitleSlide sld, _
+        "INFORMATION SHARING / DX TRIAL REPORT", _
+        "生成AI・HTML・簡易Webアプリ活用に関する実験結果の共有", _
+        "LGWAN環境下でも活用できる可能性のある" & vbCrLf & _
+        "業務効率化・資料作成・簡易ツール化の実験報告", _
+        "専門知識のない職員にも伝わるよう、実験結果・課題・活用可能性を整理"
+    AddNotes sld, _
+        "本日は、生成AIやHTML、簡易Webアプリの活用に関する実験結果を共有します。" & _
+        "LGWAN環境下でも業務効率化につなげられる可能性について、専門知識のない方にも伝わるよう整理しました。"
+
+    '==============================================================
+    ' 2枚目：本資料の流れ（目次）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "AGENDA", "本資料の流れ", "全体像"
+    Dim toc(0 To 7) As String
+    toc(0) = "背景・目的"
+    toc(1) = "実験から分かったこと"
+    toc(2) = "HTML・JavaScript活用"
+    toc(3) = "資料作成への応用"
+    toc(4) = "AIエージェントとGitHub"
+    toc(5) = "GASによる自動化"
+    toc(6) = "注意点・リスク"
+    toc(7) = "まとめ・次のアクション"
+    AddTOC sld, MARGIN, CONTENT_TOP, SLIDE_W - 2 * MARGIN, 350, toc
+    AddNotes sld, _
+        "全体の流れです。背景と目的から始め、実験で分かったこと、HTMLやJavaScriptの活用、" & _
+        "資料作成への応用、AIエージェントやGitHub、GASによる自動化、注意点とリスク、" & _
+        "最後にまとめと次のアクションをお話しします。"
+
+    '==============================================================
+    ' 3枚目：背景・目的
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "PURPOSE", "背景・目的", "DX推進の検討材料"
+    Dim colW As Single, gx As Single
+    gx = 20
+    colW = (SLIDE_W - 2 * MARGIN - gx) / 2
+    AddCard sld, MARGIN, CONTENT_TOP, colW, 175, "考えたこと", _
+        "生成AI、特にLLMをうまく活用できれば、自治体業務でも業務効率化につなげられる可能性がある。", _
+        "primary"
+    AddCard sld, MARGIN + colW + gx, CONTENT_TOP, colW, 175, "実験の視点", _
+        "・AIを最大限活用するにはどうすればよいか" & vbCrLf & _
+        "・可能性を広げるには何を知っておくべきか" & vbCrLf & _
+        "・LGWAN環境でも使える方法はあるか", _
+        "white"
+    AddNoteBox sld, MARGIN, CONTENT_TOP + 195, SLIDE_W - 2 * MARGIN, 70, _
+        "本資料は、個人で試した内容を庁内共有向けに整理したものです。実運用には情報管理部門との調整が必要です。", _
+        False
+    AddNotes sld, _
+        "生成AI、特にLLMをうまく活用できれば、自治体業務でも業務効率化につながる可能性があります。" & _
+        "一方で、LGWAN環境やセキュリティ、端末・マクロ制限など民間とは異なる条件があります。" & _
+        "そこで、どうすればAIを最大限活用できるか、何を知っておくべきか、という観点で実験を行いました。"
+
+    '==============================================================
+    ' 4枚目：今回の実験で分かった重要ポイント（番号付きカード3枚）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "KEY FINDINGS", "今回の実験で分かった重要ポイント", "結論"
+    Dim w3 As Single
+    w3 = (SLIDE_W - 2 * MARGIN - gx * 2) / 3
+    AddCard sld, MARGIN, CONTENT_TOP, w3, 230, "AIは便利だが揺れる", _
+        "回答が毎回少し変わるため、正確性が必要な処理は仕組み化が必要。", "primary", 1
+    AddCard sld, MARGIN + (w3 + gx), CONTENT_TOP, w3, 230, "オフラインでもできる", _
+        "HTML・CSS・JavaScriptなら、LGWAN環境でも活用できる可能性がある。", "green", 2
+    AddCard sld, MARGIN + (w3 + gx) * 2, CONTENT_TOP, w3, 230, "属人化に注意", _
+        "保守が必要なアプリを専門知識なしで作り込むのはリスクが高い。", "accent", 3
+    AddNotes sld, _
+        "実験から分かった主なことは三点です。AIは便利ですが回答に揺れがあること、" & _
+        "オフラインのLGWAN環境でもHTMLを使えば意外と多くのことができること、" & _
+        "そして専門知識なしで作り込むと属人化のリスクが高いことです。"
+
+    '==============================================================
+    ' 5枚目：AIだけに業務処理を任せる難しさ（対比カード）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "CHALLENGE", "AIだけに業務処理を任せる難しさ", "回答の揺れ"
+    AddCard sld, MARGIN, CONTENT_TOP, colW, 175, "AIに任せきる場合", _
+        "・同じ質問でも回答が変わる" & vbCrLf & _
+        "・表現や判断に揺れが出る" & vbCrLf & _
+        "・規定どおりの出力を保証しにくい", "red"
+    AddCard sld, MARGIN + colW + gx, CONTENT_TOP, colW, 175, "業務利用に向く形", _
+        "・決められた情報を入力する" & vbCrLf & _
+        "・決められた形式で出力する" & vbCrLf & _
+        "・検索・閲覧はできるが勝手に編集できない", "green"
+    AddNoteBox sld, MARGIN, CONTENT_TOP + 195, SLIDE_W - 2 * MARGIN, 70, _
+        "AINは「最終処理」よりも、仕組みづくり・コード作成・資料作成の補助に使う方が現実的。", False
+    AddNotes sld, _
+        "生成AIは便利ですが、同じ質問でも回答が毎回少しずつ変わります。" & _
+        "正確性や再現性が求められる業務では、決まった入力で決まった形式を出す仕組みの方が向いています。" & _
+        "AIは最終処理よりも、仕組みづくりやコード作成、資料作成の補助に使うのが現実的です。"
+
+    '==============================================================
+    ' 6枚目：LGWAN環境では「ほぼオフライン前提」で考える
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "LGWAN ENVIRONMENT", "LGWAN環境は「ほぼオフライン前提」で考える", "制約の整理"
+    MakeText sld, MARGIN, CONTENT_TOP, SLIDE_W - 2 * MARGIN, 80, _
+        "LGWAN環境内ではインターネットへ直接接続できないため、半分オフラインのような感覚で考える必要があります。", _
+        15, False, mInk, msoAlignLeft, msoAnchorTop
+    AddCard sld, MARGIN, CONTENT_TOP + 90, SLIDE_W - 2 * MARGIN, 150, "環境上の特徴", _
+        "・ZIPファイルの直接ダウンロードは不可" & vbCrLf & _
+        "・外部ライブラリの読み込みは難しい" & vbCrLf & _
+        "・ただし、HTMLファイルをブラウザで開くことは可能", "primary"
+    AddNotes sld, _
+        "LGWAN環境ではインターネットに直接つながらないため、半分オフラインのような感覚です。" & _
+        "ZIPの直接ダウンロードや外部ライブラリの読み込みは難しい一方、" & _
+        "HTMLファイルをブラウザで開いて閲覧することは可能です。"
+
+    '==============================================================
+    ' 7枚目：オフラインでも意外とできることが多い（3カード）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "OFFLINE POSSIBILITY", "オフラインでも意外とできることが多い", "HTML活用"
+    AddCard sld, MARGIN, CONTENT_TOP, w3, 175, "閲覧系", _
+        "・業務マニュアル" & vbCrLf & "・制度説明資料" & vbCrLf & "・研修用スライド", "white"
+    AddCard sld, MARGIN + (w3 + gx), CONTENT_TOP, w3, 175, "検索系", _
+        "・会議録検索" & vbCrLf & "・通知文検索" & vbCrLf & "・FAQ検索", "white"
+    AddCard sld, MARGIN + (w3 + gx) * 2, CONTENT_TOP, w3, 175, "入力・出力系", _
+        "・定型文生成" & vbCrLf & "・CSV出力" & vbCrLf & "・PDFへの書き込み補助", "white"
+    AddNoteBox sld, MARGIN, CONTENT_TOP + 195, SLIDE_W - 2 * MARGIN, 70, _
+        "「インターネットにつながらない＝何もできない」ではなく、ブラウザで動く仕組みを作る余地があります。", False
+    AddNotes sld, _
+        "オフライン前提でも、閲覧専用のマニュアルや、検索できる会議録・FAQ、" & _
+        "定型文の生成やCSV出力、PDFへの書き込み補助など、意外と多くのことができます。" & _
+        "つながらないから何もできない、ではありません。"
+
+    '==============================================================
+    ' 8枚目：HTML・CSS・JavaScriptの役割（3カード）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "BASIC TERMS", "HTML・CSS・JavaScriptの役割", "専門用語の補足"
+    AddCard sld, MARGIN, CONTENT_TOP, w3, 150, "HTML", _
+        "画面に表示する内容を作るもの。Webページの土台。", "primary"
+    AddCard sld, MARGIN + (w3 + gx), CONTENT_TOP, w3, 150, "CSS", _
+        "色・余白・文字サイズなど見た目を整えるもの。", "accent"
+    AddCard sld, MARGIN + (w3 + gx) * 2, CONTENT_TOP, w3, 150, "JavaScript", _
+        "検索・表示切替・ボタン操作など動きを作るもの。", "green"
+    MakeText sld, MARGIN, CONTENT_TOP + 170, SLIDE_W - 2 * MARGIN, 60, _
+        "これらを1つのHTMLファイルにまとめれば、ブラウザでそのまま表示・利用できます。", _
+        15, False, mInk, msoAlignLeft, msoAnchorTop
+    AddNotes sld, _
+        "簡単に役割を整理します。HTMLは画面に表示する内容、CSSは見た目やデザイン、" & _
+        "JavaScriptは検索や表示切替などの動きを作るものです。" & _
+        "これらを一つのファイルにまとめれば、ブラウザでそのまま使えます。"
+
+    '==============================================================
+    ' 9枚目：できること・できないこと（比較表）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "CAN / CANNOT", "できること・できないこと", "整理"
+    Dim hdr(0 To 2) As String
+    hdr(0) = "区分": hdr(1) = "できること": hdr(2) = "難しいこと"
+    Dim body(0 To 2, 0 To 2) As String
+    body(0, 0) = "HTMLアプリ": body(0, 1) = "閲覧・検索・画面入力・CSV/テキスト出力": body(0, 2) = "Word・Excelへの直接書き込み"
+    body(1, 0) = "データ保持": body(1, 1) = "同じ端末・同じブラウザ内での一時保存": body(1, 2) = "複数端末・複数職員での安定共有"
+    body(2, 0) = "PDF": body(2, 1) = "読み込み・画面上での書き込み・出力": body(2, 2) = "高度な編集や複雑な帳票処理"
+    AddComparisonTable sld, MARGIN, CONTENT_TOP, SLIDE_W - 2 * MARGIN, 300, hdr, body
+    AddNotes sld, _
+        "HTMLアプリは閲覧・検索・入力・CSV出力ができますが、WordやExcelへの直接書き込みは基本できません。" & _
+        "データ保持は同じ端末・ブラウザ内の一時保存にとどまり、PDFは読み込みと画面上の書き込み程度が現実的です。"
+
+    '==============================================================
+    ' 10枚目：HTMLスライドとPowerPoint資料作成への応用
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "USE CASE", "HTMLスライドとPowerPoint資料作成への応用", "資料作成"
+    AddCard sld, MARGIN, CONTENT_TOP, SLIDE_W - 2 * MARGIN, 200, "考え方の流れ", _
+        "・HTMLで見栄えのよいスライドを作成できる" & vbCrLf & _
+        "・ただし、生成後に直感的に編集しにくい" & vbCrLf & _
+        "・同じ雰囲気のPowerPointを作るVBAコードをAIに生成させる" & vbCrLf & _
+        "・最後はPowerPoint上で人が微調整する", "primary"
+    AddNotes sld, _
+        "HTMLで見栄えのよいスライドは作れますが、後から直感的に編集しにくい弱点があります。" & _
+        "そこで、HTMLの雰囲気をもとに同じようなPowerPointを作るVBAコードをAIに生成させ、" & _
+        "最後に人が微調整する、という流れを試しました。"
+
+    '==============================================================
+    ' 11枚目：AIを使った資料作成の流れ（フロー4ステップ）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "PROMPT FLOW", "AIを使った資料作成の流れ", "手順"
+    Dim ft1(0 To 3) As String, fd1(0 To 3) As String
+    ft1(0) = "プロンプト生成": fd1(0) = "まずAIに、目的に合ったプロンプト文を作らせる。"
+    ft1(1) = "HTML生成": fd1(1) = "生成したプロンプトでHTMLスライドのコードを作成。"
+    ft1(2) = "VBA化": fd1(2) = "HTMLの雰囲気をPowerPointに変換するVBAを生成。"
+    ft1(3) = "微調整": fd1(3) = "PowerPoint上で人が内容や配置を調整する。"
+    AddFlow sld, MARGIN, CONTENT_TOP, SLIDE_W - 2 * MARGIN, 170, ft1, fd1
+    AddNoteBox sld, MARGIN, CONTENT_TOP + 190, SLIDE_W - 2 * MARGIN, 70, _
+        "いきなり完成物を依頼するより、プロンプト自体もAIに作らせると安定しやすい。", False
+    AddNotes sld, _
+        "手順は四段階です。まずAIにプロンプト文自体を作らせ、それを使ってHTMLスライドを生成し、" & _
+        "次にPowerPoint化するVBAを生成、最後に人が調整します。" & _
+        "いきなり完成物を頼むより、プロンプトもAIに作らせると安定しやすいと感じました。"
+
+    '==============================================================
+    ' 12枚目：VS Code・AIエージェントによるコーディング支援
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "DEVELOPMENT SUPPORT", "VS Code・AIエージェントによる支援", "開発補助"
+    AddCard sld, MARGIN, CONTENT_TOP, colW, 175, "できたこと", _
+        "・HTMLベースの簡易Webアプリ開発" & vbCrLf & _
+        "・AIに質問しながらコード修正" & vbCrLf & _
+        "・GitHubへの反映作業", "primary"
+    AddCard sld, MARGIN + colW + gx, CONTENT_TOP, colW, 175, "使った知識は限定的", _
+        "・git add ." & vbCrLf & _
+        "・git commit -m ""メッセージ""" & vbCrLf & _
+        "・git push", "white"
+    MakeText sld, MARGIN, CONTENT_TOP + 195, SLIDE_W - 2 * MARGIN, 60, _
+        "高度な知識がなくても試せる一方で、コードを読めないまま進めることには限界があります。", _
+        14, False, mInk, msoAlignLeft, msoAnchorTop
+    AddNotes sld, _
+        "コード編集には無料のVS Codeを使い、拡張機能でAIエージェントを利用しました。" & _
+        "使えたコマンドは git add、commit、push 程度ですが、AIに質問しながら簡易アプリの公開まで試せました。" & _
+        "ただしコードを読めないまま進めるのは限界があります。"
+
+    '==============================================================
+    ' 13枚目：GitHubを使ったコード共有・公開
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "GITHUB", "GitHubを使ったコード共有・公開", "コード管理"
+    AddCard sld, MARGIN, CONTENT_TOP, colW, 160, "GitHubとは", _
+        "ソースコードを保存・共有・共同開発するためのWebサービス。公開設定にすればログインなしで確認できる場合がある。", "white"
+    AddCard sld, MARGIN + colW + gx, CONTENT_TOP, colW, 160, "今回の使い方", _
+        "・VS CodeのコードをGitHubへ送信" & vbCrLf & _
+        "・各ファイルからコードをコピー" & vbCrLf & _
+        "・LGWAN環境内で簡易アプリを再構築", "accent"
+    AddNoteBox sld, MARGIN, CONTENT_TOP + 180, SLIDE_W - 2 * MARGIN, 70, _
+        "手作業が多く、ファイル数が多いと煩雑。GitHubに置く情報の内容にも注意が必要です。", True
+    AddNotes sld, _
+        "GitHubは、ソースコードを保存・共有・共同開発するためのWebサービスです。" & _
+        "公開設定にすればログインなしで閲覧でき、各ファイルからコードをコピーしてLGWAN環境に持ち込みました。" & _
+        "ただし手作業が多く、置く情報の内容にも注意が必要です。"
+
+    '==============================================================
+    ' 14枚目：Google Apps Scriptを使った自動化の可能性
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "GAS AUTOMATION", "Google Apps Scriptによる自動化の可能性", "GAS"
+    MakeText sld, MARGIN, CONTENT_TOP, SLIDE_W - 2 * MARGIN, 60, _
+        "Googleアカウントを利用できる環境があれば、Googleフォーム・スプレッドシート・GASを連携できます。", _
+        15, False, mInk, msoAlignLeft, msoAnchorTop
+    AddCard sld, MARGIN, CONTENT_TOP + 75, SLIDE_W - 2 * MARGIN, 150, "できる処理の例", _
+        "・フォーム回答をスプレッドシートに自動反映" & vbCrLf & _
+        "・行追加をきっかけにGASを実行" & vbCrLf & _
+        "・通知や外部サービス連携も可能", "green"
+    AddNotes sld, _
+        "Googleアカウントが使える環境なら、Google Apps Scriptが活用できます。" & _
+        "フォーム回答をスプレッドシートに自動反映し、行追加をきっかけにスクリプトを動かし、" & _
+        "通知や外部連携も可能です。"
+
+    '==============================================================
+    ' 15枚目：試した自動化の流れ（フロー4ステップ）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "AUTOMATION FLOW", "試した自動化の流れ", "仕組み"
+    Dim ft2(0 To 3) As String, fd2(0 To 3) As String
+    ft2(0) = "フォーム入力": fd2(0) = "公共PC等からフォームに必要情報を入力。"
+    ft2(1) = "シート反映": fd2(1) = "回答内容が行として自動追加される。"
+    ft2(2) = "GAS実行": fd2(2) = "行追加をトリガーにスクリプトが動作。"
+    ft2(3) = "GitHub連携": fd2(3) = "認証情報を使ってファイル作成等を実行。"
+    AddFlow sld, MARGIN, CONTENT_TOP, SLIDE_W - 2 * MARGIN, 170, ft2, fd2
+    AddNoteBox sld, MARGIN, CONTENT_TOP + 190, SLIDE_W - 2 * MARGIN, 70, _
+        "便利だが仕組みが複雑で、一般職員が通常業務の中で扱うには学習コストが高い。", True
+    AddNotes sld, _
+        "実験では、フォーム入力、スプレッドシート反映、GAS実行、GitHub連携という流れで、" & _
+        "リポジトリにファイルを自動作成する仕組みも試しました。" & _
+        "便利ですが仕組みが複雑で、一般職員が日常業務で扱うには学習コストが高いです。"
+
+    '==============================================================
+    ' 16枚目：セキュリティ上の課題（対比カード）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "SECURITY", "セキュリティ上の課題", "最重要"
+    AddCard sld, MARGIN, CONTENT_TOP, colW, 175, "リスクが高い運用", _
+        "・LGWAN内のテキストをネット側へ出す" & vbCrLf & _
+        "・共有リンクを「全員編集可」にする" & vbCrLf & _
+        "・個人アカウントで実験的に運用する", "red"
+    AddCard sld, MARGIN + colW + gx, CONTENT_TOP, colW, 175, "必要な対応", _
+        "・情報管理部門との事前調整" & vbCrLf & _
+        "・扱える情報範囲の明確化" & vbCrLf & _
+        "・組織としての正式な運用ルール", "green"
+    AddNoteBox sld, MARGIN, CONTENT_TOP + 195, SLIDE_W - 2 * MARGIN, 70, _
+        "実験としては可能でも、実運用では個人判断ではなく、組織的な確認と承認が必要です。", True
+    AddNotes sld, _
+        "今回の方法には、LGWAN側とインターネット側で情報が行き来するものがあり、リスクが高いものもあります。" & _
+        "共有リンクを全員編集可にするような運用は本来望ましくありません。" & _
+        "実運用では個人判断ではなく、情報管理部門と相談し、正式なルールを定める必要があります。"
+
+    '==============================================================
+    ' 17枚目：内製化で注意すべきこと（アイコン風リスト）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "RISK", "内製化で注意すべきこと", "属人化"
+    AddIconItem sld, MARGIN, CONTENT_TOP, SLIDE_W - 2 * MARGIN, 80, _
+        "コードが読めないと保守が難しい", _
+        "AIに毎回全文を渡す必要があり、どこを直しているか把握しにくい。"
+    AddIconItem sld, MARGIN, CONTENT_TOP + 95, SLIDE_W - 2 * MARGIN, 80, _
+        "継続的な運用が必要なアプリには不向き", _
+        "担当者が異動した場合、仕組みが維持できなくなる可能性がある。"
+    AddIconItem sld, MARGIN, CONTENT_TOP + 190, SLIDE_W - 2 * MARGIN, 80, _
+        "便利さとリスクはセット", _
+        "作れることと、業務で安全に使えることは分けて考える必要がある。"
+    AddNotes sld, _
+        "内製化の注意点です。コードが読めないと保守が難しく、AIに毎回全文を渡す必要があり、" & _
+        "どこを直しているか把握しにくくなります。継続運用が必要なアプリには不向きで、" & _
+        "便利さとリスクはセットだと考える必要があります。"
+
+    '==============================================================
+    ' 18枚目：自治体業務で活用しやすい分野（4カード）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "SUITABLE AREAS", "自治体業務で活用しやすい分野", "活用候補"
+    Dim w4 As Single
+    w4 = (SLIDE_W - 2 * MARGIN - gx * 3) / 4
+    AddCard sld, MARGIN, CONTENT_TOP, w4, 175, "閲覧専用資料", _
+        "業務マニュアル、手順書、制度説明資料など。", "primary"
+    AddCard sld, MARGIN + (w4 + gx), CONTENT_TOP, w4, 175, "検索できる資料", _
+        "会議録、通知文、FAQ、過去の照会回答など。", "green"
+    AddCard sld, MARGIN + (w4 + gx) * 2, CONTENT_TOP, w4, 175, "定型入力・出力", _
+        "CSV出力、定型文作成、報告様式の補助など。", "accent"
+    AddCard sld, MARGIN + (w4 + gx) * 3, CONTENT_TOP, w4, 175, "資料作成補助", _
+        "研修・説明・提案・報告資料など。", "white"
+    AddNoteBox sld, MARGIN, CONTENT_TOP + 195, SLIDE_W - 2 * MARGIN, 70, _
+        "特に「編集させたくないが、見やすく・探しやすくしたい資料」はHTML化と相性が良い。", False
+    AddNotes sld, _
+        "比較的活用しやすいのは、閲覧専用資料のHTML化、検索できる会議録やFAQ、" & _
+        "定型入力・出力ツール、そして研修・説明・提案資料などの作成補助です。" & _
+        "特に、編集させたくないが見やすく探しやすくしたい資料はHTMLと相性が良いです。"
+
+    '==============================================================
+    ' 19枚目：組織として活用する場合に必要なもの（対比カード）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "ORGANIZATION", "組織として活用する場合に必要なもの", "環境整備"
+    AddCard sld, MARGIN, CONTENT_TOP, colW, 185, "アカウント・環境", _
+        "・組織用Googleアカウント" & vbCrLf & _
+        "・組織用GitHubアカウント" & vbCrLf & _
+        "・組織用AIサービスアカウント" & vbCrLf & _
+        "・VS Code等のコード編集環境", "white"
+    AddCard sld, MARGIN + colW + gx, CONTENT_TOP, colW, 185, "ルール・体制", _
+        "・AI利用ルール" & vbCrLf & _
+        "・データ移動ルール" & vbCrLf & _
+        "・コード管理ルール" & vbCrLf & _
+        "・保守・引き継ぎ体制", "white"
+    MakeText sld, MARGIN, CONTENT_TOP + 205, SLIDE_W - 2 * MARGIN, 50, _
+        "個人の試行錯誤ではなく、組織として管理できる形にすることが重要です。", _
+        14, False, mInk, msoAlignLeft, msoAnchorTop
+    AddNotes sld, _
+        "組織として活用するなら、組織用のGoogle・GitHub・AIサービスのアカウントやVS Code等の環境に加え、" & _
+        "AI利用ルール、データ移動ルール、コード管理ルール、保守・引き継ぎ体制が必要です。" & _
+        "個人の試行錯誤ではなく、組織として管理できる形が重要です。"
+
+    '==============================================================
+    ' 20枚目：まとめ（3カード）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "SUMMARY", "まとめ", "要点"
+    AddCard sld, MARGIN, CONTENT_TOP, w3, 200, "AIの使いどころ", _
+        "最終処理よりも、資料作成・コード作成・仕組みづくりの補助に向いている。", "primary"
+    AddCard sld, MARGIN + (w3 + gx), CONTENT_TOP, w3, 200, "LGWAN内でも可能性あり", _
+        "HTML・CSS・JavaScriptを使えば、オフライン前提でも簡易ツール化できる。", "green"
+    AddCard sld, MARGIN + (w3 + gx) * 2, CONTENT_TOP, w3, 200, "実運用は慎重に", _
+        "セキュリティ・属人化・保守体制の課題を整理してから進める必要がある。", "red"
+    AddNoteBox sld, MARGIN, CONTENT_TOP + 215, SLIDE_W - 2 * MARGIN, 60, _
+        "「AIに業務を任せる」のではなく、「AIを使って業務改善の道具を作る」という考え方が現実的です。", False
+    AddNotes sld, _
+        "まとめです。AIは最終処理より資料作成やコード作成、仕組みづくりの補助に向いています。" & _
+        "LGWAN環境でもHTML等を使えば簡易ツール化の可能性があります。" & _
+        "ただし、セキュリティ・属人化・保守体制の課題を整理してから進める必要があります。"
+
+    '==============================================================
+    ' 21枚目：次のアクション（フロー4ステップ）
+    '==============================================================
+    Set sld = NewSlide()
+    AddHeader sld, "NEXT ACTION", "次のアクション", "進め方"
+    Dim ft3(0 To 3) As String, fd3(0 To 3) As String
+    ft3(0) = "小さく試す": fd3(0) = "閲覧専用資料など、リスクの低い用途から始める。"
+    ft3(1) = "情報管理部門に相談": fd3(1) = "データ扱い・持ち込み・アカウント利用の可否を確認。"
+    ft3(2) = "共通ルール化": fd3(2) = "個人運用ではなく、組織で管理できる形に整える。"
+    ft3(3) = "横展開を検討": fd3(3) = "効果が見込める業務から、庁内展開や研修に活用。"
+    AddFlow sld, MARGIN, CONTENT_TOP, SLIDE_W - 2 * MARGIN, 180, ft3, fd3
+    AddNotes sld, _
+        "次のアクションです。まずリスクの低い用途から小さく試し、情報管理部門に相談し、" & _
+        "個人運用ではなく共通ルール化し、効果が見込めるものから庁内に横展開する、という順で進めるのが現実的です。"
+
+    '==============================================================
+    ' 22枚目：まとめスライド（クロージング）
+    '==============================================================
+    Set sld = NewSlide()
+    BuildClosingSlide sld, "CLOSING", "実験結果を、業務効率化の検討材料へ", _
+        "LGWAN環境でも、HTMLやAIをうまく使えば、" & vbCrLf & _
+        "資料作成・検索・定型処理の効率化につながる可能性があります。", _
+        "ただし、実運用ではセキュリティ・保守・属人化への配慮が不可欠です。"
+    AddNotes sld, _
+        "LGWAN環境でも、HTMLやAIをうまく使えば、資料作成・検索・定型処理の効率化につながる可能性があります。" & _
+        "ただし実運用では、セキュリティ・保守・属人化への配慮が不可欠です。" & _
+        "本日の内容が業務効率化の検討材料になれば幸いです。"
+
+    '--- 先頭スライドを表示して完了 ---
+    mPres.Slides(1).Select
+    MsgBox "スライドを生成しました（全 " & mPres.Slides.Count & " 枚）。" & vbCrLf & _
+           "各スライドのノート欄に読み原稿を設定しています。", vbInformation, "完了"
+End Sub
+
+'==================================================================
+' 色の初期化
+'==================================================================
+Private Sub InitColors()
+    mInk = RGB(31, 41, 55)
+    mMuted = RGB(100, 116, 139)
+    mLine = RGB(216, 224, 232)
+    mPrimary = RGB(31, 95, 139)
+    mPrimaryDark = RGB(23, 63, 95)
+    mPrimarySoft = RGB(232, 242, 248)
+    mAccent = RGB(183, 121, 31)
+    mAccentSoft = RGB(255, 244, 220)
+    mGreen = RGB(36, 120, 92)
+    mGreenSoft = RGB(232, 246, 239)
+    mRed = RGB(182, 66, 66)
+    mRedSoft = RGB(253, 236, 236)
+    mPaper = RGB(255, 255, 255)
+    mSlideBg = RGB(249, 251, 253)
+End Sub
+
+'==================================================================
+' 新しい空白スライドを追加（背景・フッターを設定）
+'==================================================================
+Private Function NewSlide() As Slide
+    Dim sld As Slide
+    Set sld = mPres.Slides.Add(mPres.Slides.Count + 1, ppLayoutBlank)
+    ' 淡い背景色を設定
+    sld.FollowMasterBackground = msoFalse
+    sld.Background.Fill.Visible = msoTrue
+    sld.Background.Fill.Solid
+    sld.Background.Fill.ForeColor.RGB = mSlideBg
+    Set NewSlide = sld
+End Function
+
+'==================================================================
+' ヘッダー（アイブロウ＋タイトル＋バッジ＋区切り線）
+'==================================================================
+Private Sub AddHeader(sld As Slide, eyebrow As String, title As String, badge As String)
+    ' アイブロウ（小さい英字ラベル）
+    MakeText sld, MARGIN, 30, 620, 18, eyebrow, 10.5, True, mPrimary, msoAlignLeft, msoAnchorMiddle
+    ' タイトル
+    MakeText sld, MARGIN, 50, 700, 50, title, 23, True, mPrimaryDark, msoAlignLeft, msoAnchorTop
+    ' バッジ（右上）
+    If Len(badge) > 0 Then
+        Dim bw As Single
+        bw = Len(badge) * 14 + 26    ' 文字数からおおよその幅を算出
+        Dim bx As Single
+        bx = SLIDE_W - MARGIN - bw
+        Dim b As Shape
+        Set b = MakeRect(sld, bx, 46, bw, 30, mPrimarySoft, mPrimarySoft, 0.5)
+        With b.TextFrame2
+            .VerticalAnchor = msoAnchorMiddle
+            With .TextRange
+                .Text = badge
+                .Font.Size = 11
+                .Font.Bold = msoTrue
+                .Font.Name = mJpFont
+                .Font.Fill.ForeColor.RGB = mPrimaryDark
+                .ParagraphFormat.Alignment = msoAlignCenter
+            End With
+        End With
+    End If
+    ' タイトル下の区切り線
+    Dim ln As Shape
+    Set ln = sld.Shapes.AddLine(MARGIN, 108, SLIDE_W - MARGIN, 108)
+    ln.Line.ForeColor.RGB = mLine
+    ln.Line.Weight = 1
+End Sub
+
+'==================================================================
+' 汎用テキストボックス
+'==================================================================
+Private Function MakeText(sld As Slide, x As Single, y As Single, w As Single, h As Single, _
+    txt As String, sz As Single, bold As Boolean, colorC As Long, _
+    Optional align As Long = msoAlignLeft, Optional anchor As Long = msoAnchorTop) As Shape
+
+    Dim shp As Shape
+    Set shp = sld.Shapes.AddTextbox(msoTextOrientationHorizontal, x, y, w, h)
+    With shp.TextFrame2
+        .WordWrap = msoTrue
+        .AutoSize = msoAutoSizeNone
+        .MarginLeft = 0: .MarginRight = 0: .MarginTop = 0: .MarginBottom = 0
+        .VerticalAnchor = anchor
+        With .TextRange
+            .Text = txt
+            .Font.Size = sz
+            .Font.Bold = IIf(bold, msoTrue, msoFalse)
+            .Font.Name = mJpFont
+            .Font.Fill.ForeColor.RGB = colorC
+            .ParagraphFormat.Alignment = align
+            .ParagraphFormat.SpaceWithin = 1   ' 行間（行送り）を読みやすく
+        End With
+    End With
+    Set MakeText = shp
+End Function
+
+'==================================================================
+' 汎用角丸長方形
+'==================================================================
+Private Function MakeRect(sld As Slide, x As Single, y As Single, w As Single, h As Single, _
+    fillC As Long, lineC As Long, Optional radius As Single = 0.08) As Shape
+
+    Dim shp As Shape
+    Set shp = sld.Shapes.AddShape(msoShapeRoundedRectangle, x, y, w, h)
+    On Error Resume Next
+    shp.Adjustments(1) = radius
+    On Error GoTo 0
+    shp.Fill.ForeColor.RGB = fillC
+    shp.Line.ForeColor.RGB = lineC
+    shp.Line.Weight = 1
+    shp.Shadow.Visible = msoFalse
+    Set MakeRect = shp
+End Function
+
+'==================================================================
+' バリアント色の取得（カード種別→背景色・枠色・見出し色）
+'==================================================================
+Private Sub GetVariant(variant As String, ByRef fillC As Long, ByRef lineC As Long, ByRef headC As Long)
+    Select Case LCase(variant)
+        Case "primary"
+            fillC = mPrimarySoft: lineC = mPrimary: headC = mPrimaryDark
+        Case "accent"
+            fillC = mAccentSoft: lineC = mAccent: headC = RGB(138, 90, 10)
+        Case "green"
+            fillC = mGreenSoft: lineC = mGreen: headC = mGreen
+        Case "red"
+            fillC = mRedSoft: lineC = mRed: headC = RGB(117, 48, 48)
+        Case Else   ' white
+            fillC = mPaper: lineC = mLine: headC = mPrimaryDark
+    End Select
+End Sub
+
+'==================================================================
+' カード（見出し＋本文。numを指定すると番号付き円を表示）
+'==================================================================
+Private Function AddCard(sld As Slide, x As Single, y As Single, w As Single, h As Single, _
+    heading As String, body As String, variant As String, Optional num As Integer = 0) As Shape
+
+    Dim fillC As Long, lineC As Long, headC As Long
+    GetVariant variant, fillC, lineC, headC
+
+    Dim r As Shape
+    Set r = MakeRect(sld, x, y, w, h, fillC, lineC, 0.06)
+
+    Dim ty As Single
+    ty = y + 14
+
+    ' 番号付き円
+    If num > 0 Then
+        Dim ov As Shape
+        Set ov = sld.Shapes.AddShape(msoShapeOval, x + 16, y + 14, 28, 28)
+        ov.Fill.ForeColor.RGB = mPrimary
+        ov.Line.Visible = msoFalse
+        ov.Shadow.Visible = msoFalse
+        With ov.TextFrame2
+            .VerticalAnchor = msoAnchorMiddle
+            .MarginLeft = 0: .MarginRight = 0: .MarginTop = 0: .MarginBottom = 0
+            With .TextRange
+                .Text = CStr(num)
+                .Font.Size = 14
+                .Font.Bold = msoTrue
+                .Font.Name = mJpFont
+                .Font.Fill.ForeColor.RGB = mPaper
+                .ParagraphFormat.Alignment = msoAlignCenter
+            End With
+        End With
+        ty = y + 50
+    End If
+
+    ' 見出し
+    MakeText sld, x + 16, ty, w - 32, 24, heading, 14.5, True, headC, msoAlignLeft, msoAnchorTop
+    ' 本文
+    MakeText sld, x + 16, ty + 27, w - 32, h - (ty + 27 - y) - 14, body, 12, False, mInk, msoAlignLeft, msoAnchorTop
+
+    Set AddCard = r
+End Function
+
+'==================================================================
+' ノートボックス／警告ボックス（左に色帯）
+'==================================================================
+Private Sub AddNoteBox(sld As Slide, x As Single, y As Single, w As Single, h As Single, _
+    txt As String, Optional warning As Boolean = False)
+
+    Dim fillC As Long, barC As Long, txtC As Long
+    If warning Then
+        fillC = mRedSoft: barC = mRed: txtC = RGB(117, 48, 48)
+    Else
+        fillC = mPrimarySoft: barC = mPrimary: txtC = mPrimaryDark
+    End If
+
+    MakeRect sld, x, y, w, h, fillC, fillC, 0.12
+
+    ' 左の色帯
+    Dim bar As Shape
+    Set bar = sld.Shapes.AddShape(msoShapeRectangle, x, y + 2, 6, h - 4)
+    bar.Fill.ForeColor.RGB = barC
+    bar.Line.Visible = msoFalse
+    bar.Shadow.Visible = msoFalse
+
+    MakeText sld, x + 20, y, w - 34, h, txt, 12.5, True, txtC, msoAlignLeft, msoAnchorMiddle
+End Sub
+
+'==================================================================
+' フロー（横並びのステップ。間に「›」を表示）
+'==================================================================
+Private Sub AddFlow(sld As Slide, x As Single, y As Single, totalW As Single, h As Single, _
+    titles() As String, descs() As String)
+
+    Dim n As Integer
+    n = UBound(titles) - LBound(titles) + 1
+    Dim gap As Single
+    gap = 22
+    Dim sw As Single
+    sw = (totalW - gap * (n - 1)) / n
+
+    Dim i As Integer
+    For i = 0 To n - 1
+        Dim sx As Single
+        sx = x + i * (sw + gap)
+        MakeRect sld, sx, y, sw, h, mPaper, mLine, 0.07
+
+        ' 番号付き円
+        Dim ov As Shape
+        Set ov = sld.Shapes.AddShape(msoShapeOval, sx + 16, y + 14, 28, 28)
+        ov.Fill.ForeColor.RGB = mPrimary
+        ov.Line.Visible = msoFalse
+        ov.Shadow.Visible = msoFalse
+        With ov.TextFrame2
+            .VerticalAnchor = msoAnchorMiddle
+            With .TextRange
+                .Text = CStr(i + 1)
+                .Font.Size = 14: .Font.Bold = msoTrue
+                .Font.Name = mJpFont
+                .Font.Fill.ForeColor.RGB = mPaper
+                .ParagraphFormat.Alignment = msoAlignCenter
+            End With
+        End With
+
+        ' ステップ名
+        MakeText sld, sx + 14, y + 50, sw - 28, 24, titles(i), 13.5, True, mPrimaryDark, msoAlignLeft, msoAnchorTop
+        ' 説明
+        MakeText sld, sx + 14, y + 76, sw - 28, h - 86, descs(i), 11, False, mInk, msoAlignLeft, msoAnchorTop
+
+        ' ステップ間の矢印
+        If i < n - 1 Then
+            MakeText sld, sx + sw, y, gap, h, ">", 24, True, mPrimary, msoAlignCenter, msoAnchorMiddle
+        End If
+    Next i
+End Sub
+
+'==================================================================
+' 目次（2列）
+'==================================================================
+Private Sub AddTOC(sld As Slide, x As Single, y As Single, w As Single, h As Single, items() As String)
+    Dim n As Integer
+    n = UBound(items) - LBound(items) + 1
+    Dim cols As Integer
+    cols = 2
+    Dim rows As Integer
+    rows = (n + cols - 1) \ cols
+
+    Dim gx As Single, gy As Single
+    gx = 24: gy = 14
+    Dim cw As Single, ch As Single
+    cw = (w - gx * (cols - 1)) / cols
+    ch = (h - gy * (rows - 1)) / rows
+
+    Dim i As Integer
+    For i = 0 To n - 1
+        Dim c As Integer, rr As Integer
+        c = i Mod cols
+        rr = i \ cols
+        Dim ix As Single, iy As Single
+        ix = x + c * (cw + gx)
+        iy = y + rr * (ch + gy)
+
+        MakeRect sld, ix, iy, cw, ch, mPaper, mLine, 0.12
+
+        ' 番号円
+        Dim ov As Shape
+        Set ov = sld.Shapes.AddShape(msoShapeOval, ix + 14, iy + (ch - 30) / 2, 30, 30)
+        ov.Fill.ForeColor.RGB = mPrimary
+        ov.Line.Visible = msoFalse
+        ov.Shadow.Visible = msoFalse
+        With ov.TextFrame2
+            .VerticalAnchor = msoAnchorMiddle
+            With .TextRange
+                .Text = CStr(i + 1)
+                .Font.Size = 13: .Font.Bold = msoTrue
+                .Font.Name = mJpFont
+                .Font.Fill.ForeColor.RGB = mPaper
+                .ParagraphFormat.Alignment = msoAlignCenter
+            End With
+        End With
+
+        ' 項目名
+        MakeText sld, ix + 56, iy, cw - 70, ch, items(i), 14, True, mInk, msoAlignLeft, msoAnchorMiddle
+    Next i
+End Sub
+
+'==================================================================
+' 比較表（ヘッダー1行＋本文）
+'==================================================================
+Private Sub AddComparisonTable(sld As Slide, x As Single, y As Single, w As Single, h As Single, _
+    hdr() As String, body() As String)
+
+    Dim cols As Integer, rows As Integer
+    cols = UBound(hdr) - LBound(hdr) + 1
+    rows = UBound(body, 1) - LBound(body, 1) + 2   ' データ行数＋ヘッダー
+
+    Dim shpT As Shape
+    Set shpT = sld.Shapes.AddTable(rows, cols, x, y, w, h)
+    Dim tbl As Table
+    Set tbl = shpT.Table
+
+    ' 列幅（1列目を狭め、2・3列目を広く）
+    tbl.Columns(1).Width = w * 0.2
+    tbl.Columns(2).Width = w * 0.42
+    tbl.Columns(3).Width = w * 0.38
+
+    Dim c As Integer, rr As Integer
+    ' ヘッダー行
+    For c = 1 To cols
+        With tbl.Cell(1, c)
+            .Shape.Fill.ForeColor.RGB = mPrimarySoft
+            With .Shape.TextFrame2.TextRange
+                .Text = hdr(c - 1)
+                .Font.Size = 13
+                .Font.Bold = msoTrue
+                .Font.Name = mJpFont
+                .Font.Fill.ForeColor.RGB = mPrimaryDark
+            End With
+            .Shape.TextFrame2.VerticalAnchor = msoAnchorMiddle
+        End With
+    Next c
+
+    ' データ行
+    For rr = 1 To rows - 1
+        For c = 1 To cols
+            With tbl.Cell(rr + 1, c)
+                .Shape.Fill.ForeColor.RGB = mPaper
+                With .Shape.TextFrame2.TextRange
+                    .Text = body(rr - 1, c - 1)
+                    .Font.Size = 12
+                    .Font.Bold = IIf(c = 1, msoTrue, msoFalse)
+                    .Font.Name = mJpFont
+                    .Font.Fill.ForeColor.RGB = IIf(c = 1, mPrimaryDark, mInk)
+                End With
+                .Shape.TextFrame2.VerticalAnchor = msoAnchorMiddle
+            End With
+        Next c
+    Next rr
+End Sub
+
+'==================================================================
+' アイコン風リスト項目（左に「!」マーク＋見出し＋説明）
+'==================================================================
+Private Sub AddIconItem(sld As Slide, x As Single, y As Single, w As Single, h As Single, _
+    heading As String, desc As String)
+
+    MakeRect sld, x, y, w, h, mPaper, mLine, 0.1
+
+    ' アイコン枠
+    Dim icn As Shape
+    Set icn = MakeRect(sld, x + 16, y + (h - 40) / 2, 40, 40, mPrimarySoft, mPrimarySoft, 0.2)
+    With icn.TextFrame2
+        .VerticalAnchor = msoAnchorMiddle
+        With .TextRange
+            .Text = "!"
+            .Font.Size = 20: .Font.Bold = msoTrue
+            .Font.Name = mJpFont
+            .Font.Fill.ForeColor.RGB = mPrimaryDark
+            .ParagraphFormat.Alignment = msoAlignCenter
+        End With
+    End With
+
+    ' 見出し
+    MakeText sld, x + 72, y + 14, w - 90, 24, heading, 14.5, True, mPrimaryDark, msoAlignLeft, msoAnchorTop
+    ' 説明
+    MakeText sld, x + 72, y + 40, w - 90, h - 50, desc, 12, False, mInk, msoAlignLeft, msoAnchorTop
+End Sub
+
+'==================================================================
+' 表紙スライド
+'==================================================================
+Private Sub BuildTitleSlide(sld As Slide, eyebrow As String, title As String, _
+    subtitle As String, note As String)
+
+    ' 左側の縦アクセント帯
+    Dim band As Shape
+    Set band = sld.Shapes.AddShape(msoShapeRectangle, 0, 0, 14, SLIDE_H)
+    band.Fill.ForeColor.RGB = mPrimary
+    band.Line.Visible = msoFalse
+    band.Shadow.Visible = msoFalse
+
+    MakeText sld, 80, 150, SLIDE_W - 160, 24, eyebrow, 12, True, mPrimary, msoAlignLeft, msoAnchorTop
+    MakeText sld, 80, 178, SLIDE_W - 160, 130, title, 34, True, mPrimaryDark, msoAlignLeft, msoAnchorTop
+    MakeText sld, 80, 320, SLIDE_W - 160, 70, subtitle, 18, False, RGB(51, 65, 85), msoAlignLeft, msoAnchorTop
+
+    ' 注記（金茶の帯）
+    Dim nb As Shape
+    Set nb = MakeRect(sld, 80, 400, SLIDE_W - 220, 60, mAccentSoft, mAccentSoft, 0.15)
+    Dim bar As Shape
+    Set bar = sld.Shapes.AddShape(msoShapeRectangle, 80, 402, 6, 56)
+    bar.Fill.ForeColor.RGB = mAccent
+    bar.Line.Visible = msoFalse
+    bar.Shadow.Visible = msoFalse
+    MakeText sld, 100, 400, SLIDE_W - 260, 60, note, 13, False, RGB(95, 65, 13), msoAlignLeft, msoAnchorMiddle
+End Sub
+
+'==================================================================
+' まとめ（クロージング）スライド
+'==================================================================
+Private Sub BuildClosingSlide(sld As Slide, eyebrow As String, title As String, _
+    body As String, note As String)
+
+    MakeText sld, 0, 120, SLIDE_W, 24, eyebrow, 12, True, mPrimary, msoAlignCenter, msoAnchorTop
+    MakeText sld, 80, 150, SLIDE_W - 160, 70, title, 30, True, mPrimaryDark, msoAlignCenter, msoAnchorTop
+    MakeText sld, 120, 235, SLIDE_W - 240, 90, body, 17, False, mInk, msoAlignCenter, msoAnchorTop
+
+    Dim nb As Shape
+    Set nb = MakeRect(sld, 160, 350, SLIDE_W - 320, 64, mPrimarySoft, mPrimarySoft, 0.12)
+    Dim bar As Shape
+    Set bar = sld.Shapes.AddShape(msoShapeRectangle, 160, 352, 6, 60)
+    bar.Fill.ForeColor.RGB = mPrimary
+    bar.Line.Visible = msoFalse
+    bar.Shadow.Visible = msoFalse
+    MakeText sld, 180, 350, SLIDE_W - 360, 64, note, 13, True, mPrimaryDark, msoAlignCenter, msoAnchorMiddle
+End Sub
+
+'==================================================================
+' ノート欄に読み原稿を設定
+'==================================================================
+Private Sub AddNotes(sld As Slide, txt As String)
+    Dim shp As Shape
+    On Error Resume Next
+    For Each shp In sld.NotesPage.Shapes
+        If shp.PlaceholderFormat.Type = ppPlaceholderBody Then
+            shp.TextFrame.TextRange.Text = txt
+            Exit For
+        End If
+    Next shp
+    On Error GoTo 0
+End Sub
+```
