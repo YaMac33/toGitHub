@@ -522,7 +522,12 @@ function onOpen() {
  * カスタムメニューから手動実行される。
  */
 function syncCalendar() {
-  const ui = SpreadsheetApp.getUi();
+
+  // UIが使えない環境（トリガー経由等）でも処理を止めないためのラッパー
+  function showAlert(msg) {
+    Logger.log('syncCalendar: ' + msg);
+    try { SpreadsheetApp.getUi().alert(msg); } catch (e) { /* UIなし環境では無視 */ }
+  }
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -532,20 +537,20 @@ function syncCalendar() {
     // 設定シートB3からカレンダーIDを取得
     const calId = cfgSheet.getRange('B3').getValue();
     if (!calId) {
-      ui.alert('カレンダーIDが設定されていません。設定シートのB3セルに記入してください。');
+      showAlert('カレンダーIDが設定されていません。設定シートのB3セルに記入してください。');
       return;
     }
 
     // カレンダーを取得
     const cal = CalendarApp.getCalendarById(calId);
     if (!cal) {
-      ui.alert('指定されたカレンダーIDが見つかりません：\n' + calId + '\n\nカレンダーIDが正しいか、アクセス権があるか確認してください。');
+      showAlert('指定されたカレンダーIDが見つかりません：\n' + calId + '\n\nカレンダーIDが正しいか、アクセス権があるか確認してください。');
       return;
     }
 
     const lastRow = appSheet.getLastRow();
     if (lastRow <= 1) {
-      ui.alert('申請データがありません。');
+      showAlert('申請データがありません。');
       return;
     }
 
@@ -611,7 +616,7 @@ function syncCalendar() {
       }
     });
 
-    ui.alert(
+    showAlert(
       'カレンダー反映が完了しました。\n\n' +
       '新規登録：' + created + '件\n' +
       '削除：' + deleted + '件\n' +
@@ -621,7 +626,7 @@ function syncCalendar() {
 
   } catch (err) {
     console.error('syncCalendar error:', err);
-    ui.alert('エラーが発生しました：\n' + err.message);
+    showAlert('エラーが発生しました：\n' + err.message);
   }
 }
 
