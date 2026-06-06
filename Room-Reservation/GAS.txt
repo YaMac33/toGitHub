@@ -1,0 +1,490 @@
+// ============================================================
+//  会議室予約申請システム - Google Apps Script
+//  
+//  【セットアップ手順】
+//  1. Googleスプレッドシートを新規作成
+//  2. 以下の3シートを作成：
+//     - 「申請データ」
+//     - 「公開データ」
+//     - 「設定」
+//  3. 「設定」シートのB1セルに通知先メールアドレスを記入
+//     （複数の場合はカンマ区切り例: a@city.lg.jp,b@city.lg.jp）
+//  4. スクリプトエディタにこのコードを貼り付け
+//  5. 「initSheets」関数を一度手動実行してヘッダー行を作成
+//  6. ウェブアプリとしてデプロイ
+//     - 実行ユーザー：自分
+//     - アクセスできるユーザー：全員（組織内に限定も可）
+//  7. デプロイURLをHTMLの GAS_URL に設定
+//  8. onEditトリガーを設定
+//     - 実行する関数：onEditTrigger
+//     - イベントの種類：スプレッドシートから → 編集時
+// ============================================================
+
+// ============================================================
+//  定数・設定
+// ============================================================
+
+/** シート名 */
+const SHEET = {
+  APPLICATION: '申請データ',
+  PUBLIC:      '公開データ',
+  CONFIG:      '設定',
+};
+
+/** 申請データシートの列インデックス（1始まり） */
+const COL = {
+  ID:         1,  // A: 申請ID
+  SUBMITTED:  2,  // B: 申請日時
+  DEPT:       3,  // C: 担当課
+  NAME:       4,  // D: 担当者名
+  ROOMS:      5,  // E: 会議室
+  START_DT:   6,  // F: 開始日時
+  END_DT:     7,  // G: 終了日時
+  CONTENT:    8,  // H: 内容
+  HEADCOUNT:  9,  // I: 想定利用人数
+  ROLE:       10, // J: 役職・職種等
+  STATUS:     11, // K: ステータス
+  NOTE:       12, // L: 備考
+};
+
+/** ステータスの選択肢 */
+const STATUS = {
+  PENDING:   '確認中',
+  CONFIRMED: '予約確定',
+  REJECTED:  '申請却下',
+};
+
+/** 申請データシートのヘッダー行 */
+const APP_HEADERS = [
+  '申請ID', '申請日時', '担当課', '担当者名', '会議室',
+  '開始日時', '終了日時', '内容', '想定利用人数', '役職・職種等',
+  'ステータス', '備考',
+];
+
+/** 公開データシートのヘッダー行 */
+const PUB_HEADERS = ['会議室', '開始日時', '終了日時', '担当課', 'ステータス'];
+
+
+// ============================================================
+//  初期化（初回のみ手動実行）
+// ============================================================
+
+/**
+ * 各シートのヘッダー行を作成する。
+ * スクリプトエディタから一度だけ手動実行すること。
+ */
+function initSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 申請データシート
+  const appSheet = ss.getSheetByName(SHEET.APPLICATION);
+  if (appSheet) {
+    if (appSheet.getLastRow() === 0) {
+      appSheet.appendRow(APP_HEADERS);
+      appSheet.setFrozenRows(1);
+      // ステータス列に入力規則（プルダウン）を設定
+      const rule = SpreadsheetApp.newDataValidation()
+        .requireValueInList([STATUS.PENDING, STATUS.CONFIRMED, STATUS.REJECTED], true)
+        .setAllowInvalid(false)
+        .build();
+      appSheet.getRange(2, COL.STATUS, 1000, 1).setDataValidation(rule);
+    }
+  }
+
+  // 公開データシート
+  const pubSheet = ss.getSheetByName(SHEET.PUBLIC);
+  if (pubSheet && pubSheet.getLastRow() === 0) {
+    pubSheet.appendRow(PUB_HEADERS);
+    pubSheet.setFrozenRows(1);
+  }
+
+  // 設定シート
+  const cfgSheet = ss.getSheetByName(SHEET.CONFIG);
+  if (cfgSheet && cfgSheet.getLastRow() === 0) {
+    cfgSheet.appendRow(['通知先メールアドレス', '']);
+    cfgSheet.appendRow(['システム名', '会議室予約申請システム']);
+  }
+
+  SpreadsheetApp.getUi().alert('初期化が完了しました。');
+}
+
+
+// ============================================================
+//  doPost：フォームからの申請受信
+// ============================================================
+
+/**
+ * HTMLフォームからPOSTリクエストを受け取り、申請データを記録する。
+ * @param {Object} e - GASイベントオブジェクト
+ */
+function doPost(e) {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    // リクエストボディのパース
+    const payload = JSON.parse(e.postData.contents);
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET.APPLICATION);
+
+    // 申請IDの採番ベース（現在行数）
+    const submittedAt = formatDatetime(new Date());
+    const rooms = Array.isArray(payload.rooms)
+      ? payload.rooms.join(',')
+      : String(payload.rooms || '');
+
+    // 会議室はカンマ区切りで結合
+    const isMulti = payload.isMulti === true;
+
+    if (!isMulti) {
+      // ===== 単日申請 =====
+      const lastRow = sheet.getLastRow();
+      const newId = 'R' + String(lastRow).padStart(4, '0');
+      const startDt = formatDatetime(new Date(payload.startDt));
+      const endDt   = formatDatetime(new Date(payload.endDt));
+
+      sheet.appendRow([
+        newId, submittedAt,
+        payload.dept || '', payload.name || '', rooms,
+        startDt, endDt,
+        payload.content || '', payload.headcount || '', payload.role || '',
+        STATUS.PENDING, '',
+      ]);
+
+      syncPublicData();
+      sendNotificationEmail(payload, newId, startDt, endDt, rooms);
+
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: true, id: newId }))
+        .setMimeType(ContentService.MimeType.JSON);
+
+    } else {
+      // ===== 複数日申請 =====
+      // dates: [{ date: "YYYY-MM-DD", startTime: "HH:MM", endTime: "HH:MM" }]
+      const dates = payload.dates || [];
+      if (dates.length === 0) throw new Error('datesが空です');
+
+      const baseRow = sheet.getLastRow();
+      const parentId = 'R' + String(baseRow).padStart(4, '0');
+      const ids = [];
+
+      dates.forEach((d, i) => {
+        const childId = parentId + '-' + (i + 1); // 例: R0001-1
+        const startDt = d.date + ' ' + d.startTime;
+        const endDt   = d.date + ' ' + d.endTime;
+        sheet.appendRow([
+          childId, submittedAt,
+          payload.dept || '', payload.name || '', rooms,
+          startDt, endDt,
+          payload.content || '', payload.headcount || '', payload.role || '',
+          STATUS.PENDING, '',
+        ]);
+        ids.push(childId);
+      });
+
+      syncPublicData();
+      sendNotificationEmailMulti(payload, parentId, dates, rooms);
+
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: true, ids }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+  } catch (err) {
+    console.error('doPost error:', err);
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+
+// ============================================================
+//  doGet：フロントへの予約データ返却
+// ============================================================
+
+/**
+ * フロントからGETリクエストを受け取り、公開データをJSON形式で返す。
+ * @param {Object} e - GASイベントオブジェクト
+ */
+function doGet(e) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET.PUBLIC);
+    const lastRow = sheet.getLastRow();
+
+    // データなし（ヘッダーのみ）
+    if (lastRow <= 1) {
+      return jsonResponse({ reservations: [] });
+    }
+
+    // 2行目以降を取得（ヘッダー除く）
+    const data = sheet.getRange(2, 1, lastRow - 1, PUB_HEADERS.length).getValues();
+
+    const reservations = data
+      .filter(row => row[0] !== '') // 空行除外
+      .map(row => {
+        const rooms = String(row[0]).split(',').map(r => r.trim());
+        const startDt = row[1] ? new Date(row[1]) : null;
+        const endDt   = row[2] ? new Date(row[2]) : null;
+
+        return {
+          rooms:     rooms,
+          date:      startDt ? formatDate(startDt) : '',     // YYYY-MM-DD
+          startTime: startDt ? formatTime(startDt) : '',     // HH:MM
+          endTime:   endDt   ? formatTime(endDt)   : '',     // HH:MM
+          dept:      row[3] || '',
+          status:    row[4] || STATUS.PENDING,
+        };
+      });
+
+    return jsonResponse({ reservations });
+
+  } catch (err) {
+    console.error('doGet error:', err);
+    return jsonResponse({ reservations: [], error: err.message });
+  }
+}
+
+/** JSONレスポンスを生成するヘルパー */
+function jsonResponse(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+// ============================================================
+//  syncPublicData：公開データシートの再構築
+//  ・申請データシートの全行（ヘッダー除く）を公開データに同期
+//  ・ステータス問わず全件を反映
+// ============================================================
+
+/**
+ * 申請データシートを元に公開データシートを再構築する。
+ * onEditトリガーおよびdoPostから呼び出される。
+ */
+function syncPublicData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const appSheet = ss.getSheetByName(SHEET.APPLICATION);
+  const pubSheet = ss.getSheetByName(SHEET.PUBLIC);
+
+  const lastRow = appSheet.getLastRow();
+
+  // 公開データシートのデータ行をクリア（ヘッダーは残す）
+  if (pubSheet.getLastRow() > 1) {
+    pubSheet.getRange(2, 1, pubSheet.getLastRow() - 1, PUB_HEADERS.length).clearContent();
+  }
+
+  // 申請データが1行（ヘッダーのみ）の場合は終了
+  if (lastRow <= 1) return;
+
+  // 申請データを全取得
+  const appData = appSheet.getRange(2, 1, lastRow - 1, APP_HEADERS.length).getValues();
+
+  // 公開データ用に整形（全ステータスを対象）
+  const pubRows = appData
+    .filter(row => row[COL.ID - 1] !== '') // 空行除外
+    .map(row => [
+      row[COL.ROOMS   - 1], // 会議室
+      row[COL.START_DT - 1], // 開始日時
+      row[COL.END_DT   - 1], // 終了日時
+      row[COL.DEPT     - 1], // 担当課
+      row[COL.STATUS   - 1], // ステータス
+    ]);
+
+  if (pubRows.length === 0) return;
+
+  // 公開データシートに書き込み
+  pubSheet.getRange(2, 1, pubRows.length, PUB_HEADERS.length).setValues(pubRows);
+}
+
+
+// ============================================================
+//  onEditTrigger：編集時トリガー
+//  ※ GASトリガー設定で「編集時」に紐づける関数
+// ============================================================
+
+/**
+ * 申請データシートが編集されたとき、公開データを同期する。
+ * @param {Object} e - GASトリガーイベントオブジェクト
+ */
+function onEditTrigger(e) {
+  try {
+    const sheet = e.source.getActiveSheet();
+
+    // 申請データシート以外の編集は無視
+    if (sheet.getName() !== SHEET.APPLICATION) return;
+
+    // ヘッダー行の編集は無視
+    if (e.range.getRow() <= 1) return;
+
+    // 公開データを同期
+    syncPublicData();
+
+  } catch (err) {
+    console.error('onEditTrigger error:', err);
+  }
+}
+
+
+// ============================================================
+//  メール通知
+// ============================================================
+
+/**
+ * 管理者へ申請受付メールを送信する。
+ * @param {Object} payload - フォームから受け取ったデータ
+ * @param {string} newId   - 採番した申請ID
+ * @param {string} startDt - フォーマット済み開始日時
+ * @param {string} endDt   - フォーマット済み終了日時
+ * @param {string} rooms   - カンマ区切りの会議室名
+ */
+function sendNotificationEmail(payload, newId, startDt, endDt, rooms) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const cfgSheet = ss.getSheetByName(SHEET.CONFIG);
+
+    // 設定シートからメールアドレスを取得（B1セル、カンマ区切り）
+    const mailTo = cfgSheet.getRange('B1').getValue();
+    if (!mailTo) {
+      console.warn('通知先メールアドレスが設定されていません（設定シートB1）');
+      return;
+    }
+
+    const systemName = cfgSheet.getRange('B2').getValue() || '会議室予約申請システム';
+    const subject = `【${systemName}】新規申請（${newId}）`;
+
+    const body = `
+会議室予約の新規申請がありました。
+
+━━━━━━━━━━━━━━━━━━━━
+申請ID    ：${newId}
+申請日時  ：${formatDatetime(new Date())}
+━━━━━━━━━━━━━━━━━━━━
+担当課    ：${payload.dept || '―'}
+担当者名  ：${payload.name || '―'}
+会議室    ：${rooms}
+開始日時  ：${startDt}
+終了日時  ：${endDt}
+内容      ：${payload.content   || '―'}
+想定人数  ：${payload.headcount ? payload.headcount + '名' : '―'}
+役職・職種：${payload.role      || '―'}
+━━━━━━━━━━━━━━━━━━━━
+
+スプレッドシートでステータスをご確認・変更ください。
+${ss.getUrl()}
+    `.trim();
+
+    // カンマ区切りで複数アドレスに対応
+    const recipients = mailTo.split(',').map(m => m.trim()).filter(m => m);
+    recipients.forEach(recipient => {
+      GmailApp.sendEmail(recipient, subject, body);
+    });
+
+  } catch (err) {
+    console.error('メール送信エラー:', err);
+    // メール失敗でも申請処理は続行するため例外は再スローしない
+  }
+}
+
+
+// ============================================================
+//  複数日メール通知
+// ============================================================
+
+/**
+ * 複数日申請時の管理者通知メール
+ */
+function sendNotificationEmailMulti(payload, parentId, dates, rooms) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const cfgSheet = ss.getSheetByName(SHEET.CONFIG);
+    const mailTo = cfgSheet.getRange('B1').getValue();
+    if (!mailTo) return;
+
+    const systemName = cfgSheet.getRange('B2').getValue() || '会議室予約申請システム';
+    const subject = `【${systemName}】新規申請（${parentId}、複数日・${dates.length}件）`;
+
+    const dateLines = dates.map((d, i) =>
+      `  ${i+1}. ${d.date}　${d.startTime}〜${d.endTime}`
+    ).join('
+');
+
+    const body = `
+会議室予約の新規申請がありました（複数日申請）。
+
+━━━━━━━━━━━━━━━━━━━━
+申請ID    ：${parentId}（${dates.length}日分）
+申請日時  ：${formatDatetime(new Date())}
+━━━━━━━━━━━━━━━━━━━━
+担当課    ：${payload.dept || '―'}
+担当者名  ：${payload.name || '―'}
+会議室    ：${rooms}
+内容      ：${payload.content   || '―'}
+想定人数  ：${payload.headcount ? payload.headcount + '名' : '―'}
+役職・職種：${payload.role      || '―'}
+
+【利用日時一覧】
+${dateLines}
+━━━━━━━━━━━━━━━━━━━━
+
+スプレッドシートでステータスをご確認・変更ください。
+${ss.getUrl()}
+    `.trim();
+
+    mailTo.split(',').map(m => m.trim()).filter(m => m).forEach(r => GmailApp.sendEmail(r, subject, body));
+  } catch (err) {
+    console.error('複数日メール送信エラー:', err);
+  }
+}
+
+// ============================================================
+//  日時フォーマットユーティリティ
+// ============================================================
+
+/**
+ * DateオブジェクトをYYYY/MM/DD HH:MM形式の文字列に変換する。
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatDatetime(date) {
+  if (!(date instanceof Date) || isNaN(date)) return '';
+  const y  = date.getFullYear();
+  const mo = String(date.getMonth() + 1).padStart(2, '0');
+  const d  = String(date.getDate()).padStart(2, '0');
+  const h  = String(date.getHours()).padStart(2, '0');
+  const mi = String(date.getMinutes()).padStart(2, '0');
+  return `${y}/${mo}/${d} ${h}:${mi}`;
+}
+
+/**
+ * DateオブジェクトをYYYY-MM-DD形式の文字列に変換する（GETレスポンス用）。
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatDate(date) {
+  if (!(date instanceof Date) || isNaN(date)) return '';
+  const y  = date.getFullYear();
+  const mo = String(date.getMonth() + 1).padStart(2, '0');
+  const d  = String(date.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${d}`;
+}
+
+/**
+ * DateオブジェクトをHH:MM形式の文字列に変換する（GETレスポンス用）。
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatTime(date) {
+  if (!(date instanceof Date) || isNaN(date)) return '';
+  const h  = String(date.getHours()).padStart(2, '0');
+  const mi = String(date.getMinutes()).padStart(2, '0');
+  return `${h}:${mi}`;
+}
+
