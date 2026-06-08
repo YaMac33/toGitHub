@@ -110,21 +110,21 @@
   .btn-sub{ background:#fff; border:1px solid var(--line); color:var(--ink); }
   .btn-sub:hover{ background:var(--accent-weak); }
 
-  /* ── プレビュー ── */
-  #preview{
+  /* ── 通告書表示（プレビュー／完了画面の正式版で共用）── */
+  .notice{
     background:#fff; border:1px solid var(--line); border-radius:var(--radius);
     padding:26px 30px; font-size:14.5px;
   }
-  #preview .p-session{ text-align:center; color:var(--ink-soft); font-size:13px; }
-  #preview .p-title{ text-align:center; font-family:var(--mincho); font-size:21px; letter-spacing:.3em; margin:4px 0 18px; padding-left:.3em; }
-  #preview .p-meta{ border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft); padding:10px 0; margin-bottom:16px; }
-  #preview .p-meta div{ display:flex; gap:6px; }
-  #preview .p-meta .k{ width:5.5em; color:var(--ink-soft); }
-  #preview .p-major{ margin:12px 0 4px; font-weight:700; }
-  #preview .p-mid{ margin:6px 0 2px; padding-left:1.4em; }
-  #preview .p-content{ padding-left:3em; text-indent:-1.5em; margin:3px 0; }
-  #preview .p-content .num{ color:var(--accent); }
-  #preview .empty{ color:#aab; }
+  .notice .p-session{ text-align:center; color:var(--ink-soft); font-size:13px; }
+  .notice .p-title{ text-align:center; font-family:var(--mincho); font-size:21px; letter-spacing:.3em; margin:4px 0 18px; padding-left:.3em; }
+  .notice .p-meta{ border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft); padding:10px 0; margin-bottom:16px; }
+  .notice .p-meta div{ display:flex; gap:6px; }
+  .notice .p-meta .k{ width:5.5em; color:var(--ink-soft); }
+  .notice .p-major{ margin:12px 0 4px; font-weight:700; }
+  .notice .p-mid{ margin:6px 0 2px; padding-left:1.4em; }
+  .notice .p-content{ padding-left:3em; text-indent:-1.5em; margin:3px 0; }
+  .notice .p-content .num{ color:var(--accent); }
+  .notice .empty{ color:#aab; }
 
   .msg{ padding:12px 16px; border-radius:6px; margin-top:14px; font-weight:600; display:none; }
   .msg.show{ display:block; }
@@ -138,13 +138,13 @@
   body.submitted #formArea{ display:none; }
   body.submitted .done-overlay{ display:block; }
 
-  /* ── 印刷：プレビューのみA4縦で出力 ── */
+  /* ── 印刷：通告書のみA4縦で出力 ── */
   @media print{
     body{ background:#fff; }
     .wrap{ max-width:none; padding:0; }
     .no-print{ display:none !important; }
-    #previewCard{ border:none; padding:0; margin:0; }
-    #preview{ border:none; padding:0; }
+    .card{ border:none !important; padding:0 !important; margin:0 !important; }
+    .notice{ border:none !important; padding:0 !important; }
     @page{ size:A4 portrait; margin:18mm 16mm; }
   }
 </style>
@@ -152,7 +152,7 @@
 <body>
 <div class="wrap">
 
-  <header class="doc">
+  <header class="doc no-print">
     <div class="session" id="sessionLabel">（定例会名 未設定）</div>
     <h1>一般質問通告書</h1>
   </header>
@@ -205,7 +205,7 @@
       <h2 class="no-print toggle-head" id="previewToggle">
         <span id="previewCaret">▶</span> プレビュー（通告書の体裁）
       </h2>
-      <div id="preview" style="display:none; margin-top:14px;"></div>
+      <div id="preview" class="notice" style="display:none; margin-top:14px;"></div>
     </section>
 
     <!-- 操作 -->
@@ -224,12 +224,19 @@
 
   <!-- 提出完了画面 -->
   <div class="done-overlay">
-    <section class="card">
+    <section class="card no-print">
       <h2 style="color:var(--ok); border-color:var(--ok);">提出が完了しました</h2>
       <div id="doneSummary"></div>
       <p class="hint" style="margin-top:14px;">
         入力されたアドレスへ控えのメールを送信しました。内容の修正が必要な場合は議会事務局へご連絡ください。
       </p>
+      <div class="actions" style="margin-top:14px;">
+        <button type="button" class="btn btn-primary" id="donePrintBtn">この通告書を印刷（A4縦）</button>
+      </div>
+    </section>
+    <section class="card" id="doneNoticeCard">
+      <h2 class="no-print">提出された通告書（控え）</h2>
+      <div id="doneNotice" class="notice" style="margin-top:14px;"></div>
     </section>
   </div>
 
@@ -313,9 +320,8 @@
     return box;
   }
 
-  // ── プレビュー ────────────────────────────────────────────
-  function renderPreview(){
-    var p = document.getElementById('preview');
+  // ── 通告書HTMLの組み立て（appliedAt を渡すと申請日時を表示）──
+  function noticeHTML(appliedAt){
     var html = '';
     html += '<div class="p-session">'+esc(SESSION)+'</div>';
     html += '<div class="p-title">一般質問通告書</div>';
@@ -325,7 +331,7 @@
     html += metaRow('質問日',   verifiedMember ? verifiedMember.date : '―');
     var min = document.getElementById('minutes').value;
     html += metaRow('通告時間', min ? (min+'分') : '―');
-    html += metaRow('修正日時', fmtNow());
+    if(appliedAt){ html += metaRow('申請日時', appliedAt); }
     html += '</div>';
 
     majors.forEach(function(maj, i){
@@ -337,7 +343,12 @@
         });
       });
     });
-    p.innerHTML = html;
+    return html;
+  }
+
+  // ── プレビュー（下書き：申請日時なし）──────────────────────
+  function renderPreview(){
+    document.getElementById('preview').innerHTML = noticeHTML(null);
   }
   function metaRow(k,v){ return '<div><span class="k">'+k+'</span><span>'+esc(String(v))+'</span></div>'; }
 
@@ -426,8 +437,9 @@
     var html = '<div class="p-meta" style="border-color:var(--line-soft);">'+
       metaRow('定例会', s.sessionName)+ metaRow('発言順位', s.order)+
       metaRow('議員氏名', s.name+'（'+s.group+'）')+ metaRow('質問日', s.date)+
-      metaRow('通告時間', s.minutes+'分')+'</div>';
+      metaRow('通告時間', s.minutes+'分')+ metaRow('申請日時', s.submittedAt||'')+'</div>';
     document.getElementById('doneSummary').innerHTML = html;
+    document.getElementById('doneNotice').innerHTML = noticeHTML(s.submittedAt||''); // 申請日時入りの正式版
     window.scrollTo(0,0);
   }
 
@@ -439,8 +451,7 @@
     lines.push('議員氏名　'+(verifiedMember?(verifiedMember.name+'（'+verifiedMember.group+'）'):''));
     lines.push('質問日　　'+(verifiedMember?verifiedMember.date:''));
     var min=document.getElementById('minutes').value;
-    lines.push('通告時間　'+(min?min+'分':''));
-    lines.push('修正日時　'+fmtNow()); lines.push('');
+    lines.push('通告時間　'+(min?min+'分':'')); lines.push('');
     majors.forEach(function(maj,i){
       lines.push((i+1)+'　'+maj.title);
       maj.subs.forEach(function(sub,j){
@@ -503,7 +514,7 @@
         console.log('[MOCK] 送信内容:\n' + JSON.stringify(payload, null, 2)); // ← F12コンソールで確認可
         var v = MOCK_ROSTER.filter(function(x){ return x.email===lc(payload.email); })[0];
         setTimeout(function(){ onOk({ ok:true, summary:{
-          sessionName:SESSION, name:v?v.name:'', group:v?v.group:'', order:v?v.order:'', date:v?v.date:'', minutes:payload.minutes
+          sessionName:SESSION, name:v?v.name:'', group:v?v.group:'', order:v?v.order:'', date:v?v.date:'', minutes:payload.minutes, submittedAt:fmtNow()
         }}); }, 200);
       }
     };
@@ -524,6 +535,7 @@
     renderPreview();
     window.print();
   });
+  document.getElementById('donePrintBtn').addEventListener('click', function(){ window.print(); });
   document.getElementById('plainBtn').addEventListener('click', function(){
     var ta=document.getElementById('plainArea'); ta.value=buildPlain(); ta.classList.add('show');
     document.getElementById('copyBtn').style.display='inline-block'; ta.focus(); ta.select();
