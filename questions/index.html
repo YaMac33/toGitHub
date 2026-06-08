@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root{
+    --ink:#1d2126;          /* 本文 */
+    --ink-soft:#52596b;     /* 補助テキスト */
+    --line:#d8dbe2;         /* 罫線 */
+    --line-soft:#e9ebf0;
+    --paper:#fbfbf9;        /* 用紙 */
+    --field:#ffffff;
+    --accent:#1f3a5f;       /* 藍（見出し・ボタン） */
+    --accent-weak:#eef2f7;
+    --danger:#9b2c2c;
+    --ok:#1f6f4a;
+    --radius:8px;
+    --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic Medium","Yu Gothic","Meiryo",sans-serif;
+    --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","MS PMincho",serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--gothic); font-size:15px; line-height:1.8;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:880px; margin:0 auto; padding:28px 20px 80px;}
+
+  /* ── 見出し ── */
+  header.doc{
+    text-align:center; padding:18px 0 22px; border-bottom:2px solid var(--accent);
+    margin-bottom:26px;
+  }
+  header.doc .session{ color:var(--ink-soft); font-size:14px; letter-spacing:.04em; }
+  header.doc h1{
+    font-family:var(--mincho); font-weight:600; font-size:25px; letter-spacing:.35em;
+    margin:6px 0 0; padding-left:.35em;
+  }
+
+  section.card{
+    background:var(--field); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px 22px; margin-bottom:22px;
+  }
+  .card > h2{
+    font-size:15px; font-weight:700; color:var(--accent); margin:0 0 16px;
+    padding-left:10px; border-left:4px solid var(--accent); line-height:1.4;
+  }
+  .toggle-head{ cursor:pointer; user-select:none; margin-bottom:0 !important; }
+  .toggle-head #previewCaret{ font-size:11px; display:inline-block; width:1em; }
+  .hint{ font-size:12.5px; color:var(--ink-soft); margin:-8px 0 14px; }
+
+  label.field-label{ display:block; font-size:13px; font-weight:600; color:var(--ink-soft); margin-bottom:6px; }
+  .req::after{ content:"必須"; font-size:11px; color:var(--danger); margin-left:8px; font-weight:600; }
+
+  input[type=text], input[type=email], select, textarea{
+    width:100%; font-family:var(--gothic); font-size:15px; color:var(--ink);
+    background:var(--field); border:1px solid var(--line); border-radius:6px;
+    padding:9px 11px; line-height:1.7;
+  }
+  input:focus, select:focus, textarea:focus{ outline:2px solid var(--accent); outline-offset:-1px; border-color:var(--accent); }
+  textarea{ resize:vertical; min-height:64px; }
+
+  .row{ display:flex; gap:16px; flex-wrap:wrap; }
+  .row > div{ flex:1; min-width:200px; }
+
+  /* ── 本人確認カード ── */
+  #memberBox{ margin-top:12px; border-radius:6px; padding:0; overflow:hidden; }
+  #memberBox.ok{ border:1px solid #cfe0d5; background:#f3f8f5; padding:12px 14px; }
+  #memberBox.ng{ border:1px solid #e6cdcd; background:#fbf3f3; padding:12px 14px; color:var(--danger); font-weight:600; }
+  #memberBox.hidden{ display:none; }
+  .member-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px 18px; }
+  .member-grid .k{ font-size:11.5px; color:var(--ink-soft); }
+  .member-grid .v{ font-size:15px; font-weight:700; }
+  @media(max-width:560px){ .member-grid{ grid-template-columns:repeat(2,1fr);} }
+
+  /* ── 階層ブロック ── */
+  .major{ border:1px solid var(--line); border-radius:var(--radius); margin-bottom:16px; }
+  .major-head{
+    display:flex; align-items:center; gap:10px; background:var(--accent-weak);
+    padding:10px 14px; border-bottom:1px solid var(--line); border-radius:var(--radius) var(--radius) 0 0;
+  }
+  .badge{ font-weight:700; color:var(--accent); font-size:15px; min-width:22px; text-align:center; }
+  .major-head input{ flex:1; }
+  .major-body{ padding:14px; }
+
+  .mid{ border:1px dashed var(--line); border-radius:6px; padding:12px; margin:10px 0; background:#fcfcfd; }
+  .mid-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .mid-head .badge{ color:var(--ink-soft); }
+  .mid-head input{ flex:1; }
+
+  .content-item{ display:flex; align-items:flex-start; gap:10px; margin:8px 0; }
+  .content-item .badge{ margin-top:8px; }
+  .content-item textarea{ flex:1; }
+
+  /* ── ボタン ── */
+  button{ font-family:var(--gothic); cursor:pointer; border-radius:6px; border:1px solid transparent; }
+  .btn-add{ background:#fff; border:1px dashed var(--accent); color:var(--accent); font-size:13px; padding:7px 14px; font-weight:600; }
+  .btn-add:hover{ background:var(--accent-weak); }
+  .btn-icon{ background:#fff; border:1px solid var(--line); color:var(--ink-soft); width:30px; height:30px; font-size:13px; line-height:1; padding:0; }
+  .btn-icon:hover{ background:var(--accent-weak); color:var(--accent); }
+  .btn-icon.del:hover{ background:#fbf3f3; color:var(--danger); border-color:#e6cdcd; }
+  .ctl{ display:flex; gap:6px; }
+
+  .actions{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+  .btn{ font-size:15px; font-weight:700; padding:11px 22px; }
+  .btn-primary{ background:var(--accent); color:#fff; }
+  .btn-primary:hover{ background:#16304f; }
+  .btn-primary:disabled{ background:#9aa7b6; cursor:not-allowed; }
+  .btn-sub{ background:#fff; border:1px solid var(--line); color:var(--ink); }
+  .btn-sub:hover{ background:var(--accent-weak); }
+
+  /* ── プレビュー ── */
+  #preview{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+    padding:26px 30px; font-size:14.5px;
+  }
+  #preview .p-session{ text-align:center; color:var(--ink-soft); font-size:13px; }
+  #preview .p-title{ text-align:center; font-family:var(--mincho); font-size:21px; letter-spacing:.3em; margin:4px 0 18px; padding-left:.3em; }
+  #preview .p-meta{ border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft); padding:10px 0; margin-bottom:16px; }
+  #preview .p-meta div{ display:flex; gap:6px; }
+  #preview .p-meta .k{ width:5.5em; color:var(--ink-soft); }
+  #preview .p-major{ margin:12px 0 4px; font-weight:700; }
+  #preview .p-mid{ margin:6px 0 2px; padding-left:1.4em; }
+  #preview .p-content{ padding-left:3em; text-indent:-1.5em; margin:3px 0; }
+  #preview .p-content .num{ color:var(--accent); }
+  #preview .empty{ color:#aab; }
+
+  .msg{ padding:12px 16px; border-radius:6px; margin-top:14px; font-weight:600; display:none; }
+  .msg.show{ display:block; }
+  .msg.err{ background:#fbf3f3; color:var(--danger); border:1px solid #e6cdcd; }
+  .msg.success{ background:#f3f8f5; color:var(--ok); border:1px solid #cfe0d5; }
+
+  #plainArea{ width:100%; min-height:220px; font-family:"SFMono-Regular",Consolas,"Courier New",monospace; font-size:13px; margin-top:10px; display:none; }
+  #plainArea.show{ display:block; }
+
+  .done-overlay{ display:none; }
+  body.submitted #formArea{ display:none; }
+  body.submitted .done-overlay{ display:block; }
+
+  /* ── 印刷：プレビューのみA4縦で出力 ── */
+  @media print{
+    body{ background:#fff; }
+    .wrap{ max-width:none; padding:0; }
+    .no-print{ display:none !important; }
+    #previewCard{ border:none; padding:0; margin:0; }
+    #preview{ border:none; padding:0; }
+    @page{ size:A4 portrait; margin:18mm 16mm; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc">
+    <div class="session" id="sessionLabel">（定例会名 未設定）</div>
+    <h1>一般質問通告書</h1>
+  </header>
+
+  <div id="formArea">
+
+    <!-- 提出者情報 -->
+    <section class="card no-print">
+      <h2>提出者情報</h2>
+      <label class="field-label req" for="email">メールアドレス（本人確認に使用）</label>
+      <div class="row" style="align-items:flex-end;">
+        <div style="flex:2;">
+          <input type="email" id="email" placeholder="例：gikai.taro@city.example.lg.jp" autocomplete="email">
+        </div>
+        <div style="flex:0 0 auto; min-width:auto;">
+          <button type="button" class="btn-sub" id="checkBtn" style="padding:9px 18px;">照合</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:8px;">議員名簿に登録されたアドレスを入力してください。氏名・会派・発言順位・質問日は自動で表示されます。</div>
+      <div id="memberBox" class="hidden"></div>
+
+      <div style="margin-top:18px; max-width:240px;">
+        <label class="field-label req" for="minutes">通告時間</label>
+        <select id="minutes">
+          <option value="">選択してください</option>
+          <option value="10">10分</option>
+          <option value="20">20分</option>
+          <option value="30">30分</option>
+          <option value="40">40分</option>
+          <option value="50">50分</option>
+          <option value="60">60分</option>
+          <option value="70">70分</option>
+          <option value="80">80分</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- 質問内容 -->
+    <section class="card no-print">
+      <h2>質問内容</h2>
+      <p class="hint">
+        大項目（1.2.3）→ 中項目（(1)(2)(3)）→ 内容（①②③）の3階層で入力できます。
+        構成は自由で、<b>大項目のみ</b>／<b>大項目＋中項目</b>／<b>大項目＋中項目＋内容</b> のいずれでも構いません。
+        番号は自動で振られ、追加・削除・並び替えに合わせて振り直されます。
+      </p>
+      <div id="majors"></div>
+      <button type="button" class="btn-add" id="addMajor">＋ 大項目を追加</button>
+    </section>
+
+    <!-- プレビュー -->
+    <section class="card" id="previewCard">
+      <h2 class="no-print toggle-head" id="previewToggle">
+        <span id="previewCaret">▶</span> プレビュー（通告書の体裁）
+      </h2>
+      <div id="preview" style="display:none; margin-top:14px;"></div>
+    </section>
+
+    <!-- 操作 -->
+    <section class="card no-print">
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="submitBtn">この内容で提出する</button>
+        <button type="button" class="btn btn-sub" id="printBtn">印刷（A4縦）</button>
+        <button type="button" class="btn btn-sub" id="plainBtn">コピペ用テキスト</button>
+        <button type="button" class="btn btn-sub" id="copyBtn" style="display:none;">クリップボードにコピー</button>
+      </div>
+      <textarea id="plainArea" readonly></textarea>
+      <div id="msg" class="msg"></div>
+    </section>
+
+  </div>
+
+  <!-- 提出完了画面 -->
+  <div class="done-overlay">
+    <section class="card">
+      <h2 style="color:var(--ok); border-color:var(--ok);">提出が完了しました</h2>
+      <div id="doneSummary"></div>
+      <p class="hint" style="margin-top:14px;">
+        入力されたアドレスへ控えのメールを送信しました。内容の修正が必要な場合は議会事務局へご連絡ください。
+      </p>
+    </section>
+  </div>
+
+</div>
+
+<script>
+  // ── データモデル ──────────────────────────────────────────
+  // majors = [ { title, subs:[ { subtitle, contents:[ "..." ] } ] } ]
+  var majors = [ newMajor() ];
+  var verifiedMember = null; // {name,group,order,date} 名簿照合済みの場合のみ
+
+  function newMajor(){ return { title:"", subs:[] }; }   // 中項目は任意（0個でも可）
+  function newSub(){ return { subtitle:"", contents:[] }; } // 内容は任意（0個でも可）
+
+  function circled(n){
+    if(n>=1 && n<=20) return String.fromCharCode(0x2460 + (n-1));
+    return "(" + n + ")";
+  }
+
+  // ── レンダリング ──────────────────────────────────────────
+  var majorsEl = document.getElementById('majors');
+
+  function render(){
+    majorsEl.innerHTML = '';
+    majors.forEach(function(maj, i){
+      majorsEl.appendChild(renderMajor(maj, i));
+    });
+    renderPreview();
+  }
+
+  function renderMajor(maj, i){
+    var box = el('div','major');
+    var head = el('div','major-head');
+    head.appendChild(badge(String(i+1)+'.'));
+    var t = input(maj.title, '大項目の件名を入力', function(v){ maj.title=v; renderPreview(); });
+    head.appendChild(t);
+    head.appendChild(ctl([
+      iconBtn('↑', i>0, function(){ move(majors,i,-1); render(); }),
+      iconBtn('↓', i<majors.length-1, function(){ move(majors,i,1); render(); }),
+      iconBtn('✕', majors.length>1, function(){ majors.splice(i,1); render(); }, true)
+    ]));
+    box.appendChild(head);
+
+    var body = el('div','major-body');
+    maj.subs.forEach(function(sub, j){
+      body.appendChild(renderSub(maj, sub, j));
+    });
+    body.appendChild(addBtn('＋ 中項目を追加', function(){ maj.subs.push(newSub()); render(); }));
+    box.appendChild(body);
+    return box;
+  }
+
+  function renderSub(maj, sub, j){
+    var box = el('div','mid');
+    var head = el('div','mid-head');
+    head.appendChild(badge('('+(j+1)+')'));
+    var t = input(sub.subtitle, '中項目の小見出しを入力', function(v){ sub.subtitle=v; renderPreview(); });
+    head.appendChild(t);
+    head.appendChild(ctl([
+      iconBtn('↑', j>0, function(){ move(maj.subs,j,-1); render(); }),
+      iconBtn('↓', j<maj.subs.length-1, function(){ move(maj.subs,j,1); render(); }),
+      iconBtn('✕', true, function(){ maj.subs.splice(j,1); render(); }, true)
+    ]));
+    box.appendChild(head);
+
+    sub.contents.forEach(function(text, k){
+      var item = el('div','content-item');
+      item.appendChild(badge(circled(k+1)));
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.placeholder = '質問の内容を入力';
+      ta.addEventListener('input', function(){ sub.contents[k]=ta.value; renderPreview(); });
+      item.appendChild(ta);
+      item.appendChild(ctl([
+        iconBtn('↑', k>0, function(){ move(sub.contents,k,-1); render(); }),
+        iconBtn('↓', k<sub.contents.length-1, function(){ move(sub.contents,k,1); render(); }),
+        iconBtn('✕', true, function(){ sub.contents.splice(k,1); render(); }, true)
+      ]));
+      box.appendChild(item);
+    });
+    box.appendChild(addBtn('＋ 内容（①）を追加', function(){ sub.contents.push(""); render(); }));
+    return box;
+  }
+
+  // ── プレビュー ────────────────────────────────────────────
+  function renderPreview(){
+    var p = document.getElementById('preview');
+    var html = '';
+    html += '<div class="p-session">'+esc(SESSION)+'</div>';
+    html += '<div class="p-title">一般質問通告書</div>';
+    html += '<div class="p-meta">';
+    html += metaRow('発言順位', verifiedMember ? verifiedMember.order : '―');
+    html += metaRow('議員氏名', verifiedMember ? (verifiedMember.name+'（'+verifiedMember.group+'）') : '―');
+    html += metaRow('質問日',   verifiedMember ? verifiedMember.date : '―');
+    var min = document.getElementById('minutes').value;
+    html += metaRow('通告時間', min ? (min+'分') : '―');
+    html += '</div>';
+
+    majors.forEach(function(maj, i){
+      html += '<div class="p-major">'+(i+1)+'　'+ (maj.title ? esc(maj.title) : '<span class="empty">（件名未入力）</span>') +'</div>';
+      maj.subs.forEach(function(sub, j){
+        html += '<div class="p-mid">('+(j+1)+')　'+ (sub.subtitle ? esc(sub.subtitle) : '<span class="empty">（小見出し未入力）</span>') +'</div>';
+        sub.contents.forEach(function(text, k){
+          html += '<div class="p-content"><span class="num">'+circled(k+1)+'</span>　'+ (text ? esc(text) : '<span class="empty">（未入力）</span>') +'</div>';
+        });
+      });
+    });
+    p.innerHTML = html;
+  }
+  function metaRow(k,v){ return '<div><span class="k">'+k+'</span><span>'+esc(String(v))+'</span></div>'; }
+
+  // ── 本人確認（名簿照合）────────────────────────────────────
+  function checkMember(){
+    var email = document.getElementById('email').value.trim();
+    var box = document.getElementById('memberBox');
+    if(!email){ box.className='hidden'; verifiedMember=null; renderPreview(); return; }
+    box.className=''; box.classList.remove('hidden','ok','ng');
+    box.style.padding='12px 14px'; box.style.border='1px solid var(--line)';
+    box.innerHTML = '照合中…';
+    Backend.lookupMember(email, function(res){
+      if(res && res.found){
+        verifiedMember = { name:res.name, group:res.group, order:res.order, date:res.date };
+        box.className='ok';
+        box.innerHTML =
+          '<div class="member-grid">'+
+          cell('議員氏名', res.name)+ cell('会派', res.group)+
+          cell('発言順位', res.order)+ cell('質問日', res.date)+
+          '</div>';
+      } else {
+        verifiedMember = null;
+        box.className='ng';
+        box.innerHTML = '⚠ このメールアドレスは議員名簿に登録されていません。アドレスをご確認ください。';
+      }
+      renderPreview();
+    }, function(err){
+      verifiedMember=null; box.className='ng';
+      box.innerHTML = '照合に失敗しました：'+esc(err.message||String(err));
+      renderPreview();
+    });
+  }
+  function cell(k,v){ return '<div><div class="k">'+k+'</div><div class="v">'+esc(String(v))+'</div></div>'; }
+
+  // ── 提出 ──────────────────────────────────────────────────
+  function submit(){
+    showMsg('','');
+    if(!verifiedMember){ return showMsg('err','先にメールアドレスの照合を行ってください（名簿に登録されたアドレスが必要です）。'); }
+    var min = document.getElementById('minutes').value;
+    if(!min){ return showMsg('err','通告時間を選択してください。'); }
+    var clientErr = validateClient();
+    if(clientErr){ return showMsg('err', clientErr); }
+
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = '送信中…';
+
+    var payload = {
+      email: document.getElementById('email').value.trim(),
+      minutes: Number(min),
+      items: majors.map(function(maj){
+        return { title: maj.title.trim(),
+          subs: maj.subs.map(function(sub){
+            return { subtitle: sub.subtitle.trim(),
+              contents: sub.contents.map(function(t){ return t.trim(); }) };
+          }) };
+      })
+    };
+
+    Backend.submitNotice(payload, function(res){
+      if(res && res.ok){ showDone(res.summary); }
+      else { btn.disabled=false; btn.textContent='この内容で提出する'; showMsg('err', (res&&res.error)||'提出に失敗しました。'); }
+    }, function(err){
+      btn.disabled=false; btn.textContent='この内容で提出する';
+      showMsg('err','送信エラー：'+esc(err.message||String(err)));
+    });
+  }
+
+  function validateClient(){
+    if(majors.length===0) return '大項目を1つ以上入力してください。';
+    for(var i=0;i<majors.length;i++){
+      var maj=majors[i];
+      if(!maj.title.trim()) return (i+1)+'番目の大項目（件名）が未入力です。';
+      for(var j=0;j<maj.subs.length;j++){
+        var sub=maj.subs[j];
+        if(!sub.subtitle.trim()) return '大項目「'+maj.title+'」の ('+(j+1)+') の小見出しが未入力です。';
+        for(var k=0;k<sub.contents.length;k++){
+          if(!sub.contents[k].trim()) return '中項目「'+sub.subtitle+'」の '+circled(k+1)+' の質問文が未入力です。';
+        }
+      }
+    }
+    return null;
+  }
+
+  function showDone(s){
+    document.body.classList.add('submitted');
+    var html = '<div class="p-meta" style="border-color:var(--line-soft);">'+
+      metaRow('定例会', s.sessionName)+ metaRow('発言順位', s.order)+
+      metaRow('議員氏名', s.name+'（'+s.group+'）')+ metaRow('質問日', s.date)+
+      metaRow('通告時間', s.minutes+'分')+'</div>';
+    document.getElementById('doneSummary').innerHTML = html;
+    window.scrollTo(0,0);
+  }
+
+  // ── コピペ用テキスト ──────────────────────────────────────
+  function buildPlain(){
+    var lines=[];
+    lines.push(SESSION+'　一般質問通告書'); lines.push('');
+    lines.push('発言順位　'+(verifiedMember?verifiedMember.order:''));
+    lines.push('議員氏名　'+(verifiedMember?(verifiedMember.name+'（'+verifiedMember.group+'）'):''));
+    lines.push('質問日　　'+(verifiedMember?verifiedMember.date:''));
+    var min=document.getElementById('minutes').value;
+    lines.push('通告時間　'+(min?min+'分':'')); lines.push('');
+    majors.forEach(function(maj,i){
+      lines.push((i+1)+'　'+maj.title);
+      maj.subs.forEach(function(sub,j){
+        lines.push('　('+(j+1)+')　'+sub.subtitle);
+        sub.contents.forEach(function(t,k){ lines.push('　　'+circled(k+1)+'　'+t); });
+      });
+    });
+    return lines.join('\n');
+  }
+
+  // ── ユーティリティ ────────────────────────────────────────
+  function el(tag,cls){ var e=document.createElement(tag); if(cls)e.className=cls; return e; }
+  function badge(txt){ var b=el('span','badge'); b.textContent=txt; return b; }
+  function ctl(btns){ var c=el('div','ctl'); btns.forEach(function(b){ if(b) c.appendChild(b); }); return c; }
+  function input(val,ph,onInput){
+    var i=document.createElement('input'); i.type='text'; i.value=val; i.placeholder=ph;
+    i.addEventListener('input',function(){ onInput(i.value); }); return i;
+  }
+  function iconBtn(label,enabled,onClick,danger){
+    if(!enabled) return null;
+    var b=el('button','btn-icon'+(danger?' del':'')); b.type='button'; b.textContent=label;
+    b.addEventListener('click',onClick); return b;
+  }
+  function addBtn(label,onClick){ var b=el('button','btn-add'); b.type='button'; b.textContent=label; b.addEventListener('click',onClick); return b; }
+  function move(arr,i,d){ var n=i+d; if(n<0||n>=arr.length)return; var tmp=arr[i]; arr[i]=arr[n]; arr[n]=tmp; }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function showMsg(type,text){ var m=document.getElementById('msg'); if(!text){ m.className='msg'; m.textContent=''; return;} m.className='msg show '+type; m.textContent=text; }
+
+  // ── 配線 ──────────────────────────────────────────────────
+  // ===== バックエンド接続部 ===================================
+  // 既定では下のモックで動作（GAS不要・純粋なクライアントJSのみで完結）。
+  // GAS にデプロイすると google.script.run が存在するため、自動的に
+  // 実サーバー（lookupMember / submitNotice / getSessionName）へ切り替わります。
+  // ⇒ フロント確定後は、このブロックだけ残してサーバー関数を実装すれば接続完了。
+  var SESSION = '（定例会名 未設定）';
+  var Backend = (function(){
+    var GAS = (typeof google !== 'undefined' && google.script && google.script.run);
+
+    // ---- テスト用モックデータ（GAS接続時は使用されません）----
+    var MOCK_SESSION = '令和8年第2回定例会';
+    var MOCK_ROSTER = [
+      { email:'gikai.taro@example.lg.jp',    name:'議会 太郎', group:'市民クラブ', order:1, date:'3月10日' },
+      { email:'shisei.hanako@example.lg.jp', name:'市政 花子', group:'公明の会',   order:2, date:'3月11日' }
+    ];
+    function lc(s){ return String(s||'').trim().toLowerCase(); }
+
+    return {
+      getSession: function(onOk){
+        if(GAS){ google.script.run.withSuccessHandler(onOk).getSessionName(); }
+        else { onOk(MOCK_SESSION); }
+      },
+      lookupMember: function(email, onOk, onErr){
+        if(GAS){ google.script.run.withSuccessHandler(onOk).withFailureHandler(onErr).lookupMember(email); return; }
+        var m = MOCK_ROSTER.filter(function(x){ return x.email===lc(email); })[0];
+        setTimeout(function(){ onOk(m ? {found:true,name:m.name,group:m.group,order:m.order,date:m.date} : {found:false}); }, 120);
+      },
+      submitNotice: function(payload, onOk, onErr){
+        if(GAS){ google.script.run.withSuccessHandler(onOk).withFailureHandler(onErr).submitNotice(payload); return; }
+        console.log('[MOCK] 送信内容:\n' + JSON.stringify(payload, null, 2)); // ← F12コンソールで確認可
+        var v = MOCK_ROSTER.filter(function(x){ return x.email===lc(payload.email); })[0];
+        setTimeout(function(){ onOk({ ok:true, summary:{
+          sessionName:SESSION, name:v?v.name:'', group:v?v.group:'', order:v?v.order:'', date:v?v.date:'', minutes:payload.minutes
+        }}); }, 200);
+      }
+    };
+  })();
+  document.getElementById('checkBtn').addEventListener('click', checkMember);
+  document.getElementById('email').addEventListener('blur', checkMember);
+  document.getElementById('minutes').addEventListener('change', renderPreview);
+  document.getElementById('addMajor').addEventListener('click', function(){ majors.push(newMajor()); render(); });
+  document.getElementById('submitBtn').addEventListener('click', submit);
+  document.getElementById('previewToggle').addEventListener('click', function(){
+    var p = document.getElementById('preview');
+    if(p.style.display === 'none'){ p.style.display='block'; document.getElementById('previewCaret').textContent='▼'; renderPreview(); }
+    else { p.style.display='none'; document.getElementById('previewCaret').textContent='▶'; }
+  });
+  document.getElementById('printBtn').addEventListener('click', function(){
+    var p = document.getElementById('preview');
+    p.style.display='block'; document.getElementById('previewCaret').textContent='▼'; // 印刷対象を確実に表示
+    renderPreview();
+    window.print();
+  });
+  document.getElementById('plainBtn').addEventListener('click', function(){
+    var ta=document.getElementById('plainArea'); ta.value=buildPlain(); ta.classList.add('show');
+    document.getElementById('copyBtn').style.display='inline-block'; ta.focus(); ta.select();
+  });
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    var ta=document.getElementById('plainArea');
+    ta.select();
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(ta.value).then(function(){ showMsg('success','コピーしました。'); },
+          function(){ document.execCommand('copy'); showMsg('success','コピーしました。'); });
+      } else { document.execCommand('copy'); showMsg('success','コピーしました。'); }
+    }catch(e){ showMsg('err','コピーできませんでした。テキストを手動で選択してコピーしてください。'); }
+  });
+
+  render();
+  Backend.getSession(function(s){
+    SESSION = s;
+    var lbl = document.getElementById('sessionLabel');
+    if(lbl) lbl.textContent = s;
+    renderPreview();
+  });
+</script>
+</body>
+</html>
