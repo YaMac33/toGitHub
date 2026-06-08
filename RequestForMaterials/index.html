@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{
+    --indigo:#1B3A5B;      /* 官公庁の落ち着いた藍 */
+    --indigo-dk:#142C45;
+    --paper:#FAFAF8;
+    --card:#FFFFFF;
+    --ink:#1E2630;
+    --muted:#5A6470;
+    --line:#D4D8DD;
+    --line-strong:#B7BEC6;
+    --seal:#C0392B;        /* 受付番号の朱（印影）アクセント */
+    --focus:#2F6FB0;
+    --err:#B23A2E;
+    --err-bg:#FCEEEC;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Helvetica Neue","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    line-height:1.7;
+    font-size:16px;
+    -webkit-text-size-adjust:100%;
+  }
+  .bar{height:6px;background:var(--indigo);}
+  header{
+    background:var(--card);
+    border-bottom:1px solid var(--line);
+    padding:20px 16px;
+  }
+  .head-inner{max-width:680px;margin:0 auto;}
+  .eyebrow{font-size:13px;color:var(--muted);letter-spacing:.04em;margin:0 0 4px;}
+  h1{font-size:22px;margin:0;letter-spacing:.02em;color:var(--indigo);}
+  main{max-width:680px;margin:0 auto;padding:24px 16px 64px;}
+
+  .lead{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;margin:0 0 22px;font-size:14.5px;color:var(--muted);
+  }
+  .lead strong{color:var(--ink);}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:8px 18px 22px;
+  }
+  .field{padding:16px 0;border-bottom:1px solid var(--line);}
+  .field:last-of-type{border-bottom:none;}
+  label{display:block;font-weight:700;font-size:15px;margin-bottom:8px;}
+  .req{
+    color:var(--seal);font-size:12px;font-weight:700;margin-left:8px;
+    border:1px solid var(--seal);border-radius:4px;padding:1px 6px;vertical-align:2px;
+  }
+  .hint{font-size:13px;color:var(--muted);margin:-2px 0 8px;}
+  input[type=text],input[type=email],textarea{
+    width:100%;font-family:inherit;font-size:16px;color:var(--ink);
+    background:#fff;border:1px solid var(--line-strong);border-radius:8px;
+    padding:12px 14px;line-height:1.6;
+  }
+  textarea{min-height:120px;resize:vertical;}
+  input:focus,textarea:focus{
+    outline:none;border-color:var(--focus);
+    box-shadow:0 0 0 3px rgba(47,111,176,.22);
+  }
+
+  .actions{margin-top:24px;}
+  .btn{
+    display:block;width:100%;border:none;border-radius:8px;cursor:pointer;
+    font-family:inherit;font-size:17px;font-weight:700;padding:16px;
+    background:var(--indigo);color:#fff;transition:background .15s;
+  }
+  .btn:hover{background:var(--indigo-dk);}
+  .btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px;}
+  .btn:disabled{background:#9AA6B2;cursor:default;}
+
+  .alert{
+    display:none;background:var(--err-bg);border:1px solid #E4B8B1;color:var(--err);
+    border-radius:8px;padding:12px 14px;margin:0 0 18px;font-size:14.5px;font-weight:700;
+  }
+  .alert.show{display:block;}
+
+  .foot-link{text-align:center;margin-top:26px;font-size:14.5px;}
+  .foot-link a{color:var(--focus);}
+
+  /* 受付完了画面 */
+  #done{display:none;}
+  #done.show{display:block;}
+  .done-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:32px 22px;text-align:center;
+  }
+  .done-title{font-size:20px;font-weight:700;color:var(--indigo);margin:0 0 6px;}
+  .done-sub{font-size:14px;color:var(--muted);margin:0 0 24px;}
+  .seal-box{
+    display:inline-block;border:2px solid var(--seal);border-radius:10px;
+    padding:14px 26px;margin:4px 0 8px;
+  }
+  .seal-label{font-size:12px;color:var(--seal);letter-spacing:.18em;margin:0 0 2px;}
+  .seal-no{
+    font-size:30px;font-weight:700;color:var(--seal);letter-spacing:.04em;
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+  }
+  .done-note{font-size:14px;color:var(--muted);margin:18px auto 0;max-width:420px;text-align:left;}
+  .done-note li{margin:4px 0;}
+
+  .spinner{
+    display:inline-block;width:16px;height:16px;margin-right:8px;vertical-align:-2px;
+    border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media (prefers-reduced-motion:reduce){.spinner{animation:none;}}
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<header>
+  <div class="head-inner">
+    <p class="eyebrow">議会事務局</p>
+    <h1>資料要求 申請フォーム</h1>
+  </div>
+</header>
+
+<main>
+  <!-- 入力画面 -->
+  <div id="form-view">
+    <p class="lead">
+      議長（議会事務局）あての<strong>資料要求</strong>をオンラインで申請できます。
+      申請内容は事務局が確認し、執行部局へ取り次ぎます。
+      <strong>事前に登録されたメールアドレス</strong>からのみ申請できます。
+    </p>
+
+    <div id="alert" class="alert" role="alert" aria-live="assertive"></div>
+
+    <div class="card">
+      <div class="field">
+        <label for="name">氏名<span class="req">必須</span></label>
+        <input type="text" id="name" autocomplete="name" maxlength="50">
+      </div>
+
+      <div class="field">
+        <label for="email">メールアドレス<span class="req">必須</span></label>
+        <p class="hint">本人確認に使用します。登録済みのアドレスを入力してください。</p>
+        <input type="email" id="email" autocomplete="email" inputmode="email" maxlength="120">
+      </div>
+
+      <div class="field">
+        <label for="content">資料の内容<span class="req">必須</span></label>
+        <p class="hint">要求する資料の内容を具体的にご記入ください。</p>
+        <textarea id="content" maxlength="2000"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="dept">担当部署<span class="req">必須</span></label>
+        <input type="text" id="dept" maxlength="100">
+      </div>
+
+      <div class="field">
+        <label for="purpose">用途<span class="req">必須</span></label>
+        <input type="text" id="purpose" maxlength="100">
+      </div>
+
+      <div class="field">
+        <label for="deadline">希望提出期限<span class="req">必須</span></label>
+        <p class="hint">例：令和○年○月○日まで／○月中旬 など</p>
+        <input type="text" id="deadline" maxlength="100">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="submit" class="btn" type="button">この内容で申請する</button>
+    </div>
+
+    <p class="foot-link"><a id="link-history" href="#">過去の申請を確認する</a></p>
+  </div>
+
+  <!-- 受付完了画面 -->
+  <div id="done">
+    <div class="done-card">
+      <p class="done-title">申請を受け付けました</p>
+      <p class="done-sub">受付確認メールをお送りしました。</p>
+      <div class="seal-box">
+        <p class="seal-label">受 付 番 号</p>
+        <p class="seal-no" id="done-no"></p>
+      </div>
+      <ul class="done-note">
+        <li>受付番号は申請の照会に必要です。控えをお願いします。</li>
+        <li>確認メールが届かない場合は、迷惑メールフォルダをご確認ください。</li>
+      </ul>
+    </div>
+    <p class="foot-link"><a id="link-history2" href="#">過去の申請を確認する</a></p>
+  </div>
+</main>
+
+<script>
+  var $ = function(id){ return document.getElementById(id); };
+
+  function showAlert(msg){
+    var a = $('alert');
+    a.textContent = msg;
+    a.classList.add('show');
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }
+  function clearAlert(){ $('alert').classList.remove('show'); }
+
+  function setLoading(on){
+    var b = $('submit');
+    b.disabled = on;
+    b.innerHTML = on ? '<span class="spinner"></span>送信中…' : 'この内容で申請する';
+  }
+
+  $('submit').addEventListener('click', function(){
+    clearAlert();
+    var payload = {
+      name:     $('name').value,
+      email:    $('email').value,
+      content:  $('content').value,
+      dept:     $('dept').value,
+      purpose:  $('purpose').value,
+      deadline: $('deadline').value
+    };
+    // 簡易の必須チェック（最終判定はサーバー側）
+    if(!payload.name || !payload.email || !payload.content ||
+       !payload.dept || !payload.purpose || !payload.deadline){
+      showAlert('未入力の項目があります。すべての項目を入力してください。');
+      return;
+    }
+    setLoading(true);
+    google.script.run
+      .withSuccessHandler(function(res){
+        setLoading(false);
+        if(res && res.ok){
+          $('done-no').textContent = res.receiptNumber;
+          $('form-view').style.display = 'none';
+          $('done').classList.add('show');
+          window.scrollTo({ top:0 });
+        }else{
+          showAlert((res && res.message) || '送信に失敗しました。');
+        }
+      })
+      .withFailureHandler(function(err){
+        setLoading(false);
+        showAlert('通信エラーが発生しました。時間をおいて再度お試しください。');
+      })
+      .submitRequest(payload);
+  });
+
+  // 照会ページへ（同一WebアプリURL + ?page=history）
+  google.script.run.withSuccessHandler(function(url){
+    var href = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'page=history';
+    $('link-history').href = href;
+    $('link-history2').href = href;
+  }).getAppUrl();
+</script>
+</body>
+</html>
