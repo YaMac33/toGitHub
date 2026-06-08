@@ -178,8 +178,6 @@
         <label class="field-label req" for="minutes">通告時間</label>
         <select id="minutes">
           <option value="">選択してください</option>
-          <option value="10">10分</option>
-          <option value="20">20分</option>
           <option value="30">30分</option>
           <option value="40">40分</option>
           <option value="50">50分</option>
@@ -327,6 +325,7 @@
     html += metaRow('質問日',   verifiedMember ? verifiedMember.date : '―');
     var min = document.getElementById('minutes').value;
     html += metaRow('通告時間', min ? (min+'分') : '―');
+    html += metaRow('修正日時', fmtNow());
     html += '</div>';
 
     majors.forEach(function(maj, i){
@@ -440,7 +439,8 @@
     lines.push('議員氏名　'+(verifiedMember?(verifiedMember.name+'（'+verifiedMember.group+'）'):''));
     lines.push('質問日　　'+(verifiedMember?verifiedMember.date:''));
     var min=document.getElementById('minutes').value;
-    lines.push('通告時間　'+(min?min+'分':'')); lines.push('');
+    lines.push('通告時間　'+(min?min+'分':''));
+    lines.push('修正日時　'+fmtNow()); lines.push('');
     majors.forEach(function(maj,i){
       lines.push((i+1)+'　'+maj.title);
       maj.subs.forEach(function(sub,j){
@@ -467,6 +467,7 @@
   function addBtn(label,onClick){ var b=el('button','btn-add'); b.type='button'; b.textContent=label; b.addEventListener('click',onClick); return b; }
   function move(arr,i,d){ var n=i+d; if(n<0||n>=arr.length)return; var tmp=arr[i]; arr[i]=arr[n]; arr[n]=tmp; }
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fmtNow(){ var d=new Date(); function p(n){return (n<10?'0':'')+n;} return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate())+'　'+p(d.getHours())+':'+p(d.getMinutes()); }
   function showMsg(type,text){ var m=document.getElementById('msg'); if(!text){ m.className='msg'; m.textContent=''; return;} m.className='msg show '+type; m.textContent=text; }
 
   // ── 配線 ──────────────────────────────────────────────────
