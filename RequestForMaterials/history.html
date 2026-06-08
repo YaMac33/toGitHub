@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{
+    --indigo:#1B3A5B;--indigo-dk:#142C45;--paper:#FAFAF8;--card:#FFFFFF;
+    --ink:#1E2630;--muted:#5A6470;--line:#D4D8DD;--line-strong:#B7BEC6;
+    --seal:#C0392B;--focus:#2F6FB0;--err:#B23A2E;--err-bg:#FCEEEC;--radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);color:var(--ink);
+    font-family:"Helvetica Neue","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    line-height:1.7;font-size:16px;-webkit-text-size-adjust:100%;
+  }
+  .bar{height:6px;background:var(--indigo);}
+  header{background:var(--card);border-bottom:1px solid var(--line);padding:20px 16px;}
+  .head-inner{max-width:680px;margin:0 auto;}
+  .eyebrow{font-size:13px;color:var(--muted);letter-spacing:.04em;margin:0 0 4px;}
+  h1{font-size:22px;margin:0;letter-spacing:.02em;color:var(--indigo);}
+  main{max-width:680px;margin:0 auto;padding:24px 16px 64px;}
+
+  .lead{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;margin:0 0 22px;font-size:14.5px;color:var(--muted);
+  }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
+  label{display:block;font-weight:700;font-size:15px;margin-bottom:8px;}
+  input[type=email]{
+    width:100%;font-family:inherit;font-size:16px;color:var(--ink);background:#fff;
+    border:1px solid var(--line-strong);border-radius:8px;padding:12px 14px;
+  }
+  input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(47,111,176,.22);}
+
+  .btn{
+    display:block;width:100%;border:none;border-radius:8px;cursor:pointer;
+    font-family:inherit;font-size:17px;font-weight:700;padding:16px;margin-top:16px;
+    background:var(--indigo);color:#fff;transition:background .15s;
+  }
+  .btn:hover{background:var(--indigo-dk);}
+  .btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px;}
+  .btn:disabled{background:#9AA6B2;cursor:default;}
+
+  .alert{
+    display:none;background:var(--err-bg);border:1px solid #E4B8B1;color:var(--err);
+    border-radius:8px;padding:12px 14px;margin:0 0 18px;font-size:14.5px;font-weight:700;
+  }
+  .alert.show{display:block;}
+
+  #results{margin-top:26px;}
+  .result-head{font-size:14px;color:var(--muted);margin:0 0 12px;}
+  .empty{
+    background:var(--card);border:1px dashed var(--line-strong);border-radius:var(--radius);
+    padding:28px 18px;text-align:center;color:var(--muted);
+  }
+  .item{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;margin-bottom:14px;
+  }
+  .item-top{
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px;flex-wrap:wrap;
+  }
+  .item-no{
+    font-weight:700;color:var(--seal);font-size:16px;letter-spacing:.03em;
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+  }
+  .item-date{font-size:13px;color:var(--muted);}
+  .row{display:flex;gap:10px;font-size:14.5px;padding:3px 0;}
+  .row dt{flex:0 0 92px;color:var(--muted);margin:0;}
+  .row dd{flex:1;margin:0;white-space:pre-wrap;word-break:break-word;}
+
+  .foot-link{text-align:center;margin-top:26px;font-size:14.5px;}
+  .foot-link a{color:var(--focus);}
+
+  .spinner{
+    display:inline-block;width:16px;height:16px;margin-right:8px;vertical-align:-2px;
+    border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media (prefers-reduced-motion:reduce){.spinner{animation:none;}}
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<header>
+  <div class="head-inner">
+    <p class="eyebrow">議会事務局</p>
+    <h1>資料要求 申請照会</h1>
+  </div>
+</header>
+
+<main>
+  <p class="lead">
+    申請時に入力したメールアドレスを入力すると、これまでの申請内容を確認できます。
+  </p>
+
+  <div id="alert" class="alert" role="alert" aria-live="assertive"></div>
+
+  <div class="card">
+    <label for="email">メールアドレス</label>
+    <input type="email" id="email" autocomplete="email" inputmode="email" maxlength="120">
+    <button id="lookup" class="btn" type="button">申請内容を表示する</button>
+  </div>
+
+  <div id="results"></div>
+
+  <p class="foot-link"><a id="link-form" href="#">資料要求の申請フォームへ</a></p>
+</main>
+
+<script>
+  var $ = function(id){ return document.getElementById(id); };
+
+  function showAlert(msg){
+    var a=$('alert'); a.textContent=msg; a.classList.add('show');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function clearAlert(){ $('alert').classList.remove('show'); }
+
+  function setLoading(on){
+    var b=$('lookup'); b.disabled=on;
+    b.innerHTML = on ? '<span class="spinner"></span>照会中…' : '申請内容を表示する';
+  }
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function render(items){
+    var box=$('results');
+    if(!items.length){
+      box.innerHTML='<div class="empty">このメールアドレスでの申請は見つかりませんでした。</div>';
+      return;
+    }
+    var html='<p class="result-head">'+items.length+'件の申請が見つかりました（新しい順）</p>';
+    items.forEach(function(it){
+      html+=''
+        +'<div class="item">'
+        +  '<div class="item-top">'
+        +    '<span class="item-no">'+esc(it.receipt)+'</span>'
+        +    '<span class="item-date">'+esc(it.datetime)+'</span>'
+        +  '</div>'
+        +  '<dl>'
+        +    '<div class="row"><dt>資料の内容</dt><dd>'+esc(it.content)+'</dd></div>'
+        +    '<div class="row"><dt>担当部署</dt><dd>'+esc(it.dept)+'</dd></div>'
+        +    '<div class="row"><dt>用途</dt><dd>'+esc(it.purpose)+'</dd></div>'
+        +    '<div class="row"><dt>希望提出期限</dt><dd>'+esc(it.deadline)+'</dd></div>'
+        +  '</dl>'
+        +'</div>';
+    });
+    box.innerHTML=html;
+  }
+
+  $('lookup').addEventListener('click', function(){
+    clearAlert();
+    $('results').innerHTML='';
+    var email=$('email').value.trim();
+    if(!email){ showAlert('メールアドレスを入力してください。'); return; }
+    setLoading(true);
+    google.script.run
+      .withSuccessHandler(function(res){
+        setLoading(false);
+        if(res && res.ok){ render(res.items); }
+        else{ showAlert((res && res.message) || '照会に失敗しました。'); }
+      })
+      .withFailureHandler(function(){
+        setLoading(false);
+        showAlert('通信エラーが発生しました。時間をおいて再度お試しください。');
+      })
+      .lookupRequests(email);
+  });
+
+  google.script.run.withSuccessHandler(function(url){
+    $('link-form').href = url;
+  }).getAppUrl();
+</script>
+</body>
+</html>
