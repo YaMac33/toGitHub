@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一般質問通告フォーム ― README</title>
+<style>
+  :root{
+    --ink:#1d2126; --ink-soft:#52596b; --line:#d8dbe2; --line-soft:#e9ebf0;
+    --paper:#fbfbf9; --field:#ffffff; --accent:#1f3a5f; --accent-weak:#eef2f7;
+    --danger:#9b2c2c; --ok:#1f6f4a; --warn:#8a5a00; --warn-bg:#fbf6ea;
+    --radius:8px;
+    --gothic:"Hiragino Kaku Gothic ProN","Yu Gothic Medium","Yu Gothic","Meiryo",sans-serif;
+    --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","MS PMincho",serif;
+    --mono:"SFMono-Regular",Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--gothic);
+    font-size:15px; line-height:1.85; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:880px; margin:0 auto; padding:28px 22px 90px;}
+
+  header.doc{ text-align:center; padding:22px 0 24px; border-bottom:2px solid var(--accent); margin-bottom:26px; }
+  header.doc .kicker{ color:var(--ink-soft); font-size:13px; letter-spacing:.18em; }
+  header.doc h1{ font-family:var(--mincho); font-weight:600; font-size:27px; letter-spacing:.14em; margin:8px 0 6px; }
+  header.doc .lead{ color:var(--ink-soft); font-size:14px; }
+
+  nav.toc{ background:var(--field); border:1px solid var(--line); border-radius:var(--radius); padding:16px 22px; margin-bottom:26px; }
+  nav.toc b{ display:block; font-size:13px; color:var(--accent); letter-spacing:.08em; margin-bottom:8px; }
+  nav.toc ol{ margin:0; padding-left:1.4em; columns:2; column-gap:32px; }
+  nav.toc a{ color:var(--ink); text-decoration:none; }
+  nav.toc a:hover{ color:var(--accent); text-decoration:underline; }
+  @media(max-width:560px){ nav.toc ol{ columns:1; } }
+
+  section{ margin-bottom:34px; }
+  h2{ font-size:18px; font-weight:700; color:var(--accent); margin:0 0 14px;
+    padding-bottom:8px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:10px; }
+  h2 .no{ font-family:var(--mincho); font-size:15px; color:var(--accent); border:1px solid var(--accent);
+    border-radius:50%; width:1.9em; height:1.9em; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  h3{ font-size:15px; font-weight:700; margin:20px 0 8px; padding-left:10px; border-left:4px solid var(--accent); }
+  p{ margin:8px 0; }
+  ul,ol{ margin:8px 0; padding-left:1.5em; }
+  li{ margin:5px 0; }
+  code{ font-family:var(--mono); font-size:13.5px; background:var(--accent-weak); color:#16304f; padding:1px 6px; border-radius:4px; }
+  b{ font-weight:700; }
+
+  table{ width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; background:var(--field); }
+  th,td{ border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top; }
+  th{ background:var(--accent-weak); color:var(--accent); font-weight:700; white-space:nowrap; }
+  td code{ background:#f1f3f7; }
+  .col-key{ white-space:nowrap; font-weight:600; }
+
+  .note,.warn,.tip{ border-radius:6px; padding:12px 16px; margin:14px 0; font-size:14px; }
+  .note{ background:var(--accent-weak); border:1px solid #cfd9e6; }
+  .warn{ background:var(--warn-bg); border:1px solid #e7d7ad; color:#5e4300; }
+  .tip{ background:#f3f8f5; border:1px solid #cfe0d5; }
+  .note b,.warn b,.tip b{ color:inherit; }
+
+  /* 構成フロー */
+  .flow{ display:flex; flex-wrap:wrap; align-items:stretch; gap:10px; margin:16px 0; }
+  .flow .box{ flex:1; min-width:150px; background:var(--field); border:1px solid var(--line);
+    border-radius:var(--radius); padding:12px 14px; }
+  .flow .box .t{ font-weight:700; color:var(--accent); font-size:13.5px; }
+  .flow .box .d{ font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
+  .flow .arrow{ align-self:center; color:var(--ink-soft); font-size:18px; }
+  @media(max-width:560px){ .flow{ flex-direction:column; } .flow .arrow{ transform:rotate(90deg); } }
+
+  ol.steps{ counter-reset:step; list-style:none; padding-left:0; }
+  ol.steps > li{ position:relative; padding:4px 0 14px 42px; border-left:2px solid var(--line-soft); margin-left:14px; }
+  ol.steps > li::before{ counter-increment:step; content:counter(step); position:absolute; left:-15px; top:2px;
+    width:28px; height:28px; background:var(--accent); color:#fff; border-radius:50%; font-weight:700;
+    display:flex; align-items:center; justify-content:center; font-size:14px; }
+  ol.steps > li:last-child{ border-left-color:transparent; }
+  ol.steps .h{ font-weight:700; }
+
+  footer{ border-top:1px solid var(--line); margin-top:40px; padding-top:16px; color:var(--ink-soft); font-size:12.5px; }
+  a{ color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc">
+    <div class="kicker">議会事務局向け　システム説明書</div>
+    <h1>一般質問通告フォーム</h1>
+    <div class="lead">Google Apps Script ＋ スプレッドシートで動く、Web版の一般質問通告受付システム</div>
+  </header>
+
+  <nav class="toc">
+    <b>目次</b>
+    <ol>
+      <li><a href="#about">このシステムについて</a></li>
+      <li><a href="#arch">システム構成</a></li>
+      <li><a href="#files">ファイル構成</a></li>
+      <li><a href="#sheets">シート構成</a></li>
+      <li><a href="#setup">導入手順</a></li>
+      <li><a href="#deploy">公開（デプロイ）</a></li>
+      <li><a href="#operation">運用の流れ</a></li>
+      <li><a href="#spec">入力仕様・採番ルール</a></li>
+      <li><a href="#security">本人確認の考え方</a></li>
+      <li><a href="#maintenance">保守・更新</a></li>
+      <li><a href="#faq">トラブルシューティング</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <section id="about">
+    <h2><span class="no">1</span>このシステムについて</h2>
+    <p>議員が一般質問の通告を<b>Webフォームから提出</b>し、その内容を<b>事務局のスプレッドシートに自動集約</b>するシステムです。提出と同時に、入力されたアドレスへ控えメールが自動返信されます。</p>
+    <ul>
+      <li>議員が入力するのは <b>メールアドレス</b>・<b>通告時間</b>・<b>質問内容</b> の3つだけ。発言順位・質問日・氏名・会派は名簿から自動で表示されます。</li>
+      <li>質問内容は <b>大項目 → 中項目 → 内容</b> の階層で入力でき、番号は自動採番されます。</li>
+      <li>オンライン提出が難しい議員は、従来どおり <b>紙での提出</b> も併用できます（どちらでも運用は成立します）。</li>
+    </ul>
+    <div class="note">提出後の内容修正は <b>議会事務局を経由</b> する運用です（議員からの再提出・上書きはできません）。</div>
+  </section>
+
+  <!-- 2 -->
+  <section id="arch">
+    <h2><span class="no">2</span>システム構成</h2>
+    <p>Googleスプレッドシートに紐づいた1つの Apps Script ウェブアプリとして動作します。フォームの配信からデータ保存・控えメール送信まで、すべて事務局のGoogle環境内で完結します。</p>
+    <div class="flow">
+      <div class="box"><div class="t">議員</div><div class="d">インターネット系端末からフォームを開く</div></div>
+      <div class="arrow">→</div>
+      <div class="box"><div class="t">ウェブアプリ (GAS)</div><div class="d">フォーム配信・名簿照合・検証・保存</div></div>
+      <div class="arrow">→</div>
+      <div class="box"><div class="t">スプレッドシート</div><div class="d">提出マスタ／質問明細に集約</div></div>
+    </div>
+    <div class="warn"><b>ネットワークについて：</b>スプレッドシートとGASはインターネット側のサービスのため、LGWAN端末からは利用できません。議員は<b>インターネット系端末（SKY-DIV 等）</b>からフォームを開く前提です。</div>
+  </section>
+
+  <!-- 3 -->
+  <section id="files">
+    <h2><span class="no">3</span>ファイル構成</h2>
+    <table>
+      <tr><th>ファイル</th><th>種類</th><th>役割</th></tr>
+      <tr><td class="col-key"><code>Code.gs</code></td><td>サーバー側</td><td>フォーム配信、名簿照合、入力検証、シートへの保存、控えメール送信、初期セットアップ</td></tr>
+      <tr><td class="col-key"><code>index</code><br>（index.html）</td><td>フォーム本体</td><td>画面表示・階層入力・自動採番・プレビュー・印刷・コピペ出力。すべてブラウザ側のJavaScriptで動作</td></tr>
+    </table>
+    <div class="note">HTMLファイルは Apps Script 上で必ず <b><code>index</code></b> という名前で作成してください（<code>Code.gs</code> がこの名前で配信します）。名前が違うとフォームが表示されません。</div>
+  </section>
+
+  <!-- 4 -->
+  <section id="sheets">
+    <h2><span class="no">4</span>シート構成</h2>
+    <p>初回セットアップで次の4シートが自動生成されます。<b>見出し行（1行目）の名称は変更しないでください</b>（プログラムが名称で列を判別します）。</p>
+
+    <h3>設定</h3>
+    <table>
+      <tr><th>キー</th><th>値</th></tr>
+      <tr><td class="col-key">定例会名</td><td>例：令和8年第2回定例会（定例会ごとに事務局が書き換え）</td></tr>
+    </table>
+
+    <h3>議員名簿（事務局が事前に整備）</h3>
+    <table>
+      <tr><th>列</th><th>内容</th></tr>
+      <tr><td class="col-key">メールアドレス</td><td>本人確認のキー。正確に入力（このアドレスと一致した提出のみ受け付け）</td></tr>
+      <tr><td class="col-key">議員氏名</td><td>提出時に自動表示・記録</td></tr>
+      <tr><td class="col-key">会派</td><td>同上</td></tr>
+      <tr><td class="col-key">発言順位</td><td>事前に決定した順位を事務局が付番</td></tr>
+      <tr><td class="col-key">質問日</td><td>事前に決定した登壇日。日付セルで入力（「○月○日」で取り込み）</td></tr>
+    </table>
+
+    <h3>提出マスタ（1提出＝1行・自動記録）</h3>
+    <table>
+      <tr><th>列</th><th>内容</th></tr>
+      <tr><td class="col-key">提出ID</td><td>システムが自動採番（UUID）</td></tr>
+      <tr><td class="col-key">発言順位</td><td>名簿から転記</td></tr>
+      <tr><td class="col-key">提出日時</td><td>サーバー時刻を自動記録</td></tr>
+      <tr><td class="col-key">定例会名</td><td>設定シートから転記</td></tr>
+      <tr><td class="col-key">議員氏名 / 会派 / 質問日</td><td>名簿から転記</td></tr>
+      <tr><td class="col-key">通告時間(分)</td><td>議員が選択（10〜80分）</td></tr>
+      <tr><td class="col-key">メールアドレス</td><td>提出者の照合済みアドレス</td></tr>
+    </table>
+
+    <h3>質問明細（内容を1行ずつ記録）</h3>
+    <table>
+      <tr><th>列</th><th>内容</th></tr>
+      <tr><td class="col-key">提出ID</td><td>提出マスタと紐づけるキー</td></tr>
+      <tr><td class="col-key">大項目番号 / 件名</td><td>例：<code>1</code> ／ 件名テキスト</td></tr>
+      <tr><td class="col-key">中項目番号 / 小見出し</td><td>例：<code>(1)</code> ／ 小見出しテキスト（無い場合は空欄）</td></tr>
+      <tr><td class="col-key">内容番号 / 質問文</td><td>例：<code>①</code> ／ 質問本文（無い場合は空欄）</td></tr>
+      <tr><td class="col-key">答弁者</td><td><b>空欄。事務局が内容（①）単位で記入する欄</b></td></tr>
+    </table>
+    <div class="tip"><b>答弁者別の一覧：</b>質問明細の「答弁者」列を埋めたうえで、その列で並べ替え・フィルタ（またはピボット）すると、答弁者ごとの質問一覧が得られます。</div>
+  </section>
+
+  <!-- 5 -->
+  <section id="setup">
+    <h2><span class="no">5</span>導入手順</h2>
+    <ol class="steps">
+      <li><span class="h">スプレッドシートを作成</span><br>Googleドライブで新規スプレッドシートを作成（名称は任意。例「一般質問通告」）。中身は空のままでOK。</li>
+      <li><span class="h">スクリプトエディタを開く</span><br>メニュー「拡張機能」→「Apps Script」。このシートに紐づいたスクリプトが開きます。</li>
+      <li><span class="h">2つのファイルを貼り付け</span><br>既定の <code>コード.gs</code> の中身を全消去して <code>Code.gs</code> を貼り付け。左の「＋」→「HTML」でファイル名 <b><code>index</code></b> を作成し、<code>index.html</code> を貼り付けて保存。</li>
+      <li><span class="h">シートを自動生成</span><br>関数選択で <code>setupSheets</code> を選び「実行」。初回は権限承認を求められるので、事務局のアカウントで承認します。4シートが見出し付きで作成されます。</li>
+      <li><span class="h">名簿・定例会名を入力</span><br>「議員名簿」に各議員の情報を入力し、「設定」の定例会名を今回の名称に更新します。</li>
+      <li><span class="h">公開（次節）</span><br>ウェブアプリとしてデプロイし、発行URLを議員へ配布します。</li>
+    </ol>
+    <div class="warn"><b>権限承認の画面で「このアプリは確認されていません」と表示された場合：</b>これは自作スクリプトのため通常表示されるものです。詳細を開き、自分のプロジェクトとして続行してください。</div>
+  </section>
+
+  <!-- 6 -->
+  <section id="deploy">
+    <h2><span class="no">6</span>公開（デプロイ）</h2>
+    <ol class="steps">
+      <li><span class="h">デプロイを開始</span><br>エディタ右上「デプロイ」→「新しいデプロイ」→ 種類「ウェブアプリ」を選択。</li>
+      <li><span class="h">実行ユーザーとアクセス範囲を設定</span><br>
+        <b>「次のユーザーとして実行」＝自分（事務局アカウント）</b>／<b>「アクセスできるユーザー」＝全員</b> に設定。</li>
+      <li><span class="h">デプロイしてURLを配布</span><br>発行された<b>ウェブアプリURL</b>を議員へ配布します。</li>
+    </ol>
+    <div class="note"><b>なぜ「実行＝自分／アクセス＝全員」なのか：</b>この組み合わせにより、議員はGoogleログイン不要でフォームを開け、名簿・集約データのスプレッドシートは事務局の権限で動くため<b>議員側からは見えません</b>。個人Gmailアカウントを使う場合でも成立する構成です。</div>
+  </section>
+
+  <!-- 7 -->
+  <section id="operation">
+    <h2><span class="no">7</span>運用の流れ</h2>
+    <ol>
+      <li>議員がフォームを開き、<b>メールアドレスを入力して照合</b>。名簿に登録があれば氏名・会派・発言順位・質問日が自動表示されます（未登録ならその場で弾かれます）。</li>
+      <li>通告時間を選び、質問内容を入力。「プレビュー」で通告書の体裁を確認できます。</li>
+      <li>「提出する」で送信 → <b>提出マスタ・質問明細に記録</b>され、入力アドレスへ<b>控えメール</b>が届きます。</li>
+      <li>事務局は質問明細の<b>答弁者列を①単位で記入</b>し、部局への割り振りや答弁者別一覧の作成に使います。</li>
+      <li>内容の修正依頼があれば、事務局がシート上で対応します（議員からの再提出はできません）。</li>
+    </ol>
+    <div class="note"><b>一発提出：</b>同一の定例会で同じアドレスからの二重提出は受け付けません（最初の1件のみ記録）。誤提出・修正は事務局へ。</div>
+  </section>
+
+  <!-- 8 -->
+  <section id="spec">
+    <h2><span class="no">8</span>入力仕様・採番ルール</h2>
+    <h3>質問内容の階層と採番</h3>
+    <table>
+      <tr><th>階層</th><th>呼称</th><th>採番</th></tr>
+      <tr><td class="col-key">第1階層</td><td>大項目（件名）</td><td><code>1.</code> <code>2.</code> <code>3.</code> …</td></tr>
+      <tr><td class="col-key">第2階層</td><td>中項目（小見出し）</td><td><code>(1)</code> <code>(2)</code> <code>(3)</code> …</td></tr>
+      <tr><td class="col-key">第3階層</td><td>内容（質問文）</td><td><code>①</code> <code>②</code> <code>③</code> …（⑳超は <code>(21)</code> 以降の表記で吸収）</td></tr>
+    </table>
+    <ul>
+      <li>番号は<b>自動採番</b>。項目の追加・削除・並び替えに合わせて自動で振り直されます。</li>
+      <li>構成は自由で、<b>大項目のみ／大項目＋中項目／大項目＋中項目＋内容</b> のいずれでも提出できます（大項目の件名のみ必須）。</li>
+    </ul>
+    <h3>通告時間</h3>
+    <p><b>10分〜80分・10分刻み</b>（10/20/30/40/50/60/70/80分）から選択します。</p>
+    <h3>出力</h3>
+    <ul>
+      <li><b>プレビュー</b>（通告書の体裁・開閉式）</li>
+      <li><b>印刷</b>（A4縦レイアウト）</li>
+      <li><b>コピペ用テキスト</b>（プレーンテキストでコピー）</li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section id="security">
+    <h2><span class="no">9</span>本人確認の考え方</h2>
+    <p>本人確認は、入力されたメールアドレスを<b>議員名簿と突き合わせる方式</b>です。Googleアカウントのログイン認証は使いません。</p>
+    <ul>
+      <li>名簿に登録されたアドレスでなければ提出できません（未登録は<b>その場で弾く</b>）。</li>
+      <li>これは「登録済み議員のアドレスである」ことの確認であり、<b>厳密な本人認証ではありません</b>。アドレスを知っていれば他人を装える余地は理屈上残ります。</li>
+      <li>抑止策として、提出時に<b>控えメールが本人へ自動送信</b>されます。身に覚えのない控えが届けば本人が気づけます。</li>
+      <li>提出は数十名規模で、事務局が<b>全件を確認</b>する運用であること、紙提出も併存することから、実務上のなりすましリスクは低い前提です。</li>
+    </ul>
+    <div class="warn">配布するウェブアプリURLは、必要な範囲（議員・関係者）にのみ共有してください。</div>
+  </section>
+
+  <!-- 10 -->
+  <section id="maintenance">
+    <h2><span class="no">10</span>保守・更新</h2>
+    <ul>
+      <li><b>コードを修正したとき：</b>「デプロイ」→「デプロイを管理」から既存デプロイを編集し、新しいバージョンを反映します（URLは変わりません）。「新しいデプロイ」を作り直すとURLが変わるので注意。</li>
+      <li><b>定例会が変わったとき：</b>「設定」シートの定例会名を書き換えます。</li>
+      <li><b>改選・会派異動があったとき：</b>「議員名簿」を更新します（メール・氏名・会派・発言順位・質問日）。発言順位・質問日が確定したら名簿に反映してから受付を開始します。</li>
+      <li><b>過去の提出データ：</b>提出マスタ・質問明細はそのまま蓄積されます。定例会名で絞り込めば回次ごとに区別できます。</li>
+    </ul>
+  </section>
+
+  <!-- 11 -->
+  <section id="faq">
+    <h2><span class="no">11</span>トラブルシューティング</h2>
+    <table>
+      <tr><th>症状</th><th>確認・対処</th></tr>
+      <tr><td>フォームが真っ白／エラーになる</td><td>HTMLファイル名が <code>index</code> になっているか確認。コード修正後に「デプロイを管理」で更新したか確認。</td></tr>
+      <tr><td>照合しても「登録されていません」になる</td><td>名簿のメールアドレスに<b>前後の空白</b>や<b>全角文字</b>が混ざっていないか確認（半角で入力）。大文字・小文字と前後空白はプログラム側で吸収します。</td></tr>
+      <tr><td>控えメールが届かない</td><td>迷惑メールフォルダを確認。個人Gmailアカウントは<b>送信1日100通</b>の上限があります（議員数なら通常問題ありません）。なお送信に失敗しても、提出データの保存自体は完了しています。</td></tr>
+      <tr><td>提出できない（二重提出の表示）</td><td>同一定例会で既に提出済みです（仕様）。修正は事務局へ。</td></tr>
+      <tr><td>名簿に無い人が提出したい</td><td>名簿に行を追加すれば提出可能になります。難しい場合は紙提出で対応。</td></tr>
+      <tr><td>権限承認の画面が出る</td><td>自作スクリプトのため初回に表示されます。詳細を開いて自分のプロジェクトとして続行。</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    一般質問通告フォーム README ／ 構成：Google Apps Script（<code>Code.gs</code>）＋ フォーム（<code>index</code>）＋ スプレッドシート（設定・議員名簿・提出マスタ・質問明細）
+  </footer>
+
+</div>
+</body>
+</html>
