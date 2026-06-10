@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>議員資料要求フォーム 運用マニュアル</title>
+<style>
+  :root{
+    --indigo:#1B3A5B;--indigo-dk:#142C45;--paper:#FAFAF8;--card:#FFFFFF;
+    --ink:#1E2630;--muted:#5A6470;--line:#D4D8DD;--line-strong:#B7BEC6;
+    --seal:#C0392B;--focus:#2F6FB0;--warn-bg:#FFF6E5;--warn-bd:#E8C98A;
+    --ok-bg:#EDF5EE;--ok-bd:#A9CBAE;--code-bg:#F2F4F6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);color:var(--ink);
+    font-family:"Helvetica Neue","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    line-height:1.85;font-size:16px;
+  }
+  .bar{height:6px;background:var(--indigo);}
+  header{background:var(--card);border-bottom:1px solid var(--line);padding:28px 16px;}
+  .inner{max-width:860px;margin:0 auto;padding:0 4px;}
+  .eyebrow{font-size:13px;color:var(--muted);letter-spacing:.05em;margin:0 0 6px;}
+  h1{font-size:26px;margin:0 0 6px;color:var(--indigo);letter-spacing:.02em;}
+  .docmeta{font-size:13px;color:var(--muted);margin:0;}
+  main{max-width:860px;margin:0 auto;padding:28px 16px 80px;}
+
+  nav.toc{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:20px 24px;margin-bottom:36px;
+  }
+  nav.toc p{margin:0 0 8px;font-weight:700;color:var(--indigo);}
+  nav.toc ol{margin:0;padding-left:22px;}
+  nav.toc li{margin:3px 0;}
+  nav.toc a{color:var(--focus);text-decoration:none;}
+  nav.toc a:hover{text-decoration:underline;}
+
+  section{margin-bottom:48px;}
+  h2{
+    font-size:21px;color:var(--indigo);border-left:5px solid var(--indigo);
+    padding:2px 0 2px 14px;margin:0 0 18px;letter-spacing:.02em;
+  }
+  h3{font-size:17.5px;margin:28px 0 10px;color:var(--ink);}
+  h4{font-size:15.5px;margin:20px 0 8px;color:var(--ink);}
+  p{margin:0 0 14px;}
+  ul,ol{margin:0 0 14px;padding-left:26px;}
+  li{margin:4px 0;}
+  strong{color:var(--ink);}
+
+  table{
+    border-collapse:collapse;width:100%;margin:0 0 18px;font-size:14.5px;
+    background:var(--card);
+  }
+  th,td{border:1px solid var(--line-strong);padding:9px 12px;text-align:left;vertical-align:top;}
+  th{background:#EEF1F4;color:var(--indigo);font-weight:700;white-space:nowrap;}
+  td code{white-space:nowrap;}
+
+  code{
+    background:var(--code-bg);border:1px solid var(--line);border-radius:4px;
+    padding:1px 6px;font-family:Consolas,Menlo,"Courier New",monospace;font-size:14px;
+  }
+  pre{
+    background:var(--code-bg);border:1px solid var(--line);border-radius:8px;
+    padding:14px 16px;overflow-x:auto;font-size:13.5px;line-height:1.6;margin:0 0 18px;
+  }
+  pre code{background:none;border:none;padding:0;}
+
+  .box{
+    border-radius:8px;padding:14px 18px;margin:0 0 18px;font-size:14.5px;
+  }
+  .box .t{font-weight:700;display:block;margin-bottom:4px;}
+  .warn{background:var(--warn-bg);border:1px solid var(--warn-bd);}
+  .warn .t{color:#8A5A00;}
+  .ok{background:var(--ok-bg);border:1px solid var(--ok-bd);}
+  .ok .t{color:#2E6B3A;}
+  .danger{background:#FCEEEC;border:1px solid #E4B8B1;}
+  .danger .t{color:var(--seal);}
+
+  .flow{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:18px 20px;margin:0 0 18px;font-size:14.5px;
+    font-family:Consolas,Menlo,monospace;white-space:pre;overflow-x:auto;line-height:1.7;
+  }
+
+  .fillin{
+    display:inline-block;min-width:280px;border-bottom:1px solid var(--ink);
+    color:var(--muted);font-size:13px;padding:0 4px;
+  }
+
+  footer{
+    border-top:1px solid var(--line);padding:24px 16px;text-align:center;
+    font-size:13px;color:var(--muted);
+  }
+
+  @media print{
+    body{background:#fff;font-size:12.5px;}
+    .bar{display:none;}
+    nav.toc a{color:var(--ink);}
+    section{break-inside:avoid-page;}
+    pre,.flow{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<header>
+  <div class="inner">
+    <p class="eyebrow">議会事務局　内部資料</p>
+    <h1>議員資料要求フォーム　運用マニュアル</h1>
+    <p class="docmeta">
+      対象システム：議員資料要求 Web申請フォーム（Google Apps Script）<br>
+      本書の管理者：<span class="fillin">（所属・氏名を記入）</span>　最終更新日：<span class="fillin">（日付を記入）</span>
+    </p>
+  </div>
+</header>
+
+<main>
+
+<nav class="toc">
+  <p>目次</p>
+  <ol>
+    <li><a href="#sec1">このシステムは何か（概要）</a></li>
+    <li><a href="#sec2">仕組み（アーキテクチャ）</a></li>
+    <li><a href="#sec3">構成ファイルとデータの所在</a></li>
+    <li><a href="#sec4">初期構築手順（ゼロから作る場合）</a></li>
+    <li><a href="#sec5">日常の運用作業</a></li>
+    <li><a href="#sec6">よくあるトラブルと対処</a></li>
+    <li><a href="#sec7">プログラムを修正・再公開する手順</a></li>
+    <li><a href="#sec8">セキュリティと運用上の割り切り</a></li>
+    <li><a href="#sec9">引き継ぎチェックリスト</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ -->
+<section id="sec1">
+  <h2>1. このシステムは何か（概要）</h2>
+  <p>
+    議員が議長（議会事務局）あてに行う<strong>「資料要求」の申請を、紙の窓口提出に代えてオンラインで受け付ける</strong>ためのWebフォームです。
+    議員がスマートフォンやパソコンから申請すると、内容がGoogleスプレッドシートに記録され、議員本人と議会事務局の双方に自動でメールが届きます。
+  </p>
+
+  <h3>業務フロー上の位置づけ</h3>
+  <div class="flow">議員 ──[本システムで申請]──&gt; 議長（議会事務局） ──[従来どおり取り次ぎ]──&gt; 首長（執行部局）
+        ↑ここをオンライン化           ↑ここから先は本システムの範囲外</div>
+
+  <h3>主な機能</h3>
+  <ul>
+    <li><strong>申請フォーム</strong>：氏名・メールアドレス・資料の内容・担当部署・調整状況（未調整／調整済）・用途・希望提出期限を入力して送信</li>
+    <li><strong>本人確認</strong>：事前に「議員名簿」シートへ登録したメールアドレス以外からは申請できない</li>
+    <li><strong>受付番号の自動発行</strong>：<code>20260610-001</code> 形式（日付＋その日の連番）</li>
+    <li><strong>自動メール通知</strong>：議員へ受付確認メール、議会事務局へ新規申請の通知メール</li>
+    <li><strong>過去申請の照会</strong>：議員がメールアドレスを入力すると自分の申請履歴を一覧できる別ページ</li>
+  </ul>
+
+  <h3>意図的に「持っていない」機能</h3>
+  <ul>
+    <li>パスワードによるログイン認証（メールアドレス照合のみ）</li>
+    <li>申請のステータス管理（処理中・完了など。議員側に進捗を見せない運用方針のため）</li>
+    <li>申請の取消・修正機能（必要な場合は事務局がスプレッドシートを直接編集する）</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="sec2">
+  <h2>2. 仕組み（アーキテクチャ）</h2>
+  <p>
+    本システムは<strong>Google Apps Script（GAS）のWebアプリ機能</strong>だけで動いています。
+    サーバーの契約・保守は不要で、費用はかかりません。Googleアカウント（スプレッドシート＋GAS）がすべてです。
+  </p>
+
+  <div class="flow">┌─ 議員のスマホ／PC（ブラウザ）─────────────────┐
+│  フォームページ（index）／照会ページ（history）  │
+└──────────────┬───────────────┘
+               │ google.script.run（GAS内部通信）
+┌──────────────▼───────────────┐
+│  Google Apps Script（Code.gs）                  │
+│   ・登録アドレスの照合   ・受付番号の採番        │
+│   ・データの保存         ・メール送信            │
+└──────────────┬───────────────┘
+               │
+┌──────────────▼───────────────┐
+│  Googleスプレッドシート（3シート）               │
+│   申請データ／議員名簿／設定                     │
+└──────────────────────────────┘</div>
+
+  <h3>重要な考え方</h3>
+  <ul>
+    <li><strong>スプレッドシートが「データベース」かつ「管理画面」</strong>です。事務局の日常操作は基本的にスプレッドシートの編集だけで完結します。</li>
+    <li>プログラム（Code.gs）は、スプレッドシートに紐付いた「コンテナバインド型」のGASです。スプレッドシートを開き、メニューの「拡張機能 → Apps Script」から開けます。</li>
+    <li>Webアプリは<strong>「実行ユーザー＝デプロイした人のアカウント」</strong>で動きます。メールもそのアカウントから送信されます。したがって<strong>個人アカウントではなく、組織の共用アカウント（例：議会事務局の代表Googleアカウント）で構築・公開することを強く推奨</strong>します。</li>
+  </ul>
+
+  <div class="warn box"><span class="t">⚠ 属人化を防ぐ最重要ポイント</span>
+    スプレッドシートとGASの「所有者」が退職・異動した個人アカウントのままだと、アカウント削除と同時にシステムが消滅します。
+    必ず共用アカウントの所有とするか、後任への所有権移転を引き継ぎ事項に含めてください（→ <a href="#sec9">9. 引き継ぎチェックリスト</a>）。
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="sec3">
+  <h2>3. 構成ファイルとデータの所在</h2>
+
+  <h3>GASプロジェクト内のファイル（3つ）</h3>
+  <table>
+    <tr><th>ファイル名</th><th>種類</th><th>役割</th></tr>
+    <tr><td><code>Code.gs</code></td><td>スクリプト</td><td>サーバー側の処理すべて。ページの出し分け、入力チェック、登録アドレス照合、受付番号の採番、シートへの保存、メール送信。</td></tr>
+    <tr><td><code>index</code>（index.html）</td><td>HTML</td><td>議員が使う申請フォームの画面。デザイン・入力欄・送信処理を含む。</td></tr>
+    <tr><td><code>history</code>（history.html）</td><td>HTML</td><td>過去申請の照会画面。メールアドレスを入力すると履歴を一覧表示。</td></tr>
+  </table>
+
+  <h3>スプレッドシートのシート（3つ）</h3>
+  <table>
+    <tr><th>シート名</th><th>役割</th><th>事務局が編集するか</th></tr>
+    <tr><td>申請データ</td><td>申請の記録が1行ずつ蓄積される。列：受付番号／送信日時／氏名／メールアドレス／資料の内容／担当部署／調整状況／用途／希望提出期限</td><td>原則編集しない（閲覧のみ）。誤申請の削除等は可。</td></tr>
+    <tr><td>議員名簿</td><td>A列：メールアドレス、B列：氏名。<strong>ここに登録されたアドレスからのみ申請できる。</strong></td><td><strong>する</strong>（改選時・議員の変更時）</td></tr>
+    <tr><td>設定</td><td>「議会事務局通知先メールアドレス」の行に通知先を記入。カンマ区切りで複数指定可。</td><td><strong>する</strong>（担当変更時）</td></tr>
+  </table>
+
+  <h3>公開URL</h3>
+  <table>
+    <tr><th>用途</th><th>URL</th></tr>
+    <tr><td>申請フォーム</td><td>WebアプリのURL（<code>https://script.google.com/macros/s/～/exec</code>）<br>→ <span class="fillin">（実際のURLを記入）</span></td></tr>
+    <tr><td>照会ページ</td><td>上記URLの末尾に <code>?page=history</code> を付けたもの</td></tr>
+  </table>
+  <div class="warn box"><span class="t">⚠ URLについての注意</span>
+    Webアプリを「新しいデプロイ」で公開し直すとURLが変わります。議員に案内済みのURLを変えないためには、必ず「デプロイを管理」から<strong>既存デプロイの編集（バージョン更新）</strong>を行ってください（→ <a href="#sec7">7章</a>）。
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="sec4">
+  <h2>4. 初期構築手順（ゼロから作る場合）</h2>
+  <p>システムを新規に構築する場合、または作り直す場合の手順です。所要時間は30分程度です。</p>
+
+  <h3>4-1. スプレッドシートとGASプロジェクトの作成</h3>
+  <ol>
+    <li><strong>組織の共用Googleアカウント</strong>でログインする</li>
+    <li>Googleスプレッドシートを新規作成し、名前を「議員資料要求フォーム（データ）」等にする</li>
+    <li>メニュー「拡張機能」→「Apps Script」を開く</li>
+    <li>最初からある <code>コード.gs</code> の中身をすべて消し、<code>Code.gs</code> の内容を貼り付ける</li>
+    <li>左側「ファイル」の「＋」→「HTML」で <code>index</code> という名前のファイルを作成し、<code>index.html</code> の内容を貼り付ける（拡張子 <code>.html</code> は自動で付く）</li>
+    <li>同様に <code>history</code> を作成し、<code>history.html</code> の内容を貼り付ける</li>
+    <li>保存（Ctrl+S または 💾アイコン）</li>
+  </ol>
+
+  <h3>4-2. シートの初期化</h3>
+  <ol>
+    <li>GASエディタ上部の関数選択プルダウンで <code>setup</code> を選び、「実行」をクリック</li>
+    <li>初回は「承認が必要です」と表示される。「権限を確認」→ アカウント選択 →（「確認されていないアプリ」と出た場合は「詳細」→「（安全ではないページ）に移動」）→「許可」</li>
+    <li>スプレッドシートに「申請データ」「議員名簿」「設定」の3シートが生成されたことを確認</li>
+    <li><strong>議員名簿</strong>シートの見本行（example.lg.jp）を削除し、実際の議員のメールアドレスと氏名を登録</li>
+    <li><strong>設定</strong>シートのB2セルを、実際の事務局通知先メールアドレスに変更</li>
+  </ol>
+
+  <h3>4-3. Webアプリとして公開</h3>
+  <ol>
+    <li>GASエディタ右上「デプロイ」→「新しいデプロイ」</li>
+    <li>歯車アイコン →「ウェブアプリ」を選択</li>
+    <li>設定値：
+      <table>
+        <tr><th>項目</th><th>設定値</th></tr>
+        <tr><td>説明</td><td>任意（例：初回公開）</td></tr>
+        <tr><td>次のユーザーとして実行</td><td><strong>自分</strong></td></tr>
+        <tr><td>アクセスできるユーザー</td><td><strong>全員</strong></td></tr>
+      </table>
+    </li>
+    <li>「デプロイ」をクリックし、発行された <strong>ウェブアプリのURL</strong> を控える</li>
+    <li>本書3章のURL欄に記入し、議員へ案内する</li>
+  </ol>
+
+  <h3>4-4. 動作確認（公開前に必ず実施）</h3>
+  <ol>
+    <li>議員名簿に<strong>テスト用に自分のアドレス</strong>を一時登録する</li>
+    <li>フォームURLを開き、全項目を入力して送信 → 受付番号が表示されるか</li>
+    <li>「申請データ」シートに1行追加されているか</li>
+    <li>自分宛の受付確認メールと、設定シートの通知先宛のメールが届いているか（迷惑メールフォルダも確認）</li>
+    <li><strong>未登録のアドレス</strong>で送信し、「登録されていないメールアドレスです。」と拒否されるか</li>
+    <li>照会ページ（<code>?page=history</code>）で自分のアドレスを入力し、テスト申請が表示されるか</li>
+    <li>確認後、テスト用アドレスを名簿から削除し、テストデータの行を申請データから削除する</li>
+  </ol>
+</section>
+
+<!-- ============================================================ -->
+<section id="sec5">
+  <h2>5. 日常の運用作業</h2>
+  <p>通常運用で事務局が行う作業は、以下の3つだけです。<strong>いずれもスプレッドシートの編集のみで、プログラムの変更は不要です。</strong></p>
+
+  <h3>5-1. 申請の確認と取り次ぎ</h3>
+  <ul>
+    <li>新規申請があると、設定シートに登録した通知先へメールが届きます（件名：【資料要求】新規申請）。</li>
+    <li>メール本文に全項目が記載されているため、原則メールだけで内容確認できます。一覧で見たい場合は「申請データ」シートを開いてください。</li>
+    <li>その後の議長決裁・執行部局への要求は、従来どおりの事務処理で行ってください（本システムの範囲外）。</li>
+    <li>「調整状況」列は、議員が担当部署と事前調整済みかどうかの自己申告です。「未調整」の案件は取り次ぎ前に調整の要否を判断してください。</li>
+  </ul>
+
+  <h3>5-2. 議員名簿の更新（改選時・随時）</h3>
+  <ol>
+    <li>「議員名簿」シートを開く</li>
+    <li>追加：最終行の下に「メールアドレス」「氏名」を入力（順不同・空行は不可）</li>
+    <li>削除：退任議員の行を行ごと削除</li>
+    <li>保存操作は不要（スプレッドシートは自動保存）。<strong>即時反映</strong>されます。</li>
+  </ol>
+  <div class="ok box"><span class="t">✓ 補足</span>
+    メールアドレスの大文字・小文字、前後の空白は自動で吸収されるため、厳密に揃える必要はありません。1人の議員が複数アドレスを使う場合は、複数行に分けて登録できます（氏名は同じでかまいません）。
+  </div>
+
+  <h3>5-3. 通知先メールアドレスの変更（担当変更時）</h3>
+  <ol>
+    <li>「設定」シートを開く</li>
+    <li>「議会事務局通知先メールアドレス」の行の<strong>B列</strong>を書き換える</li>
+    <li>複数に送りたい場合はカンマ区切りで記入（例：<code>a@example.lg.jp, b@example.lg.jp</code>）</li>
+  </ol>
+
+  <h3>5-4. データの保全（推奨・月1回程度）</h3>
+  <ul>
+    <li>スプレッドシートの「ファイル」→「ダウンロード」→「Microsoft Excel」で控えを保存し、所定の共有フォルダに保管してください。</li>
+    <li>年度替わり等で申請データが増えすぎた場合は、過去年度分を別ファイルに切り出してから行を削除して構いません（受付番号は日付ベースのため連番が崩れる心配はありません）。ただし<strong>削除した分は照会ページに表示されなくなる</strong>点に留意してください。</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="sec6">
+  <h2>6. よくあるトラブルと対処</h2>
+  <table>
+    <tr><th>症状</th><th>原因と対処</th></tr>
+    <tr>
+      <td>議員から「登録されていないメールアドレスですと出る」と連絡</td>
+      <td>議員名簿に当該アドレスが未登録、または誤記。名簿のアドレスと議員が入力したアドレスを突き合わせる。よくあるのは携帯キャリアアドレスとGmailの取り違え、ドメインの打ち間違い。</td>
+    </tr>
+    <tr>
+      <td>確認メールが議員に届かない</td>
+      <td>①迷惑メールフォルダを確認させる。②携帯キャリアメールの場合、PCメール拒否設定で弾かれることがある → 送信元（デプロイしたGoogleアカウントのGmailアドレス）の受信許可を依頼。③申請自体は「申請データ」シートに記録されていれば受付済みなので、その旨を案内してよい。</td>
+    </tr>
+    <tr>
+      <td>事務局に通知メールが届かない</td>
+      <td>「設定」シートのB列のアドレスに誤記がないか確認。シート名が「設定」、A列の項目名が「議会事務局通知先メールアドレス」と一字一句一致しているかも確認（プログラムはこの文字列で行を探している）。</td>
+    </tr>
+    <tr>
+      <td>フォームのURLを開くと「権限が必要です」「このアプリは確認されていません」等が表示される</td>
+      <td>デプロイ設定の「アクセスできるユーザー」が「全員」になっていない可能性。デプロイ → デプロイを管理 → 編集（鉛筆）で設定を確認し、バージョンを「新バージョン」にしてデプロイし直す。</td>
+    </tr>
+    <tr>
+      <td>フォームを開くと真っ白／エラー画面になる</td>
+      <td>GASの障害または直近のコード修正ミスの可能性。GASエディタの「実行数」（時計アイコン）でエラーログを確認。直近に修正をしていた場合は、デプロイを管理から<strong>前のバージョンに戻す</strong>ことができる。</td>
+    </tr>
+    <tr>
+      <td>1日の途中からメールが送られなくなった</td>
+      <td>Googleアカウントの1日あたりメール送信上限（無料アカウント100通／Google Workspace 1,500通）に達した可能性。翌日自動的に回復する。申請データ自体は記録されている。</td>
+    </tr>
+    <tr>
+      <td>同じ受付番号が重複した</td>
+      <td>通常は排他制御により発生しないが、万一発生した場合はスプレッドシート上で手動で枝番（例：-001a）を振って区別し、関係者に連絡する。</td>
+    </tr>
+  </table>
+
+  <h3>エラーログの見方</h3>
+  <ol>
+    <li>スプレッドシート →「拡張機能」→「Apps Script」</li>
+    <li>左メニューの時計アイコン「実行数」をクリック</li>
+    <li>「失敗」となっている行を開くと、エラー内容と発生箇所が表示される</li>
+  </ol>
+</section>
+
+<!-- ============================================================ -->
+<section id="sec7">
+  <h2>7. プログラムを修正・再公開する手順</h2>
+
+  <h3>7-1. 修正の基本手順</h3>
+  <ol>
+    <li>GASエディタで該当ファイル（Code.gs / index / history）を修正し、保存</li>
+    <li>右上「デプロイ」→「<strong>デプロイを管理</strong>」</li>
+    <li>既存のデプロイの<strong>鉛筆アイコン（編集）</strong>をクリック</li>
+    <li>「バージョン」を「<strong>新バージョン</strong>」に変更し、「デプロイ」</li>
+  </ol>
+  <div class="danger box"><span class="t">✗ やってはいけない</span>
+    「新しいデプロイ」から公開すると<strong>URLが変わってしまい、議員に案内済みのURLが使えなくなります</strong>。修正の反映は必ず「デプロイを管理」→ 既存デプロイの編集で行ってください。
+  </div>
+  <div class="ok box"><span class="t">✓ 失敗してもすぐ戻せます</span>
+    「デプロイを管理」の編集画面でバージョン番号を過去のものに選び直してデプロイすれば、即座に以前の状態へ戻せます。修正前のバージョン番号を控えておくと安心です。
+  </div>
+
+  <h3>7-2. よくある軽微な修正の場所</h3>
+  <table>
+    <tr><th>変更したいこと</th><th>修正場所</th></tr>
+    <tr><td>フォームの文言・項目名・注意書き</td><td><code>index</code> 内のHTML部分（&lt;label&gt;や&lt;p class="hint"&gt;の文章）</td></tr>
+    <tr><td>メール本文の文面</td><td><code>Code.gs</code> の <code>buildMailBody_</code> 関数</td></tr>
+    <tr><td>メールの件名</td><td><code>Code.gs</code> の <code>sendApplicantMail_</code>（議員宛）／<code>sendOfficeMail_</code>（事務局宛）</td></tr>
+    <tr><td>受付番号の形式</td><td><code>Code.gs</code> の <code>generateReceiptNumber_</code> 関数</td></tr>
+    <tr><td>入力項目の追加・削除</td><td><code>index</code>（画面）と <code>Code.gs</code>（COL定数・submitRequest・ヘッダー行）の両方。シートの列追加も必要。難易度が高いため7-3の方法を推奨。</td></tr>
+  </table>
+
+  <h3>7-3. 生成AIを活用した改修（推奨）</h3>
+  <p>
+    本システムは、<strong>3ファイルすべてを生成AI（Claude等）に貼り付ければ全体を把握できる規模</strong>で設計されています。
+    改修したい場合は、次の手順が安全かつ確実です。
+  </p>
+  <ol>
+    <li>Code.gs / index / history の3ファイルの中身と本マニュアルの該当部分をAIに渡す</li>
+    <li>「○○という項目を追加したい」「文言を△△に変えたい」等の要望を伝える</li>
+    <li>修正版のコードを受け取り、テスト用に<strong>シートを複製した別環境</strong>で動作確認してから本番へ反映する</li>
+  </ol>
+</section>
+
+<!-- ============================================================ -->
+<section id="sec8">
+  <h2>8. セキュリティと運用上の割り切り</h2>
+  <p>本システムは利便性を優先し、以下を承知のうえで運用しています。後任者は前提として把握してください。</p>
+  <ul>
+    <li><strong>認証はメールアドレス照合のみ</strong>です。パスワードはありません。なりすまし防止は「登録アドレス以外は受け付けない」ことのみに依存しています。</li>
+    <li><strong>照会ページは、議員のメールアドレスを知っていれば誰でもその議員の申請履歴を閲覧できます。</strong>機微な内容を含む資料要求が想定される場合は、運用ルール（紙での提出に切り替える等）でカバーするか、受付番号との二要素照合方式への改修を検討してください。</li>
+    <li>フォームURL自体は非公開ですが、<strong>URLを知っていれば誰でもフォーム画面の表示までは可能</strong>です（送信は登録アドレスのみ）。URLは議員と事務局以外に共有しないでください。</li>
+    <li>申請データには議員の氏名・メールアドレスが含まれます。スプレッドシートの<strong>共有設定は事務局の必要最小限の職員のみ</strong>とし、「リンクを知っている全員」には絶対にしないでください。</li>
+    <li>メール送信はGoogleアカウントの送信上限（無料100通/日、Workspace 1,500通/日）の範囲内で動作します。</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="sec9">
+  <h2>9. 引き継ぎチェックリスト</h2>
+  <p>担当者の異動・退職時には、後任とともに以下を確認してください。</p>
+  <table>
+    <tr><th style="width:36px;">✓</th><th>引き継ぎ項目</th></tr>
+    <tr><td></td><td>スプレッドシート・GASの<strong>所有アカウント</strong>とそのログイン情報（共用アカウントの場合）。個人アカウント所有の場合は、所有権を後任または共用アカウントへ移転したか</td></tr>
+    <tr><td></td><td>スプレッドシートの<strong>共有設定</strong>に後任を追加し、前任を削除したか</td></tr>
+    <tr><td></td><td><strong>WebアプリのURL</strong>（フォーム・照会ページ）の所在</td></tr>
+    <tr><td></td><td>「設定」シートの通知先アドレスを後任の体制に更新したか</td></tr>
+    <tr><td></td><td>本マニュアル（README.html）と3つのソースファイル（Code.gs / index.html / history.html）の保管場所</td></tr>
+    <tr><td></td><td>直近のデータバックアップ（Excel控え）の保管場所</td></tr>
+    <tr><td></td><td>議員への案内文書（URL周知文書）の控え</td></tr>
+    <tr><td></td><td>8章「セキュリティと運用上の割り切り」を後任が読み、了解したか</td></tr>
+  </table>
+
+  <h3>ソースファイルの保管について</h3>
+  <p>
+    GASエディタ上のコードが「本番」ですが、不測の事態（誤削除等）に備え、
+    <strong>Code.gs / index.html / history.html の3ファイルと本マニュアルを、必ず庁内の共有フォルダ等にも保管</strong>してください。
+    この4ファイルさえあれば、本書4章の手順でシステム全体をいつでも再構築できます。
+  </p>
+</section>
+
+</main>
+
+<footer>
+  議員資料要求フォーム 運用マニュアル ― 本書は印刷（PDF保存）にも対応しています（ブラウザの印刷機能をご利用ください）
+</footer>
+</body>
+</html>
