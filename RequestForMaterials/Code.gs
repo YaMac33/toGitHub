@@ -3,7 +3,7 @@
  * Google Apps Script Web アプリ
  *
  * --- 構成 ---
- *  シート「申請データ」: 受付番号 / 送信日時 / 氏名 / メールアドレス / 資料の内容 / 担当部署 / 用途 / 希望提出期限
+ *  シート「申請データ」: 受付番号 / 送信日時 / 氏名 / メールアドレス / 資料の内容 / 担当部署 / 調整状況 / 用途 / 希望提出期限
  *  シート「議員名簿」  : メールアドレス / 氏名   ← 登録済みアドレスのみ送信可
  *  シート「設定」      : 項目 / 値             ← 議会事務局の通知先アドレス等
  */
@@ -25,9 +25,14 @@ var COL = {
   EMAIL:    4, // メールアドレス
   CONTENT:  5, // 資料の内容
   DEPT:     6, // 担当部署
-  PURPOSE:  7, // 用途
-  DEADLINE: 8  // 希望提出期限
+  ADJUST:   7, // 調整状況（未調整／調整済）
+  PURPOSE:  8, // 用途
+  DEADLINE: 9  // 希望提出期限
 };
+
+// 調整状況の選択肢
+var ADJUST_VALUES = ['未調整', '調整済'];
+var ADJUST_DEFAULT = '未調整';
 
 // =============================================================
 // ルーティング
@@ -52,7 +57,7 @@ function getAppUrl() {
 // 申請の登録（フォーム送信）
 // =============================================================
 /**
- * @param {Object} f { name, email, content, dept, purpose, deadline }
+ * @param {Object} f { name, email, content, dept, adjust, purpose, deadline }
  * @return {Object} { ok:true, receiptNumber, datetime } | { ok:false, message }
  */
 function submitRequest(f) {
@@ -62,8 +67,12 @@ function submitRequest(f) {
     var email    = String(f.email    || '').trim();
     var content  = String(f.content  || '').trim();
     var dept     = String(f.dept     || '').trim();
+    var adjust   = String(f.adjust   || '').trim();
     var purpose  = String(f.purpose  || '').trim();
     var deadline = String(f.deadline || '').trim();
+
+    // 調整状況：許可値以外はデフォルトに丸める
+    if (ADJUST_VALUES.indexOf(adjust) === -1) adjust = ADJUST_DEFAULT;
 
     // 必須チェック
     if (!name || !email || !content || !dept || !purpose || !deadline) {
@@ -97,6 +106,7 @@ function submitRequest(f) {
       row[COL.EMAIL    - 1] = email;
       row[COL.CONTENT  - 1] = content;
       row[COL.DEPT     - 1] = dept;
+      row[COL.ADJUST   - 1] = adjust;
       row[COL.PURPOSE  - 1] = purpose;
       row[COL.DEADLINE - 1] = deadline;
       data.appendRow(row);
@@ -108,7 +118,7 @@ function submitRequest(f) {
     // メール送信（失敗しても申請自体は受付済みとする）
     var payload = {
       receipt: receipt, datetime: datetimeStr, name: name, email: email,
-      content: content, dept: dept, purpose: purpose, deadline: deadline
+      content: content, dept: dept, adjust: adjust, purpose: purpose, deadline: deadline
     };
     try { sendApplicantMail_(payload); } catch (err) { logError_('議員宛メール', err); }
     try { sendOfficeMail_(payload);    } catch (err) { logError_('事務局宛メール', err); }
@@ -233,6 +243,9 @@ function buildMailBody_(p, forOffice) {
   lines.push('議員氏名　　：' + p.name);
   lines.push('メール　　　：' + p.email);
   lines.push('担当部署　　：' + p.dept);
+  if (forOffice) {
+    lines.push('調整状況　　：' + p.adjust);
+  }
   lines.push('用途　　　　：' + p.purpose);
   lines.push('希望提出期限：' + p.deadline);
   lines.push('');
@@ -269,7 +282,7 @@ function getOrCreateDataSheet_(ss) {
   var sh = ss.getSheetByName(SHEET_DATA);
   if (!sh) {
     sh = ss.insertSheet(SHEET_DATA);
-    sh.appendRow(['受付番号','送信日時','氏名','メールアドレス','資料の内容','担当部署','用途','希望提出期限']);
+    sh.appendRow(['受付番号','送信日時','氏名','メールアドレス','資料の内容','担当部署','調整状況','用途','希望提出期限']);
     sh.setFrozenRows(1);
   }
   return sh;

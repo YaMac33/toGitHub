@@ -68,6 +68,23 @@
     box-shadow:0 0 0 3px rgba(47,111,176,.22);
   }
 
+  /* ラジオボタン（調整状況） */
+  .radio-group{display:flex;gap:12px;flex-wrap:wrap;}
+  .radio-opt{
+    flex:1;min-width:130px;display:flex;align-items:center;gap:10px;cursor:pointer;
+    border:1px solid var(--line-strong);border-radius:8px;background:#fff;
+    padding:12px 14px;font-size:16px;font-weight:400;
+  }
+  .radio-opt input[type=radio]{
+    width:20px;height:20px;margin:0;accent-color:var(--indigo);cursor:pointer;flex:0 0 auto;
+  }
+  .radio-opt:has(input:checked){
+    border-color:var(--indigo);background:#F0F4F8;font-weight:700;
+  }
+  .radio-opt:has(input:focus-visible){
+    box-shadow:0 0 0 3px rgba(47,111,176,.22);
+  }
+
   .actions{margin-top:24px;}
   .btn{
     display:block;width:100%;border:none;border-radius:8px;cursor:pointer;
@@ -161,6 +178,21 @@
       </div>
 
       <div class="field">
+        <label id="adjust-label">担当部署との調整状況<span class="req">必須</span></label>
+        <p class="hint">資料の内容について、担当部署と事前に調整したかどうかを選択してください。</p>
+        <div class="radio-group" role="radiogroup" aria-labelledby="adjust-label">
+          <label class="radio-opt">
+            <input type="radio" name="adjust" value="未調整" checked>
+            未調整
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="adjust" value="調整済">
+            調整済
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
         <label for="purpose">用途<span class="req">必須</span></label>
         <input type="text" id="purpose" maxlength="100">
       </div>
@@ -216,11 +248,13 @@
 
   $('submit').addEventListener('click', function(){
     clearAlert();
+    var adjustEl = document.querySelector('input[name="adjust"]:checked');
     var payload = {
       name:     $('name').value,
       email:    $('email').value,
       content:  $('content').value,
       dept:     $('dept').value,
+      adjust:   adjustEl ? adjustEl.value : '未調整',
       purpose:  $('purpose').value,
       deadline: $('deadline').value
     };
