@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>業務ToDo（着手可能 / 待ち）</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --surface:#ffffff; --ink:#1f2933; --muted:#6b7280;
+    --line:#e5e7eb; --line2:#eef0f3;
+    --go:#0f766e; --go-bg:#ecfdf5; --go-line:#99f6e4;
+    --wait:#b45309; --wait-bg:#fffbeb; --wait-line:#fde68a;
+    --done:#9ca3af; --done-bg:#f9fafb;
+    --over:#b91c1c; --over-bg:#fef2f2;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 80px;}
+  header.top{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  h1{font-size:20px; letter-spacing:.02em; margin:0;}
+  .sub{color:var(--muted); font-size:12px;}
+  p.lead{color:var(--muted); font-size:12px; margin:6px 0 16px;}
+
+  /* 接続ステータス */
+  .conn{display:flex; align-items:center; gap:8px; font-size:12px; padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; margin-bottom:12px; flex-wrap:wrap;}
+  .dot{width:8px; height:8px; border-radius:50%; background:#cbd2da;}
+  .dot.on{background:var(--go);}
+  .dot.dirty{background:var(--wait);}
+  .conn .fname{font-weight:700; color:var(--ink);}
+
+  .bar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+  button{font:inherit; cursor:pointer; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:8px 12px; transition:.12s;}
+  button:hover{border-color:#cbd2da;}
+  button:focus-visible{outline:2px solid var(--go); outline-offset:2px;}
+  button.primary{background:var(--go); border-color:var(--go); color:#fff;}
+  button.primary:hover{background:#0c5e58;}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  button.small{padding:4px 9px; font-size:12px;}
+  button.ghost{background:transparent; border-color:transparent; color:var(--muted);}
+  button.ghost:hover{background:#eef0f3;}
+
+  .group{margin-bottom:26px;}
+  .group-head{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+  .badge{font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; letter-spacing:.04em;}
+  .badge.go{color:var(--go); background:var(--go-bg); border:1px solid var(--go-line);}
+  .badge.wait{color:var(--wait); background:var(--wait-bg); border:1px solid var(--wait-line);}
+  .badge.done{color:var(--done); background:var(--done-bg); border:1px solid var(--line);}
+  .count{font-size:12px; color:var(--muted);}
+  .group-rule{flex:1; height:1px; background:var(--line2);}
+
+  .task{display:flex; align-items:flex-start; gap:11px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:11px 13px; margin-bottom:8px;}
+  .task.is-wait{background:var(--wait-bg); border-color:var(--wait-line);}
+  .task.is-done{background:var(--done-bg);}
+  .task.is-done .t-title{color:var(--done); text-decoration:line-through;}
+  .chk{appearance:none; width:19px; height:19px; min-width:19px; margin-top:2px; border:1.6px solid #cbd2da; border-radius:5px; cursor:pointer; position:relative; background:#fff;}
+  .chk:checked{background:var(--go); border-color:var(--go);}
+  .chk:checked::after{content:""; position:absolute; left:5px; top:1px; width:5px; height:10px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg);}
+  .t-main{flex:1; min-width:0;}
+  .t-title{font-size:15px; font-weight:600; word-break:break-word;}
+  .t-meta{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:3px; font-size:12px; color:var(--muted);}
+  .due{display:inline-flex; align-items:center; gap:4px;}
+  .due.over{color:var(--over); font-weight:700;}
+  .due.soon{color:var(--wait); font-weight:700;}
+  .wait-on{color:var(--wait);}
+  .t-actions{display:flex; gap:2px; align-items:center;}
+  .empty{color:var(--muted); font-size:13px; padding:8px 2px;}
+
+  .start{background:#fff; border:1px dashed var(--line); border-radius:14px; padding:30px 20px; text-align:center; color:var(--muted);}
+  .start h2{color:var(--ink); font-size:16px; margin:0 0 6px;}
+  .start .row{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:14px;}
+  .warn{display:none; background:var(--over-bg); border:1px solid #f3c4c4; color:#7f1d1d; font-size:13px; padding:10px 13px; border-radius:var(--radius); margin-bottom:14px;}
+  .warn.show{display:block;}
+
+  .ov{display:none; position:fixed; inset:0; background:rgba(31,41,51,.45); padding:18px; z-index:30; overflow:auto;}
+  .ov.show{display:flex; align-items:flex-start; justify-content:center;}
+  .modal{background:#fff; border-radius:14px; width:100%; max-width:520px; margin-top:6vh; padding:20px; box-shadow:0 20px 50px rgba(0,0,0,.2);}
+  .modal h2{font-size:16px; margin:0 0 14px;}
+  label.f{display:block; font-size:12px; font-weight:700; color:var(--muted); margin:12px 0 5px;}
+  input[type=text],input[type=date]{width:100%; font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:#fff;}
+  .deps{border:1px solid var(--line); border-radius:8px; padding:8px; max-height:160px; overflow:auto;}
+  .deps label{display:flex; gap:8px; align-items:center; font-size:13px; padding:3px 2px; cursor:pointer;}
+  .modal-foot{display:flex; justify-content:space-between; gap:8px; margin-top:18px;}
+  .hint{font-size:12px; color:var(--muted); margin:6px 0 0;}
+  .danger{color:var(--over); border-color:#f3c4c4;}
+  .danger:hover{background:var(--over-bg);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>業務ToDo</h1>
+    <span class="sub" id="updated"></span>
+  </header>
+  <p class="lead">上から「① 着手可能 → ② 待ち → ③ 完了」。各グループ内は期限の早い順。前提タスクを完了にすると、待ちタスクは自動で着手可能へ上がります。</p>
+
+  <div class="warn" id="warn"></div>
+
+  <div class="conn" id="conn">
+    <span class="dot" id="dot"></span>
+    <span id="connText">未接続</span>
+    <span style="flex:1"></span>
+    <button class="small" id="reconnectBtn" onclick="reconnect()" style="display:none">前回のファイルに再接続</button>
+  </div>
+
+  <div class="bar">
+    <button class="primary" id="saveBtn" onclick="saveFile()" disabled>保存</button>
+    <button onclick="openFile()">データを開く</button>
+    <button id="addBtn" onclick="openEdit()" disabled>＋ タスクを追加</button>
+    <button class="ghost small" onclick="toggleDone()" id="toggleDoneBtn">完了を表示</button>
+    <span style="flex:1"></span>
+    <button class="ghost small" onclick="downloadData()">ダウンロード</button>
+  </div>
+
+  <div id="board"></div>
+</div>
+
+<!-- 編集モーダル -->
+<div class="ov" id="editOv">
+  <div class="modal">
+    <h2 id="editTitle">タスクを追加</h2>
+    <input type="hidden" id="f-id">
+    <label class="f">タスク名</label>
+    <input type="text" id="f-title" placeholder="例：要求資料を担当課へ依頼">
+    <label class="f">期限</label>
+    <input type="date" id="f-deadline">
+    <label class="f">着手可能日（この日以降に着手可能。指定なしなら制限なし）</label>
+    <input type="date" id="f-startdate">
+    <label class="f">前提タスク（これらが全部完了したら着手可能になる）</label>
+    <div class="deps" id="f-deps"></div>
+    <p class="hint">着手可能日と前提タスクは併用できます（例：◯◯完了後、かつ6/20以降）。両方とも満たして初めて「着手可能」に入ります。</p>
+    <div class="modal-foot">
+      <button class="danger small" id="delBtn" onclick="delTask()" style="visibility:hidden">削除</button>
+      <span style="flex:1"></span>
+      <button class="ghost" onclick="closeEdit()">キャンセル</button>
+      <button class="primary" onclick="saveTask()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= 状態 ================= */
+let state = { version:1, updatedAt:"", tasks:[] };
+let fileHandle = null;     // 接続中の data.js
+let dirty = false;
+let showDone = false;
+const FSA = !!(window.showOpenFilePicker);
+
+/* ================= 起動時チェック ================= */
+(function init(){
+  if(!FSA){
+    showWarn("このブラウザは直接保存に対応していません（Chrome / Edge でご利用ください）。表示と「ダウンロード」は使えます。");
+  }
+  // 前回開いたファイルがあれば「再接続」を出す
+  idbGet("handle").then(h=>{ if(h){ document.getElementById("reconnectBtn").style.display=""; } });
+  renderStart();
+})();
+
+/* ================= File System Access ================= */
+async function openFile(){
+  if(!FSA){ showWarn("このブラウザでは「データを開く」が使えません。Chrome / Edge をご利用ください。"); return; }
+  try{
+    const [h] = await window.showOpenFilePicker({
+      types:[{description:"data.js", accept:{"text/javascript":[".js"]}}]
+    });
+    await connect(h);
+  }catch(e){ /* キャンセルは無視 */ }
+}
+async function reconnect(){
+  const h = await idbGet("handle");
+  if(!h){ document.getElementById("reconnectBtn").style.display="none"; return; }
+  try{
+    const perm = await h.requestPermission({mode:"readwrite"});
+    if(perm!=="granted"){ showWarn("ファイルへのアクセスが許可されませんでした。"); return; }
+    await connect(h);
+  }catch(e){ showWarn("再接続できませんでした。「データを開く」から選び直してください。"); }
+}
+async function connect(h){
+  const file = await h.getFile();
+  const text = await file.text();
+  const parsed = parseDataJs(text);
+  if(!parsed){ showWarn("data.js を読み込めませんでした。形式を確認してください。"); return; }
+  fileHandle = h; state = parsed;
+  await idbSet("handle", h);
+  hideWarn(); dirty=false;
+  document.getElementById("reconnectBtn").style.display="none";
+  render();
+}
+async function saveFile(){
+  if(!fileHandle){ showWarn("先に「データを開く」でファイルを選んでください。"); return; }
+  try{
+    const today=new Date();
+    state.updatedAt=`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+    const w = await fileHandle.createWritable();
+    await w.write(serialize()); await w.close();
+    dirty=false; render(); flashSaved();
+  }catch(e){ showWarn("保存できませんでした。アクセス許可が切れた可能性があります。「データを開く」で選び直してください。"); }
+}
+function downloadData(){
+  const blob=new Blob([serialize()],{type:"text/javascript"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="data.js"; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ----- data.js のパースと生成 ----- */
+function parseDataJs(text){
+  try{
+    const sandbox={};
+    new Function("window", text)(sandbox);
+    const d=sandbox.TODO_DATA;
+    if(!d || !Array.isArray(d.tasks)) return null;
+    d.tasks=d.tasks.map(t=>({id:String(t.id), title:String(t.title||""), deadline:t.deadline||"", startDate:t.startDate||"", dependsOn:Array.isArray(t.dependsOn)?t.dependsOn.map(String):[], done:!!t.done}));
+    return {version:d.version||1, updatedAt:d.updatedAt||"", tasks:d.tasks};
+  }catch(e){ return null; }
+}
+function serialize(){
+  const lines=state.tasks.map(t=>{
+    const deps="["+(t.dependsOn||[]).map(d=>`"${d}"`).join(", ")+"]";
+    return `    { id: "${t.id}", title: ${jss(t.title)}, deadline: "${t.deadline||""}", startDate: "${t.startDate||""}", dependsOn: ${deps}, done: ${!!t.done} }`;
+  }).join(",\n");
+  return `/* タスクデータ — 業務ToDo アプリが自動生成。手で編集することも可能です。 */
+window.TODO_DATA = {
+  version: 1,
+  updatedAt: "${state.updatedAt||""}",
+  tasks: [
+${lines}
+  ]
+};
+`;
+}
+function jss(s){ return '"'+String(s).replace(/\\/g,"\\\\").replace(/"/g,'\\"')+'"'; }
+
+/* ================= 判定ロジック ================= */
+function dateNotYet(d){
+  if(!d) return false;
+  const today=new Date(); today.setHours(0,0,0,0);
+  return new Date(d+"T00:00:00") > today;   // 着手可能日が未来 = まだ待ち
+}
+function statusOf(t){
+  if(t.done) return "done";
+  const deps=(t.dependsOn||[]).map(id=>state.tasks.find(x=>x.id===id)).filter(Boolean);
+  const taskBlocked = deps.some(d=>!d.done);
+  const dateBlocked = dateNotYet(t.startDate);
+  return (taskBlocked || dateBlocked) ? "wait" : "go";
+}
+function byDeadline(a,b){ const da=a.deadline||"9999-99-99", db=b.deadline||"9999-99-99"; return da<db?-1:da>db?1:0; }
+function dueClass(t){
+  if(!t.deadline||t.done) return "";
+  const today=new Date(); today.setHours(0,0,0,0);
+  const diff=Math.round((new Date(t.deadline+"T00:00:00")-today)/86400000);
+  return diff<0?"over":diff<=2?"soon":"";
+}
+function fmtDue(t){ if(!t.deadline) return "期限なし"; const[,m,d]=t.deadline.split("-"); return `${+m}/${+d} まで`; }
+
+/* ================= 描画 ================= */
+function renderStart(){
+  const board=document.getElementById("board");
+  board.innerHTML=`<div class="start">
+    <h2>データを開いてください</h2>
+    <div>共有フォルダ上の <b>data.js</b> を開くと、ここにタスクが表示されます。</div>
+    <div class="row">
+      <button class="primary" onclick="openFile()">データを開く</button>
+      <button onclick="startSample()">サンプルで試す</button>
+    </div>
+  </div>`;
+}
+function startSample(){
+  state={version:1, updatedAt:"", tasks:[
+    {id:"t1",title:"議案資料の体裁チェック",deadline:"2026-06-18",startDate:"",dependsOn:[],done:false},
+    {id:"t2",title:"議員からの資料要求を一覧化",deadline:"2026-06-16",startDate:"",dependsOn:[],done:false},
+    {id:"t3",title:"要求資料を担当課へ依頼",deadline:"2026-06-19",startDate:"",dependsOn:["t2"],done:false},
+    {id:"t4",title:"回答を取りまとめて議員へ送付",deadline:"2026-06-17",startDate:"",dependsOn:["t3"],done:false},
+    {id:"t5",title:"次定例会の招集告示（告示日以降）",deadline:"2026-06-30",startDate:"2026-06-25",dependsOn:[],done:false},
+    {id:"t6",title:"会議室予約状況の最終確認",deadline:"2026-06-15",startDate:"",dependsOn:["t1"],done:false},
+    {id:"t7",title:"前回議事録の校正",deadline:"2026-06-13",startDate:"",dependsOn:[],done:true}
+  ]};
+  render();
+}
+function render(){
+  updateConn();
+  document.getElementById("updated").textContent = state.updatedAt ? "最終保存 "+state.updatedAt : "";
+  document.getElementById("addBtn").disabled=false;
+  document.getElementById("saveBtn").disabled=!(fileHandle && FSA);
+
+  const groups={go:[],wait:[],done:[]};
+  state.tasks.forEach(t=>groups[statusOf(t)].push(t));
+  Object.values(groups).forEach(g=>g.sort(byDeadline));
+
+  const board=document.getElementById("board"); board.innerHTML="";
+  board.appendChild(groupEl("go","着手可能",groups.go,"今すぐ進められるタスクはありません。"));
+  board.appendChild(groupEl("wait","待ち",groups.wait,"待ちのタスクはありません。"));
+  if(showDone) board.appendChild(groupEl("done","完了",groups.done,"完了したタスクはまだありません。"));
+}
+function groupEl(kind,label,list,emptyMsg){
+  const g=document.createElement("div"); g.className="group";
+  g.innerHTML=`<div class="group-head"><span class="badge ${kind}">${label}</span><span class="count">${list.length}件</span><span class="group-rule"></span></div>`;
+  if(!list.length){ const e=document.createElement("div"); e.className="empty"; e.textContent=emptyMsg; g.appendChild(e); return g; }
+  list.forEach(t=>g.appendChild(taskEl(t,kind))); return g;
+}
+function taskEl(t,kind){
+  const el=document.createElement("div");
+  el.className="task "+(kind==="wait"?"is-wait":kind==="done"?"is-done":"");
+  const dc=dueClass(t); let waitNote="";
+  if(kind==="wait"){
+    const parts=[];
+    if(dateNotYet(t.startDate)){ const[,m,d]=t.startDate.split("-"); parts.push(`<span class="wait-on">📅 ${+m}/${+d} から</span>`); }
+    const names=(t.dependsOn||[]).map(id=>state.tasks.find(x=>x.id===id)).filter(d=>d&&!d.done).map(d=>d.title);
+    if(names.length) parts.push(`<span class="wait-on">⏳ ${esc(names.join("・"))} 待ち</span>`);
+    waitNote=parts.join("");
+  }
+  el.innerHTML=`<input type="checkbox" class="chk" ${t.done?"checked":""} onchange="toggleTask('${t.id}')">
+    <div class="t-main"><div class="t-title">${esc(t.title)}</div>
+    <div class="t-meta"><span class="due ${dc}">${dc==="over"?"⚠ ":""}${fmtDue(t)}</span>${waitNote}</div></div>
+    <div class="t-actions"><button class="ghost small" onclick="openEdit('${t.id}')">編集</button></div>`;
+  return el;
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function pad(n){ return String(n).padStart(2,"0"); }
+
+function updateConn(){
+  const dot=document.getElementById("dot"), txt=document.getElementById("connText");
+  if(fileHandle){ dot.className="dot "+(dirty?"dirty":"on"); txt.innerHTML=`<span class="fname">${esc(fileHandle.name)}</span> に接続中${dirty?"（未保存の変更あり）":""}`; }
+  else { dot.className="dot"; txt.textContent = state.tasks.length?"サンプル表示中（未接続・保存するにはファイルを開いてください）":"未接続"; }
+}
+
+/* ================= 操作 ================= */
+function markDirty(){ dirty=true; }
+function toggleTask(id){ const t=state.tasks.find(x=>x.id===id); if(t){ t.done=!t.done; markDirty(); render(); } }
+function toggleDone(){ showDone=!showDone; document.getElementById("toggleDoneBtn").textContent=showDone?"完了を隠す":"完了を表示"; render(); }
+
+function openEdit(id){
+  const isNew=!id;
+  document.getElementById("editTitle").textContent=isNew?"タスクを追加":"タスクを編集";
+  document.getElementById("delBtn").style.visibility=isNew?"hidden":"visible";
+  const t=isNew?{id:"",title:"",deadline:"",startDate:"",dependsOn:[]}:state.tasks.find(x=>x.id===id);
+  document.getElementById("f-id").value=t.id;
+  document.getElementById("f-title").value=t.title;
+  document.getElementById("f-deadline").value=t.deadline||"";
+  document.getElementById("f-startdate").value=t.startDate||"";
+  const box=document.getElementById("f-deps"); box.innerHTML="";
+  const others=state.tasks.filter(x=>x.id!==t.id);
+  if(!others.length) box.innerHTML='<span class="hint">他にタスクがありません</span>';
+  others.forEach(x=>{
+    const c=(t.dependsOn||[]).includes(x.id)?"checked":"";
+    box.insertAdjacentHTML("beforeend",`<label><input type="checkbox" value="${x.id}" ${c}>${esc(x.title)}</label>`);
+  });
+  show("editOv"); document.getElementById("f-title").focus();
+}
+function closeEdit(){ hide("editOv"); }
+function saveTask(){
+  const title=document.getElementById("f-title").value.trim();
+  if(!title){ alert("タスク名を入力してください。"); return; }
+  const id=document.getElementById("f-id").value;
+  const deadline=document.getElementById("f-deadline").value;
+  const startDate=document.getElementById("f-startdate").value;
+  const deps=[...document.querySelectorAll("#f-deps input:checked")].map(c=>c.value);
+  if(id){ const t=state.tasks.find(x=>x.id===id); t.title=title; t.deadline=deadline; t.startDate=startDate; t.dependsOn=deps; }
+  else { state.tasks.push({id:"t"+Date.now().toString(36), title, deadline, startDate, dependsOn:deps, done:false}); }
+  markDirty(); render(); closeEdit();
+}
+function delTask(){
+  const id=document.getElementById("f-id").value;
+  const dep=state.tasks.filter(x=>(x.dependsOn||[]).includes(id));
+  let msg="このタスクを削除しますか？"; if(dep.length) msg+=`\n（${dep.length}件のタスクの前提から自動的に外されます）`;
+  if(!confirm(msg)) return;
+  state.tasks=state.tasks.filter(x=>x.id!==id);
+  state.tasks.forEach(x=>{ if(x.dependsOn) x.dependsOn=x.dependsOn.filter(d=>d!==id); });
+  markDirty(); render(); closeEdit();
+}
+
+/* ================= 通知・モーダル ================= */
+function showWarn(m){ const w=document.getElementById("warn"); w.textContent=m; w.classList.add("show"); }
+function hideWarn(){ document.getElementById("warn").classList.remove("show"); }
+function flashSaved(){ const b=document.getElementById("saveBtn"); const o=b.textContent; b.textContent="保存しました ✓"; setTimeout(()=>b.textContent=o,1400); }
+function show(id){ document.getElementById(id).classList.add("show"); }
+function hide(id){ document.getElementById(id).classList.remove("show"); }
+document.querySelectorAll(".ov").forEach(ov=>ov.addEventListener("click",e=>{ if(e.target===ov) ov.classList.remove("show"); }));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") document.querySelectorAll(".ov.show").forEach(o=>o.classList.remove("show")); });
+window.addEventListener("beforeunload",e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+
+/* ================= IndexedDB（ファイル参照の保持） ================= */
+function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open("todoFS",1); r.onupgradeneeded=()=>r.result.createObjectStore("kv"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function idbSet(k,v){ try{ const db=await idbOpen(); await new Promise((res,rej)=>{ const t=db.transaction("kv","readwrite"); t.objectStore("kv").put(v,k); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }catch(e){} }
+async function idbGet(k){ try{ const db=await idbOpen(); return await new Promise((res)=>{ const t=db.transaction("kv","readonly"); const rq=t.objectStore("kv").get(k); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(null); }); }catch(e){ return null; } }
+</script>
+</body>
+</html>

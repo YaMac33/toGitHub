@@ -1,0 +1,13 @@
+# タスクの実データはリポジトリに含めない（共有フォルダ運用・公開回避）
+data.js
+
+# Claude Code の個人用メモリ（共有しない）
+CLAUDE.local.md
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+.vscode/
+
+# 依存（万一導入した場合）
+node_modules/
