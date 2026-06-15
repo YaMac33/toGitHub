@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File System Access API 動作確認テスト</title>
+<style>
+  body {
+    font-family: "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 16px;
+    line-height: 1.6;
+  }
+  h1 { font-size: 1.3em; }
+  .box {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .ok   { color: #1a7f37; font-weight: bold; }
+  .ng   { color: #c0392b; font-weight: bold; }
+  button {
+    padding: 8px 16px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  textarea {
+    width: 100%;
+    height: 200px;
+    box-sizing: border-box;
+    font-family: monospace;
+    margin-top: 8px;
+  }
+  #log {
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .step { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<h1>File System Access API 動作確認テスト</h1>
+
+<div class="box">
+  <h2>1. API対応状況チェック</h2>
+  <div id="apiCheck">確認中...</div>
+  <div class="step">現在のオリジン (location.origin): <code id="originInfo"></code></div>
+  <div class="step">isSecureContext: <code id="secureContext"></code></div>
+</div>
+
+<div class="box">
+  <h2>2. CSVファイルを開く</h2>
+  <button id="btnOpen">CSVファイルを開く (showOpenFilePicker)</button>
+  <div id="openResult"></div>
+  <textarea id="csvContent" placeholder="ここに開いたCSVの内容が表示されます"></textarea>
+</div>
+
+<div class="box">
+  <h2>3. 同じファイルに上書き保存</h2>
+  <p>上のテキストを編集してから押してください。元のファイルに直接上書きされます。</p>
+  <button id="btnSave" disabled>同じファイルに上書き保存 (createWritable)</button>
+  <div id="saveResult"></div>
+</div>
+
+<div class="box">
+  <h2>動作ログ</h2>
+  <div id="log"></div>
+</div>
+
+<script>
+  const logEl = document.getElementById('log');
+  function log(msg, isError) {
+    const time = new Date().toLocaleTimeString();
+    const line = `[${time}] ${msg}`;
+    logEl.textContent += line + "\n";
+    logEl.scrollTop = logEl.scrollHeight;
+    console.log(line);
+  }
+
+  // --- 1. 対応状況チェック ---
+  const apiCheckEl = document.getElementById('apiCheck');
+  const hasOpenPicker = 'showOpenFilePicker' in window;
+  const hasSavePicker = 'showSaveFilePicker' in window;
+
+  document.getElementById('originInfo').textContent = location.origin;
+  document.getElementById('secureContext').textContent = String(window.isSecureContext);
+
+  if (hasOpenPicker && hasSavePicker) {
+    apiCheckEl.innerHTML = '<span class="ok">✅ File System Access API は利用可能です</span> (showOpenFilePicker / createWritable が使えます)';
+    log('File System Access API: 対応');
+  } else {
+    apiCheckEl.innerHTML = '<span class="ng">❌ File System Access API は利用できません</span> (このブラウザ/環境では showOpenFilePicker が未定義です)';
+    log('File System Access API: 非対応 (showOpenFilePicker=' + hasOpenPicker + ', showSaveFilePicker=' + hasSavePicker + ')');
+    log('考えられる原因: ブラウザが古い(Edge Legacy/IE11等) / file://で開いている / 組織のポリシーでブロック / セキュアコンテキストでない');
+  }
+
+  // --- 2. ファイルを開く ---
+  let fileHandle = null;
+  const csvTextarea = document.getElementById('csvContent');
+  const btnSave = document.getElementById('btnSave');
+  const openResult = document.getElementById('openResult');
+  const saveResult = document.getElementById('saveResult');
+
+  document.getElementById('btnOpen').addEventListener('click', async () => {
+    try {
+      log('showOpenFilePicker を呼び出します...');
+      [fileHandle] = await window.showOpenFilePicker({
+        types: [
+          {
+            description: 'CSV / テキストファイル',
+            accept: { 'text/csv': ['.csv'], 'text/plain': ['.txt'] }
+          }
+        ],
+        excludeAcceptAllOption: false,
+        multiple: false
+      });
+
+      log('ファイルハンドルを取得: ' + fileHandle.name);
+
+      const file = await fileHandle.getFile();
+      const text = await file.text();
+      csvTextarea.value = text;
+
+      openResult.innerHTML = '<span class="ok">✅ 読み込み成功: ' + fileHandle.name + ' (' + file.size + ' bytes)</span>';
+      log('ファイル内容を読み込みました (' + file.size + ' bytes)');
+
+      btnSave.disabled = false;
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        log('ユーザーがファイル選択をキャンセルしました');
+        openResult.innerHTML = '<span class="ng">キャンセルされました</span>';
+      } else {
+        log('エラー: ' + err.name + ' - ' + err.message);
+        openResult.innerHTML = '<span class="ng">❌ エラー: ' + err.message + '</span>';
+      }
+    }
+  });
+
+  // --- 3. 上書き保存 ---
+  btnSave.addEventListener('click', async () => {
+    if (!fileHandle) {
+      saveResult.innerHTML = '<span class="ng">先にファイルを開いてください</span>';
+      return;
+    }
+    try {
+      log('書き込み用ストリームを作成します (createWritable)...');
+      const writable = await fileHandle.createWritable();
+
+      log('内容を書き込みます...');
+      await writable.write(csvTextarea.value);
+
+      log('クローズします...');
+      await writable.close();
+
+      saveResult.innerHTML = '<span class="ok">✅ 上書き保存に成功しました: ' + fileHandle.name + '</span>';
+      log('上書き保存 完了: ' + fileHandle.name);
+    } catch (err) {
+      log('保存エラー: ' + err.name + ' - ' + err.message);
+      saveResult.innerHTML = '<span class="ng">❌ 保存エラー: ' + err.message + '</span>';
+
+      if (err.name === 'NotAllowedError') {
+        log('→ NotAllowedError: 組織のセキュリティポリシーでファイル書き込みがブロックされている可能性があります');
+      }
+    }
+  });
+
+  log('ページ読み込み完了。「CSVファイルを開く」を押してテストを開始してください。');
+</script>
+
+</body>
+</html>
