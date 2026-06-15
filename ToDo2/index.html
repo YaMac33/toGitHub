@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TODOリスト</title>
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --panel: #ffffff;
+    --ink: #1f2733;
+    --muted: #6b7480;
+    --line: #e2e0d8;
+    --accent: #2f4858;
+    --accent-soft: #eaeef1;
+    --done: #9aa3ad;
+    --danger: #a4444a;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+  header h1 {
+    font-size: 1.5rem; font-weight: 700; margin: 0 0 4px;
+    letter-spacing: .02em;
+  }
+  header p { margin: 0 0 24px; color: var(--muted); font-size: .9rem; }
+
+  /* ---- drop zone ---- */
+  .dropzone {
+    border: 2px dashed var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    padding: 28px 20px;
+    text-align: center;
+    transition: border-color .15s, background .15s;
+    cursor: pointer;
+  }
+  .dropzone.drag { border-color: var(--accent); background: var(--accent-soft); }
+  .dropzone p { margin: 0; color: var(--muted); font-size: .9rem; }
+  .dropzone strong { color: var(--accent); }
+  #fileInput { display: none; }
+
+  /* ---- file list ---- */
+  .files {
+    margin: 20px 0;
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .file-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; padding: 6px 14px; font-size: .85rem;
+  }
+  .file-chip label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .file-chip.modified::after {
+    content: "未保存"; font-size: .7rem; color: var(--danger);
+    background: #f7e9ea; padding: 1px 6px; border-radius: 4px;
+  }
+  .file-chip .count { color: var(--muted); font-size: .75rem; }
+
+  /* ---- toolbar ---- */
+  .toolbar {
+    display: flex; align-items: center; gap: 12px;
+    margin: 16px 0; flex-wrap: wrap;
+  }
+  .toolbar .spacer { flex: 1; }
+  button {
+    font: inherit; cursor: pointer; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--panel);
+    color: var(--ink); padding: 8px 16px; transition: background .15s, border-color .15s;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.primary:hover { background: #25404f; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .sort-btn .arrow { font-size: .75rem; color: var(--muted); margin-left: 4px; }
+
+  /* ---- table ---- */
+  .section-label {
+    font-size: .8rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .08em;
+    margin: 28px 0 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: .78rem; color: var(--muted);
+    font-weight: 600; padding: 8px 12px; border-bottom: 2px solid var(--line);
+    white-space: nowrap;
+  }
+  tbody td { padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: .9rem; vertical-align: middle; }
+  tbody tr:hover { background: #fafaf8; }
+  .col-check { width: 36px; text-align: center; }
+  .col-date { width: 150px; white-space: nowrap; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .col-src { width: 130px; }
+  .src-tag {
+    font-size: .72rem; color: var(--muted); background: var(--accent-soft);
+    padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+  }
+  tr.done td { color: var(--done); }
+  tr.done .task { text-decoration: line-through; }
+  input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+  .empty {
+    text-align: center; color: var(--muted); font-size: .9rem;
+    padding: 48px 20px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: var(--radius);
+  }
+  .hidden { display: none; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 10px 20px; border-radius: 8px;
+    font-size: .85rem; opacity: 0; transition: opacity .25s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  @media (max-width: 600px) {
+    .col-src { display: none; }
+    .col-date { width: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>TODOリスト</h1>
+    <p>複数のCSVを読み込み、日時順に統合して表示します。完了状態を変更して保存できます。</p>
+  </header>
+
+  <div class="dropzone" id="dropzone">
+    <p><strong>CSVファイルを選択</strong> またはここにドラッグ＆ドロップ（複数可）</p>
+    <input type="file" id="fileInput" accept=".csv" multiple>
+  </div>
+
+  <div class="files" id="fileList"></div>
+
+  <div class="toolbar" id="toolbar" style="display:none;">
+    <button class="sort-btn" id="sortBtn">日時で並び替え<span class="arrow" id="sortArrow">▲ 昇順</span></button>
+    <div class="spacer"></div>
+    <button class="primary" id="saveBtn">変更を保存</button>
+  </div>
+
+  <div id="board"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---- state ----
+  let files = {};       // fileName -> { name, rows:[{datetime,task,done}], visible, modified, header }
+  let sortAsc = true;
+
+  const DONE_TRUE = "完了";
+  const DONE_FALSE = "未完了";
+
+  const $ = id => document.getElementById(id);
+  const dropzone = $("dropzone");
+  const fileInput = $("fileInput");
+
+  // ---- CSV parsing (handles quoted fields) ----
+  function parseCSV(text) {
+    const rows = [];
+    let field = "", row = [], inQuotes = false;
+    text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; }
+          else inQuotes = false;
+        } else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ",") { row.push(field); field = ""; }
+        else if (c === "\n") { row.push(field); rows.push(row); field = ""; row = []; }
+        else field += c;
+      }
+    }
+    if (field !== "" || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(r => r.length && !(r.length === 1 && r[0].trim() === ""));
+  }
+
+  function escapeField(v) {
+    v = String(v == null ? "" : v);
+    return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+
+  function buildCSV(file) {
+    const lines = [file.header.join(",")];
+    for (const r of file.rows) {
+      lines.push([r.datetime, r.task, r.done ? DONE_TRUE : DONE_FALSE].map(escapeField).join(","));
+    }
+    return lines.join("\r\n");
+  }
+
+  // ---- date parsing for sort ----
+  function toTime(s) {
+    const t = Date.parse(String(s).replace(/\//g, "-").replace(" ", "T"));
+    return isNaN(t) ? Infinity : t;  // 不正な日時は末尾へ
+  }
+
+  // ---- ingest a File object ----
+  function readFile(file) {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const rows = parseCSV(reader.result);
+        if (!rows.length) { resolve(); return; }
+        const header = rows[0];
+        const body = rows.slice(1).map(cols => ({
+          datetime: (cols[0] || "").trim(),
+          task: (cols[1] || "").trim(),
+          done: (cols[2] || "").trim() === DONE_TRUE
+        }));
+        files[file.name] = { name: file.name, header, rows: body, visible: true, modified: false };
+        resolve();
+      };
+      reader.readAsText(file, "UTF-8");
+    });
+  }
+
+  async function handleFiles(fileList) {
+    const arr = [...fileList].filter(f => /\.csv$/i.test(f.name));
+    if (!arr.length) { toast("CSVファイルを選択してください"); return; }
+    await Promise.all(arr.map(readFile));
+    render();
+  }
+
+  // ---- rendering ----
+  function render() {
+    renderFileChips();
+    renderTables();
+    $("toolbar").style.display = Object.keys(files).length ? "flex" : "none";
+  }
+
+  function renderFileChips() {
+    const list = $("fileList");
+    list.innerHTML = "";
+    Object.values(files).forEach(f => {
+      const chip = document.createElement("div");
+      chip.className = "file-chip" + (f.modified ? " modified" : "");
+      const label = document.createElement("label");
+      const cb = document.createElement("input");
+      cb.type = "checkbox"; cb.checked = f.visible;
+      cb.onchange = () => { f.visible = cb.checked; renderTables(); };
+      const name = document.createElement("span");
+      name.textContent = f.name;
+      const count = document.createElement("span");
+      count.className = "count";
+      count.textContent = "(" + f.rows.length + ")";
+      label.append(cb, name, count);
+      chip.append(label);
+      list.append(chip);
+    });
+  }
+
+  function visibleTasks() {
+    const out = [];
+    Object.values(files).forEach(f => {
+      if (!f.visible) return;
+      f.rows.forEach(r => out.push({ file: f, row: r }));
+    });
+    return out;
+  }
+
+  function renderTables() {
+    const board = $("board");
+    board.innerHTML = "";
+    const all = visibleTasks();
+
+    if (!all.length) {
+      board.innerHTML = '<div class="empty">表示するタスクがありません。CSVを読み込むか、ファイルの表示をオンにしてください。</div>';
+      return;
+    }
+
+    const dir = sortAsc ? 1 : -1;
+    const sorter = (a, b) => (toTime(a.row.datetime) - toTime(b.row.datetime)) * dir;
+    const pending = all.filter(x => !x.row.done).sort(sorter);
+    const done = all.filter(x => x.row.done).sort(sorter);
+
+    board.append(buildSection("未完了", pending, false));
+    if (done.length) board.append(buildSection("完了", done, true));
+  }
+
+  function buildSection(title, items, isDone) {
+    const frag = document.createDocumentFragment();
+    const label = document.createElement("div");
+    label.className = "section-label";
+    label.textContent = title + "（" + items.length + "）";
+    frag.append(label);
+
+    if (!items.length) {
+      const e = document.createElement("div");
+      e.className = "empty";
+      e.textContent = "なし";
+      frag.append(e);
+      return frag;
+    }
+
+    const table = document.createElement("table");
+    table.innerHTML =
+      "<thead><tr>" +
+      '<th class="col-check"></th>' +
+      '<th class="col-date">日時</th>' +
+      "<th>タスク内容</th>" +
+      '<th class="col-src">ファイル</th>' +
+      "</tr></thead>";
+    const tbody = document.createElement("tbody");
+
+    items.forEach(({ file, row }) => {
+      const tr = document.createElement("tr");
+      if (row.done) tr.className = "done";
+
+      const tdCheck = document.createElement("td");
+      tdCheck.className = "col-check";
+      const cb = document.createElement("input");
+      cb.type = "checkbox"; cb.checked = row.done;
+      cb.onchange = () => {
+        row.done = cb.checked;
+        file.modified = true;
+        render();
+      };
+      tdCheck.append(cb);
+
+      const tdDate = document.createElement("td");
+      tdDate.className = "col-date";
+      tdDate.textContent = row.datetime || "—";
+
+      const tdTask = document.createElement("td");
+      tdTask.className = "task";
+      tdTask.textContent = row.task;
+
+      const tdSrc = document.createElement("td");
+      tdSrc.className = "col-src";
+      const tag = document.createElement("span");
+      tag.className = "src-tag";
+      tag.textContent = file.name;
+      tdSrc.append(tag);
+
+      tr.append(tdCheck, tdDate, tdTask, tdSrc);
+      tbody.append(tr);
+    });
+
+    table.append(tbody);
+    frag.append(table);
+    return frag;
+  }
+
+  // ---- save (download per modified file) ----
+  function saveAll() {
+    const modified = Object.values(files).filter(f => f.modified);
+    if (!modified.length) { toast("保存する変更はありません"); return; }
+    modified.forEach(f => {
+      const blob = new Blob(["\uFEFF" + buildCSV(f)], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = f.name;
+      document.body.append(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      f.modified = false;
+    });
+    renderFileChips();
+    toast(modified.length + "件のファイルを書き出しました");
+  }
+
+  // ---- toast ----
+  let toastTimer;
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  // ---- events ----
+  dropzone.onclick = () => fileInput.click();
+  fileInput.onchange = () => { handleFiles(fileInput.files); fileInput.value = ""; };
+
+  ["dragenter", "dragover"].forEach(ev =>
+    dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add("drag"); }));
+  ["dragleave", "drop"].forEach(ev =>
+    dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove("drag"); }));
+  dropzone.addEventListener("drop", e => handleFiles(e.dataTransfer.files));
+
+  $("sortBtn").onclick = () => {
+    sortAsc = !sortAsc;
+    $("sortArrow").textContent = sortAsc ? "▲ 昇順" : "▼ 降順";
+    renderTables();
+  };
+  $("saveBtn").onclick = saveAll;
+})();
+</script>
+</body>
+</html>
