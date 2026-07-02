@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>サンプルツール</title>
+
+<!-- 1. 共通スタイル -->
+<link rel="stylesheet" href="./style.css">
+
+<!-- 2. 共通レイアウト(header/footer) -->
+<script src="./layout.js"></script>
+</head>
+<body>
+
+  <!-- ヘッダー(共通コンポーネント) -->
+  <site-header title="会議室予約システム" home="./index.html"></site-header>
+
+  <!-- 3. 本文(メインページ部分) -->
+  <main class="container" style="padding-block: var(--space-7);">
+
+    <div class="section-title">
+      <span class="eyebrow">TOOL</span>
+      <h1>会議室予約</h1>
+    </div>
+
+    <p class="text-muted">
+      このセクションはサンプルです。style.css のトークンとコンポーネントを
+      そのまま使っています。
+    </p>
+
+    <div class="grid grid-2" style="margin-top: var(--space-6);">
+
+      <section class="card card-accent stack">
+        <h3>予約フォーム</h3>
+
+        <div class="form-group">
+          <label class="label" for="room">会議室</label>
+          <select id="room" class="select">
+            <option>第1会議室</option>
+            <option>第2会議室</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="pin">PIN</label>
+          <input id="pin" class="input" type="password" placeholder="4桁のPIN">
+          <p class="hint">予約時に発行されたPINを入力してください。</p>
+        </div>
+
+        <button id="submit-btn" class="btn btn-accent">予約する</button>
+      </section>
+
+      <section class="card stack">
+        <h3>本日の予約状況</h3>
+        <table class="table">
+          <thead>
+            <tr><th>時間</th><th>会議室</th><th>状態</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>10:00–11:00</td>
+              <td>第1会議室</td>
+              <td><span class="badge badge-success">確定</span></td>
+            </tr>
+            <tr>
+              <td>13:00–14:00</td>
+              <td>第2会議室</td>
+              <td><span class="badge badge-warning">仮予約</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+
+    <div id="result" class="alert alert-success" style="display:none; margin-top: var(--space-6);">
+      予約を受け付けました。
+    </div>
+
+  </main>
+
+  <!-- フッター(共通コンポーネント) -->
+  <site-footer owner="習志野市役所"></site-footer>
+
+  <!-- 4. ページ固有ロジック(IIFEでグローバル汚染を防止) -->
+  <script>
+    (function () {
+      "use strict";
+
+      const submitBtn = document.getElementById("submit-btn");
+      const result = document.getElementById("result");
+
+      submitBtn.addEventListener("click", function () {
+        // ここに実際の予約処理(GAS呼び出しなど)を書く
+        result.style.display = "block";
+      });
+    })();
+  </script>
+
+</body>
+</html>
