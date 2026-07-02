@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>プロンプト早見表 | DX推進リーダー 活動紹介</title>
+
+<link rel="stylesheet" href="./style.css">
+<script src="./layout.js"></script>
+</head>
+<body>
+
+  <site-header base="."></site-header>
+
+  <main class="container article-body" style="padding-block: var(--space-7); max-width: 52rem;">
+
+    <div class="section-title">
+      <span class="eyebrow">PROMPT</span>
+      <h1>記事生成プロンプト早見表</h1>
+    </div>
+
+    <p class="text-muted">
+      AIに記事を作らせるときに使う早見表とプロンプトの型です。
+      各ブロックの「コピー」ボタンで全文をコピーできます。
+    </p>
+
+    <div class="alert alert-warning">
+      使い方：まず <strong>①デザインシステム早見表</strong> を貼り、続けて
+      <strong>②プロンプトの型</strong> を貼って、下部の「この記事の情報」を埋めて送信します。
+    </div>
+
+
+    <!-- ① デザインシステム早見表 -->
+    <div class="flex items-center justify-between" style="margin-top: var(--space-7);">
+      <h2 style="margin:0;">① デザインシステム早見表</h2>
+      <button class="btn btn-ghost no-print" data-copy="#block-cheatsheet">コピー</button>
+    </div>
+    <p class="text-sm text-muted">毎回、最初に貼るもの。</p>
+    <pre class="code-block" id="block-cheatsheet"><code>[デザインシステム参照ルール]
+・style.css / layout.js は変更禁止。既存のクラス・トークンのみで組む。
+・インラインstyleでの色/フォント直指定は禁止。必ず変数(var(--color-xx)等)を使う。
+・個人名・団体名・固有名詞は 〇〇 で伏せる(実データは後で自分で埋める)。
+・ページ固有JSは&lt;body&gt;末尾にIIFEで記述。
+
+■ 共通レイアウト(layout.js)
+&lt;site-header base="."&gt;&lt;/site-header&gt;   … ルート(index.html)の場合
+&lt;site-header base=".."&gt;&lt;/site-header&gt;  … pages/ や info/ 内の場合
+&lt;site-footer&gt;&lt;/site-footer&gt;            … owner属性省略可(既定値あり)
+&lt;article-list base="."&gt;&lt;/article-list&gt; … 記事一覧を自動生成(トップページ用)
+※ base はページの階層に合わせて "." か ".." を指定する
+※ CSS/JSの読み込みパスも同じ考え方(ルート="./style.css" / pages・info内="../style.css")
+
+■ 色トークン
+--color-ink / --color-ink-soft   : 主要/補助テキスト
+--color-paper / --color-paper-raised : 背景/カード面
+--color-mist                     : 罫線・区切り
+--color-brass / --color-brass-soft : アクセント(強調・シグネチャ)
+--color-slate / --color-slate-soft : セカンダリ(リンク等)
+--color-success/warning/danger (+soft) : 状態色
+
+■ レイアウト
+.container / .flex / .flex-col / .grid .grid-2 .grid-3
+.stack (子要素に自動余白) / .divider
+gap-1〜6, .items-center, .justify-between
+
+■ タイポグラフィ
+h1〜h4(明朝) / p(ゴシック) / .text-sm .text-xs .text-lg .text-muted
+.section-title + &lt;span class="eyebrow"&gt; (シグネチャ見出し)
+.article-body (記事本文の幅・行間調整) / .article-meta (記事の日付表示)
+
+■ コンポーネント
+.btn-primary / .btn-accent / .btn-ghost
+.card / .card-accent
+.form-group / .label / .input / .select / .textarea / .hint
+.table
+.badge-success/warning/danger/neutral
+.alert-success/warning/danger</code></pre>
+
+
+    <!-- ② プロンプトの型 -->
+    <div class="flex items-center justify-between" style="margin-top: var(--space-7);">
+      <h2 style="margin:0;">② 毎回使うプロンプトの型</h2>
+      <button class="btn btn-ghost no-print" data-copy="#block-template">コピー</button>
+    </div>
+    <p class="text-sm text-muted">①のあとに貼り、「この記事の情報」を埋めて送信する。</p>
+    <pre class="code-block" id="block-template"><code>[役割]
+デザインシステム(style.css / layout.js)に準拠して、新しい記事1本を作成してください。
+
+[前提]
+・出力は3点セット
+   ① pages/ 用の記事HTML本体(&lt;main class="container article-body"&gt;以下)
+   ② layout.js の ARTICLES に追記する1ブロック(file/title/date/category/body)
+   ③ ファイル名(YYYY-MM-DD_内容.html、半角英数字)の提案
+・pages/内のHTMLなので、CSS/JS参照と&lt;site-header&gt;のbaseは "../" ".." を使う
+・個人名・団体名・固有名詞は 〇〇 で伏せる(実データは後で自分で埋める)
+・②の body には、記事本文のテキストを検索用に入れる(本文と同じ内容にする)
+
+[この記事の情報]
+・日付:
+・タイトル:
+・目的/種別: (実績報告 / お知らせ / 活動レポート など)
+・本文で伝えたいこと(箇条書きでOK):
+・表や画像は使うか: (使う場合は概要も)</code></pre>
+
+    <div class="alert alert-success" style="margin-top: var(--space-5);">
+      ※ 検索機能を追加したため、②の出力には <code>body</code>（検索用の本文テキスト）が
+      含まれます。記事本文を直したときは <code>body</code> も直してください。
+    </div>
+
+    <hr class="divider">
+    <p class="text-sm text-muted">
+      <a href="./index.html">← トップページへ戻る</a>
+    </p>
+
+  </main>
+
+  <site-footer></site-footer>
+
+  <!-- ページ固有ロジック: コピーボタン -->
+  <script>
+    (function () {
+      "use strict";
+      const buttons = document.querySelectorAll("[data-copy]");
+      buttons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          const target = document.querySelector(btn.getAttribute("data-copy"));
+          if (!target) return;
+          const text = target.innerText;
+          const done = function () {
+            const original = btn.textContent;
+            btn.textContent = "コピーしました";
+            setTimeout(function () { btn.textContent = original; }, 1500);
+          };
+          // navigator.clipboard が使える環境（要HTTPS/localhost等）
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done).catch(function () {
+              fallbackCopy(text, done);
+            });
+          } else {
+            // file:// 環境向けフォールバック
+            fallbackCopy(text, done);
+          }
+        });
+      });
+
+      function fallbackCopy(text, done) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); done(); }
+        catch (e) { /* コピー不可の環境では何もしない */ }
+        document.body.removeChild(ta);
+      }
+    })();
+  </script>
+
+</body>
+</html>

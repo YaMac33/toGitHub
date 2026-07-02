@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>更新手順書 | DX推進リーダー 活動紹介</title>
+
+<!-- トップ階層なので "./" 参照 -->
+<link rel="stylesheet" href="./style.css">
+<script src="./layout.js"></script>
+</head>
+<body>
+
+  <site-header base="."></site-header>
+
+  <main class="container article-body" style="padding-block: var(--space-7); max-width: 48rem;">
+
+    <div class="section-title">
+      <span class="eyebrow">README</span>
+      <h1>更新手順書</h1>
+    </div>
+
+    <p>
+      このサイトは、共有フォルダ内のHTMLファイルをそのまま開いて見る
+      「オフライン・完全ローカル」のサイトです。インターネットにはつながっていません。
+      このフォルダを丸ごと共有フォルダに置き、<code>index.html</code> を開けば表示されます
+      （ブラウザは Microsoft Edge を想定しています）。
+    </p>
+
+    <div class="alert alert-success">
+      更新担当者がさわるのは、基本的に <strong>記事HTML</strong> と
+      <strong>layout.js の記事リスト</strong> の2か所だけです。
+      それ以外は原則さわりません。
+    </div>
+
+
+    <!-- フォルダの中身 -->
+    <h2>フォルダの中身</h2>
+    <table class="table">
+      <thead>
+        <tr><th style="width:11em;">名前</th><th>役割</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="font-mono">index.html</td><td>トップページ（記事一覧・検索）。基本さわりません。</td></tr>
+        <tr><td class="font-mono">style.css</td><td>見た目の設定。<span class="badge badge-danger">さわらない</span></td></tr>
+        <tr><td class="font-mono">layout.js</td><td>記事の一覧を管理。<span class="badge badge-warning">記事リストだけ編集</span></td></tr>
+        <tr><td class="font-mono">pages/</td><td>記事のHTMLを入れる場所</td></tr>
+        <tr><td class="font-mono">info/</td><td>固定ページ（about / contact）。必要時のみ編集</td></tr>
+        <tr><td class="font-mono">images/</td><td>画像を入れる場所（ここに1か所集約）</td></tr>
+        <tr><td class="font-mono">_template/</td><td>新しい記事を作るときの雛形</td></tr>
+        <tr><td class="font-mono">README.html</td><td>この手順書</td></tr>
+      </tbody>
+    </table>
+
+
+    <!-- 記事追加の手順 -->
+    <h2>新しい記事を追加する手順</h2>
+    <p class="text-muted">全体で3ステップです。順番どおりに進めてください。</p>
+
+    <h3>ステップ1　雛形をコピーして記事を作る</h3>
+    <div class="card stack-sm">
+      <p style="margin:0;">
+        1. <code>_template</code> フォルダの「記事テンプレート.html」をコピーする<br>
+        2. コピーしたファイルを <code>pages</code> フォルダに移動する<br>
+        3. ファイル名を、次のルールで付け直す
+      </p>
+      <div class="alert alert-warning" style="margin:0;">
+        <strong>ファイル名のルール：</strong> <code>日付_内容.html</code>（すべて半角）<br>
+        例：<code>2026-08-01_meeting-room.html</code><br>
+        ・日付は <code>YYYY-MM-DD</code> の形（2026-08-01 など）<br>
+        ・内容は半角の英数字とハイフンだけ（日本語やスペースは使わない）
+      </div>
+    </div>
+
+    <h3>ステップ2　記事の中身を書く</h3>
+    <div class="card stack-sm">
+      <p style="margin:0;">
+        4. <code>pages</code> に置いたファイルを右クリック →「プログラムから開く」→「メモ帳」で開く<br>
+        5. ファイルの中の <strong>【書き換え1〜4】</strong> と書かれた場所だけを書き換える
+        （それ以外はさわらない）<br>
+        6. 上書き保存する
+      </p>
+    </div>
+
+    <h3>ステップ3　一覧に載せる（いちばん大事）</h3>
+    <div class="card stack-sm">
+      <p style="margin:0;">
+        7. <code>layout.js</code> をメモ帳で開く<br>
+        8. 上のほうにある「記事リスト（ARTICLES）」を探す<br>
+        9. 次のかたまりを1つコピーして、すぐ上に貼り付ける
+      </p>
+
+      <pre class="code-block"><code>{
+  file: "2026-07-02_dx-results.html",
+  title: "DX推進リーダー これまでの取り組みと実績",
+  date: "2026-07-02",
+  category: "",
+  body: "記事の本文をここに貼り付ける"
+},</code></pre>
+
+      <p style="margin:0;">
+        10. 貼り付けたほうの中身を、今回の記事に書き換える
+      </p>
+      <table class="table">
+        <tbody>
+          <tr><th style="width:7em;">file</th><td>ステップ1で付けたファイル名（正確に）</td></tr>
+          <tr><th>title</th><td>一覧に表示したいタイトル</td></tr>
+          <tr><th>date</th><td>日付（YYYY-MM-DD）</td></tr>
+          <tr><th>category</th><td>空っぽ（<code>""</code> のまま）でOK</td></tr>
+          <tr><th>body</th><td>記事本文のテキスト。<strong>検索に使われます</strong>（下の注意を参照）</td></tr>
+        </tbody>
+      </table>
+      <p style="margin:0;">
+        11. 上書き保存する<br>
+        12. <code>index.html</code> を開いて、一覧に新しい記事が出ていれば完成です
+      </p>
+    </div>
+
+    <div class="alert alert-danger">
+      <strong>カンマ「,」に注意：</strong>
+      各かたまりの最後（閉じカッコ <code>}</code> の後ろ）にカンマが必要です。
+      付け忘れると一覧が表示されなくなります。
+      いちばん最後の記事だけはカンマ不要です（元からあるお手本を参考に）。
+    </div>
+
+
+    <!-- 検索用bodyの注意 -->
+    <h2>検索機能と「body」について</h2>
+    <p>
+      トップページには記事を横断検索する機能があります。検索は、記事リストの
+      <code>body</code> に書かれたテキストを対象にしています。
+    </p>
+    <div class="alert alert-warning">
+      <strong>大事なルール：</strong>
+      記事の本文（pages のHTML）を後から直したときは、
+      <code>layout.js</code> の <code>body</code> も同じ内容に直してください。
+      <br>
+      片方だけ直すと、検索結果と実際の記事の中身がズレてしまいます。
+      （システムの都合で、本文と body は自動では同期されません）
+    </div>
+    <p class="text-sm text-muted">
+      ※ 検索は、英数字の全角・半角、大文字・小文字は自動で区別せずにヒットします。
+      ただし、ひらがなとカタカナ（例：「システム」と「しすてむ」）は別の文字として扱われます。
+    </p>
+
+
+    <!-- 画像 -->
+    <h2>画像を入れたいとき</h2>
+    <div class="card stack-sm">
+      <p style="margin:0;">
+        1. 画像ファイルを <code>images</code> フォルダに入れる<br>
+        2. ファイル名は次のルールで付ける（すべて半角）
+      </p>
+      <div class="alert alert-warning" style="margin:0;">
+        <code>日付_記事名_連番.jpg</code><br>
+        例：<code>2026-08-01_meeting-room_01.jpg</code>
+      </div>
+      <p style="margin:0;">
+        3. 記事HTMLの中の【任意：画像を入れる場合】の説明にしたがって、
+        画像の行を有効にし、ファイル名を書き換える
+      </p>
+    </div>
+
+
+    <!-- トラブルシューティング -->
+    <h2>うまく表示されないとき</h2>
+    <table class="table">
+      <thead>
+        <tr><th style="width:14em;">症状</th><th>確認すること</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>一覧に記事が出ない</td>
+          <td>layout.js のカンマ「,」の付け忘れ・付けすぎがないか確認</td>
+        </tr>
+        <tr>
+          <td>検索しても出てこない</td>
+          <td>その記事の <code>body</code> にテキストが入っているか確認。
+              ひらがな／カタカナの違いでもヒットしません</td>
+        </tr>
+        <tr>
+          <td>見た目が崩れる（文字だけになる）</td>
+          <td>style.css / layout.js が index.html と同じ場所にあるか。
+              記事は pages、固定ページは info に入っているか
+              （場所が変わると参照がずれて読み込めません）</td>
+        </tr>
+        <tr>
+          <td>画像が出ない</td>
+          <td>images フォルダに画像があるか、ファイル名が一致しているか
+              （大文字小文字・全角半角も区別されます）</td>
+        </tr>
+      </tbody>
+    </table>
+
+
+    <!-- さわってはいけないもの -->
+    <h2>さわってはいけないファイル</h2>
+    <div class="card card-accent">
+      <ul style="margin:0; padding-left: 1.2em;">
+        <li><code>style.css</code>（見た目全体の設定）</li>
+        <li><code>layout.js</code> の「記事リスト」以外の部分</li>
+      </ul>
+      <p class="text-sm text-muted" style="margin-top: var(--space-3); margin-bottom:0;">
+        これらは全ページ共通です。壊すと全ページに影響します。
+        変更が必要なときは、DX推進担当（〇〇）に相談してください。
+      </p>
+    </div>
+
+    <hr class="divider">
+    <p class="text-sm text-muted">
+      <a href="./index.html">← トップページへ戻る</a>
+    </p>
+
+  </main>
+
+  <site-footer></site-footer>
+
+</body>
+</html>

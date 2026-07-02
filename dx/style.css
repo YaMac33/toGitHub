@@ -417,6 +417,30 @@ p { margin: 0 0 var(--space-4); }
   margin-bottom: var(--space-5);
 }
 
+/* インラインコード */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-mist);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+}
+/* コードブロック（手順書のサンプル用） */
+.code-block {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+.code-block code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
 
 /* -------------------------------------------------------------------------
    8. THEME: DARK  （<html data-theme="dark"> で有効）
