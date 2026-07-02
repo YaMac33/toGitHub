@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DX推進リーダー 活動紹介</title>
+
+<!-- トップ階層なので "./" 参照 -->
+<link rel="stylesheet" href="./style.css">
+<script src="./layout.js"></script>
+</head>
+<body>
+
+  <!-- トップ階層なので base="." -->
+  <site-header base="."></site-header>
+
+  <main class="container" style="padding-block: var(--space-7);">
+
+    <!-- 導入 -->
+    <section class="stack" style="margin-bottom: var(--space-7);">
+      <div class="section-title">
+        <span class="eyebrow">DX PROMOTION</span>
+        <h1>DX推進リーダーの活動を紹介します</h1>
+      </div>
+      <p class="text-muted" style="max-width: 44rem;">
+        現場の小さな「手間」を仕組みで軽くする取り組みを、こちらでお知らせしています。
+        気になる活動があれば、お気軽にお問い合わせ先までご連絡ください。
+      </p>
+    </section>
+
+    <!-- 固定ページへの入口 -->
+    <section class="grid grid-2" style="margin-bottom: var(--space-7);">
+      <a href="./info/about.html" class="card card-accent" style="text-decoration:none;">
+        <h4>DX推進リーダーとは？</h4>
+        <p class="text-sm text-muted" style="margin:0;">
+          役割・ミッションと推進体制についてご紹介します。
+        </p>
+      </a>
+      <a href="./info/contact.html" class="card card-accent" style="text-decoration:none;">
+        <h4>お問い合わせ先</h4>
+        <p class="text-sm text-muted" style="margin:0;">
+          相談・依頼の窓口はこちらです。
+        </p>
+      </a>
+    </section>
+
+    <!-- 記事検索 -->
+    <section style="margin-bottom: var(--space-6);">
+      <div class="section-title">
+        <span class="eyebrow">SEARCH</span>
+        <h2>記事を検索</h2>
+      </div>
+      <article-search base="."></article-search>
+    </section>
+
+    <!-- 記事一覧（検索中は隠す。制御は下部のスクリプト） -->
+    <section id="article-list-section">
+      <div class="section-title">
+        <span class="eyebrow">ARTICLES</span>
+        <h2>活動記事</h2>
+      </div>
+      <article-list base="."></article-list>
+    </section>
+
+  </main>
+
+  <site-footer></site-footer>
+
+  <!-- ページ固有ロジック: 検索中は一覧を隠す -->
+  <script>
+    (function () {
+      "use strict";
+      const listSection = document.getElementById("article-list-section");
+
+      // 検索語が入ったら一覧を隠し、空になったら戻す
+      document.addEventListener("search-active", function () {
+        listSection.style.display = "none";
+      });
+      document.addEventListener("search-clear", function () {
+        listSection.style.display = "";
+      });
+    })();
+  </script>
+
+</body>
+</html>
