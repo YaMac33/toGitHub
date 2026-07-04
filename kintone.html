@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kintone を活用した業務改善環境の構築について｜庁内説明資料</title>
+<style>
+  :root {
+    --ink: #16202e;
+    --ink-soft: #3d4a5c;
+    --mist: #6b7789;
+    --line: #d9dee7;
+    --line-soft: #e8ebf1;
+    --paper: #f6f7fa;
+    --paper-warm: #fbfcfd;
+    --navy: #1f3a5f;
+    --navy-deep: #142a45;
+    --sky: #2f6db3;
+    --sky-soft: #eaf1fa;
+    --teal: #17786b;
+    --teal-soft: #e5f2f0;
+    --amber: #b5702a;
+    --amber-soft: #f8efe3;
+    --rose: #a8384a;
+    --rose-soft: #f7e9eb;
+    --white: #ffffff;
+    --radius: 14px;
+    --radius-lg: 20px;
+    --shadow-sm: 0 1px 2px rgba(20,42,69,.06), 0 2px 8px rgba(20,42,69,.05);
+    --shadow-md: 0 4px 14px rgba(20,42,69,.08), 0 12px 30px rgba(20,42,69,.07);
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    --font-serif: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.85;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ---------- Layout shell ---------- */
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- Header ---------- */
+  header.masthead {
+    background:
+      radial-gradient(1200px 400px at 80% -10%, rgba(47,109,179,.28), transparent 60%),
+      linear-gradient(160deg, var(--navy-deep) 0%, var(--navy) 60%, #234873 100%);
+    color: #eaf0f8;
+    position: relative;
+    overflow: hidden;
+  }
+  header.masthead::after {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: radial-gradient(700px 400px at 78% 0%, #000 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .masthead-inner { position: relative; z-index: 1; padding: 30px 0 46px; }
+
+  .eyebrow-row {
+    display: flex; align-items: center; gap: 14px;
+    flex-wrap: wrap;
+    padding-bottom: 30px;
+  }
+  .badge-gov {
+    font-size: 12.5px; letter-spacing: .14em; font-weight: 600;
+    color: #bcd2ec;
+    border: 1px solid rgba(188,210,236,.4);
+    padding: 5px 12px; border-radius: 999px;
+    background: rgba(255,255,255,.04);
+  }
+  .doc-meta { font-size: 13px; color: #9db4d1; margin-left: auto; }
+
+  .kicker {
+    font-size: 13.5px; letter-spacing: .28em; font-weight: 600;
+    color: #7fa8d6; text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  h1.title {
+    font-family: var(--font-serif);
+    font-size: clamp(28px, 4.6vw, 46px);
+    line-height: 1.34;
+    font-weight: 600;
+    letter-spacing: .01em;
+    max-width: 20ch;
+  }
+  .subtitle {
+    margin-top: 20px;
+    font-size: clamp(15px, 1.7vw, 18px);
+    color: #c6d6ec;
+    font-weight: 400;
+    max-width: 46ch;
+    line-height: 1.8;
+    border-left: 3px solid var(--sky);
+    padding-left: 18px;
+  }
+
+  /* summary chips in hero */
+  .hero-chips {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 40px;
+  }
+  .chip {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px;
+    padding: 16px 16px 18px;
+    backdrop-filter: blur(4px);
+  }
+  .chip .n {
+    font-family: var(--font-serif);
+    font-size: 13px; color: #7fa8d6; letter-spacing: .1em;
+    display: block; margin-bottom: 8px;
+  }
+  .chip .t { font-size: 14.5px; font-weight: 600; color: #eaf0f8; line-height: 1.55; }
+  .chip .s { font-size: 12.5px; color: #9db4d1; margin-top: 6px; }
+
+  /* ---------- Nav (sticky) ---------- */
+  nav.toc {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(255,255,255,.86);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .toc-inner {
+    display: flex; gap: 6px; overflow-x: auto;
+    padding: 11px 0; scrollbar-width: none;
+  }
+  .toc-inner::-webkit-scrollbar { display: none; }
+  .toc-inner a {
+    flex: 0 0 auto;
+    font-size: 13px; font-weight: 600; color: var(--ink-soft);
+    text-decoration: none; padding: 7px 14px; border-radius: 999px;
+    white-space: nowrap; transition: all .18s ease;
+    border: 1px solid transparent;
+  }
+  .toc-inner a:hover { background: var(--sky-soft); color: var(--navy); }
+
+  /* ---------- Main ---------- */
+  main { padding: 20px 0 80px; }
+
+  section.block {
+    background: var(--white);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    padding: 40px 42px;
+    margin-top: 22px;
+    box-shadow: var(--shadow-sm);
+    scroll-margin-top: 72px;
+  }
+
+  .sec-head {
+    display: flex; align-items: baseline; gap: 16px;
+    margin-bottom: 26px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .sec-num {
+    font-family: var(--font-serif);
+    font-size: 15px; font-weight: 600;
+    color: var(--white);
+    background: var(--navy);
+    width: 38px; height: 38px; min-width: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-sm);
+  }
+  h2.sec-title {
+    font-size: clamp(19px, 2.4vw, 24px);
+    font-weight: 700; letter-spacing: .01em; color: var(--ink);
+    line-height: 1.4;
+  }
+  .sec-title small { display:block; font-size: 13px; font-weight: 500; color: var(--mist); margin-top: 4px; letter-spacing:.02em;}
+
+  p { margin: 0 0 16px; color: var(--ink-soft); }
+  p:last-child { margin-bottom: 0; }
+  strong { color: var(--ink); font-weight: 700; }
+
+  .lead {
+    font-size: 17px; color: var(--ink); line-height: 1.9;
+  }
+
+  /* ---------- Overview 4-part grid ---------- */
+  .parts-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+    margin-top: 8px;
+  }
+  .part-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 22px 24px;
+    position: relative;
+    background: var(--paper-warm);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .part-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .part-tag {
+    display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: .08em;
+    padding: 4px 10px; border-radius: 6px; margin-bottom: 12px;
+  }
+  .t-navy { background: var(--sky-soft); color: var(--navy); }
+  .t-teal { background: var(--teal-soft); color: var(--teal); }
+  .t-amber { background: var(--amber-soft); color: var(--amber); }
+  .t-rose { background: var(--rose-soft); color: var(--rose); }
+  .part-card h3 { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 8px; line-height:1.5; }
+  .part-card p { font-size: 14px; margin: 0; color: var(--ink-soft); }
+
+  .note-band {
+    margin-top: 22px;
+    background: var(--sky-soft);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    font-size: 14.5px; color: var(--navy-deep);
+    display: flex; gap: 12px; align-items: flex-start;
+    line-height: 1.75;
+  }
+  .note-band .ic { font-size: 17px; line-height: 1.5; }
+
+  /* ---------- Definition detail cards ---------- */
+  .def {
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--navy);
+    border-radius: 12px;
+    padding: 24px 26px;
+    margin-top: 18px;
+    background: var(--paper-warm);
+  }
+  .def.teal { border-left-color: var(--teal); }
+  .def.amber { border-left-color: var(--amber); }
+  .def.rose { border-left-color: var(--rose); }
+  .def h3 {
+    font-size: 17px; font-weight: 700; color: var(--ink);
+    margin-bottom: 14px; display:flex; align-items:center; gap:10px;
+  }
+  .def h3 .mk { font-size:12px; font-weight:700; padding:3px 9px; border-radius:6px; letter-spacing:.05em;}
+
+  dl.specs { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; margin-top: 4px; }
+  dl.specs dt { font-size: 13.5px; font-weight: 700; color: var(--navy); white-space: nowrap; }
+  dl.specs dd { font-size: 14px; color: var(--ink-soft); }
+
+  .mini-head { font-size: 14px; font-weight: 700; color: var(--ink); margin: 18px 0 10px; }
+
+  ul.clean { list-style: none; display: grid; gap: 9px; }
+  ul.clean li {
+    position: relative; padding-left: 22px; font-size: 14px; color: var(--ink-soft); line-height: 1.7;
+  }
+  ul.clean li::before {
+    content: ""; position: absolute; left: 4px; top: 11px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--sky);
+  }
+  ul.clean.teal li::before { background: var(--teal); }
+
+  /* ---------- Flow / connection diagram ---------- */
+  .flow-compare { display: grid; gap: 18px; margin-top: 8px; }
+  .flow {
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    border: 1px solid var(--line);
+  }
+  .flow.current { background: #fbf6f4; border-color: #ecd8d1; }
+  .flow.proposed { background: var(--teal-soft); border-color: #c9e6e0; }
+  .flow-label {
+    display:inline-flex; align-items:center; gap:8px;
+    font-size: 13px; font-weight: 700; letter-spacing:.05em;
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 16px;
+  }
+  .flow.current .flow-label { background: var(--rose-soft); color: var(--rose); }
+  .flow.proposed .flow-label { background: #d3ece6; color: var(--teal); }
+
+  .flow-track {
+    display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap;
+  }
+  .node {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13.5px; font-weight: 600; color: var(--ink);
+    display: flex; flex-direction: column; justify-content: center;
+    min-width: 0; flex: 1 1 auto; text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .node .sub { font-size: 11.5px; font-weight: 500; color: var(--mist); margin-top: 3px; }
+  .node.endpoint { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .node.endpoint .sub { color: #9db4d1; }
+  .node.hl-rose { border-color: #e2b2ac; background: #fdf3f1; }
+  .node.hl-teal { border-color: #a9d8cf; background: #eef7f5; }
+  .arrow {
+    align-self: center; color: var(--mist); font-size: 18px; font-weight: 700;
+    flex: 0 0 auto; padding: 0 2px;
+  }
+  .flow-note { margin-top: 14px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
+  .flow.current .flow-note { color: #8a5548; }
+  .flow.proposed .flow-note { color: #2c6459; }
+
+  /* ---------- Coexist split ---------- */
+  .coexist { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
+  .lane {
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 22px; background: var(--paper-warm);
+  }
+  .lane .lane-h { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .lane .lane-route { font-size: 13px; color: var(--sky); font-weight: 600; margin-bottom: 12px; }
+  .lane.b .lane-route { color: var(--teal); }
+  .lane p { font-size: 13.5px; margin: 0; }
+
+  /* ---------- Security: main/sub ---------- */
+  .measure { display: grid; gap: 14px; margin-top: 8px; }
+  .measure-item {
+    display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start;
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 20px 22px; background: var(--paper-warm);
+  }
+  .measure-rank {
+    font-size: 12px; font-weight: 700; letter-spacing: .08em;
+    padding: 6px 12px; border-radius: 8px; white-space: nowrap; height: fit-content;
+  }
+  .rank-main { background: var(--navy); color: #fff; }
+  .rank-sub { background: var(--sky-soft); color: var(--navy); border: 1px solid #c3d6ee; }
+  .measure-item h4 { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .measure-item p { font-size: 14px; margin: 0; }
+
+  .alert {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--rose-soft); border: 1px solid #e6c6cb;
+    border-radius: var(--radius); padding: 18px 22px; margin-top: 6px;
+  }
+  .alert .ic { font-size: 18px; }
+  .alert .body h4 { font-size: 14.5px; font-weight: 700; color: var(--rose); margin-bottom: 4px; }
+  .alert .body p { font-size: 14px; margin: 0; color: #7d3d47; }
+
+  /* ---------- Callout (data location) ---------- */
+  .callout {
+    background: linear-gradient(135deg, var(--navy-deep), var(--navy));
+    color: #eaf0f8; border-radius: var(--radius-lg);
+    padding: 30px 34px; margin-top: 8px;
+    position: relative; overflow: hidden;
+  }
+  .callout::before {
+    content: "≠"; position: absolute; right: 26px; top: 8px;
+    font-family: var(--font-serif); font-size: 130px; color: rgba(255,255,255,.06);
+    line-height: 1;
+  }
+  .callout h3 { font-size: 18px; font-weight: 700; margin-bottom: 14px; color: #fff; position: relative; }
+  .callout p { color: #c6d6ec; font-size: 14.5px; position: relative; margin-bottom: 12px; }
+  .callout .eq {
+    display: inline-block; background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.16); border-radius: 10px;
+    padding: 12px 18px; font-size: 14px; color: #eaf0f8; margin-top: 6px; line-height:1.7;
+  }
+  .callout .eq b { color: #8fc7bd; }
+
+  /* ---------- Timeline ---------- */
+  .timeline { position: relative; margin-top: 10px; padding-left: 8px; }
+  .step {
+    display: grid; grid-template-columns: auto 1fr; gap: 20px;
+    position: relative; padding-bottom: 26px;
+  }
+  .step:last-child { padding-bottom: 0; }
+  .step-dot {
+    width: 44px; height: 44px; border-radius: 12px; z-index: 1;
+    background: var(--white); border: 2px solid var(--navy);
+    color: var(--navy); font-weight: 700; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-serif);
+  }
+  .step:not(:last-child) .step-dot::after {
+    content:""; position:absolute; left: 21px; top: 44px; bottom: 0;
+    width: 2px; background: linear-gradient(var(--navy), var(--line));
+  }
+  .step-body { padding-top: 4px; }
+  .step-body h4 { font-size: 15.5px; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
+  .step-body p { font-size: 14px; margin: 0; }
+  .step-body .when {
+    display:inline-block; font-size: 12px; font-weight:700; color: var(--amber);
+    background: var(--amber-soft); padding: 2px 10px; border-radius: 6px; margin-top:8px;
+  }
+
+  /* ---------- Checklist ---------- */
+  .checklist { display: grid; gap: 12px; margin-top: 6px; }
+  .check {
+    display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start;
+    border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px;
+    background: var(--paper-warm);
+  }
+  .check .box {
+    width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--sky);
+    margin-top: 1px;
+  }
+  .check p { font-size: 14px; margin: 0; }
+
+  /* ---------- Meaning / closing ---------- */
+  .meaning-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-top: 8px; }
+  .meaning {
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 20px 22px; background: var(--paper-warm);
+    display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items:start;
+  }
+  .meaning .mk {
+    width: 34px; height: 34px; border-radius: 9px; background: var(--teal-soft);
+    color: var(--teal); display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:16px;
+  }
+  .meaning p { font-size: 14px; margin: 0; }
+
+  /* ---------- Footer ---------- */
+  footer {
+    background: var(--navy-deep); color: #9db4d1;
+    padding: 34px 0; margin-top: 20px; font-size: 13px;
+  }
+  footer .wrap { display:flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  footer strong { color: #eaf0f8; }
+  .disclaimer {
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px; padding: 14px 18px; margin-top: 16px; line-height: 1.7;
+    color: #b6c8de; font-size: 12.5px; max-width: 100%;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px) {
+    .hero-chips { grid-template-columns: repeat(2,1fr); }
+    .parts-grid, .coexist, .meaning-grid { grid-template-columns: 1fr; }
+    section.block { padding: 30px 22px; }
+    .callout::before { display:none; }
+  }
+  @media (max-width: 520px) {
+    .hero-chips { grid-template-columns: 1fr; }
+    .sec-head { gap: 12px; }
+    .measure-item { grid-template-columns: 1fr; gap: 10px; }
+    dl.specs { grid-template-columns: 1fr; gap: 2px 0; }
+    dl.specs dd { margin-bottom: 8px; }
+  }
+
+  @media print {
+    nav.toc { display: none; }
+    section.block { box-shadow: none; break-inside: avoid; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="masthead">
+  <div class="wrap masthead-inner">
+    <div class="eyebrow-row">
+      <span class="badge-gov">庁 内 説 明 資 料</span>
+      <span class="badge-gov">DX 推 進</span>
+      <span class="doc-meta">作成：〇〇課 DX推進担当　／　令和〇年〇月〇日</span>
+    </div>
+    <div class="kicker">Proposal</div>
+    <h1 class="title">kintone を活用した<br>業務改善環境の構築について</h1>
+    <p class="subtitle">まるごとDXボックス／moconavi の併用による、庁費負担を抑えた段階的なDX推進の提案</p>
+
+    <div class="hero-chips">
+      <div class="chip">
+        <span class="n">Ⅰ. 基盤</span>
+        <span class="t">まるごとDXボックス</span>
+        <span class="s">全職員が無償で使える kintone 環境</span>
+      </div>
+      <div class="chip">
+        <span class="n">Ⅱ. 接続</span>
+        <span class="t">LGWAN×kintone<br>まるっと活用プログラム</span>
+        <span class="s">moconavi による LGWAN 接続</span>
+      </div>
+      <div class="chip">
+        <span class="n">Ⅲ. 支援</span>
+        <span class="t">パートナー：JOYZO</span>
+        <span class="s">元市役所職員による伴走支援</span>
+      </div>
+      <div class="chip">
+        <span class="n">Ⅳ. 方式</span>
+        <span class="t">LGWAN-ASP 専用接続</span>
+        <span class="s">SKY-DIV とは別経路で共存</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= TOC ================= -->
+<nav class="toc">
+  <div class="wrap toc-inner">
+    <a href="#s1">1. 概要</a>
+    <a href="#s2">2. 各構成要素</a>
+    <a href="#s3">3. 接続方式の変更点</a>
+    <a href="#s4">4. 既存環境との共存</a>
+    <a href="#s5">5. セキュリティ論点</a>
+    <a href="#s6">6. データ保存場所</a>
+    <a href="#s7">7. 進め方</a>
+    <a href="#s8">8. 確認事項</a>
+    <a href="#s9">9. 本提案の意義</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ===== 1. 概要 ===== -->
+  <section class="block" id="s1">
+    <div class="sec-head">
+      <div class="sec-num">1</div>
+      <h2 class="sec-title">提案の概要</h2>
+    </div>
+    <p class="lead">本提案は、<strong>無償プログラムを活用して kintone を全庁的に試験導入</strong>し、あわせて LGWAN 環境からの安全な接続手段を確保するものである。予算化前の準備・効果検証期間として、庁費の追加負担を最小限に抑えて実証（PoC）を実施できる点が最大の利点である。</p>
+
+    <div class="parts-grid">
+      <div class="part-card">
+        <span class="part-tag t-navy">Ⅰ. kintone 本体・環境</span>
+        <h3>自治体まるごとDXボックス</h3>
+        <p>サイボウズ社が提供する、全職員が無償で利用できる kintone 環境。自治体向けアプリを標準で搭載。</p>
+      </div>
+      <div class="part-card">
+        <span class="part-tag t-teal">Ⅱ. LGWAN 接続手段</span>
+        <h3>LGWAN×kintone まるっと活用プログラム</h3>
+        <p>レコモット社「moconavi」を無償試用。LGWAN 端末から kintone へ安全に直接接続する。</p>
+      </div>
+      <div class="part-card">
+        <span class="part-tag t-amber">Ⅲ. 伴走支援（窓口）</span>
+        <h3>パートナー企業：JOYZO</h3>
+        <p>まるごとDXボックスの申込窓口。導入から運用・内製化までの伴走支援を担う。</p>
+      </div>
+      <div class="part-card">
+        <span class="part-tag t-rose">Ⅳ. 接続方式</span>
+        <h3>moconavi による LGWAN-ASP 専用接続</h3>
+        <p>SKY-DIV を経由せず、LGWAN-ASP 認定の専用経路で kintone を利用する。</p>
+      </div>
+    </div>
+
+    <div class="note-band">
+      <span class="ic">◎</span>
+      <span>いずれも<strong>無償で利用可能なプログラム</strong>であり、本格導入の可否を判断するための実証を、低コストで実施できる。</span>
+    </div>
+  </section>
+
+  <!-- ===== 2. 各構成要素 ===== -->
+  <section class="block" id="s2">
+    <div class="sec-head">
+      <div class="sec-num">2</div>
+      <h2 class="sec-title">各構成要素の説明</h2>
+    </div>
+
+    <div class="def">
+      <h3><span class="mk t-navy">Ⅰ</span>kintone「自治体まるごとDXボックス」</h3>
+      <p>サイボウズ社が小規模自治体向けに提供する、kintone を基盤とした自治体DX推進プログラム。全職員が無償で利用できる kintone 環境に、すぐに使える自治体向けアプリがあらかじめ備わっている。</p>
+      <dl class="specs">
+        <dt>提供元</dt><dd>サイボウズ株式会社</dd>
+        <dt>費用</dt><dd>無償（プログラム参加中）</dd>
+        <dt>無償提供期間</dt><dd>利用開始日 ～ 令和9年4月末まで（最大約13か月）</dd>
+        <dt>特徴</dt><dd>庁内説明用の投資対効果資料、連携サービス・プラグインの無償提供を含む</dd>
+        <dt>申込方法</dt><dd>パートナー企業経由での申込みが必要</dd>
+      </dl>
+    </div>
+
+    <div class="def teal">
+      <h3><span class="mk t-teal">Ⅱ</span>moconavi「LGWAN×kintone まるっと活用プログラム」</h3>
+      <p>レコモット社が提供する、LGWAN 環境から kintone を安全に利用するためのクラウドゲートウェイサービス「moconavi」を無償で試用できるプログラム。<strong>上記Ⅰへの参加が前提条件</strong>となる。</p>
+      <dl class="specs">
+        <dt>提供元</dt><dd>株式会社レコモット</dd>
+        <dt>費用</dt><dd>無償（キャンペーン期間中・ユーザー数無制限）</dd>
+        <dt>申込期間</dt><dd>令和8年9月30日まで</dd>
+        <dt>無償提供期間</dt><dd>利用開始日 ～ 令和9年3月末まで</dd>
+        <dt>登録区分</dt><dd>LGWAN-ASP 登録済サービス（認定登録番号 A831780）</dd>
+        <dt>特徴</dt><dd>VPN・端末証明書が不要。端末に専用アプリを導入するだけで、LGWAN 端末から直接クラウドサービスへ接続可能</dd>
+      </dl>
+    </div>
+
+    <div class="def amber">
+      <h3><span class="mk t-amber">Ⅲ</span>パートナー企業「JOYZO（ジョイゾー）」</h3>
+      <p>まるごとDXボックスは複数のパートナー企業が窓口となって提供しており、自治体はその中から1社を選んで申し込む。本提案では JOYZO を選定する。</p>
+      <div class="mini-head">選定理由</div>
+      <ul class="clean">
+        <li>kintone に特化したシステム開発企業で、1,750件を超える開発実績を持つ。</li>
+        <li>サイボウズ社のパートナー評価制度（CyPN Report）で5年連続の星を獲得しており、実績・信頼性の客観的な裏付けがある。</li>
+        <li>実務経験20年以上の元市役所職員による伴走支援体制を有し、自治体特有の事務フローや人事異動時の引き継ぎといった現場課題に対応できる。</li>
+        <li>自治体向けパッケージ群「ジチタイ39」を、まるごとDXボックスの検証環境内で試用可能。</li>
+      </ul>
+      <div class="mini-head">伴走支援に期待する内容</div>
+      <ul class="clean">
+        <li>導入から運用までの現場支援（内製化の定着）</li>
+        <li>当市の業務に即したアプリ設計・効果検証の助言</li>
+        <li>LGWAN 環境（moconavi 併用）を前提とした構成上の助言</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== 3. 接続方式 ===== -->
+  <section class="block" id="s3">
+    <div class="sec-head">
+      <div class="sec-num">3</div>
+      <h2 class="sec-title">接続方式の現状と変更点<small>kintone への接続のみ、SKY-DIV を経由せず moconavi 経由の専用接続とする</small></h2>
+    </div>
+
+    <p><strong>現状（当市の環境）</strong>では、インターネット系の閲覧は SKY-DIV による画面転送方式、Microsoft365（Word/Excel）は LGWAN 環境内に保存したデータを利用している。このまま kintone を利用しようとすると、SKY-DIV を通した画面転送経由でのアクセスとなり、操作性の低下や連携サービスが正しく動作しない懸念がある。</p>
+
+    <div class="flow-compare">
+      <div class="flow current">
+        <span class="flow-label">▲ 現状のまま利用した場合</span>
+        <div class="flow-track">
+          <div class="node">LGWAN 端末</div>
+          <span class="arrow">→</span>
+          <div class="node hl-rose">SKY-DIV<span class="sub">画面転送</span></div>
+          <span class="arrow">→</span>
+          <div class="node">インターネット系<br>ブラウザ<span class="sub">通常接続</span></div>
+          <span class="arrow">→</span>
+          <div class="node endpoint">kintone<span class="sub">サイボウズ社クラウド</span></div>
+        </div>
+        <p class="flow-note">画面転送を経由するため操作性・応答性が低下。連携サービス（フォーム・帳票出力等）が正しく動作しない可能性がある。</p>
+      </div>
+
+      <div class="flow proposed">
+        <span class="flow-label">◎ 本提案（moconavi 専用接続）</span>
+        <div class="flow-track">
+          <div class="node">LGWAN 端末</div>
+          <span class="arrow">→</span>
+          <div class="node hl-teal">moconavi<span class="sub">セキュアブラウザ起動</span></div>
+          <span class="arrow">→</span>
+          <div class="node">LGWAN-ASP<br>認定の専用経路</div>
+          <span class="arrow">→</span>
+          <div class="node endpoint">kintone<span class="sub">サイボウズ社クラウド</span></div>
+        </div>
+        <p class="flow-note">LGWAN 端末上で moconavi のセキュアブラウザ（mocochro）を起動し、その中で kintone にログインして利用する。起動時に kintone 画面へ自動遷移させることも可能で、職員から見た使用感は「kintone 専用アイコンを開く」感覚に近づけられる。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 4. 共存 ===== -->
+  <section class="block" id="s4">
+    <div class="sec-head">
+      <div class="sec-num">4</div>
+      <h2 class="sec-title">既存環境（SKY-DIV）との共存<small>SKY-DIV を置き換えるものではなく、共存を前提とする</small></h2>
+    </div>
+
+    <div class="coexist">
+      <div class="lane a">
+        <div class="lane-h">一般的なインターネット閲覧</div>
+        <div class="lane-route">→ 従来どおり SKY-DIV を使用</div>
+        <p>ホームページの閲覧、調べ物など、これまでの用途はそのまま SKY-DIV の画面転送で対応する。</p>
+      </div>
+      <div class="lane b">
+        <div class="lane-h">kintone および連携サービス</div>
+        <div class="lane-route">→ moconavi 経由で専用接続</div>
+        <p>kintone と対応する連携サービスのみ、moconavi のセキュアブラウザから直接接続する。</p>
+      </div>
+    </div>
+
+    <div class="note-band">
+      <span class="ic">◎</span>
+      <span>moconavi は<strong>構成プロファイルを利用しない</strong>ため、既存の端末管理・セキュリティ製品と競合せず併用できる。当市の現行セキュリティモデルを変更することなく、kintone 専用の別経路として並行導入できる。</span>
+    </div>
+  </section>
+
+  <!-- ===== 5. セキュリティ ===== -->
+  <section class="block" id="s5">
+    <div class="sec-head">
+      <div class="sec-num">5</div>
+      <h2 class="sec-title">セキュリティ上の論点と対策</h2>
+    </div>
+
+    <div class="alert">
+      <span class="ic">⚠</span>
+      <div class="body">
+        <h4>論点：SKY-DIV 経由でも kintone にログインできてしまうリスク</h4>
+        <p>moconavi を経由せずとも、SKY-DIV を通したインターネット系ブラウザで ID・パスワードを入力すれば、理屈のうえでは kintone にログインできてしまう。これを放置すると、意図しない経路からのアクセスが発生しうる。</p>
+      </div>
+    </div>
+
+    <div class="mini-head">対策（技術的制御を「主」、運用ルールを「従」とする）</div>
+    <div class="measure">
+      <div class="measure-item">
+        <span class="measure-rank rank-main">主 ・ 技術的制御</span>
+        <div>
+          <h4>kintone の IP アドレス制限機能を利用</h4>
+          <p>moconavi の通信経路（ゲートウェイの IP アドレス）からのアクセスのみを許可する。これにより、SKY-DIV 経由の通常インターネットからのログインを<strong>技術的に遮断</strong>できる。</p>
+        </div>
+      </div>
+      <div class="measure-item">
+        <span class="measure-rank rank-sub">従 ・ 運用ルール</span>
+        <div>
+          <h4>庁内での周知・明文化</h4>
+          <p>上記 IP 制限を補完する形で、「kintone へは moconavi 経由でのみアクセスする」旨を庁内で周知・明文化する。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-head" style="margin-top:22px;">無害化について</div>
+    <ul class="clean teal">
+      <li>SKY-DIV とは別に、moconavi 自体が Office ファイルを中心とした無害化機能を標準搭載している（Web編集／サンドボックス編集の2方式）。</li>
+      <li>結果として、経路ごとに無害化が担保される「二重の無害化体制」となる。</li>
+      <li>両者の無害化ポリシーが重複・矛盾しないよう、情報政策担当と事前に整理する。</li>
+    </ul>
+  </section>
+
+  <!-- ===== 6. データ保存場所 ===== -->
+  <section class="block" id="s6">
+    <div class="sec-head">
+      <div class="sec-num">6</div>
+      <h2 class="sec-title">データの保存場所に関する留意点<small>誤解防止のため、庁内で正確に共有すべき事項</small></h2>
+    </div>
+
+    <div class="callout">
+      <h3>LGWAN-ASP を利用しても、kintone の業務データの保存場所自体は変わらない。</h3>
+      <p>kintone のデータは、従来どおりサイボウズ社のクラウド上に保存される。moconavi（LGWAN-ASP）が提供するのは「安全な通信経路」であり、データを別サーバーに保管し直すものではない。</p>
+      <div class="eq">
+        「保存場所が LGWAN 内に移る」のではなく、<br>
+        <b>「そこへ至る通信経路が LGWAN の閉域網を経由する安全な形になる」</b>と理解すべきである。
+      </div>
+    </div>
+    <p style="margin-top:18px;">※この点は、個人情報の取扱い区分を検討する際に重要となるため、庁内で正確に共有しておく必要がある。</p>
+  </section>
+
+  <!-- ===== 7. 進め方 ===== -->
+  <section class="block" id="s7">
+    <div class="sec-head">
+      <div class="sec-num">7</div>
+      <h2 class="sec-title">導入の進め方（想定スケジュール）</h2>
+    </div>
+
+    <div class="timeline">
+      <div class="step">
+        <div class="step-dot">1</div>
+        <div class="step-body">
+          <h4>パートナー企業（JOYZO）経由で「まるごとDXボックス」に申込み</h4>
+          <p>kintone 環境と JOYZO の伴走支援がセットで開始される。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">2</div>
+        <div class="step-body">
+          <h4>「LGWAN×kintone まるっと活用プログラム（moconavi）」に申込み</h4>
+          <p>参加確定後に申込み。事前ヒアリングを経て、レコモット社によるセットアップ支援を受ける。</p>
+          <span class="when">締切：令和8年9月30日</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">3</div>
+        <div class="step-body">
+          <h4>kintone 側の IP アドレス制限を設定</h4>
+          <p>moconavi 経由のアクセスのみを許可するよう設定する。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">4</div>
+        <div class="step-body">
+          <h4>動作検証</h4>
+          <p>kintone 本体および連携サービスが LGWAN 環境で正常動作するかを確認する。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">5</div>
+        <div class="step-body">
+          <h4>効果検証・全庁展開の可否判断・次年度予算要求の検討</h4>
+          <p>実証結果をもとに、本格導入の判断と予算化の検討を行う。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 8. 確認事項 ===== -->
+  <section class="block" id="s8">
+    <div class="sec-head">
+      <div class="sec-num">8</div>
+      <h2 class="sec-title">事前に確認すべき事項</h2>
+    </div>
+    <div class="checklist">
+      <div class="check">
+        <span class="box"></span>
+        <p>当市が過去に「まるごとDXボックス」「moconavi 本プログラム」に参加していないか（<strong>前年度参加者は対象外</strong>となるルールがあるため）</p>
+      </div>
+      <div class="check">
+        <span class="box"></span>
+        <p>moconavi 経由での kintone・連携サービスの動作可否（要事前検証）</p>
+      </div>
+      <div class="check">
+        <span class="box"></span>
+        <p>SKY-DIV と moconavi の無害化ポリシーの整合性（情報政策担当と調整）</p>
+      </div>
+      <div class="check">
+        <span class="box"></span>
+        <p>全職員導入を見据えた場合の次年度以降の費用（優遇価格の適用条件）</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 9. 意義 ===== -->
+  <section class="block" id="s9">
+    <div class="sec-head">
+      <div class="sec-num">9</div>
+      <h2 class="sec-title">本提案の意義（まとめ）</h2>
+    </div>
+    <div class="meaning-grid">
+      <div class="meaning"><span class="mk">¥</span><p><strong>低コストでの実証</strong><br>無償プログラムの活用により、庁費の追加負担を最小限に抑えて kintone の実証導入が可能。</p></div>
+      <div class="meaning"><span class="mk">⇄</span><p><strong>既存環境との共存</strong><br>LGWAN 環境からの操作性・利便性を確保しつつ、既存の SKY-DIV 環境とも共存できる。</p></div>
+      <div class="meaning"><span class="mk">🔒</span><p><strong>安全性の担保</strong><br>技術的なアクセス制御（IP制限）により、意図しない経路からのアクセスを遮断できる。</p></div>
+      <div class="meaning"><span class="mk">◎</span><p><strong>伴走による定着</strong><br>実績あるパートナー（JOYZO）の支援により、内製化・定着まで見据えた推進が可能。</p></div>
+    </div>
+    <div class="note-band" style="margin-top:16px;">
+      <span class="ic">★</span>
+      <span>本取組は、当市における<strong>「kintone×moconavi 併用」の先行的な実証事例</strong>となり、今後の全庁DX基盤整備を検討するうえでの貴重な材料となる。</span>
+    </div>
+  </section>
+
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div>
+      <strong>kintone を活用した業務改善環境の構築について</strong><br>
+      〇〇課 DX推進担当　／　令和〇年〇月〇日
+    </div>
+    <div style="max-width:620px;">
+      <div class="disclaimer">
+        本資料中の無償提供期間・申込締切・登録番号・実績数値等は作成時点の情報に基づく。正式な起案前に、各提供元（サイボウズ社・レコモット社・JOYZO）の最新の公式情報で再確認すること。
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
