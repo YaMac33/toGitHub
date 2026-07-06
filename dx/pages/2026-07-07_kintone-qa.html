@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kintone導入 想定問答集｜財政・上長査定対応</title>
+<style>
+  :root{
+    --bg:#EEF1F4;
+    --surface:#FFFFFF;
+    --ink:#16202E;
+    --muted:#5B6673;
+    --line:#DDE2E8;
+    --navy:#1F3A5F;
+    --navy-deep:#16293F;
+    --q:#A63A4A;
+    --q-soft:#FBEEF0;
+    --a:#1F7A6B;
+    --a-soft:#EAF4F1;
+    --warn:#C6803A;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(22,32,46,.06),0 4px 16px rgba(22,32,46,.05);
+    font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    line-height:1.75;font-size:15px;letter-spacing:.01em;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    background:linear-gradient(160deg,var(--navy-deep),var(--navy));
+    color:#fff;padding:34px 20px 30px;
+  }
+  .head-inner{max-width:920px;margin:0 auto;}
+  .eyebrow{
+    font-size:12px;letter-spacing:.18em;font-weight:700;
+    color:#9FC2E0;margin:0 0 10px;
+  }
+  header h1{
+    margin:0 0 12px;font-size:26px;line-height:1.4;font-weight:800;
+    letter-spacing:.01em;
+  }
+  header p.lead{
+    margin:0;font-size:14px;color:#D6E3F0;max-width:70ch;line-height:1.85;
+  }
+  .head-meta{
+    display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:18px;
+    font-size:12.5px;color:#B9CDE0;
+  }
+  .head-meta span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:6px;height:6px;border-radius:50%;background:#6FA8D6;display:inline-block;}
+
+  /* ---------- toolbar ---------- */
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px 64px;}
+  .toolbar{
+    position:sticky;top:0;z-index:20;
+    background:var(--bg);
+    padding:16px 0 12px;margin-bottom:4px;
+    border-bottom:1px solid var(--line);
+  }
+  .search{
+    position:relative;margin-bottom:12px;
+  }
+  .search input{
+    width:100%;padding:12px 14px 12px 40px;font-size:15px;
+    border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--surface);color:var(--ink);
+    font-family:inherit;
+  }
+  .search input:focus{
+    outline:2px solid var(--navy);outline-offset:1px;border-color:var(--navy);
+  }
+  .search svg{
+    position:absolute;left:13px;top:50%;transform:translateY(-50%);
+    width:17px;height:17px;stroke:var(--muted);
+  }
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;}
+  .chip{
+    font-family:inherit;font-size:13px;font-weight:600;
+    padding:7px 13px;border-radius:999px;cursor:pointer;
+    border:1px solid var(--line);background:var(--surface);color:var(--muted);
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .chip:hover{border-color:var(--navy);color:var(--navy);}
+  .chip[aria-pressed="true"]{
+    background:var(--navy);border-color:var(--navy);color:#fff;
+  }
+  .chip .n{opacity:.7;font-weight:600;margin-left:2px;font-size:11.5px;}
+  .bar-actions{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;
+  }
+  .count{font-size:12.5px;color:var(--muted);}
+  .count b{color:var(--ink);}
+  .txtbtn{
+    background:none;border:none;font-family:inherit;font-size:12.5px;
+    font-weight:600;color:var(--navy);cursor:pointer;padding:4px 6px;
+    border-radius:6px;
+  }
+  .txtbtn:hover{background:#E3E9F0;}
+  .txtbtn:focus-visible{outline:2px solid var(--navy);outline-offset:1px;}
+
+  /* ---------- cards ---------- */
+  .list{margin-top:14px;display:flex;flex-direction:column;gap:14px;}
+  .card{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .qhead{
+    width:100%;text-align:left;background:none;border:none;cursor:pointer;
+    font-family:inherit;color:inherit;padding:0;display:block;
+  }
+  .qhead:focus-visible{outline:2px solid var(--navy);outline-offset:-3px;}
+  .qtop{
+    display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+    padding:15px 18px 0;
+  }
+  .tag{
+    font-size:11px;font-weight:700;letter-spacing:.04em;
+    padding:3px 9px;border-radius:5px;background:#EDF1F6;color:var(--navy);
+  }
+  .warnmeter{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--warn);font-weight:700;margin-left:auto;}
+  .warnmeter .lab{color:var(--muted);font-weight:600;letter-spacing:.02em;}
+  .warnmeter .pip{width:8px;height:8px;border-radius:2px;background:#E6D3BE;display:inline-block;}
+  .warnmeter .pip.on{background:var(--warn);}
+  .qbody{
+    display:flex;gap:12px;padding:11px 18px 15px;align-items:flex-start;
+  }
+  .qmark{
+    flex:none;font-size:11px;font-weight:800;color:#fff;background:var(--q);
+    padding:4px 8px;border-radius:6px;letter-spacing:.06em;margin-top:2px;
+  }
+  .qtext{font-size:16px;font-weight:700;line-height:1.6;color:var(--ink);}
+  .concl{
+    margin:0 18px 16px;padding:12px 14px;background:var(--a-soft);
+    border-left:3px solid var(--a);border-radius:0 8px 8px 0;
+    font-size:14px;line-height:1.7;
+  }
+  .concl .amark{
+    font-size:11px;font-weight:800;color:var(--a);letter-spacing:.06em;
+    display:block;margin-bottom:3px;
+  }
+  .concl b{color:var(--navy-deep);}
+  .chev{
+    flex:none;width:18px;height:18px;stroke:var(--muted);
+    transition:transform .2s;margin-top:3px;
+  }
+  .card.open .chev{transform:rotate(180deg);}
+
+  /* ---------- detail (collapsible) ---------- */
+  .detail{
+    display:none;padding:2px 18px 20px;border-top:1px solid var(--line);
+    margin-top:2px;
+  }
+  .card.open .detail{display:block;animation:reveal .22s ease;}
+  @keyframes reveal{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+  .detail h4{
+    margin:16px 0 6px;font-size:12px;font-weight:800;color:var(--navy);
+    letter-spacing:.05em;
+  }
+  .detail p{margin:0 0 10px;font-size:14px;line-height:1.85;color:#2A3543;}
+  .reinforce{
+    list-style:none;margin:4px 0 0;padding:0;
+  }
+  .reinforce li{
+    position:relative;padding:6px 0 6px 22px;font-size:13.5px;
+    line-height:1.7;color:#33404F;border-bottom:1px dashed var(--line);
+  }
+  .reinforce li:last-child{border-bottom:none;}
+  .reinforce li::before{
+    content:"";position:absolute;left:4px;top:13px;width:8px;height:8px;
+    border-radius:50%;border:2px solid var(--a);
+  }
+  .empty{
+    text-align:center;padding:48px 20px;color:var(--muted);font-size:14px;
+    background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);
+  }
+
+  footer{
+    max-width:920px;margin:0 auto;padding:0 20px 48px;
+    color:var(--muted);font-size:12px;line-height:1.9;
+  }
+  footer .rule{height:1px;background:var(--line);margin:0 0 16px;}
+  footer strong{color:var(--ink);}
+
+  @media (max-width:600px){
+    header{padding:26px 16px 24px;}
+    header h1{font-size:21px;}
+    .wrap{padding:0 14px 48px;}
+    footer{padding:0 14px 40px;}
+    .qtext{font-size:15px;}
+    .warnmeter{margin-left:0;width:100%;order:5;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+  @media print{
+    .toolbar{display:none;}
+    .detail{display:block!important;}
+    .chev{display:none;}
+    body{background:#fff;}
+    .card{break-inside:avoid;box-shadow:none;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="head-inner">
+    <p class="eyebrow">想定問答集 / ANTICIPATED Q&amp;A</p>
+    <h1>kintone導入提案 ― 財政・上長査定への回答</h1>
+    <p class="lead">財政部門および上長から想定される18の指摘に対する回答骨子集。各設問には「結論（まず一言）」を常時表示し、展開すると詳細説明と査定席で持ち出せる補強材料を確認できます。突っ込まれやすい論点ほど警戒度を高く表示しています。</p>
+    <div class="head-meta">
+      <span><i class="dot"></i>全18問 / 5カテゴリ</span>
+      <span><i class="dot"></i>提案対象：本市（〇〇）</span>
+      <span><i class="dot"></i>オフライン閲覧可（LGWAN対応・外部通信なし）</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="toolbar">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="search" type="search" placeholder="キーワードで絞り込み（例：随意契約、属人化、費用対効果）" aria-label="質問を検索">
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="カテゴリで絞り込み"></div>
+    <div class="bar-actions">
+      <div class="count" id="count"></div>
+      <div>
+        <button class="txtbtn" id="expandAll">すべて展開</button>
+        <button class="txtbtn" id="collapseAll">すべて閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="list" id="list"></div>
+  <div class="empty" id="empty" hidden>該当する質問がありません。キーワードやカテゴリを変更してください。</div>
+</div>
+
+<footer>
+  <div class="rule"></div>
+  <p><strong>作成メモ：</strong>費用対効果（設問3）の金額と、効果測定・撤退基準（設問17・18）の数値目標は、対象業務の現行工数を実測のうえ確定してください。セキュリティ・認証の記載は査定直前に最新の登録状況を再確認することを推奨します。</p>
+  <p>本資料は庁内査定の準備用。ライセンス契約・構築・LGWAN接続の各条件（SLA・価格改定条項・データ移行手段）は導入前に事業者へ確認し明記すること。</p>
+</footer>
+
+<script>
+/* ===== 想定問答データ ===== */
+const CATS = ["費用対効果・必要性","セキュリティ・LGWAN対応","調達手続き","運用・持続可能性","効果測定"];
+
+const DATA = [
+  {
+    cat:"費用対効果・必要性", level:2,
+    q:"kintoneじゃなきゃダメなのか。導入済みのAppSuiteではできないのか。",
+    concl:"AppSuiteとは<b>役割が異なり、併用が前提</b>。AppSuiteが届かない非定型業務の内製化を担う。",
+    detail:[
+      "AppSuiteはグループウェア・文書管理・定型申請が中心で、既存フォーマットの運用に強みがあります。一方kintoneは、業務ごとに異なる入力項目・一覧・集計・承認フローを、原課職員自身がノーコードで組み替える「業務データベース基盤」です。",
+      "現在Excel・紙・メールで属人的に回している非定型業務（資料要求依頼、会議室予約、一般質問通告など）を、SEに依頼せず現場で電子化・標準化できる点が本質的な違いです。既存資産を捨てるのではなく、AppSuiteでは手の届かない領域を補完します。"
+    ],
+    reinforce:[
+      "現行のExcel/紙運用業務を具体名で3〜5件挙げ、AppSuiteで代替できない理由を1行ずつ添える。",
+      "「作ってもらう」から原課が「自分で作る」への転換自体が導入目的である点を強調。"
+    ]
+  },
+  {
+    cat:"費用対効果・必要性", level:2,
+    q:"既存システム（グループウェア・文書管理システム等）の機能拡張で代替できないか。",
+    concl:"機能拡張は<b>個別カスタマイズ開発</b>となり、かえって高コスト・属人化を招く。",
+    detail:[
+      "既存システムの機能拡張は、多くがベンダーへの個別開発（有償カスタマイズ）を伴い、1業務ごとに見積・調達・納期が発生します。変更のたびに費用と時間がかかり、ブラックボックス化しやすいのが難点です。",
+      "ノーコードのkintoneなら、同じ予算規模で数十業務を職員が内製でき、仕様変更も即日反映できます。「改修＝発注」という構造から抜け出すこと自体が狙いであり、機能拡張では代替できません。"
+    ],
+    reinforce:[
+      "過去の個別カスタマイズ発注の見積・納期の実例があれば対比材料として提示。",
+      "kintoneは1ライセンスで作成アプリ数に制限がなく、追加業務のたびの調達が不要。"
+    ]
+  },
+  {
+    cat:"費用対効果・必要性", level:3,
+    q:"費用対効果を定量的に示せるか（削減工数・削減人件費換算）。",
+    concl:"<b>対象業務を絞り、現行工数×人件費単価</b>で年間効果と回収年数を試算する。",
+    detail:[
+      "全庁の抽象的効果ではなく、初期対象業務に限定して試算します。現状の紙・Excel・メール往復に要する月間工数を実測し、「削減見込み時間 × 職員人件費単価」で年間効果額を算出。ライセンス費と比較して回収年数を提示します。",
+      "例：1業務あたり月◯時間削減 × ◯業務 × 単価◯円／時 ＝ 年間◯円。初期は数業務でも、内製アプリが増えるほど限界費用ゼロで効果が積み上がる構造である点も添えます。（数値は実測後に確定）"
+    ],
+    reinforce:[
+      "定量化が最も弱くなる論点。査定前に対象業務のベースライン工数を必ず実測しておく。",
+      "削減時間は「他の企画業務に振り向けられる時間」として住民サービス向上に接続すると訴求力が増す。",
+      "紙・印刷・郵送コストなど、人件費以外の直接経費削減も併記する。"
+    ]
+  },
+  {
+    cat:"費用対効果・必要性", level:1,
+    q:"ライセンス費用は毎年発生するのか。将来的な費用増加の見込みは。",
+    concl:"サブスクで<b>毎年発生</b>。ただしユーザー数課金のため<b>費用を制御でき、予算平準化に資する</b>。",
+    detail:[
+      "kintoneはユーザー数×月額のサブスクリプションで、官公庁向けのガバメントライセンスがあります。利用者を増やせば費用は増えますが、逆に必要な人数だけ契約すればよく、スモールスタートで固定費を最小化できます。",
+      "ハード更新やベンダー個別開発のような突発的な大型支出が発生しにくく、予算平準化に寄与します。将来の価格改定リスクは他社SaaSと同様に存在するため、撤退容易性（設問16）とあわせて説明します。"
+    ],
+    reinforce:[
+      "初年度は最小ユーザー数で契約し、効果を見て翌年度以降に増員する段階予算を提示。",
+      "無償トライアルや自治体向け無償プログラムを使えば初年度の実質負担をさらに圧縮できる。"
+    ]
+  },
+  {
+    cat:"費用対効果・必要性", level:1,
+    q:"スモールスタートは可能か。全庁展開の前に一部署で試せないか。",
+    concl:"<b>可能。むしろ推奨される導入方法</b>。成功事例を作ってから横展開する。",
+    detail:[
+      "最小ユーザー数・1〜数部署・数業務から開始し、効果を検証してから段階拡大できます。30日間の無償トライアルや、サイボウズが自治体向けに提供する無償活用プログラム（自治体まるごとDXボックス連動のLGWAN×kintone活用プログラム等）を活用すれば、初期投資を抑えて実証できます。",
+      "全庁一斉導入のリスクを避け、まず推進担当部署で成功体験を作り、他部署へ横展開する方針とします。各拡大フェーズをGo/No-Go判断点として設計します。"
+    ],
+    reinforce:[
+      "最初の対象部署・業務を1つ名指しで決めておくと査定側がイメージしやすい。",
+      "無償プログラムには設定を伴走支援するサポートが付くため、内製ノウハウも同時に蓄積できる。"
+    ]
+  },
+
+  {
+    cat:"セキュリティ・LGWAN対応", level:2,
+    q:"LGWAN-ASP／ISMAP認証は取得しているか。",
+    concl:"サイボウズ基盤・kintoneは<b>ISMAP登録済み</b>。LGWAN利用は<b>ゲートウェイ経由</b>で対応可能。",
+    detail:[
+      "kintoneを提供するサイボウズのクラウドサービス基盤およびkintone本体は、政府情報システムのためのセキュリティ評価制度（ISMAP）のクラウドサービスリストに登録済みです。ISO/IEC 27001・27017も取得しています。",
+      "kintone単体はLGWAN-ASPではありませんが、両備システムズ「R-Cloud Proxy for kintone」（ISMAP認証を取得したLGWAN-ASP）や、レコモット「moconavi LGWANクラウドゲートウェイサービス」を経由することで、LGWAN端末から安全に利用できます。総務省「地方公共団体における情報セキュリティポリシーに関するガイドライン」が求める推奨要件を満たす構成を取れます。"
+    ],
+    reinforce:[
+      "「製品のISMAP登録」と「LGWAN接続手段（ASP事業者）」は別レイヤー。混同されやすいので図で分けて説明。",
+      "moconavi経由ならトヨクモ製プラグイン等の外部拡張も利用可。R-Cloud Proxyとの機能差を把握しておく。",
+      "査定直前に最新の登録状況（J-LIS／サイボウズ公表情報）を再確認する。"
+    ]
+  },
+  {
+    cat:"セキュリティ・LGWAN対応", level:2,
+    q:"個人情報を扱う業務でも使えるのか。セキュリティ基準は満たすか。",
+    concl:"<b>庁内の規定整備を前提に、機密性2以上の業務でも利用可能</b>。まず非個人情報業務から段階導入。",
+    detail:[
+      "令和4年3月のガイドライン改定で、クラウドサービスで個人情報を扱う際の規定整備例が示され、ISMAP等の認証を満たすサービスは選定条件をクリアしやすくなりました。サイボウズ製品はアカウント保有者のみログイン可能で「不特定多数への提供」に当たらないため、規定整備を前提に個人情報を含む業務でも利用できます。",
+      "ただし導入初期は、インターネット環境の非個人情報業務から始め、実績を積んでからLGWAN・個人情報業務へ拡大する段階的アプローチを取り、リスクを抑えます。"
+    ],
+    reinforce:[
+      "情報セキュリティ担当部門と事前に協議し、規定整備の要否・範囲を確認しておく。",
+      "取り扱う情報の機密性区分ごとに、利用可否と必要な接続構成を一覧化して提示。"
+    ]
+  },
+  {
+    cat:"セキュリティ・LGWAN対応", level:1,
+    q:"他自治体での導入実績・事故事例はあるか。",
+    concl:"<b>全国の自治体で導入実績多数</b>。大規模団体の公表事例もあり、重大事故の前提を覆す事象は確認されていない。",
+    detail:[
+      "神戸市・西予市をはじめ多数の自治体がkintone／Garoonを業務改善に活用しており、サイボウズが導入事例を公表しています。ノーコードで原課職員が内製する自治体DXの有力な選択肢として定着しています。",
+      "制度利用の前提を覆すような重大なサービス障害・情報漏えい事故が公表されている事実は確認されていません（最新状況は導入前に改めて確認します）。"
+    ],
+    reinforce:[
+      "自庁と規模・業務が近い自治体の事例を1〜2件選び、対象業務・効果まで具体的に引用する。",
+      "サイボウズの自治体事例集・登壇資料は査定資料の添付候補。"
+    ]
+  },
+  {
+    cat:"セキュリティ・LGWAN対応", level:1,
+    q:"データはどこに保存されるのか（国内リージョンか）。",
+    concl:"<b>国内データセンターで運用</b>。第三者認証（ISMAP・ISMS）下で管理。",
+    detail:[
+      "サイボウズのクラウド基盤は国内のデータセンターで運用され、ISMAP・ISMS（ISO27001）等の第三者認証のもとで管理されています。",
+      "LGWAN経由で利用する場合は、両備システムズ・レコモット等のLGWAN-ASP事業者のデータセンターを介する構成となります。具体的なデータ保存場所・冗長構成は契約時に事業者へ確認し、庁内セキュリティ基準との整合を確認します。"
+    ],
+    reinforce:[
+      "「どの事業者のどのDCを経由するか」を接続方式（R-Cloud Proxy／moconavi）ごとに整理しておく。"
+    ]
+  },
+
+  {
+    cat:"調達手続き", level:3,
+    q:"競争入札ではなく随意契約とする根拠は何か（1者しか提供できない理由）。",
+    concl:"kintoneは<b>サイボウズの独占製品</b>。ただし販売はパートナー経由のため<b>製品指定と事業者選定を分けて</b>整理する。",
+    detail:[
+      "kintoneという製品自体はサイボウズ1社のみが提供し、他社に同一製品は存在しません。同等機能（LGWAN対応のノーコード業務アプリ基盤）を持つ代替が限定的であることを機能比較で示し、地方自治法施行令167条の2第1項の該当号（性質・目的が競争入札に適さない／1者しか提供できない等）を根拠とします。",
+      "注意点として、ライセンス販売・構築はパートナー企業が担うため「製品はサイボウズ独占だが販売代理店は複数」という構造になります。製品指定の合理性と、販売・構築事業者の選定の考え方を分けて説明する必要があります。"
+    ],
+    reinforce:[
+      "最も突っ込まれる論点。他社比較表（設問11）と機能要件定義書をセットで用意し、製品指定の合理性を客観化する。",
+      "パートナーが複数存在する部分では相見積を取り、競争性を確保していることを示す（設問12と連動）。",
+      "自庁の契約担当・契約規則を事前確認し、根拠号数の当てはめを法的に詰めておく。"
+    ]
+  },
+  {
+    cat:"調達手続き", level:2,
+    q:"他社の類似サービス（Salesforce、Google Workspace等）との比較検討をしたか。",
+    concl:"<b>比較検討済み</b>。LGWAN対応・自治体実績・学習コスト等の観点で比較表を提示する。",
+    detail:[
+      "Salesforce、Microsoft Power Platform、Google Workspace（AppSheet）等のノーコード／ローコード基盤と、①LGWAN環境での利用可否と接続方式、②自治体導入実績、③原課職員が扱える学習コスト、④費用体系、⑤ISMAP等の認証、の観点で比較します。",
+      "kintoneは自治体導入実績とLGWAN接続手段の豊富さ、日本語UI・国内サポートで優位、という整理を比較表として添付します。"
+    ],
+    reinforce:[
+      "比較表は「kintone有利」に見えすぎないよう、他社が優れる項目も正直に記載すると説得力が上がる。",
+      "自庁の要件（LGWAN必須・原課内製・低学習コスト）を先に定義し、それに照らした評価にする。"
+    ]
+  },
+  {
+    cat:"調達手続き", level:2,
+    q:"見積もりは複数社から取ったか。",
+    concl:"製品は1つでも、<b>構築・支援パートナーからは複数見積を取得可能</b>。",
+    detail:[
+      "kintoneライセンスは定価が公表されていますが、導入支援・構築・LGWAN接続を担うパートナー企業（JOYZO、ペパコミ、両備システムズ等）は複数存在するため、支援内容と価格で相見積を取得できます。",
+      "製品選定の合理性（随意）と、パートナー選定の競争性を切り分けることで、調達の透明性を確保します。"
+    ],
+    reinforce:[
+      "支援内容（伴走の回数・研修・保守範囲）が各社で異なるため、価格だけでなく提供役務の比較表も用意。",
+      "無償プログラム活用時は、その後の有償支援の相見積方針を先に決めておく。"
+    ]
+  },
+
+  {
+    cat:"運用・持続可能性", level:3,
+    q:"担当者（あなた）が異動・退職した後、誰が運用・保守を担うのか。",
+    concl:"<b>ノーコードゆえ引継ぎ可能</b>。マニュアル・複数運用体制・パートナー保守の3点で<b>属人化させない</b>。",
+    detail:[
+      "SEでなくても運用・改修できるのがkintoneの特長です。そのうえで、①操作・管理マニュアルの整備、②複数職員による運用体制（管理者を1人に依存させない）、③パートナーによる保守・伴走支援契約、の3点で属人化を防ぎます。",
+      "作成したアプリや設定はGUI上で可視化されており、後任が構造を把握しやすい設計です。この「属人化しない設計」自体を導入の前提条件とします。"
+    ],
+    reinforce:[
+      "随意契約と並ぶ最重要論点。「担当者依存でしょ？」への回答を最も厚く準備する。",
+      "運用ルール（誰が管理者権限を持つか、アプリ作成の承認フロー）を導入時に文書化して提示。",
+      "情報部門を巻き込み、全庁的な運用ガバナンス下に置く体制を示すと安心感が高い。"
+    ]
+  },
+  {
+    cat:"運用・持続可能性", level:1,
+    q:"職員のITリテラシーで使いこなせるか。研修コストは。",
+    concl:"<b>ドラッグ&ドロップ操作で習得容易</b>。研修は無償・低コスト資源が豊富。",
+    detail:[
+      "kintoneは画面上の操作でアプリを作成でき、Excelが使える職員であれば基本操作を習得できます。サイボウズの自治体向け無償プログラム、公式オンライン学習コンテンツ、他自治体の内製コミュニティなど、無償・低コストの学習資源が充実しています。",
+      "初期は情報部門・推進担当が伴走し、成功体験を通じて現場へ展開します。全職員が作り手になる必要はなく、まず各課の推進役を育てる方針です。"
+    ],
+    reinforce:[
+      "「全員が使える」ではなく「各課1〜2人の推進役＋利用者」という現実的な体制像を示す。",
+      "研修費を計上する場合も、無償リソースでどこまで賄えるかを先に整理してコストを圧縮。"
+    ]
+  },
+  {
+    cat:"運用・持続可能性", level:2,
+    q:"障害発生時のサポート体制・SLAはどうなっているか。",
+    concl:"<b>サイボウズ本体＋パートナーの二層サポート</b>。具体的SLAは契約条項で確認・明記。",
+    detail:[
+      "サイボウズのクラウドサービスは稼働状況を公開し、障害情報を告知する運用を行っています。加えて、導入支援パートナーが庁内窓口として一次対応を担う二層体制を組めます。",
+      "稼働率保証・サポート時間・復旧対応等の具体的なSLAは、ライセンス契約およびLGWAN-ASP事業者契約の条項で導入前に確認し、明記します。"
+    ],
+    reinforce:[
+      "「クラウド本体の障害」と「LGWAN接続部分の障害」で窓口が分かれる点を整理しておく。",
+      "業務停止時の代替手段（従来運用への一時退避）を運用計画に含めると査定側が安心する。"
+    ]
+  },
+  {
+    cat:"運用・持続可能性", level:2,
+    q:"将来的にkintoneの提供終了・値上げがあった場合のリスクは。",
+    concl:"SaaS共通のリスクだが、<b>データ可搬性と撤退容易性でロックインを回避</b>。",
+    detail:[
+      "いかなるSaaSにも提供終了・価格改定リスクはあります。kintoneはデータをCSV等で標準エクスポートでき、特定ベンダーにデータが人質化しにくい構造です。",
+      "ハード資産を抱えないため、仮に撤退する場合もサブスク解約で費用を止められ、サンクコストが小さくて済みます。契約前に価格改定の条件・通知期間、データ移行手段を確認しておきます。"
+    ],
+    reinforce:[
+      "「オンプレ／個別開発より撤退が容易」という比較で、むしろリスクが低いと反転させる。",
+      "定期的にデータをエクスポート・バックアップする運用ルールを決めておく。"
+    ]
+  },
+
+  {
+    cat:"効果測定", level:2,
+    q:"導入後どう効果を検証するのか。KPIは設定しているか。",
+    concl:"<b>対象業務ごとに定量・定性KPIを事前設定</b>し、四半期ごとに測定・報告する。",
+    detail:[
+      "定量KPI例：対象業務の処理時間削減率、紙・印刷枚数の削減、内製アプリ数、利用部署数、フォーム処理件数。定性KPI例：職員アンケートによる負担感・満足度。",
+      "導入前にベースラインを実測し、四半期ごとに測定して財政・上長へ報告します。無償プログラム利用時は、期間中のアンケートで進捗を可視化できます。"
+    ],
+    reinforce:[
+      "KPIは導入前ベースラインとセットで初めて意味を持つ。査定前に現状値を必ず取っておく。",
+      "報告サイクル（誰に・いつ・何を）を先に決めておくと、継続の説明責任を果たしやすい。"
+    ]
+  },
+  {
+    cat:"効果測定", level:2,
+    q:"失敗した場合の撤退基準はあるか。",
+    concl:"<b>撤退条件を事前に定義</b>。段階導入と低い撤退コストで、いつでも止められる設計。",
+    detail:[
+      "例として「トライアル／初年度終了時点で対象業務の工数削減が目標の◯%に達しない」「利用部署・アプリ数が計画を大きく下回る」等を、撤退・縮小の判断基準として事前合意します。",
+      "前述のとおりサブスク・データ可搬性により撤退コストは小さく、段階導入なので拡大前の各フェーズがGo/No-Go判断点（ゲート）として機能します。"
+    ],
+    reinforce:[
+      "「引くに引けなくなる」懸念を先回りで潰せる論点。数値の撤退基準を明示すると査定を通りやすい。",
+      "撤退＝失敗ではなく「最小コストで検証し損切りできる」健全さとして提示する。"
+    ]
+  }
+];
+
+/* ===== 描画 ===== */
+const listEl = document.getElementById('list');
+const emptyEl = document.getElementById('empty');
+const chipsEl = document.getElementById('chips');
+const countEl = document.getElementById('count');
+const searchEl = document.getElementById('search');
+
+let activeCat = "all";
+let query = "";
+
+function warnMeter(level){
+  let pips = "";
+  for(let i=1;i<=3;i++){ pips += `<span class="pip${i<=level?' on':''}"></span>`; }
+  return `<span class="warnmeter"><span class="lab">警戒度</span>${pips}</span>`;
+}
+
+function cardHTML(item, idx){
+  const det = item.detail.map(p=>`<p>${p}</p>`).join("");
+  const rein = item.reinforce && item.reinforce.length
+    ? `<h4>査定席で持ち出せる材料</h4><ul class="reinforce">${item.reinforce.map(r=>`<li>${r}</li>`).join("")}</ul>`
+    : "";
+  return `
+  <article class="card" data-cat="${item.cat}" id="q${idx}">
+    <button class="qhead" aria-expanded="false" aria-controls="d${idx}">
+      <div class="qtop">
+        <span class="tag">${item.cat}</span>
+        ${warnMeter(item.level)}
+      </div>
+      <div class="qbody">
+        <span class="qmark">査定</span>
+        <span class="qtext">${item.q}</span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+    </button>
+    <div class="concl"><span class="amark">結論 ― まず一言</span>${item.concl}</div>
+    <div class="detail" id="d${idx}" role="region">
+      <h4>詳細説明</h4>
+      ${det}
+      ${rein}
+    </div>
+  </article>`;
+}
+
+function render(){
+  const q = query.trim().toLowerCase();
+  const filtered = DATA.map((it,i)=>({it,i})).filter(({it})=>{
+    if(activeCat!=="all" && it.cat!==activeCat) return false;
+    if(!q) return true;
+    const hay = (it.q+it.concl+it.detail.join("")+(it.reinforce||[]).join("")).toLowerCase();
+    return hay.includes(q);
+  });
+
+  listEl.innerHTML = filtered.map(({it,i})=>cardHTML(it,i)).join("");
+  emptyEl.hidden = filtered.length>0;
+  countEl.innerHTML = `<b>${filtered.length}</b> 件表示中 / 全 ${DATA.length} 問`;
+  bindCards();
+}
+
+function bindCards(){
+  document.querySelectorAll('.card .qhead').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const card = btn.closest('.card');
+      const open = card.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true':'false');
+    });
+  });
+}
+
+/* カテゴリチップ */
+function buildChips(){
+  const counts = {};
+  DATA.forEach(d=> counts[d.cat]=(counts[d.cat]||0)+1);
+  const all = `<button class="chip" data-cat="all" aria-pressed="true">すべて<span class="n">${DATA.length}</span></button>`;
+  const rest = CATS.map(c=>`<button class="chip" data-cat="${c}" aria-pressed="false">${c}<span class="n">${counts[c]||0}</span></button>`).join("");
+  chipsEl.innerHTML = all+rest;
+  chipsEl.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      activeCat = chip.dataset.cat;
+      chipsEl.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', c===chip?'true':'false'));
+      render();
+    });
+  });
+}
+
+searchEl.addEventListener('input', e=>{ query = e.target.value; render(); });
+document.getElementById('expandAll').addEventListener('click', ()=>{
+  document.querySelectorAll('.card').forEach(c=>{c.classList.add('open');c.querySelector('.qhead').setAttribute('aria-expanded','true');});
+});
+document.getElementById('collapseAll').addEventListener('click', ()=>{
+  document.querySelectorAll('.card').forEach(c=>{c.classList.remove('open');c.querySelector('.qhead').setAttribute('aria-expanded','false');});
+});
+
+buildChips();
+render();
+</script>
+</body>
+</html>
