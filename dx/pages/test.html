@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kintone全庁ニーズ募集｜想定却下理由と説得材料</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --text: #18181b;
+    --text-muted: #52525b;
+    --text-faint: #71717a;
+    --border: #e7e7ea;
+    --border-soft: #f1f1f4;
+    --accent: #4f46e5;
+    --accent-soft: #eef2ff;
+    --danger: #b91c1c;
+    --danger-soft: #fef4f4;
+    --danger-line: #ef4444;
+    --success: #047857;
+    --success-soft: #f0fdf9;
+    --success-line: #10b981;
+    --radius: 16px;
+    --shadow: 0 1px 2px rgba(24,24,27,.04), 0 8px 24px rgba(24,24,27,.05);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
+            "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: .01em;
+  }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 64px 24px 96px; }
+
+  /* Header */
+  header { margin-bottom: 56px; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-size: clamp(26px, 4.5vw, 38px);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1.3;
+    margin-bottom: 16px;
+  }
+  .lead {
+    font-size: 15px;
+    color: var(--text-muted);
+    max-width: 640px;
+  }
+
+  /* Section titles */
+  .section-title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 64px 0 28px;
+  }
+  .section-title h2 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+  }
+  .section-title .count {
+    font-size: 13px;
+    color: var(--text-faint);
+    font-weight: 600;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 22px 24px 18px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .num {
+    flex: none;
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: var(--text);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+  }
+  .card-head h3 {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.5;
+    padding-top: 4px;
+  }
+
+  .block { padding: 16px 24px; display: flex; gap: 14px; }
+  .block + .block { border-top: 1px solid var(--border-soft); }
+  .tag {
+    flex: none;
+    width: 86px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    padding: 5px 0;
+    text-align: center;
+    border-radius: 8px;
+    height: fit-content;
+    margin-top: 2px;
+  }
+  .tag.reason { color: var(--danger); background: var(--danger-soft); }
+  .tag.persuade { color: var(--success); background: var(--success-soft); }
+  .block p { font-size: 14.5px; color: var(--text); }
+  .block.reason-block { background: var(--danger-soft); }
+  .block.reason-block p { color: #7f1d1d; }
+  .block.persuade-block p { color: var(--text); }
+
+  /* Design summary table */
+  .table-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th, td {
+    text-align: left;
+    padding: 16px 20px;
+    font-size: 14px;
+    vertical-align: top;
+  }
+  thead th {
+    background: var(--text);
+    color: #fff;
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: .04em;
+  }
+  tbody tr + tr td { border-top: 1px solid var(--border-soft); }
+  tbody td:first-child {
+    font-weight: 700;
+    color: var(--text);
+    width: 34%;
+    background: #fafafa;
+  }
+  tbody td:last-child { color: var(--text-muted); }
+
+  /* Footnote */
+  .note {
+    margin-top: 40px;
+    padding: 20px 24px;
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+    font-size: 13.5px;
+    color: #3730a3;
+  }
+  .note strong { font-weight: 700; }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-faint);
+  }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 44px 18px 72px; }
+    .block { flex-direction: column; gap: 8px; }
+    .tag { width: fit-content; padding: 5px 12px; }
+    tbody td:first-child { width: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow">DX推進｜内部検討メモ</span>
+    <h1>全庁ニーズ募集にあたっての<br>想定却下理由と説得材料</h1>
+    <p class="lead">
+      ノーコード基盤（〇〇）の全庁ニーズ募集について、上長承認を得る前段の論点整理。
+      各却下理由に対する説得材料と、これまでの検討で収束した実施設計をまとめる。
+    </p>
+  </header>
+
+  <div class="section-title">
+    <h2>想定される却下理由 × 説得材料</h2>
+    <span class="count">8項目</span>
+  </div>
+
+  <!-- 1 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="num">1</span>
+      <h3>予算・費用対効果への懸念</h3>
+    </div>
+    <div class="block reason-block">
+      <span class="tag reason">却下理由</span>
+      <p>トライアルは無料でも、本導入費用が見えない段階で現場の期待値を上げるのは時期尚早ではないか。</p>
+    </div>
+    <div class="block persuade-block">
+      <span class="tag persuade">説得材料</span>
+      <p>全庁導入条件のクリアを前提に、長期無料トライアルを各社に確認済み。今回の募集はあくまで<strong>ニーズ調査</strong>であり導入確約ではないため、この段階での財政的リスクはゼロ。</p>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="num">2</span>
+      <h3>情報システム部門・セキュリティ主管課との調整不足</h3>
+    </div>
+    <div class="block reason-block">
+      <span class="tag reason">却下理由</span>
+      <p>情報政策部門の合意を得ずに、いきなり全庁へ募集をかけるのは手続き上問題ではないか。</p>
+    </div>
+    <div class="block persuade-block">
+      <span class="tag persuade">説得材料</span>
+      <p>LGWANゲートウェイ（〇〇）の技術的精査は完了済み。セキュリティ主管課への事前説明・同意取得を本募集とセットで進める段取りを提示する。</p>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="num">3</span>
+      <h3>既存システムとの機能重複</h3>
+    </div>
+    <div class="block reason-block">
+      <span class="tag reason">却下理由</span>
+      <p>既存のグループウェアや文書ツールと機能が重複しており、新たなツールを入れる必要性が薄いのではないか。</p>
+    </div>
+    <div class="block persuade-block">
+      <span class="tag persuade">説得材料</span>
+      <p>業務担当者自身が<strong>ノーコードでアプリを構築できる</strong>点は既存ツールにない価値。既存環境とは役割を棲み分け、代替ではなく補完として位置づける。</p>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="num">4</span>
+      <h3>現場の期待値管理・収拾がつかなくなる懸念</h3>
+    </div>
+    <div class="block reason-block">
+      <span class="tag reason">却下理由</span>
+      <p>募集をかけたのに採用されなかった部署・職員から不満が出て、収拾がつかなくなるのではないか。</p>
+    </div>
+    <div class="block persuade-block">
+      <span class="tag persuade">説得材料</span>
+      <p>主軸は<strong>DX推進側による対象部署・業務の名指し</strong>。全庁一斉ではなく段階的スモールスタート。個人希望者にはアンケート回答前の必須確認事項で期待値を事前調整する。</p>
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="num">5</span>
+      <h3>前例・実績への不安</h3>
+    </div>
+    <div class="block reason-block">
+      <span class="tag reason">却下理由</span>
+      <p>自治体でのノーコード導入事例がまだ少なく、失敗リスクが読めないのではないか。</p>
+    </div>
+    <div class="block persuade-block">
+      <span class="tag persuade">説得材料</span>
+      <p>自治体向けの導入支援プログラム（〇〇）・伴走スキームが既に存在。庁内だけで抱え込まず、外部の支援体制を活用できる前提で進められる。</p>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="num">6</span>
+      <h3>現場の業務負担増</h3>
+    </div>
+    <div class="block reason-block">
+      <span class="tag reason">却下理由</span>
+      <p>ただでさえ多忙な現場に、提案書の作成など新たな負担を負わせるのではないか。</p>
+    </div>
+    <div class="block persuade-block">
+      <span class="tag persuade">説得材料</span>
+      <p>募集は既存グループウェア（〇〇）のアンケート機能を用い、数行の回答のみで完結。肉付け・具体化はDX推進側で担うため、現場の負担は最小限。</p>
+    </div>
+  </div>
+
+  <!-- 7 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="num">7</span>
+      <h3>伴走支援の属人化・持続可能性</h3>
+    </div>
+    <div class="block reason-block">
+      <span class="tag reason">却下理由</span>
+      <p>伴走支援がDX推進リーダー1人に依存する体制で、異動・多忙時に立ち行かなくなるのではないか。</p>
+    </div>
+    <div class="block persuade-block">
+      <span class="tag persuade">説得材料</span>
+      <p>上限は設けず様子を見ながら調整し、自分の工数内で回せる範囲に絞る。伴走が必要な案件は順番待ちとし、個人付与分には支援が行き届かない旨を<strong>事前周知</strong>することで、実質的な調整弁とする。</p>
+    </div>
+  </div>
+
+  <!-- 8 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="num">8</span>
+      <h3>ベンダーロックインへの警戒</h3>
+    </div>
+    <div class="block reason-block">
+      <span class="tag reason">却下理由</span>
+      <p>特定ベンダーへの偏り・囲い込みを招くのではないか。</p>
+    </div>
+    <div class="block persuade-block">
+      <span class="tag persuade">説得材料</span>
+      <p>複数社に条件を確認済みで比較検討中。トライアル段階でも複数の選択肢（〇〇 ／ 〇〇 ／ 〇〇）を並行評価する姿勢を示す。</p>
+    </div>
+  </div>
+
+  <div class="section-title">
+    <h2>収束した全体設計</h2>
+    <span class="count">実施イメージ</span>
+  </div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr><th>論点</th><th>決定事項</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>主軸</td><td>DX推進側が対象部署・業務を名指し（モデル部署として依頼形式で丁重に）</td></tr>
+        <tr><td>救済ルート</td><td>名指し漏れでも希望する個人にはアカウントを付与</td></tr>
+        <tr><td>募集手段</td><td>グループウェア（〇〇）のアンケート機能。個人からの回答形式で簡易化</td></tr>
+        <tr><td>伴走支援キャパ</td><td>上限は設けず様子を見ながら調整（実質、事前周知が調整弁）</td></tr>
+        <tr><td>個人希望者の優先順位</td><td>明確な基準は設けず裁量。ただし事前に期待値を下げる周知を行う</td></tr>
+        <tr><td>周知タイミング</td><td>アンケート回答前の必須確認事項として表示</td></tr>
+        <tr><td>情報共有</td><td>選出者はチャットツール（〇〇）の専用トークルームで横断的に共有</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <strong>要点：</strong>上長が最も気にするのは「後で問題になった時の責任所在」。
+    ①事前調整済み ②リスクゼロ・負担最小 ③段階的で撤退可能 ④期待値は回答前に周知済み
+    ——この4点を前面に出すことで、承認のハードルを大きく下げられる。
+  </div>
+
+  <footer>
+    ※固有名詞はすべて〇〇に置換しています。内部検討用メモ。
+  </footer>
+
+</div>
+</body>
+</html>
