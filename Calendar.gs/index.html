@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #ffffff;
+      --ink: #101216;
+      --muted: #767c86;
+      --rule: #e7e9ee;
+      --rule-soft: #f2f3f6;
+      --accent: #2438c8;
+      --accent-soft: #eef0ff;
+      --now: #e5484d;
+      --cat-work: #2438c8;
+      --cat-private: #0d7a63;
+      --cat-other: #7b3ba8;
+      --font-display: "Noto Sans JP", sans-serif;
+      --font-body: "Noto Sans JP", sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --gap: 20px;
+      --hour-h: 44px;
+      --gutter-w: 46px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+    body { font-family: var(--font-body); font-size: 15px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 0 var(--gap) 96px; }
+
+    /* ===== アプリバー ===== */
+    .app-bar {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid var(--rule);
+    }
+    .app-bar-inner {
+      max-width: 920px; margin: 0 auto; padding: 14px var(--gap);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 16px; margin: 0; }
+    .wordmark span { border-bottom: 2px solid var(--accent); padding-bottom: 2px; }
+
+    .btn {
+      font-family: var(--font-body); font-size: 13px; font-weight: 500; line-height: 1;
+      padding: 10px 16px; border-radius: 999px; border: 1px solid var(--rule);
+      background: var(--paper); color: var(--ink); cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--rule-soft); }
+    .btn-primary { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+    .btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+    .btn-quiet { border-color: transparent; padding-left: 8px; padding-right: 8px; color: var(--muted); }
+    .btn-quiet:hover { color: var(--ink); background: transparent; }
+    .btn-mini { font-size: 11.5px; padding: 6px 12px; }
+    .btn[disabled] { opacity: 0.45; cursor: default; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+    /* ===== ビュータブ ===== */
+    .tabs { display: flex; gap: 4px; padding: 14px 0 4px; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+    .tab-btn {
+      font-family: var(--font-body); font-size: 13px; font-weight: 500;
+      padding: 8px 14px; border-radius: 999px 999px 0 0; border: 1px solid transparent;
+      background: transparent; color: var(--muted); cursor: pointer;
+    }
+    .tab-btn.is-on { color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+    /* ===== ナビ(月・週・日・テーブル共通) ===== */
+    .nav-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 4px; gap: 10px; }
+    .nav-label { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+    .nav-btns { display: flex; gap: 6px; }
+
+    /* ===== 一覧:期間表示・カテゴリ絞り込み ===== */
+    .range-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0 4px; flex-wrap: wrap; gap: 10px;
+    }
+    .range-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+    .seg { display: flex; gap: 6px; flex-wrap: wrap; }
+    .seg-btn {
+      font-family: var(--font-body); font-size: 12px; font-weight: 500; letter-spacing: 0.02em;
+      padding: 7px 14px; border-radius: 999px; border: 1px solid var(--rule);
+      background: var(--paper); color: var(--muted); cursor: pointer; transition: all 0.15s ease;
+    }
+    .seg-btn:hover { border-color: #cfd3dc; color: var(--ink); }
+    .seg-btn.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+    /* ===== 一覧(日付グルーピング) ===== */
+    .rows { margin-top: 10px; }
+    .date-group { margin-top: 22px; }
+    .date-group:first-child { margin-top: 10px; }
+    .date-head {
+      font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+      padding: 4px 0; border-bottom: 1px solid var(--rule-soft); letter-spacing: 0.04em;
+    }
+    .date-head.is-today { color: var(--accent); font-weight: 700; }
+
+    .row {
+      display: grid; grid-template-columns: 76px 1fr auto;
+      align-items: baseline; gap: 4px 16px; padding: 16px 4px;
+      border-bottom: 1px solid var(--rule-soft); cursor: pointer; position: relative;
+      transition: background 0.12s ease;
+    }
+    .row::before {
+      content: ""; position: absolute; left: -12px; top: 14px; bottom: 14px; width: 2px;
+      background: var(--accent); opacity: 0; transition: opacity 0.15s ease;
+    }
+    .row:hover { background: #fbfbfd; }
+    .row:hover::before { opacity: 1; }
+
+    .row-time { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .row-time.is-allday { color: var(--accent); }
+    .row-title { font-size: 15.5px; font-weight: 500; line-height: 1.6; }
+    .badge {
+      font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em;
+      padding: 4px 8px; border: 1px solid currentColor; border-radius: 3px;
+      white-space: nowrap; display: inline-block;
+    }
+    .badge[data-cat="仕事"] { color: var(--cat-work); }
+    .badge[data-cat="私用"] { color: var(--cat-private); }
+    .badge[data-cat="その他"] { color: var(--cat-other); }
+
+    .empty { padding: 64px 0; text-align: center; color: var(--muted); font-size: 14px; }
+    .empty strong { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+
+    /* ===== 月表示 ===== */
+    .month-grid-head { display: grid; grid-template-columns: repeat(7, 1fr); padding-top: 10px; }
+    .month-grid-head span { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: center; padding-bottom: 6px; display: block; }
+    .month-weeks { border-left: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+    .month-week {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      grid-template-rows: 22px 20px 20px 16px;
+      border-top: 1px solid var(--rule);
+    }
+    .month-cell {
+      grid-row: 1 / -1; border-right: 1px solid var(--rule-soft);
+      padding: 3px 4px 0; position: relative; cursor: pointer;
+    }
+    .month-cell:hover { background: #fbfbfd; }
+    .month-cell.is-other { background: #fafbfc; }
+    .month-cell.is-other .month-daynum { color: var(--muted); }
+    .month-daynum {
+      display: inline-block; font-family: var(--font-mono); font-size: 11px;
+      width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 50%;
+    }
+    .month-cell.is-today .month-daynum { background: var(--accent); color: #fff; }
+    .month-bar {
+      grid-row: 2; align-self: start; margin: 1px 2px 0; height: 17px; line-height: 17px;
+      font-size: 11px; padding: 0 5px; border-radius: 3px; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap; color: #fff; cursor: pointer;
+    }
+    .month-bar.slot-1 { grid-row: 3; }
+    .month-bar[data-cat="仕事"] { background: var(--cat-work); }
+    .month-bar[data-cat="私用"] { background: var(--cat-private); }
+    .month-bar[data-cat="その他"] { background: var(--cat-other); }
+    .month-item {
+      grid-row: 2; align-self: start; margin: 1px 2px 0; height: 17px; line-height: 17px;
+      font-size: 11px; padding: 0 3px; overflow: hidden; white-space: nowrap; cursor: pointer; color: var(--ink);
+    }
+    .month-item.slot-1 { grid-row: 3; }
+    .month-item .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+    .month-item[data-cat="仕事"] .dot { background: var(--cat-work); }
+    .month-item[data-cat="私用"] .dot { background: var(--cat-private); }
+    .month-item[data-cat="その他"] .dot { background: var(--cat-other); }
+    .month-more {
+      grid-row: 4; align-self: start; margin: 0 2px; font-family: var(--font-mono);
+      font-size: 10px; color: var(--muted); cursor: pointer;
+    }
+    .month-more:hover { color: var(--accent); }
+
+    /* ===== 週表示・日表示(共通の時間軸) ===== */
+    .week-head {
+      display: grid; grid-template-columns: var(--gutter-w) repeat(7, 1fr);
+      border-bottom: 1px solid var(--rule); padding-top: 10px;
+    }
+    .week-head-cell { text-align: center; padding: 4px 0 6px; cursor: pointer; }
+    .week-head-cell:hover .week-head-num { background: var(--rule-soft); }
+    .week-head-dow { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); display: block; }
+    .week-head-num {
+      font-family: var(--font-mono); font-size: 14px; display: inline-block;
+      width: 26px; height: 26px; line-height: 26px; border-radius: 50%; margin-top: 2px;
+    }
+    .week-head-cell.is-today .week-head-num { background: var(--accent); color: #fff; }
+    .week-head-cell.is-other .week-head-dow,
+    .week-head-cell.is-other .week-head-num { color: var(--muted); }
+
+    .allday-band {
+      display: grid; border-bottom: 1px solid var(--rule); min-height: 22px;
+    }
+    .week-allday { grid-template-columns: var(--gutter-w) repeat(7, 1fr); }
+    .day-allday { grid-template-columns: var(--gutter-w) 1fr; }
+    .allday-label {
+      font-family: var(--font-mono); font-size: 9.5px; color: var(--muted);
+      text-align: right; padding: 4px 6px 0 0; grid-column: 1;
+    }
+    .allday-lanes { grid-column: 2 / -1; display: grid; gap: 2px 0; padding: 3px 0; }
+    .week-allday .allday-lanes { grid-template-columns: repeat(7, 1fr); }
+    .day-allday .allday-lanes { grid-template-columns: 1fr; }
+    .allbar {
+      height: 18px; line-height: 18px; margin: 0 2px; padding: 0 6px; border-radius: 3px;
+      font-size: 11px; color: #fff; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; cursor: pointer;
+    }
+    .allbar[data-cat="仕事"] { background: var(--cat-work); }
+    .allbar[data-cat="私用"] { background: var(--cat-private); }
+    .allbar[data-cat="その他"] { background: var(--cat-other); }
+
+    .time-scroll {
+      height: 62vh; min-height: 360px; overflow-y: auto; overflow-x: hidden;
+      border-bottom: 1px solid var(--rule);
+    }
+    .time-body { display: grid; }
+    .week-body { grid-template-columns: var(--gutter-w) repeat(7, 1fr); }
+    .day-body { grid-template-columns: var(--gutter-w) 1fr; }
+    .time-gutter { grid-column: 1; }
+    .gutter-hour {
+      height: var(--hour-h); font-family: var(--font-mono); font-size: 10px;
+      color: var(--muted); text-align: right; padding-right: 6px;
+    }
+    .time-col {
+      position: relative; border-left: 1px solid var(--rule-soft);
+      background-image: repeating-linear-gradient(
+        to bottom,
+        var(--rule-soft) 0px, var(--rule-soft) 1px,
+        transparent 1px, transparent var(--hour-h)
+      );
+    }
+    .time-col.is-today { background-color: #fcfcff; }
+    .time-ev {
+      position: absolute; border-radius: 4px; padding: 1px 5px; overflow: hidden;
+      font-size: 11px; line-height: 1.35; color: #fff; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.7);
+    }
+    .time-ev[data-cat="仕事"] { background: var(--cat-work); }
+    .time-ev[data-cat="私用"] { background: var(--cat-private); }
+    .time-ev[data-cat="その他"] { background: var(--cat-other); }
+    .time-ev-time { font-family: var(--font-mono); font-size: 9.5px; opacity: 0.85; display: block; }
+    .time-ev-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .time-now {
+      position: absolute; left: 0; right: 0; height: 0;
+      border-top: 2px solid var(--now); z-index: 3; pointer-events: none;
+    }
+    .time-now::before {
+      content: ""; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px;
+      border-radius: 50%; background: var(--now);
+    }
+
+    /* ===== 日表示:詳細カード ===== */
+    .day-cards-head {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+      color: var(--muted); margin: 28px 0 12px;
+    }
+    .day-card {
+      border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; margin-bottom: 12px;
+      transition: border-color 0.35s ease, box-shadow 0.35s ease;
+    }
+    .day-card.is-flash { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .day-card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .day-card-time { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 500; }
+    .day-card-cont { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
+    .day-card-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; line-height: 1.6; margin: 8px 0 0; }
+    .day-card-memo {
+      white-space: pre-wrap; word-break: break-word; font-size: 14px;
+      margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rule-soft); color: #33383f;
+    }
+    .day-card-foot {
+      margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--rule-soft);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      font-family: var(--font-mono); font-size: 10.5px; color: var(--muted);
+    }
+    .day-card-meta { display: flex; gap: 14px; flex-wrap: wrap; }
+
+    /* ===== テーブル表示 ===== */
+    .table-scroll {
+      margin-top: 12px; border: 1px solid var(--rule); border-radius: 8px;
+      overflow: auto; max-height: 68vh;
+    }
+    .rec-table { border-collapse: separate; border-spacing: 0; font-size: 13px; white-space: nowrap; width: 100%; }
+    .rec-table th, .rec-table td { padding: 9px 12px; border-bottom: 1px solid var(--rule-soft); text-align: left; }
+    .rec-table th {
+      position: sticky; top: 0; z-index: 2; background: var(--paper);
+      font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.04em;
+      color: var(--muted); cursor: pointer; user-select: none; border-bottom: 1px solid var(--rule);
+    }
+    .rec-table th:hover { color: var(--ink); }
+    .rec-table th.is-sorted { color: var(--accent); }
+    .rec-table th .arrow { margin-left: 4px; font-size: 9px; }
+    .rec-table th.col-id, .rec-table td.col-id { position: sticky; left: 0; background: var(--paper); }
+    .rec-table td.col-id { z-index: 1; }
+    .rec-table th.col-id { z-index: 3; }
+    .rec-table td.mono { font-family: var(--font-mono); font-size: 12px; }
+    .rec-table td.col-memo { max-width: 260px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+    .rec-table td.col-title { font-weight: 500; }
+    .rec-table tbody tr { cursor: pointer; }
+    .rec-table tbody tr:hover td { background: #fbfbfd; }
+    .rec-table .dim { color: #c3c7d0; }
+    .table-count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 10px; }
+
+    /* ===== 詳細・フォーム ===== */
+    .page-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 20px 0; border-bottom: 1px solid var(--rule); flex-wrap: wrap;
+    }
+    .page-head-actions { display: flex; gap: 6px; align-items: center; }
+    .meta-id { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+    .field { margin: 0 0 20px; }
+    .label { display: block; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 7px; }
+    .input, .textarea, .select {
+      width: 100%; font-family: var(--font-body); font-size: 15px; line-height: 1.7;
+      color: var(--ink); background: var(--paper); border: 1px solid var(--rule);
+      border-radius: 8px; padding: 11px 13px; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .input:focus, .textarea:focus, .select:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .textarea { min-height: 100px; resize: vertical; }
+    .select { appearance: none; }
+    .row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+    .check-line { display: flex; align-items: center; gap: 8px; margin: 0 0 20px; }
+    .check-line input { width: 16px; height: 16px; }
+    .check-line label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+    .view { display: none; }
+    .view.is-active { display: block; }
+
+    @media (max-width: 640px) {
+      :root { --gap: 16px; --hour-h: 38px; --gutter-w: 38px; }
+      .row-2col { grid-template-columns: 1fr; }
+      .tab-btn { padding: 8px 11px; font-size: 12.5px; }
+      .month-daynum { width: 17px; height: 17px; line-height: 17px; font-size: 10px; }
+      .month-bar, .month-item { font-size: 9.5px; height: 15px; line-height: 15px; }
+      .month-week { grid-template-rows: 19px 17px 17px 14px; }
+      .week-head-num { width: 22px; height: 22px; line-height: 22px; font-size: 12px; }
+      .time-ev { font-size: 9.5px; padding: 0 3px; }
+      .week-body .time-ev .time-ev-time { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-bar">
+    <div class="app-bar-inner">
+      <h1 class="wordmark"><span>カレンダー</span></h1>
+      <button class="btn btn-primary" id="btnNew">予定を追加</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <div class="tabs" id="tabs">
+      <button class="tab-btn is-on" data-tab="month">月</button>
+      <button class="tab-btn" data-tab="week">週</button>
+      <button class="tab-btn" data-tab="day">日</button>
+      <button class="tab-btn" data-tab="list">一覧</button>
+      <button class="tab-btn" data-tab="table">テーブル</button>
+    </div>
+
+    <!-- ===== 月表示 ===== -->
+    <section id="view-month" class="view is-active">
+      <div class="nav-bar">
+        <div class="nav-label" id="monthLabel"></div>
+        <div class="nav-btns">
+          <button class="btn btn-quiet" id="btnMonthPrev">←</button>
+          <button class="btn btn-quiet" id="btnMonthToday">今日</button>
+          <button class="btn btn-quiet" id="btnMonthNext">→</button>
+        </div>
+      </div>
+      <div class="month-grid-head">
+        <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+      </div>
+      <div class="month-weeks" id="monthBody"></div>
+    </section>
+
+    <!-- ===== 週表示 ===== -->
+    <section id="view-week" class="view">
+      <div class="nav-bar">
+        <div class="nav-label" id="weekLabel"></div>
+        <div class="nav-btns">
+          <button class="btn btn-quiet" id="btnWeekPrev">←</button>
+          <button class="btn btn-quiet" id="btnWeekToday">今週</button>
+          <button class="btn btn-quiet" id="btnWeekNext">→</button>
+        </div>
+      </div>
+      <div class="week-head" id="weekHead"></div>
+      <div class="allday-band week-allday" id="weekAllDay"></div>
+      <div class="time-scroll" id="weekScroll">
+        <div class="time-body week-body">
+          <div class="time-gutter" id="weekGutter"></div>
+          <div class="time-col" data-col="0"></div>
+          <div class="time-col" data-col="1"></div>
+          <div class="time-col" data-col="2"></div>
+          <div class="time-col" data-col="3"></div>
+          <div class="time-col" data-col="4"></div>
+          <div class="time-col" data-col="5"></div>
+          <div class="time-col" data-col="6"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 日表示 ===== -->
+    <section id="view-day" class="view">
+      <div class="nav-bar">
+        <div class="nav-label" id="dayLabel"></div>
+        <div class="nav-btns">
+          <button class="btn btn-quiet" id="btnDayPrev">←</button>
+          <button class="btn btn-quiet" id="btnDayToday">今日</button>
+          <button class="btn btn-quiet" id="btnDayNext">→</button>
+        </div>
+      </div>
+      <div class="allday-band day-allday" id="dayAllDay"></div>
+      <div class="time-scroll" id="dayScroll">
+        <div class="time-body day-body">
+          <div class="time-gutter" id="dayGutter"></div>
+          <div class="time-col" id="dayCol"></div>
+        </div>
+      </div>
+      <div class="day-cards-head" id="dayCardsHead">この日の予定</div>
+      <div id="dayCards"></div>
+    </section>
+
+    <!-- ===== 一覧表示 ===== -->
+    <section id="view-list" class="view">
+      <div class="range-bar">
+        <span class="range-label" id="rangeLabel"></span>
+        <div class="seg" id="seg">
+          <button class="seg-btn is-on" data-cat="">すべて</button>
+          <button class="seg-btn" data-cat="仕事">仕事</button>
+          <button class="seg-btn" data-cat="私用">私用</button>
+          <button class="seg-btn" data-cat="その他">その他</button>
+        </div>
+      </div>
+      <div class="rows" id="listBody"></div>
+    </section>
+
+    <!-- ===== テーブル表示 ===== -->
+    <section id="view-table" class="view">
+      <div class="nav-bar">
+        <div class="nav-label" id="tableLabel"></div>
+        <div class="nav-btns">
+          <button class="btn btn-quiet" id="btnTablePrev">←</button>
+          <button class="btn btn-quiet" id="btnTableToday">今月</button>
+          <button class="btn btn-quiet" id="btnTableNext">→</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="rec-table">
+          <thead>
+            <tr id="tableHead">
+              <th class="col-id" data-key="id">ID</th>
+              <th data-key="start">開始日</th>
+              <th data-key="start">開始時刻</th>
+              <th data-key="end">終了日</th>
+              <th data-key="end">終了時刻</th>
+              <th data-key="allday">終日</th>
+              <th data-key="category">分類</th>
+              <th data-key="title">予定名</th>
+              <th data-key="memo">メモ</th>
+              <th data-key="created">作成日時</th>
+              <th data-key="updated">更新日時</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="table-count" id="tableCount"></div>
+    </section>
+
+    <!-- ===== 詳細・編集 ===== -->
+    <section id="view-detail" class="view">
+      <div class="page-head">
+        <button class="btn btn-quiet" id="btnBackFromDetail">← 戻る</button>
+        <div class="page-head-actions">
+          <span class="meta-id" id="d-id"></span>
+          <button class="btn" id="btnDelete">削除</button>
+          <button class="btn btn-primary" id="btnSave">保存</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="label">分類</span>
+        <select class="select" id="d-category"></select>
+      </div>
+      <div class="field">
+        <span class="label">予定名</span>
+        <input type="text" class="input" id="d-title">
+      </div>
+      <div class="check-line">
+        <input type="checkbox" id="d-allday">
+        <label for="d-allday">終日</label>
+      </div>
+      <div class="row-2col">
+        <div class="field">
+          <span class="label">開始</span>
+          <input type="datetime-local" class="input" id="d-start">
+        </div>
+        <div class="field">
+          <span class="label">終了</span>
+          <input type="datetime-local" class="input" id="d-end">
+        </div>
+      </div>
+      <div class="field">
+        <span class="label">メモ</span>
+        <textarea class="textarea" id="d-memo"></textarea>
+      </div>
+      <div class="field" id="d-timestamps" style="color:var(--muted);font-family:var(--font-mono);font-size:11px;"></div>
+    </section>
+
+    <!-- ===== 新規登録 ===== -->
+    <section id="view-new" class="view">
+      <div class="page-head">
+        <button class="btn btn-quiet" id="btnBackFromNew">← 戻る</button>
+        <button class="btn btn-primary" id="btnCreate">登録する</button>
+      </div>
+
+      <div class="field">
+        <span class="label">分類</span>
+        <select class="select" id="n-category"></select>
+      </div>
+      <div class="field">
+        <span class="label">予定名</span>
+        <input type="text" class="input" id="n-title" placeholder="例:定例ミーティング">
+      </div>
+      <div class="check-line">
+        <input type="checkbox" id="n-allday">
+        <label for="n-allday">終日</label>
+      </div>
+      <div class="row-2col">
+        <div class="field">
+          <span class="label">開始</span>
+          <input type="datetime-local" class="input" id="n-start">
+        </div>
+        <div class="field">
+          <span class="label">終了</span>
+          <input type="datetime-local" class="input" id="n-end">
+        </div>
+      </div>
+      <div class="field">
+        <span class="label">メモ</span>
+        <textarea class="textarea" id="n-memo"></textarea>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var $ = function (id) { return document.getElementById(id); };
+      var CATEGORIES = ['仕事', '私用', 'その他'];
+      var DOW = ['日', '月', '火', '水', '木', '金', '土'];
+      var DAY_MS = 86400000;
+      var HOUR_MS = 3600000;
+
+      var allEvents = [];
+      var currentCat = '';
+      var currentId = null;
+      var listRange = null;
+      var lastMainView = 'month';
+
+      var monthState = { focus: null, grid: null, cache: {} };
+      var weekState = { focus: null, days: null, cache: {}, scrolled: false };
+      var dayState = { focus: null, events: [], cache: {}, scrolled: false };
+      var tableState = { focus: null, rows: [], cache: {}, sortKey: 'start', sortDir: 1 };
+
+      /* ===== 日付ユーティリティ ===== */
+      function pad2(n) { return ('0' + n).slice(-2); }
+      function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+      function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+      function startOfWeek(d) { return addDays(startOfDay(d), -d.getDay()); }
+      function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+
+      function toGasStr(d) {
+        return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()) +
+          ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+      }
+      function parseGasStr(s) {
+        if (!s) return null;
+        return new Date(String(s).replace(/-/g, '/'));
+      }
+      function toLocalInputValue(d) {
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
+          'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+      }
+      function fromLocalInputValue(v) {
+        return new Date(v.replace('T', ' ').replace(/-/g, '/'));
+      }
+      function fmtDate(d) { return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()); }
+      function fmtDateHead(d) { return fmtDate(d) + '(' + DOW[d.getDay()] + ')'; }
+      function fmtTime(d) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+      function isSameDay(a, b) {
+        return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+      }
+      function dateKey(d) { return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()); }
+
+      // 予定の実効期間(終日は inclusive → exclusive に正規化)
+      function effRange(ev) {
+        var s = parseGasStr(ev.start_at);
+        var e = parseGasStr(ev.end_at) || s;
+        if (ev.all_day) return { start: startOfDay(s), end: addDays(startOfDay(e), 1) };
+        if (e.getTime() <= s.getTime()) e = new Date(s.getTime() + 60000);
+        return { start: s, end: e };
+      }
+
+      function computeListRange() {
+        var now = new Date();
+        return { start: startOfDay(now), end: new Date(now.getFullYear(), now.getMonth() + 3, 1) };
+      }
+
+      function escapeHtml(str) {
+        return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      function showView(name) {
+        var views = document.querySelectorAll('.view');
+        for (var i = 0; i < views.length; i++) views[i].classList.remove('is-active');
+        $('view-' + name).classList.add('is-active');
+        window.scrollTo(0, 0);
+      }
+
+      function setActiveTab(tab) {
+        var btns = document.querySelectorAll('.tab-btn');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].classList.toggle('is-on', btns[i].getAttribute('data-tab') === tab);
+        }
+      }
+
+      function fillCategorySelect(sel) {
+        sel.innerHTML = CATEGORIES.map(function (c) {
+          return '<option value="' + c + '">' + c + '</option>';
+        }).join('');
+      }
+
+      function scanCache(cache, id) {
+        for (var key in cache) {
+          for (var j = 0; j < cache[key].length; j++) if (cache[key][j].id === id) return cache[key][j];
+        }
+        return null;
+      }
+
+      function findEventById(id) {
+        for (var i = 0; i < allEvents.length; i++) if (allEvents[i].id === id) return allEvents[i];
+        return scanCache(monthState.cache, id) || scanCache(weekState.cache, id) ||
+               scanCache(dayState.cache, id) || scanCache(tableState.cache, id);
+      }
+
+      // 保存・削除・登録のあと、全ビューのキャッシュを作り直す
+      function refreshAll(callback) {
+        monthState.cache = {};
+        weekState.cache = {};
+        dayState.cache = {};
+        tableState.cache = {};
+
+        var pending = 1;
+        var done = function () { if (--pending === 0 && callback) callback(); };
+
+        loadList(done);
+        if (monthState.focus) { pending++; loadMonth(monthState.focus, done); }
+        if (weekState.focus) { pending++; loadWeek(weekState.focus, done); }
+        if (dayState.focus) { pending++; loadDay(dayState.focus, done); }
+        if (tableState.focus) { pending++; loadTable(tableState.focus, done); }
+      }
+
+      /* ===== 一覧表示 ===== */
+      function loadList(callback) {
+        listRange = computeListRange();
+        $('rangeLabel').textContent =
+          fmtDateHead(listRange.start).slice(0, -3) + ' 〜 ' +
+          fmtDateHead(new Date(listRange.end.getTime() - DAY_MS)).slice(0, -3);
+
+        google.script.run
+          .withSuccessHandler(function (items) {
+            allEvents = items;
+            renderList();
+            if (callback) callback();
+          })
+          .withFailureHandler(function (err) {
+            $('listBody').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(err.message) + '</div>';
+            if (callback) callback();
+          })
+          .getEvents(toGasStr(listRange.start), toGasStr(listRange.end));
+      }
+
+      function renderList() {
+        var today = startOfDay(new Date());
+        var filtered = allEvents.filter(function (ev) { return !currentCat || ev.category === currentCat; });
+        var body = $('listBody');
+
+        if (filtered.length === 0) {
+          body.innerHTML = '<div class="empty"><strong>この期間に予定はありません</strong>右上の「予定を追加」から登録できます。</div>';
+          return;
+        }
+
+        var cursor = new Date(listRange.start);
+        var groups = [];
+        while (cursor.getTime() < listRange.end.getTime()) {
+          var dayStart = new Date(cursor);
+          var dayEnd = addDays(cursor, 1);
+          var dayEvents = filtered.filter(function (ev) {
+            var r = effRange(ev);
+            return r.start.getTime() < dayEnd.getTime() && r.end.getTime() > dayStart.getTime();
+          });
+          if (dayEvents.length > 0) groups.push({ date: dayStart, events: dayEvents });
+          cursor = dayEnd;
+        }
+
+        body.innerHTML = groups.map(function (g) {
+          var rows = g.events.map(function (ev) {
+            var timeHtml = ev.all_day
+              ? '<span class="row-time is-allday">終日</span>'
+              : '<span class="row-time">' + fmtTime(parseGasStr(ev.start_at)) + '</span>';
+            return '<div class="row" data-id="' + escapeHtml(ev.id) + '">' +
+              '<div>' + timeHtml + '</div>' +
+              '<div class="row-title">' + escapeHtml(ev.title) + '</div>' +
+              '<div><span class="badge" data-cat="' + escapeHtml(ev.category) + '">' + escapeHtml(ev.category) + '</span></div>' +
+              '</div>';
+          }).join('');
+          var isToday = isSameDay(g.date, today);
+          return '<div class="date-group" id="dg-' + dateKey(g.date) + '">' +
+            '<div class="date-head' + (isToday ? ' is-today' : '') + '">' + fmtDateHead(g.date) +
+            (isToday ? '(今日)' : '') + '</div>' + rows + '</div>';
+        }).join('');
+      }
+
+      /* ===== 終日帯の詰め込み(月・週・日で共通) ===== */
+      function falseRow(n) {
+        var a = [];
+        for (var i = 0; i < n; i++) a.push(false);
+        return a;
+      }
+
+      function dayIndexIn(days, date) {
+        for (var i = 0; i < days.length; i++) if (isSameDay(days[i], date)) return i;
+        return -1;
+      }
+
+      // 終日予定を days の列範囲にクリップして、重ならない最小スロットに割り当てる
+      function packAllDay(events, days) {
+        var n = days.length;
+        var rangeStart = days[0];
+        var rangeEndEx = addDays(days[n - 1], 1);
+        var items = [];
+
+        events.forEach(function (ev) {
+          if (!ev.all_day) return;
+          var r = effRange(ev);
+          if (r.start.getTime() >= rangeEndEx.getTime() || r.end.getTime() <= rangeStart.getTime()) return;
+          var colStart = r.start.getTime() <= rangeStart.getTime() ? 0 : dayIndexIn(days, r.start);
+          var lastIncl = new Date(r.end.getTime() - DAY_MS);
+          var colEnd = lastIncl.getTime() >= days[n - 1].getTime() ? n - 1 : dayIndexIn(days, lastIncl);
+          if (colStart === -1 || colEnd === -1) return;
+          items.push({ ev: ev, colStart: colStart, colEnd: colEnd });
+        });
+
+        items.sort(function (a, b) {
+          if (a.colStart !== b.colStart) return a.colStart - b.colStart;
+          return (b.colEnd - b.colStart) - (a.colEnd - a.colStart);
+        });
+
+        var occupied = [];
+        items.forEach(function (item) {
+          var slot = 0, c;
+          for (;;) {
+            if (!occupied[slot]) occupied[slot] = falseRow(n);
+            var free = true;
+            for (c = item.colStart; c <= item.colEnd; c++) { if (occupied[slot][c]) { free = false; break; } }
+            if (free) break;
+            slot++;
+          }
+          item.slot = slot;
+          for (c = item.colStart; c <= item.colEnd; c++) occupied[slot][c] = true;
+        });
+
+        return items;
+      }
+
+      function renderAllDayBand(containerId, events, days) {
+        var items = packAllDay(events, days);
+        var laneCount = 0;
+        items.forEach(function (it) { if (it.slot + 1 > laneCount) laneCount = it.slot + 1; });
+
+        var lanes = items.map(function (it) {
+          return '<div class="allbar" style="grid-column:' + (it.colStart + 1) + '/' + (it.colEnd + 2) +
+            ';grid-row:' + (it.slot + 1) + ';" data-cat="' + escapeHtml(it.ev.category) +
+            '" data-id="' + escapeHtml(it.ev.id) + '">' + escapeHtml(it.ev.title) + '</div>';
+        }).join('');
+
+        $(containerId).innerHTML =
+          '<div class="allday-label">終日</div>' +
+          '<div class="allday-lanes" style="grid-template-rows:repeat(' + Math.max(laneCount, 1) + ', 18px);">' +
+          lanes + '</div>';
+      }
+
+      /* ===== 月表示 ===== */
+      function ymKey(d) { return d.getFullYear() + '-' + d.getMonth(); }
+
+      function computeMonthGrid(focus) {
+        var first = startOfMonth(focus);
+        var last = new Date(focus.getFullYear(), focus.getMonth() + 1, 0);
+        var cur = addDays(first, -first.getDay());
+        var lastCell = addDays(last, 6 - last.getDay());
+        var weeks = [];
+        var rangeStart = new Date(cur);
+
+        while (cur.getTime() <= lastCell.getTime()) {
+          var week = [];
+          for (var i = 0; i < 7; i++) { week.push(new Date(cur)); cur = addDays(cur, 1); }
+          weeks.push(week);
+        }
+        return { weeks: weeks, rangeStart: rangeStart, rangeEnd: new Date(cur) };
+      }
+
+      function loadMonth(focus, callback) {
+        monthState.focus = focus;
+        var grid = computeMonthGrid(focus);
+        monthState.grid = grid;
+        $('monthLabel').textContent = focus.getFullYear() + '年' + (focus.getMonth() + 1) + '月';
+
+        var key = ymKey(focus);
+        if (monthState.cache[key]) {
+          renderMonth(monthState.cache[key], grid);
+          if (callback) callback();
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function (items) {
+            monthState.cache[key] = items;
+            renderMonth(items, grid);
+            if (callback) callback();
+          })
+          .withFailureHandler(function (err) {
+            $('monthBody').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(err.message) + '</div>';
+            if (callback) callback();
+          })
+          .getEvents(toGasStr(grid.rangeStart), toGasStr(grid.rangeEnd));
+      }
+
+      // 月表示は終日バー + 時間指定(開始日のみ)を同じスロットに詰める
+      function packMonthWeek(events, week) {
+        var items = packAllDay(events, week);
+        var occupied = [];
+        items.forEach(function (item) {
+          if (!occupied[item.slot]) occupied[item.slot] = falseRow(7);
+          for (var c = item.colStart; c <= item.colEnd; c++) occupied[item.slot][c] = true;
+        });
+
+        var timed = [];
+        events.forEach(function (ev) {
+          if (ev.all_day) return;
+          var s = parseGasStr(ev.start_at);
+          var idx = dayIndexIn(week, startOfDay(s));
+          if (idx === -1) return;
+          timed.push({ ev: ev, colStart: idx, colEnd: idx, startTime: s });
+        });
+        timed.sort(function (a, b) {
+          if (a.colStart !== b.colStart) return a.colStart - b.colStart;
+          return a.startTime - b.startTime;
+        });
+
+        timed.forEach(function (item) {
+          var slot = 0;
+          for (;;) {
+            if (!occupied[slot]) occupied[slot] = falseRow(7);
+            if (!occupied[slot][item.colStart]) break;
+            slot++;
+          }
+          item.slot = slot;
+          occupied[slot][item.colStart] = true;
+          items.push(item);
+        });
+
+        return items;
+      }
+
+      function renderMonth(events, grid) {
+        var today = startOfDay(new Date());
+        var thisMonth = monthState.focus.getMonth();
+        var MAX_VISIBLE_SLOTS = 2;
+
+        $('monthBody').innerHTML = grid.weeks.map(function (week) {
+          var cellsHtml = week.map(function (d, i) {
+            var cls = 'month-cell' + (d.getMonth() !== thisMonth ? ' is-other' : '') + (isSameDay(d, today) ? ' is-today' : '');
+            return '<div class="' + cls + '" style="grid-column:' + (i + 1) + '/' + (i + 2) + ';" data-date="' + dateKey(d) + '">' +
+              '<span class="month-daynum">' + d.getDate() + '</span></div>';
+          }).join('');
+
+          var items = packMonthWeek(events, week);
+          var overflow = [0, 0, 0, 0, 0, 0, 0];
+
+          var barsHtml = items.map(function (item) {
+            if (item.slot >= MAX_VISIBLE_SLOTS) {
+              for (var c = item.colStart; c <= item.colEnd; c++) overflow[c]++;
+              return '';
+            }
+            var colStyle = 'grid-column:' + (item.colStart + 1) + '/' + (item.colEnd + 2) + ';';
+            var slotCls = item.slot === 1 ? ' slot-1' : '';
+            if (item.ev.all_day) {
+              return '<div class="month-bar' + slotCls + '" style="' + colStyle + '" data-cat="' + escapeHtml(item.ev.category) +
+                '" data-id="' + escapeHtml(item.ev.id) + '">' + escapeHtml(item.ev.title) + '</div>';
+            }
+            return '<div class="month-item' + slotCls + '" style="' + colStyle + '" data-cat="' + escapeHtml(item.ev.category) +
+              '" data-id="' + escapeHtml(item.ev.id) + '"><span class="dot"></span>' +
+              fmtTime(item.startTime) + ' ' + escapeHtml(item.ev.title) + '</div>';
+          }).join('');
+
+          var moreHtml = overflow.map(function (n, i) {
+            if (n === 0) return '';
+            return '<div class="month-more" style="grid-column:' + (i + 1) + '/' + (i + 2) + ';" data-date="' +
+              dateKey(week[i]) + '">+' + n + '件</div>';
+          }).join('');
+
+          return '<div class="month-week">' + cellsHtml + barsHtml + moreHtml + '</div>';
+        }).join('');
+      }
+
+      /* ===== 時間軸の共通処理 ===== */
+      function hourHeight() {
+        var v = getComputedStyle(document.documentElement).getPropertyValue('--hour-h');
+        return parseFloat(v) || 44;
+      }
+
+      function renderGutter(id) {
+        var html = '';
+        for (var h = 0; h < 24; h++) html += '<div class="gutter-hour">' + pad2(h) + ':00</div>';
+        $(id).innerHTML = html;
+      }
+
+      // 1日分の時間指定予定を、重なりクラスタごとに列分割する
+      function layoutDayColumn(events, dayStart) {
+        var dayEnd = addDays(dayStart, 1);
+        var blocks = [];
+
+        events.forEach(function (ev) {
+          if (ev.all_day) return;
+          var r = effRange(ev);
+          var os = Math.max(r.start.getTime(), dayStart.getTime());
+          var oe = Math.min(r.end.getTime(), dayEnd.getTime());
+          if (oe <= os) return;
+          blocks.push({ ev: ev, start: os, end: oe, origStart: r.start, origEnd: r.end });
+        });
+
+        blocks.sort(function (a, b) {
+          if (a.start !== b.start) return a.start - b.start;
+          return (b.end - b.start) - (a.end - a.start);
+        });
+
+        var i = 0;
+        while (i < blocks.length) {
+          var clusterEnd = blocks[i].end;
+          var j = i + 1;
+          while (j < blocks.length && blocks[j].start < clusterEnd) {
+            if (blocks[j].end > clusterEnd) clusterEnd = blocks[j].end;
+            j++;
+          }
+          assignColumns(blocks.slice(i, j));
+          i = j;
+        }
+        return blocks;
+      }
+
+      // クラスタ内で、重ならない最小の列に置き、右に空きがあれば幅を広げる
+      function assignColumns(cluster) {
+        var cols = [];
+        cluster.forEach(function (b) {
+          for (var c = 0; c < cols.length; c++) {
+            if (cols[c][cols[c].length - 1].end <= b.start) { cols[c].push(b); b.col = c; return; }
+          }
+          b.col = cols.length;
+          cols.push([b]);
+        });
+
+        var n = cols.length;
+        cluster.forEach(function (b) {
+          var span = 1;
+          for (var c = b.col + 1; c < n; c++) {
+            var conflict = false;
+            for (var k = 0; k < cols[c].length; k++) {
+              var o = cols[c][k];
+              if (o.start < b.end && o.end > b.start) { conflict = true; break; }
+            }
+            if (conflict) break;
+            span++;
+          }
+          b.ncols = n;
+          b.span = span;
+        });
+      }
+
+      // 1列分のブロックHTMLを組み立てる
+      function renderTimeColumn(col, events, day, H, opts) {
+        var today = startOfDay(new Date());
+        var now = new Date();
+        col.style.height = (24 * H) + 'px';
+        col.classList.toggle('is-today', isSameDay(day, today));
+
+        var blocks = layoutDayColumn(events, day);
+        var html = blocks.map(function (b) {
+          var top = (b.start - day.getTime()) / HOUR_MS * H;
+          var height = Math.max((b.end - b.start) / HOUR_MS * H - 2, 15);
+          var widthPct = (b.span / b.ncols) * 100;
+          var leftPct = (b.col / b.ncols) * 100;
+          var label = fmtTime(b.origStart) + '–' + fmtTime(b.origEnd);
+          return '<div class="time-ev" data-cat="' + escapeHtml(b.ev.category) + '" data-id="' + escapeHtml(b.ev.id) +
+            '"' + (opts && opts.scrollTarget ? ' data-scroll="1"' : '') +
+            ' style="top:' + top + 'px;height:' + height + 'px;left:calc(' + leftPct + '% + 1px);width:calc(' + widthPct + '% - 3px);">' +
+            '<span class="time-ev-time">' + label + '</span>' +
+            '<span class="time-ev-title">' + escapeHtml(b.ev.title) + '</span></div>';
+        }).join('');
+
+        if (isSameDay(day, today)) {
+          var nowTop = (now.getHours() * 60 + now.getMinutes()) / 60 * H;
+          html += '<div class="time-now" style="top:' + nowTop + 'px;"></div>';
+        }
+        col.innerHTML = html;
+      }
+
+      /* ===== 週表示 ===== */
+      function loadWeek(focus, callback) {
+        var weekStart = startOfWeek(focus);
+        weekState.focus = weekStart;
+        var days = [];
+        for (var i = 0; i < 7; i++) days.push(addDays(weekStart, i));
+        weekState.days = days;
+
+        $('weekLabel').textContent = fmtDate(weekStart) + ' 〜 ' +
+          pad2(days[6].getMonth() + 1) + '/' + pad2(days[6].getDate());
+
+        var key = dateKey(weekStart);
+        if (weekState.cache[key]) {
+          renderWeek(weekState.cache[key], days);
+          if (callback) callback();
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function (items) {
+            weekState.cache[key] = items;
+            renderWeek(items, days);
+            if (callback) callback();
+          })
+          .withFailureHandler(function (err) {
+            $('weekAllDay').innerHTML = '<div class="empty" style="grid-column:1/-1"><strong>読み込めませんでした</strong>' +
+              escapeHtml(err.message) + '</div>';
+            if (callback) callback();
+          })
+          .getEvents(toGasStr(weekStart), toGasStr(addDays(weekStart, 7)));
+      }
+
+      function renderWeek(events, days) {
+        var today = startOfDay(new Date());
+        var H = hourHeight();
+        var thisMonth = weekState.focus.getMonth();
+
+        $('weekHead').innerHTML = '<div></div>' + days.map(function (d) {
+          var cls = 'week-head-cell' + (isSameDay(d, today) ? ' is-today' : '') +
+            (d.getMonth() !== thisMonth ? ' is-other' : '');
+          return '<div class="' + cls + '" data-date="' + dateKey(d) + '">' +
+            '<span class="week-head-dow">' + DOW[d.getDay()] + '</span>' +
+            '<span class="week-head-num">' + d.getDate() + '</span></div>';
+        }).join('');
+
+        renderAllDayBand('weekAllDay', events, days);
+        renderGutter('weekGutter');
+
+        days.forEach(function (d, i) {
+          renderTimeColumn(document.querySelector('.week-body .time-col[data-col="' + i + '"]'), events, d, H, null);
+        });
+
+        if (!weekState.scrolled) {
+          $('weekScroll').scrollTop = 8 * H;
+          weekState.scrolled = true;
+        }
+      }
+
+      /* ===== 日表示 ===== */
+      function loadDay(focus, callback) {
+        var day = startOfDay(focus);
+        dayState.focus = day;
+        $('dayLabel').textContent = fmtDateHead(day);
+
+        var key = dateKey(day);
+        if (dayState.cache[key]) {
+          renderDay(dayState.cache[key], day);
+          if (callback) callback();
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function (items) {
+            dayState.cache[key] = items;
+            renderDay(items, day);
+            if (callback) callback();
+          })
+          .withFailureHandler(function (err) {
+            $('dayCards').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(err.message) + '</div>';
+            if (callback) callback();
+          })
+          .getEvents(toGasStr(day), toGasStr(addDays(day, 1)));
+      }
+
+      // その日の時刻表記(前日から続く / 翌日まで続く を補う)
+      function dayTimeLabel(ev, day) {
+        var dayEnd = addDays(day, 1);
+        var r = effRange(ev);
+
+        if (ev.all_day) {
+          var s = parseGasStr(ev.start_at);
+          var e = parseGasStr(ev.end_at) || s;
+          if (isSameDay(s, e)) return { main: '終日', note: '' };
+          return { main: '終日', note: fmtDate(s) + ' 〜 ' + fmtDate(e) + ' の期間中' };
+        }
+
+        var startsBefore = r.start.getTime() < day.getTime();
+        var endsAfter = r.end.getTime() > dayEnd.getTime();
+        var main = fmtTime(r.start) + ' – ' + fmtTime(r.end);
+        var note = '';
+        if (startsBefore && endsAfter) note = fmtDate(r.start) + ' から ' + fmtDate(r.end) + ' まで連続';
+        else if (startsBefore) note = '前日 ' + fmtTime(r.start) + ' から続く';
+        else if (endsAfter) note = '翌日 ' + fmtTime(r.end) + ' まで続く';
+        return { main: main, note: note };
+      }
+
+      function renderDay(events, day) {
+        var H = hourHeight();
+
+        renderAllDayBand('dayAllDay', events, [day]);
+        renderGutter('dayGutter');
+        renderTimeColumn($('dayCol'), events, day, H, { scrollTarget: true });
+
+        // --- 詳細カード(終日を先に、その後は開始時刻順) ---
+        var sorted = events.slice().sort(function (a, b) {
+          if (a.all_day !== b.all_day) return a.all_day ? -1 : 1;
+          return effRange(a).start - effRange(b).start;
+        });
+
+        $('dayCardsHead').textContent = 'この日の予定 ' + sorted.length + '件';
+
+        if (sorted.length === 0) {
+          $('dayCards').innerHTML = '<div class="empty"><strong>この日に予定はありません</strong>右上の「予定を追加」から登録できます。</div>';
+        } else {
+          $('dayCards').innerHTML = sorted.map(function (ev) {
+            var t = dayTimeLabel(ev, day);
+            return '<article class="day-card" id="dc-' + escapeHtml(ev.id) + '">' +
+              '<div class="day-card-head">' +
+                '<span class="day-card-time">' + escapeHtml(t.main) + '</span>' +
+                '<span class="badge" data-cat="' + escapeHtml(ev.category) + '">' + escapeHtml(ev.category) + '</span>' +
+                (t.note ? '<span class="day-card-cont">' + escapeHtml(t.note) + '</span>' : '') +
+              '</div>' +
+              '<h3 class="day-card-title">' + escapeHtml(ev.title) + '</h3>' +
+              (ev.memo ? '<div class="day-card-memo">' + escapeHtml(ev.memo) + '</div>' : '') +
+              '<div class="day-card-foot">' +
+                '<span class="day-card-meta">' +
+                  '<span>ID ' + escapeHtml(ev.id) + '</span>' +
+                  '<span>作成 ' + escapeHtml(ev.created_at) + '</span>' +
+                  '<span>更新 ' + escapeHtml(ev.updated_at) + '</span>' +
+                '</span>' +
+                '<button class="btn btn-mini" data-edit="' + escapeHtml(ev.id) + '">編集する</button>' +
+              '</div>' +
+              '</article>';
+          }).join('');
+        }
+
+        if (!dayState.scrolled) {
+          $('dayScroll').scrollTop = 8 * H;
+          dayState.scrolled = true;
+        }
+      }
+
+      function flashDayCard(id) {
+        var card = document.getElementById('dc-' + id);
+        if (!card) return;
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('is-flash');
+        setTimeout(function () { card.classList.remove('is-flash'); }, 1600);
+      }
+
+      /* ===== テーブル表示 ===== */
+      var TABLE_KEYS = ['id', 'start', 'start', 'end', 'end', 'allday', 'category', 'title', 'memo', 'created', 'updated'];
+
+      function loadTable(focus, callback) {
+        var monthStart = startOfMonth(focus);
+        var monthEnd = new Date(focus.getFullYear(), focus.getMonth() + 1, 1);
+        tableState.focus = monthStart;
+        $('tableLabel').textContent = monthStart.getFullYear() + '年' + (monthStart.getMonth() + 1) + '月';
+
+        var key = ymKey(monthStart);
+        if (tableState.cache[key]) {
+          buildTableRows(tableState.cache[key], monthStart, monthEnd);
+          renderTable();
+          if (callback) callback();
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function (items) {
+            tableState.cache[key] = items;
+            buildTableRows(items, monthStart, monthEnd);
+            renderTable();
+            if (callback) callback();
+          })
+          .withFailureHandler(function (err) {
+            $('tableBody').innerHTML = '<tr><td colspan="11"><div class="empty"><strong>読み込めませんでした</strong>' +
+              escapeHtml(err.message) + '</div></td></tr>';
+            if (callback) callback();
+          })
+          .getEvents(toGasStr(monthStart), toGasStr(monthEnd));
+      }
+
+      // getEvents は月にまたがる予定も返すので、開始日がその月にあるレコードだけを行にする
+      function buildTableRows(items, monthStart, monthEnd) {
+        tableState.rows = items.filter(function (ev) {
+          var s = parseGasStr(ev.start_at);
+          return s.getTime() >= monthStart.getTime() && s.getTime() < monthEnd.getTime();
+        }).map(function (ev) {
+          var s = parseGasStr(ev.start_at);
+          var e = parseGasStr(ev.end_at) || s;
+          var c = parseGasStr(ev.created_at);
+          var u = parseGasStr(ev.updated_at);
+          return {
+            ev: ev,
+            id: ev.id,
+            s: s, e: e,
+            allday: ev.all_day ? 1 : 0,
+            category: ev.category || '',
+            title: ev.title || '',
+            memo: ev.memo || '',
+            created: c ? c.getTime() : 0,
+            updated: u ? u.getTime() : 0,
+            createdStr: ev.created_at,
+            updatedStr: ev.updated_at
+          };
+        });
+      }
+
+      function sortValue(row, key) {
+        if (key === 'id') return row.id;
+        if (key === 'start') return row.s.getTime();
+        if (key === 'end') return row.e.getTime();
+        if (key === 'allday') return row.allday;
+        if (key === 'category') return row.category;
+        if (key === 'title') return row.title;
+        if (key === 'memo') return row.memo;
+        if (key === 'created') return row.created;
+        if (key === 'updated') return row.updated;
+        return 0;
+      }
+
+      function renderTable() {
+        var key = tableState.sortKey, dir = tableState.sortDir;
+        var rows = tableState.rows.slice().sort(function (a, b) {
+          var va = sortValue(a, key), vb = sortValue(b, key);
+          if (va < vb) return -1 * dir;
+          if (va > vb) return 1 * dir;
+          return a.s.getTime() - b.s.getTime();
+        });
+
+        // ヘッダーのソート表示
+        var ths = $('tableHead').children;
+        for (var i = 0; i < ths.length; i++) {
+          var th = ths[i];
+          var isSorted = TABLE_KEYS[i] === key;
+          th.classList.toggle('is-sorted', isSorted);
+          var base = th.textContent.replace(/[▲▼]$/, '').trim();
+          th.innerHTML = escapeHtml(base) + (isSorted ? '<span class="arrow">' + (dir === 1 ? '▲' : '▼') + '</span>' : '');
+        }
+
+        if (rows.length === 0) {
+          $('tableBody').innerHTML = '<tr><td colspan="11"><div class="empty"><strong>この月にレコードはありません</strong>' +
+            '開始日がこの月にある予定が表示されます。</div></td></tr>';
+          $('tableCount').textContent = '0件';
+          return;
+        }
+
+        $('tableBody').innerHTML = rows.map(function (r) {
+          var allDay = r.allday === 1;
+          return '<tr data-id="' + escapeHtml(r.id) + '">' +
+            '<td class="col-id mono">' + escapeHtml(r.id) + '</td>' +
+            '<td class="mono">' + fmtDate(r.s) + '</td>' +
+            '<td class="mono">' + (allDay ? '<span class="dim">—</span>' : fmtTime(r.s)) + '</td>' +
+            '<td class="mono">' + fmtDate(r.e) + '</td>' +
+            '<td class="mono">' + (allDay ? '<span class="dim">—</span>' : fmtTime(r.e)) + '</td>' +
+            '<td class="mono">' + (allDay ? '✓' : '<span class="dim">—</span>') + '</td>' +
+            '<td><span class="badge" data-cat="' + escapeHtml(r.category) + '">' + escapeHtml(r.category) + '</span></td>' +
+            '<td class="col-title">' + escapeHtml(r.title) + '</td>' +
+            '<td class="col-memo">' + (r.memo ? escapeHtml(r.memo.replace(/\n/g, ' ')) : '<span class="dim">—</span>') + '</td>' +
+            '<td class="mono">' + escapeHtml(r.createdStr) + '</td>' +
+            '<td class="mono">' + escapeHtml(r.updatedStr) + '</td>' +
+            '</tr>';
+        }).join('');
+
+        $('tableCount').textContent = rows.length + '件(開始日がこの月にあるレコード)';
+      }
+
+      /* ===== 画面遷移 ===== */
+      function goToDay(key) {
+        var y = parseInt(key.slice(0, 4), 10);
+        var m = parseInt(key.slice(4, 6), 10) - 1;
+        var d = parseInt(key.slice(6, 8), 10);
+        setActiveTab('day');
+        showView('day');
+        loadDay(new Date(y, m, d));
+      }
+
+      function openDetail(id) {
+        var item = findEventById(id);
+        if (!item) return;
+        currentId = id;
+
+        var activeTab = document.querySelector('.tab-btn.is-on');
+        lastMainView = activeTab ? activeTab.getAttribute('data-tab') : 'list';
+
+        $('d-id').textContent = item.id;
+        $('d-category').value = item.category;
+        $('d-title').value = item.title;
+        $('d-allday').checked = item.all_day;
+
+        var s = parseGasStr(item.start_at);
+        var e = parseGasStr(item.end_at) || s;
+        $('d-start').value = toLocalInputValue(s);
+        $('d-end').value = toLocalInputValue(e);
+        $('d-memo').value = item.memo;
+        $('d-timestamps').textContent = '作成 ' + item.created_at + ' / 更新 ' + item.updated_at;
+
+        showView('detail');
+      }
+
+      function backToLastMainView() {
+        setActiveTab(lastMainView);
+        showView(lastMainView);
+      }
+
+      /* ===== イベント ===== */
+      $('tabs').addEventListener('click', function (e) {
+        var btn = e.target.closest('.tab-btn');
+        if (!btn) return;
+        var tab = btn.getAttribute('data-tab');
+        setActiveTab(tab);
+        showView(tab);
+        if (tab === 'month') loadMonth(monthState.focus || new Date());
+        if (tab === 'week') loadWeek(weekState.focus || new Date());
+        if (tab === 'day') loadDay(dayState.focus || new Date());
+        if (tab === 'table') loadTable(tableState.focus || new Date());
+      });
+
+      $('btnMonthPrev').addEventListener('click', function () {
+        var f = monthState.focus; loadMonth(new Date(f.getFullYear(), f.getMonth() - 1, 1));
+      });
+      $('btnMonthNext').addEventListener('click', function () {
+        var f = monthState.focus; loadMonth(new Date(f.getFullYear(), f.getMonth() + 1, 1));
+      });
+      $('btnMonthToday').addEventListener('click', function () {
+        var t = new Date(); loadMonth(startOfMonth(t));
+      });
+
+      $('btnWeekPrev').addEventListener('click', function () { loadWeek(addDays(weekState.focus, -7)); });
+      $('btnWeekNext').addEventListener('click', function () { loadWeek(addDays(weekState.focus, 7)); });
+      $('btnWeekToday').addEventListener('click', function () { loadWeek(new Date()); });
+
+      $('btnDayPrev').addEventListener('click', function () { loadDay(addDays(dayState.focus, -1)); });
+      $('btnDayNext').addEventListener('click', function () { loadDay(addDays(dayState.focus, 1)); });
+      $('btnDayToday').addEventListener('click', function () { loadDay(new Date()); });
+
+      $('btnTablePrev').addEventListener('click', function () {
+        var f = tableState.focus; loadTable(new Date(f.getFullYear(), f.getMonth() - 1, 1));
+      });
+      $('btnTableNext').addEventListener('click', function () {
+        var f = tableState.focus; loadTable(new Date(f.getFullYear(), f.getMonth() + 1, 1));
+      });
+      $('btnTableToday').addEventListener('click', function () { loadTable(startOfMonth(new Date())); });
+
+      $('monthBody').addEventListener('click', function (e) {
+        var bar = e.target.closest('.month-bar, .month-item');
+        if (bar) { openDetail(bar.getAttribute('data-id')); return; }
+        var more = e.target.closest('.month-more');
+        if (more) { goToDay(more.getAttribute('data-date')); return; }
+        var cell = e.target.closest('.month-cell');
+        if (cell) goToDay(cell.getAttribute('data-date'));
+      });
+
+      $('view-week').addEventListener('click', function (e) {
+        var ev = e.target.closest('.time-ev, .allbar');
+        if (ev) { openDetail(ev.getAttribute('data-id')); return; }
+        var head = e.target.closest('.week-head-cell');
+        if (head) goToDay(head.getAttribute('data-date'));
+      });
+
+      // 日表示:時間軸のブロック・終日バーは下の詳細カードへスクロール、編集ボタンで編集画面へ
+      $('view-day').addEventListener('click', function (e) {
+        var editBtn = e.target.closest('[data-edit]');
+        if (editBtn) { openDetail(editBtn.getAttribute('data-edit')); return; }
+        var block = e.target.closest('.time-ev, .allbar');
+        if (block) flashDayCard(block.getAttribute('data-id'));
+      });
+
+      $('seg').addEventListener('click', function (e) {
+        var btn = e.target.closest('.seg-btn');
+        if (!btn) return;
+        var btns = document.querySelectorAll('#seg .seg-btn');
+        for (var i = 0; i < btns.length; i++) btns[i].classList.remove('is-on');
+        btn.classList.add('is-on');
+        currentCat = btn.getAttribute('data-cat');
+        renderList();
+      });
+
+      $('listBody').addEventListener('click', function (e) {
+        var row = e.target.closest('.row');
+        if (row) openDetail(row.getAttribute('data-id'));
+      });
+
+      $('tableHead').addEventListener('click', function (e) {
+        var th = e.target.closest('th');
+        if (!th) return;
+        var key = th.getAttribute('data-key');
+        if (tableState.sortKey === key) tableState.sortDir *= -1;
+        else { tableState.sortKey = key; tableState.sortDir = 1; }
+        renderTable();
+      });
+
+      $('tableBody').addEventListener('click', function (e) {
+        var tr = e.target.closest('tr[data-id]');
+        if (tr) openDetail(tr.getAttribute('data-id'));
+      });
+
+      $('btnNew').addEventListener('click', function () {
+        var activeTab = document.querySelector('.tab-btn.is-on');
+        lastMainView = activeTab ? activeTab.getAttribute('data-tab') : 'list';
+
+        $('n-category').value = CATEGORIES[0];
+        $('n-title').value = '';
+        $('n-allday').checked = false;
+        var now = new Date();
+        now.setMinutes(0, 0, 0);
+        $('n-start').value = toLocalInputValue(now);
+        $('n-end').value = toLocalInputValue(new Date(now.getTime() + HOUR_MS));
+        $('n-memo').value = '';
+        showView('new');
+        $('n-title').focus();
+      });
+
+      $('btnBackFromDetail').addEventListener('click', backToLastMainView);
+      $('btnBackFromNew').addEventListener('click', backToLastMainView);
+
+      $('btnSave').addEventListener('click', function () {
+        var data = {
+          id: currentId,
+          category: $('d-category').value,
+          title: $('d-title').value,
+          all_day: $('d-allday').checked,
+          start_at: toGasStr(fromLocalInputValue($('d-start').value)),
+          end_at: toGasStr(fromLocalInputValue($('d-end').value)),
+          memo: $('d-memo').value
+        };
+        if (!data.title.trim()) { alert('予定名を入力してください。'); return; }
+
+        $('btnSave').disabled = true;
+        google.script.run
+          .withSuccessHandler(function () {
+            refreshAll(function () { $('btnSave').disabled = false; backToLastMainView(); });
+          })
+          .withFailureHandler(function (err) {
+            $('btnSave').disabled = false;
+            alert('保存できませんでした。' + err.message);
+          })
+          .updateItem(data);
+      });
+
+      $('btnDelete').addEventListener('click', function () {
+        if (!confirm('この予定を削除します。よろしいですか?')) return;
+        $('btnDelete').disabled = true;
+        google.script.run
+          .withSuccessHandler(function () {
+            refreshAll(function () { $('btnDelete').disabled = false; backToLastMainView(); });
+          })
+          .withFailureHandler(function (err) {
+            $('btnDelete').disabled = false;
+            alert('削除できませんでした。' + err.message);
+          })
+          .deleteItem(currentId);
+      });
+
+      $('btnCreate').addEventListener('click', function () {
+        var data = {
+          category: $('n-category').value,
+          title: $('n-title').value,
+          all_day: $('n-allday').checked,
+          start_at: toGasStr(fromLocalInputValue($('n-start').value)),
+          end_at: toGasStr(fromLocalInputValue($('n-end').value)),
+          memo: $('n-memo').value
+        };
+        if (!data.title.trim()) { alert('予定名を入力してください。'); return; }
+
+        $('btnCreate').disabled = true;
+        google.script.run
+          .withSuccessHandler(function () {
+            refreshAll(function () { $('btnCreate').disabled = false; backToLastMainView(); });
+          })
+          .withFailureHandler(function (err) {
+            $('btnCreate').disabled = false;
+            alert('登録できませんでした。' + err.message);
+          })
+          .addItem(data);
+      });
+
+      /* ===== 初期化 ===== */
+      fillCategorySelect($('n-category'));
+      fillCategorySelect($('d-category'));
+      loadMonth(new Date());
+      loadList();
+    })();
+  </script>
+</body>
+</html>
