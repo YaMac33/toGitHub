@@ -130,9 +130,9 @@ function normalizeInput_(data) {
   };
 }
 
-// ID採番:YYMMDD + 同日の連番2桁(同prefixの最大値+1。行削除しても衝突しない)
-function newId_(sh, map) {
-  const prefix = Utilities.formatDate(new Date(), tz_(), 'yyMMdd');
+// ID採番:開始日のYYMMDD + 同じ開始日の連番2桁(同prefixの最大値+1)
+function newId_(sh, map, startDate) {
+  const prefix = Utilities.formatDate(startDate, tz_(), 'yyMMdd');
   let max = 0;
   getRows_(sh).forEach(function (r) {
     const id = String(r[map.id]);
@@ -220,7 +220,7 @@ function addItem(data) {
     const map = getColMap_(sh);
     const v = normalizeInput_(data);
     const now = new Date();
-    const id = newId_(sh, map);
+    const id = newId_(sh, map, v.start);
 
     const row = new Array(LAST_COL).fill('');
     row[map.id] = id;

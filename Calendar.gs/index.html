@@ -291,9 +291,15 @@
     .rec-table th:hover { color: var(--ink); }
     .rec-table th.is-sorted { color: var(--accent); }
     .rec-table th .arrow { margin-left: 4px; font-size: 9px; }
-    .rec-table th.col-id, .rec-table td.col-id { position: sticky; left: 0; background: var(--paper); }
-    .rec-table td.col-id { z-index: 1; }
-    .rec-table th.col-id { z-index: 3; }
+    .rec-table th.col-sdate, .rec-table td.col-sdate,
+    .rec-table th.col-stime, .rec-table td.col-stime { position: sticky; background: var(--paper); }
+    .rec-table th.col-sdate, .rec-table td.col-sdate { left: 0; width: 106px; min-width: 106px; }
+    .rec-table th.col-stime, .rec-table td.col-stime {
+      left: 106px; width: 78px; min-width: 78px; box-shadow: 1px 0 0 var(--rule);
+    }
+    .rec-table td.col-sdate, .rec-table td.col-stime { z-index: 1; }
+    .rec-table th.col-sdate, .rec-table th.col-stime { z-index: 3; }
+    .rec-table td.col-id { color: var(--muted); }
     .rec-table td.mono { font-family: var(--font-mono); font-size: 12px; }
     .rec-table td.col-memo { max-width: 260px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
     .rec-table td.col-title { font-weight: 500; }
@@ -340,6 +346,8 @@
       .week-head-num { width: 22px; height: 22px; line-height: 22px; font-size: 12px; }
       .time-ev { font-size: 9.5px; padding: 0 3px; }
       .week-body .time-ev .time-ev-time { display: none; }
+      .rec-table th.col-sdate, .rec-table td.col-sdate { width: 92px; min-width: 92px; }
+      .rec-table th.col-stime, .rec-table td.col-stime { left: 92px; width: 66px; min-width: 66px; }
     }
   </style>
 </head>
@@ -453,9 +461,8 @@
         <table class="rec-table">
           <thead>
             <tr id="tableHead">
-              <th class="col-id" data-key="id">ID</th>
-              <th data-key="start">開始日</th>
-              <th data-key="start">開始時刻</th>
+              <th class="col-sdate" data-key="start">開始日</th>
+              <th class="col-stime" data-key="start">開始時刻</th>
               <th data-key="end">終了日</th>
               <th data-key="end">終了時刻</th>
               <th data-key="allday">終日</th>
@@ -464,6 +471,7 @@
               <th data-key="memo">メモ</th>
               <th data-key="created">作成日時</th>
               <th data-key="updated">更新日時</th>
+              <th data-key="id">ID</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -1185,7 +1193,7 @@
       }
 
       /* ===== テーブル表示 ===== */
-      var TABLE_KEYS = ['id', 'start', 'start', 'end', 'end', 'allday', 'category', 'title', 'memo', 'created', 'updated'];
+      var TABLE_KEYS = ['start', 'start', 'end', 'end', 'allday', 'category', 'title', 'memo', 'created', 'updated', 'id'];
 
       function loadTable(focus, callback) {
         var monthStart = startOfMonth(focus);
@@ -1284,9 +1292,8 @@
         $('tableBody').innerHTML = rows.map(function (r) {
           var allDay = r.allday === 1;
           return '<tr data-id="' + escapeHtml(r.id) + '">' +
-            '<td class="col-id mono">' + escapeHtml(r.id) + '</td>' +
-            '<td class="mono">' + fmtDate(r.s) + '</td>' +
-            '<td class="mono">' + (allDay ? '<span class="dim">—</span>' : fmtTime(r.s)) + '</td>' +
+            '<td class="col-sdate mono">' + fmtDate(r.s) + '</td>' +
+            '<td class="col-stime mono">' + (allDay ? '<span class="dim">—</span>' : fmtTime(r.s)) + '</td>' +
             '<td class="mono">' + fmtDate(r.e) + '</td>' +
             '<td class="mono">' + (allDay ? '<span class="dim">—</span>' : fmtTime(r.e)) + '</td>' +
             '<td class="mono">' + (allDay ? '✓' : '<span class="dim">—</span>') + '</td>' +
@@ -1295,6 +1302,7 @@
             '<td class="col-memo">' + (r.memo ? escapeHtml(r.memo.replace(/\n/g, ' ')) : '<span class="dim">—</span>') + '</td>' +
             '<td class="mono">' + escapeHtml(r.createdStr) + '</td>' +
             '<td class="mono">' + escapeHtml(r.updatedStr) + '</td>' +
+            '<td class="col-id mono">' + escapeHtml(r.id) + '</td>' +
             '</tr>';
         }).join('');
 
