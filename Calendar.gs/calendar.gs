@@ -131,6 +131,7 @@ function normalizeInput_(data) {
 }
 
 // ID採番:開始日のYYMMDD + 同じ開始日の連番2桁(同prefixの最大値+1)
+// 例:開始日7/28の4件目 → 26072804
 function newId_(sh, map, startDate) {
   const prefix = Utilities.formatDate(startDate, tz_(), 'yyMMdd');
   let max = 0;
@@ -167,7 +168,7 @@ function toObject_(row, map) {
   };
 }
 
-/** ===== API ===== */
+/** ===== 予定API ===== */
 
 // 指定期間と「重なる」予定をすべて返す(月跨ぎの終日予定も拾える)
 // rangeStart / rangeEnd は 'yyyy/MM/dd HH:mm' 形式の文字列
@@ -262,6 +263,7 @@ function updateItem(data) {
     values[map.category] = v.category;
     values[map.memo] = v.memo;
     values[map.updated_at] = new Date();   // created_at は触らない
+    // id は変更しない(登録時点の開始日を含んだ通し番号のまま固定)
 
     sh.getRange(rowNo, 1, 1, LAST_COL).setValues([values]);
     applyFormat_(sh, rowNo, v.allDay);
@@ -290,6 +292,51 @@ function deleteItem(id) {
 // フロントの分類プルダウン・バッジ色の元になる定数を渡す
 function getCategories() {
   return CATEGORIES;
+}
+
+/** ===== 祝日 ===== */
+const HOLIDAY_API_URL = 'https://holidays-jp.github.io/api/v1/date.json';
+const HOLIDAY_CACHE_KEY = 'holidays_jp_v1';
+const HOLIDAY_CACHE_SEC = 21600; // 6時間
+
+// 季節行事などで祝日に混ざることがある名称の除外リスト
+const HOLIDAY_EXCLUDE = ['節分', 'ひな祭り', '雛祭り', '母の日', '父の日', '七夕', '七五三'];
+
+// 指定期間の祝日を [{date:'yyyyMMdd', name:'海の日'}, ...] で返す
+function getHolidays(rangeStart, rangeEnd) {
+  const rs = toDate_(rangeStart);
+  const re = toDate_(rangeEnd);
+  if (!rs || !re) throw new Error('取得期間が不正です');
+
+  const all = fetchHolidayMap_(); // {'2026-07-20': '海の日', ...}
+  const out = [];
+
+  Object.keys(all).forEach(function (dateStr) {
+    const d = new Date(dateStr.replace(/-/g, '/'));
+    if (d.getTime() < rs.getTime() || d.getTime() >= re.getTime()) return;
+    if (HOLIDAY_EXCLUDE.indexOf(all[dateStr]) !== -1) return;
+    out.push({ date: Utilities.formatDate(d, tz_(), 'yyyyMMdd'), name: all[dateStr] });
+  });
+
+  return out;
+}
+
+// APIレスポンスをCacheServiceで数時間キャッシュしつつ取得する
+function fetchHolidayMap_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get(HOLIDAY_CACHE_KEY);
+  if (cached) return JSON.parse(cached);
+
+  const res = UrlFetchApp.fetch(HOLIDAY_API_URL, { muteHttpExceptions: true });
+  if (res.getResponseCode() !== 200) throw new Error('祝日APIの取得に失敗しました(' + res.getResponseCode() + ')');
+
+  const map = JSON.parse(res.getContentText());
+  // CacheServiceは1件100KB制限があるため、超える場合は分割保存する
+  const json = JSON.stringify(map);
+  if (json.length < 90000) {
+    cache.put(HOLIDAY_CACHE_KEY, json, HOLIDAY_CACHE_SEC);
+  }
+  return map;
 }
 
 /** ===== Webアプリ ===== */
@@ -327,7 +374,7 @@ function test_getEvents_overnight() {
   // 期待:26072505(日跨ぎ)が含まれる
 }
 
-// 4. 新規追加
+// 4. 新規追加(開始日ベースのID採番の確認)
 function test_addItem() {
   const id = addItem({
     title: 'テスト:通常予定',
@@ -337,7 +384,7 @@ function test_addItem() {
     category: '仕事',
     memo: 'テストで追加した予定'
   });
-  Logger.log('追加されたID: ' + id);
+  Logger.log('追加されたID: ' + id); // 例:8/5の1件目なら 26080501
 }
 
 // 5. 終日予定の追加(inclusive:8/10〜8/12 の3日間)
@@ -379,4 +426,17 @@ function test_validation() {
   } catch (e) {
     Logger.log('OK:' + e.message);
   }
+}
+
+// 9. 祝日API:2026年7月分(海の日のみ出れば成功。節分などが混ざっていないか目視確認)
+function test_getHolidays() {
+  const list = getHolidays('2026/07/01 00:00', '2026/08/01 00:00');
+  Logger.log(JSON.stringify(list, null, 2));
+}
+
+// 10. 祝日API:生データ確認(除外リストに何を足すべきか判断する用)
+function test_fetchHolidayMap() {
+  const map = fetchHolidayMap_();
+  Logger.log('件数: ' + Object.keys(map).length);
+  Logger.log(JSON.stringify(map, null, 2));
 }
