@@ -17,6 +17,8 @@
       --accent: #2438c8;
       --accent-soft: #eef0ff;
       --now: #e5484d;
+      --sat: #1d6fd0;
+      --holiday: #d92d20;
       --cat-work: #2438c8;
       --cat-private: #0d7a63;
       --cat-other: #7b3ba8;
@@ -132,6 +134,8 @@
     /* ===== 月表示 ===== */
     .month-grid-head { display: grid; grid-template-columns: repeat(7, 1fr); padding-top: 10px; }
     .month-grid-head span { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: center; padding-bottom: 6px; display: block; }
+    .month-grid-head span.dow-sat { color: var(--sat); }
+    .month-grid-head span.dow-sun { color: var(--holiday); }
     .month-weeks { border-left: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
     .month-week {
       display: grid; grid-template-columns: repeat(7, 1fr);
@@ -144,11 +148,20 @@
     }
     .month-cell:hover { background: #fbfbfd; }
     .month-cell.is-other { background: #fafbfc; }
-    .month-cell.is-other .month-daynum { color: var(--muted); }
+    .month-cell-top { display: flex; align-items: center; gap: 3px; height: 20px; overflow: hidden; }
     .month-daynum {
-      display: inline-block; font-family: var(--font-mono); font-size: 11px;
+      display: inline-block; font-family: var(--font-mono); font-size: 11px; flex: 0 0 auto;
       width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 50%;
     }
+    .month-holiday {
+      flex: 1 1 auto; min-width: 0; font-size: 9.5px; line-height: 1.2; color: var(--holiday);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .month-cell.is-sat .month-daynum { color: var(--sat); }
+    .month-cell.is-sun .month-daynum,
+    .month-cell.is-holiday .month-daynum { color: var(--holiday); }
+    .month-cell.is-other .month-daynum { color: var(--muted); }
+    .month-cell.is-other .month-holiday { opacity: 0.45; }
     .month-cell.is-today .month-daynum { background: var(--accent); color: #fff; }
     .month-bar {
       grid-row: 2; align-self: start; margin: 1px 2px 0; height: 17px; line-height: 17px;
@@ -186,9 +199,20 @@
       font-family: var(--font-mono); font-size: 14px; display: inline-block;
       width: 26px; height: 26px; line-height: 26px; border-radius: 50%; margin-top: 2px;
     }
-    .week-head-cell.is-today .week-head-num { background: var(--accent); color: #fff; }
+    .week-head-holiday {
+      display: block; font-size: 9px; line-height: 1.3; color: var(--holiday);
+      padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .week-head-cell.is-sat .week-head-dow, .week-head-cell.is-sat .week-head-num { color: var(--sat); }
+    .week-head-cell.is-sun .week-head-dow, .week-head-cell.is-sun .week-head-num,
+    .week-head-cell.is-holiday .week-head-dow, .week-head-cell.is-holiday .week-head-num { color: var(--holiday); }
     .week-head-cell.is-other .week-head-dow,
     .week-head-cell.is-other .week-head-num { color: var(--muted); }
+    .week-head-cell.is-other .week-head-holiday { opacity: 0.45; }
+    .week-head-cell.is-today .week-head-num { background: var(--accent); color: #fff; }
+    .nav-label .is-sat { color: var(--sat); }
+    .nav-label .is-sun, .nav-label .is-holiday { color: var(--holiday); }
+    .day-holiday { margin-left: 10px; font-size: 12.5px; font-weight: 500; color: var(--holiday); }
 
     .allday-band {
       display: grid; border-bottom: 1px solid var(--rule); min-height: 22px;
@@ -292,14 +316,18 @@
     .rec-table th.is-sorted { color: var(--accent); }
     .rec-table th .arrow { margin-left: 4px; font-size: 9px; }
     .rec-table th.col-sdate, .rec-table td.col-sdate,
+    .rec-table th.col-dow, .rec-table td.col-dow,
     .rec-table th.col-stime, .rec-table td.col-stime { position: sticky; background: var(--paper); }
     .rec-table th.col-sdate, .rec-table td.col-sdate { left: 0; width: 106px; min-width: 106px; }
+    .rec-table th.col-dow, .rec-table td.col-dow { left: 106px; width: 34px; min-width: 34px; text-align: center; }
     .rec-table th.col-stime, .rec-table td.col-stime {
-      left: 106px; width: 78px; min-width: 78px; box-shadow: 1px 0 0 var(--rule);
+      left: 140px; width: 78px; min-width: 78px; box-shadow: 1px 0 0 var(--rule);
     }
-    .rec-table td.col-sdate, .rec-table td.col-stime { z-index: 1; }
-    .rec-table th.col-sdate, .rec-table th.col-stime { z-index: 3; }
+    .rec-table td.col-sdate, .rec-table td.col-dow, .rec-table td.col-stime { z-index: 1; }
+    .rec-table th.col-sdate, .rec-table th.col-dow, .rec-table th.col-stime { z-index: 3; }
     .rec-table td.col-id { color: var(--muted); }
+    .rec-table td.col-dow.is-sat { color: var(--sat); }
+    .rec-table td.col-dow.is-sun, .rec-table td.col-dow.is-holiday { color: var(--holiday); }
     .rec-table td.mono { font-family: var(--font-mono); font-size: 12px; }
     .rec-table td.col-memo { max-width: 260px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
     .rec-table td.col-title { font-weight: 500; }
@@ -347,7 +375,8 @@
       .time-ev { font-size: 9.5px; padding: 0 3px; }
       .week-body .time-ev .time-ev-time { display: none; }
       .rec-table th.col-sdate, .rec-table td.col-sdate { width: 92px; min-width: 92px; }
-      .rec-table th.col-stime, .rec-table td.col-stime { left: 92px; width: 66px; min-width: 66px; }
+      .rec-table th.col-dow, .rec-table td.col-dow { left: 92px; width: 28px; min-width: 28px; }
+      .rec-table th.col-stime, .rec-table td.col-stime { left: 120px; width: 66px; min-width: 66px; }
     }
   </style>
 </head>
@@ -381,7 +410,7 @@
         </div>
       </div>
       <div class="month-grid-head">
-        <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+        <span class="dow-sun">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="dow-sat">土</span>
       </div>
       <div class="month-weeks" id="monthBody"></div>
     </section>
@@ -462,6 +491,7 @@
           <thead>
             <tr id="tableHead">
               <th class="col-sdate" data-key="start">開始日</th>
+              <th class="col-dow" data-key="start">曜</th>
               <th class="col-stime" data-key="start">開始時刻</th>
               <th data-key="end">終了日</th>
               <th data-key="end">終了時刻</th>
@@ -505,12 +535,22 @@
       </div>
       <div class="row-2col">
         <div class="field">
-          <span class="label">開始</span>
-          <input type="datetime-local" class="input" id="d-start">
+          <span class="label">開始日</span>
+          <input type="date" class="input" id="d-start-date">
         </div>
         <div class="field">
-          <span class="label">終了</span>
-          <input type="datetime-local" class="input" id="d-end">
+          <span class="label">開始時刻(空欄で終日)</span>
+          <input type="time" class="input" id="d-start-time">
+        </div>
+      </div>
+      <div class="row-2col">
+        <div class="field">
+          <span class="label">終了日</span>
+          <input type="date" class="input" id="d-end-date">
+        </div>
+        <div class="field">
+          <span class="label">終了時刻(空欄で終日)</span>
+          <input type="time" class="input" id="d-end-time">
         </div>
       </div>
       <div class="field">
@@ -541,12 +581,22 @@
       </div>
       <div class="row-2col">
         <div class="field">
-          <span class="label">開始</span>
-          <input type="datetime-local" class="input" id="n-start">
+          <span class="label">開始日</span>
+          <input type="date" class="input" id="n-start-date">
         </div>
         <div class="field">
-          <span class="label">終了</span>
-          <input type="datetime-local" class="input" id="n-end">
+          <span class="label">開始時刻(空欄で終日)</span>
+          <input type="time" class="input" id="n-start-time">
+        </div>
+      </div>
+      <div class="row-2col">
+        <div class="field">
+          <span class="label">終了日</span>
+          <input type="date" class="input" id="n-end-date">
+        </div>
+        <div class="field">
+          <span class="label">終了時刻(空欄で終日)</span>
+          <input type="time" class="input" id="n-end-time">
         </div>
       </div>
       <div class="field">
@@ -573,6 +623,9 @@
       var listRange = null;
       var lastMainView = 'month';
 
+      var holidays = {};       // 'yyyyMMdd' → 祝日名
+      var holidayLoaded = {};  // 取得済みの期間キー
+
       var monthState = { focus: null, grid: null, cache: {} };
       var weekState = { focus: null, days: null, cache: {}, scrolled: false };
       var dayState = { focus: null, events: [], cache: {}, scrolled: false };
@@ -597,10 +650,81 @@
         return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
           'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
       }
+      function toDateInputValue(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+      function toTimeInputValue(d) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
       function fromLocalInputValue(v) {
         return new Date(v.replace('T', ' ').replace(/-/g, '/'));
       }
+      // 日付欄+時刻欄(空欄可)を合成してDateにする。日付が空ならnull、時刻が空なら00:00扱い
+      function combineDT(prefix, which) {
+        var dv = $(prefix + '-' + which + '-date').value;
+        var tv = $(prefix + '-' + which + '-time').value;
+        if (!dv) return null;
+        return fromLocalInputValue(dv + 'T' + (tv || '00:00'));
+      }
+
+      // 終了日時の自動補完(開始+1時間)。終了欄を手で編集したら以後は自動補完しない
+      var autoEndActive = { n: true, d: true };
+
+      function wireDateTimeForm(prefix) {
+        function recomputeEnd() {
+          if (!autoEndActive[prefix]) return;
+          var sd = $(prefix + '-start-date').value;
+          var st = $(prefix + '-start-time').value;
+          if (!sd) return;
+          if (!st) {
+            // 開始時刻が空欄 = 終日想定。終了日は開始日と同日、時刻は空欄のまま
+            $(prefix + '-end-date').value = sd;
+            $(prefix + '-end-time').value = '';
+            return;
+          }
+          var start = fromLocalInputValue(sd + 'T' + st);
+          var end = new Date(start.getTime() + HOUR_MS);
+          $(prefix + '-end-date').value = toDateInputValue(end);
+          $(prefix + '-end-time').value = toTimeInputValue(end);
+        }
+
+        $(prefix + '-start-date').addEventListener('input', recomputeEnd);
+        $(prefix + '-start-time').addEventListener('input', recomputeEnd);
+        $(prefix + '-end-date').addEventListener('input', function () { autoEndActive[prefix] = false; });
+        $(prefix + '-end-time').addEventListener('input', function () { autoEndActive[prefix] = false; });
+
+        // 「終日」チェックボックスと時刻欄の表示を連動させる
+        var cb = $(prefix + '-allday');
+        cb.addEventListener('change', function () { applyAlldayVisibility(prefix); });
+      }
+
+      function applyAlldayVisibility(prefix) {
+        var checked = $(prefix + '-allday').checked;
+        var startTimeField = $(prefix + '-start-time').closest('.field');
+        var endTimeField = $(prefix + '-end-time').closest('.field');
+        startTimeField.style.display = checked ? 'none' : '';
+        endTimeField.style.display = checked ? 'none' : '';
+        if (checked) { $(prefix + '-start-time').value = ''; $(prefix + '-end-time').value = ''; }
+      }
+
+      // フォームから予定データを組み立てる。開始時刻が空欄なら終日として扱う
+      function readEventForm(prefix) {
+        var startDt = combineDT(prefix, 'start');
+        if (!startDt) return { error: '開始日を入力してください。' };
+        var endDt = combineDT(prefix, 'end') || startDt;
+        var startTimeVal = $(prefix + '-start-time').value;
+        var allDay = $(prefix + '-allday').checked || !startTimeVal;
+
+        return {
+          error: null,
+          data: {
+            category: $(prefix + '-category').value,
+            title: $(prefix + '-title').value,
+            all_day: allDay,
+            start_at: toGasStr(startDt),
+            end_at: toGasStr(endDt),
+            memo: $(prefix + '-memo').value
+          }
+        };
+      }
       function fmtDate(d) { return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()); }
+      function fmtMD(d) { return (d.getMonth() + 1) + '/' + d.getDate(); } // テーブル用:年は見出し側で表示済み
       function fmtDateHead(d) { return fmtDate(d) + '(' + DOW[d.getDay()] + ')'; }
       function fmtTime(d) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
       function isSameDay(a, b) {
@@ -632,6 +756,7 @@
         var views = document.querySelectorAll('.view');
         for (var i = 0; i < views.length; i++) views[i].classList.remove('is-active');
         $('view-' + name).classList.add('is-active');
+        $('btnNew').style.display = (name === 'new' || name === 'detail') ? 'none' : '';
         window.scrollTo(0, 0);
       }
 
@@ -646,6 +771,34 @@
         sel.innerHTML = CATEGORIES.map(function (c) {
           return '<option value="' + c + '">' + c + '</option>';
         }).join('');
+      }
+
+      /* ===== 祝日 ===== */
+      // 祝日は変わらないので、一度取得した期間は再取得しない
+      function loadHolidays(rangeStart, rangeEnd, callback) {
+        var key = dateKey(rangeStart) + '-' + dateKey(rangeEnd);
+        if (holidayLoaded[key]) { callback(); return; }
+
+        google.script.run
+          .withSuccessHandler(function (list) {
+            list.forEach(function (h) { holidays[h.date] = h.name; });
+            holidayLoaded[key] = true;
+            callback();
+          })
+          .withFailureHandler(function () {
+            // 祝日が取れなくてもカレンダー本体は表示する
+            holidayLoaded[key] = true;
+            callback();
+          })
+          .getHolidays(toGasStr(rangeStart), toGasStr(rangeEnd));
+      }
+
+      // 祝日 > 日曜 > 土曜 の優先で色分けクラスを返す
+      function dayClass(d) {
+        if (holidays[dateKey(d)]) return ' is-holiday';
+        if (d.getDay() === 0) return ' is-sun';
+        if (d.getDay() === 6) return ' is-sat';
+        return '';
       }
 
       function scanCache(cache, id) {
@@ -834,22 +987,26 @@
         $('monthLabel').textContent = focus.getFullYear() + '年' + (focus.getMonth() + 1) + '月';
 
         var key = ymKey(focus);
-        if (monthState.cache[key]) {
-          renderMonth(monthState.cache[key], grid);
+        var events = null;
+        var errMsg = '';
+        var pending = 2;   // 予定 + 祝日
+        var done = function () {
+          if (--pending > 0) return;
+          if (errMsg) {
+            $('monthBody').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(errMsg) + '</div>';
+          } else {
+            renderMonth(events, grid);
+          }
           if (callback) callback();
-          return;
-        }
+        };
+
+        loadHolidays(grid.rangeStart, grid.rangeEnd, done);
+
+        if (monthState.cache[key]) { events = monthState.cache[key]; done(); return; }
 
         google.script.run
-          .withSuccessHandler(function (items) {
-            monthState.cache[key] = items;
-            renderMonth(items, grid);
-            if (callback) callback();
-          })
-          .withFailureHandler(function (err) {
-            $('monthBody').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(err.message) + '</div>';
-            if (callback) callback();
-          })
+          .withSuccessHandler(function (items) { monthState.cache[key] = items; events = items; done(); })
+          .withFailureHandler(function (err) { errMsg = err.message; done(); })
           .getEvents(toGasStr(grid.rangeStart), toGasStr(grid.rangeEnd));
       }
 
@@ -897,9 +1054,14 @@
 
         $('monthBody').innerHTML = grid.weeks.map(function (week) {
           var cellsHtml = week.map(function (d, i) {
-            var cls = 'month-cell' + (d.getMonth() !== thisMonth ? ' is-other' : '') + (isSameDay(d, today) ? ' is-today' : '');
+            var holiday = holidays[dateKey(d)];
+            var cls = 'month-cell' + dayClass(d) +
+              (d.getMonth() !== thisMonth ? ' is-other' : '') + (isSameDay(d, today) ? ' is-today' : '');
             return '<div class="' + cls + '" style="grid-column:' + (i + 1) + '/' + (i + 2) + ';" data-date="' + dateKey(d) + '">' +
-              '<span class="month-daynum">' + d.getDate() + '</span></div>';
+              '<div class="month-cell-top">' +
+                '<span class="month-daynum">' + d.getDate() + '</span>' +
+                (holiday ? '<span class="month-holiday">' + escapeHtml(holiday) + '</span>' : '') +
+              '</div></div>';
           }).join('');
 
           var items = packMonthWeek(events, week);
@@ -1044,23 +1206,27 @@
           pad2(days[6].getMonth() + 1) + '/' + pad2(days[6].getDate());
 
         var key = dateKey(weekStart);
-        if (weekState.cache[key]) {
-          renderWeek(weekState.cache[key], days);
+        var events = null;
+        var errMsg = '';
+        var pending = 2;   // 予定 + 祝日
+        var done = function () {
+          if (--pending > 0) return;
+          if (errMsg) {
+            $('weekAllDay').innerHTML = '<div class="empty" style="grid-column:1/-1"><strong>読み込めませんでした</strong>' +
+              escapeHtml(errMsg) + '</div>';
+          } else {
+            renderWeek(events, days);
+          }
           if (callback) callback();
-          return;
-        }
+        };
+
+        loadHolidays(weekStart, addDays(weekStart, 7), done);
+
+        if (weekState.cache[key]) { events = weekState.cache[key]; done(); return; }
 
         google.script.run
-          .withSuccessHandler(function (items) {
-            weekState.cache[key] = items;
-            renderWeek(items, days);
-            if (callback) callback();
-          })
-          .withFailureHandler(function (err) {
-            $('weekAllDay').innerHTML = '<div class="empty" style="grid-column:1/-1"><strong>読み込めませんでした</strong>' +
-              escapeHtml(err.message) + '</div>';
-            if (callback) callback();
-          })
+          .withSuccessHandler(function (items) { weekState.cache[key] = items; events = items; done(); })
+          .withFailureHandler(function (err) { errMsg = err.message; done(); })
           .getEvents(toGasStr(weekStart), toGasStr(addDays(weekStart, 7)));
       }
 
@@ -1070,11 +1236,13 @@
         var thisMonth = weekState.focus.getMonth();
 
         $('weekHead').innerHTML = '<div></div>' + days.map(function (d) {
-          var cls = 'week-head-cell' + (isSameDay(d, today) ? ' is-today' : '') +
+          var holiday = holidays[dateKey(d)];
+          var cls = 'week-head-cell' + dayClass(d) + (isSameDay(d, today) ? ' is-today' : '') +
             (d.getMonth() !== thisMonth ? ' is-other' : '');
           return '<div class="' + cls + '" data-date="' + dateKey(d) + '">' +
             '<span class="week-head-dow">' + DOW[d.getDay()] + '</span>' +
-            '<span class="week-head-num">' + d.getDate() + '</span></div>';
+            '<span class="week-head-num">' + d.getDate() + '</span>' +
+            '<span class="week-head-holiday">' + (holiday ? escapeHtml(holiday) : '&nbsp;') + '</span></div>';
         }).join('');
 
         renderAllDayBand('weekAllDay', events, days);
@@ -1094,26 +1262,38 @@
       function loadDay(focus, callback) {
         var day = startOfDay(focus);
         dayState.focus = day;
-        $('dayLabel').textContent = fmtDateHead(day);
+        setDayLabel(day);
 
         var key = dateKey(day);
-        if (dayState.cache[key]) {
-          renderDay(dayState.cache[key], day);
+        var events = null;
+        var errMsg = '';
+        var pending = 2;   // 予定 + 祝日
+        var done = function () {
+          if (--pending > 0) return;
+          setDayLabel(day);
+          if (errMsg) {
+            $('dayCards').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(errMsg) + '</div>';
+          } else {
+            renderDay(events, day);
+          }
           if (callback) callback();
-          return;
-        }
+        };
+
+        loadHolidays(day, addDays(day, 1), done);
+
+        if (dayState.cache[key]) { events = dayState.cache[key]; done(); return; }
 
         google.script.run
-          .withSuccessHandler(function (items) {
-            dayState.cache[key] = items;
-            renderDay(items, day);
-            if (callback) callback();
-          })
-          .withFailureHandler(function (err) {
-            $('dayCards').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(err.message) + '</div>';
-            if (callback) callback();
-          })
+          .withSuccessHandler(function (items) { dayState.cache[key] = items; events = items; done(); })
+          .withFailureHandler(function (err) { errMsg = err.message; done(); })
           .getEvents(toGasStr(day), toGasStr(addDays(day, 1)));
+      }
+
+      function setDayLabel(day) {
+        var holiday = holidays[dateKey(day)];
+        $('dayLabel').innerHTML =
+          '<span class="' + dayClass(day).trim() + '">' + fmtDateHead(day) + '</span>' +
+          (holiday ? '<span class="day-holiday">' + escapeHtml(holiday) + '</span>' : '');
       }
 
       // その日の時刻表記(前日から続く / 翌日まで続く を補う)
@@ -1193,7 +1373,7 @@
       }
 
       /* ===== テーブル表示 ===== */
-      var TABLE_KEYS = ['start', 'start', 'end', 'end', 'allday', 'category', 'title', 'memo', 'created', 'updated', 'id'];
+      var TABLE_KEYS = ['start', 'start', 'start', 'end', 'end', 'allday', 'category', 'title', 'memo', 'created', 'updated', 'id'];
 
       function loadTable(focus, callback) {
         var monthStart = startOfMonth(focus);
@@ -1202,25 +1382,28 @@
         $('tableLabel').textContent = monthStart.getFullYear() + '年' + (monthStart.getMonth() + 1) + '月';
 
         var key = ymKey(monthStart);
-        if (tableState.cache[key]) {
-          buildTableRows(tableState.cache[key], monthStart, monthEnd);
-          renderTable();
-          if (callback) callback();
-          return;
-        }
-
-        google.script.run
-          .withSuccessHandler(function (items) {
-            tableState.cache[key] = items;
+        var items = null;
+        var errMsg = '';
+        var pending = 2;   // 予定 + 祝日
+        var done = function () {
+          if (--pending > 0) return;
+          if (errMsg) {
+            $('tableBody').innerHTML = '<tr><td colspan="12"><div class="empty"><strong>読み込めませんでした</strong>' +
+              escapeHtml(errMsg) + '</div></td></tr>';
+          } else {
             buildTableRows(items, monthStart, monthEnd);
             renderTable();
-            if (callback) callback();
-          })
-          .withFailureHandler(function (err) {
-            $('tableBody').innerHTML = '<tr><td colspan="11"><div class="empty"><strong>読み込めませんでした</strong>' +
-              escapeHtml(err.message) + '</div></td></tr>';
-            if (callback) callback();
-          })
+          }
+          if (callback) callback();
+        };
+
+        loadHolidays(monthStart, monthEnd, done);
+
+        if (tableState.cache[key]) { items = tableState.cache[key]; done(); return; }
+
+        google.script.run
+          .withSuccessHandler(function (list) { tableState.cache[key] = list; items = list; done(); })
+          .withFailureHandler(function (err) { errMsg = err.message; done(); })
           .getEvents(toGasStr(monthStart), toGasStr(monthEnd));
       }
 
@@ -1283,7 +1466,7 @@
         }
 
         if (rows.length === 0) {
-          $('tableBody').innerHTML = '<tr><td colspan="11"><div class="empty"><strong>この月にレコードはありません</strong>' +
+          $('tableBody').innerHTML = '<tr><td colspan="12"><div class="empty"><strong>この月にレコードはありません</strong>' +
             '開始日がこの月にある予定が表示されます。</div></td></tr>';
           $('tableCount').textContent = '0件';
           return;
@@ -1292,9 +1475,10 @@
         $('tableBody').innerHTML = rows.map(function (r) {
           var allDay = r.allday === 1;
           return '<tr data-id="' + escapeHtml(r.id) + '">' +
-            '<td class="col-sdate mono">' + fmtDate(r.s) + '</td>' +
+            '<td class="col-sdate mono">' + fmtMD(r.s) + '</td>' +
+            '<td class="col-dow mono' + dayClass(r.s) + '">' + DOW[r.s.getDay()] + '</td>' +
             '<td class="col-stime mono">' + (allDay ? '<span class="dim">—</span>' : fmtTime(r.s)) + '</td>' +
-            '<td class="mono">' + fmtDate(r.e) + '</td>' +
+            '<td class="mono">' + fmtMD(r.e) + '</td>' +
             '<td class="mono">' + (allDay ? '<span class="dim">—</span>' : fmtTime(r.e)) + '</td>' +
             '<td class="mono">' + (allDay ? '✓' : '<span class="dim">—</span>') + '</td>' +
             '<td><span class="badge" data-cat="' + escapeHtml(r.category) + '">' + escapeHtml(r.category) + '</span></td>' +
@@ -1334,8 +1518,13 @@
 
         var s = parseGasStr(item.start_at);
         var e = parseGasStr(item.end_at) || s;
-        $('d-start').value = toLocalInputValue(s);
-        $('d-end').value = toLocalInputValue(e);
+        $('d-start-date').value = toDateInputValue(s);
+        $('d-start-time').value = item.all_day ? '' : toTimeInputValue(s);
+        $('d-end-date').value = toDateInputValue(e);
+        $('d-end-time').value = item.all_day ? '' : toTimeInputValue(e);
+        applyAlldayVisibility('d');
+        autoEndActive.d = true;
+
         $('d-memo').value = item.memo;
         $('d-timestamps').textContent = '作成 ' + item.created_at + ' / 更新 ' + item.updated_at;
 
@@ -1448,8 +1637,13 @@
         $('n-allday').checked = false;
         var now = new Date();
         now.setMinutes(0, 0, 0);
-        $('n-start').value = toLocalInputValue(now);
-        $('n-end').value = toLocalInputValue(new Date(now.getTime() + HOUR_MS));
+        $('n-start-date').value = toDateInputValue(now);
+        $('n-start-time').value = toTimeInputValue(now);
+        var later = new Date(now.getTime() + HOUR_MS);
+        $('n-end-date').value = toDateInputValue(later);
+        $('n-end-time').value = toTimeInputValue(later);
+        applyAlldayVisibility('n');
+        autoEndActive.n = true;
         $('n-memo').value = '';
         showView('new');
         $('n-title').focus();
@@ -1459,16 +1653,11 @@
       $('btnBackFromNew').addEventListener('click', backToLastMainView);
 
       $('btnSave').addEventListener('click', function () {
-        var data = {
-          id: currentId,
-          category: $('d-category').value,
-          title: $('d-title').value,
-          all_day: $('d-allday').checked,
-          start_at: toGasStr(fromLocalInputValue($('d-start').value)),
-          end_at: toGasStr(fromLocalInputValue($('d-end').value)),
-          memo: $('d-memo').value
-        };
-        if (!data.title.trim()) { alert('予定名を入力してください。'); return; }
+        var form = readEventForm('d');
+        if (form.error) { alert(form.error); return; }
+        if (!form.data.title.trim()) { alert('予定名を入力してください。'); return; }
+        var data = form.data;
+        data.id = currentId;
 
         $('btnSave').disabled = true;
         google.script.run
@@ -1497,15 +1686,10 @@
       });
 
       $('btnCreate').addEventListener('click', function () {
-        var data = {
-          category: $('n-category').value,
-          title: $('n-title').value,
-          all_day: $('n-allday').checked,
-          start_at: toGasStr(fromLocalInputValue($('n-start').value)),
-          end_at: toGasStr(fromLocalInputValue($('n-end').value)),
-          memo: $('n-memo').value
-        };
-        if (!data.title.trim()) { alert('予定名を入力してください。'); return; }
+        var form = readEventForm('n');
+        if (form.error) { alert(form.error); return; }
+        if (!form.data.title.trim()) { alert('予定名を入力してください。'); return; }
+        var data = form.data;
 
         $('btnCreate').disabled = true;
         google.script.run
@@ -1522,6 +1706,8 @@
       /* ===== 初期化 ===== */
       fillCategorySelect($('n-category'));
       fillCategorySelect($('d-category'));
+      wireDateTimeForm('n');
+      wireDateTimeForm('d');
       loadMonth(new Date());
       loadList();
     })();
