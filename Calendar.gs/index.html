@@ -539,7 +539,7 @@
           <input type="date" class="input" id="d-start-date">
         </div>
         <div class="field">
-          <span class="label">開始時刻(空欄で終日)</span>
+          <span class="label">開始時刻</span>
           <input type="time" class="input" id="d-start-time">
         </div>
       </div>
@@ -549,7 +549,7 @@
           <input type="date" class="input" id="d-end-date">
         </div>
         <div class="field">
-          <span class="label">終了時刻(空欄で終日)</span>
+          <span class="label">終了時刻</span>
           <input type="time" class="input" id="d-end-time">
         </div>
       </div>
@@ -585,7 +585,7 @@
           <input type="date" class="input" id="n-start-date">
         </div>
         <div class="field">
-          <span class="label">開始時刻(空欄で終日)</span>
+          <span class="label">開始時刻</span>
           <input type="time" class="input" id="n-start-time">
         </div>
       </div>
@@ -595,7 +595,7 @@
           <input type="date" class="input" id="n-end-date">
         </div>
         <div class="field">
-          <span class="label">終了時刻(空欄で終日)</span>
+          <span class="label">終了時刻</span>
           <input type="time" class="input" id="n-end-time">
         </div>
       </div>
@@ -616,6 +616,8 @@
       var DOW = ['日', '月', '火', '水', '木', '金', '土'];
       var DAY_MS = 86400000;
       var HOUR_MS = 3600000;
+      var DEFAULT_START_TIME = '09:00';   // 終日を解除したときに入れる既定値
+      var DEFAULT_END_TIME = '10:00';
 
       var allEvents = [];
       var currentCat = '';
@@ -646,10 +648,6 @@
         if (!s) return null;
         return new Date(String(s).replace(/-/g, '/'));
       }
-      function toLocalInputValue(d) {
-        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
-          'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
-      }
       function toDateInputValue(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
       function toTimeInputValue(d) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
       function fromLocalInputValue(v) {
@@ -664,7 +662,7 @@
       }
 
       // 終了日時の自動補完(開始+1時間)。終了欄を手で編集したら以後は自動補完しない
-      var autoEndActive = { n: true, d: true };
+      var autoEndActive = { n: true, d: false };
 
       function wireDateTimeForm(prefix) {
         function recomputeEnd() {
@@ -700,7 +698,19 @@
         var endTimeField = $(prefix + '-end-time').closest('.field');
         startTimeField.style.display = checked ? 'none' : '';
         endTimeField.style.display = checked ? 'none' : '';
-        if (checked) { $(prefix + '-start-time').value = ''; $(prefix + '-end-time').value = ''; }
+
+        if (checked) {
+          $(prefix + '-start-time').value = '';
+          $(prefix + '-end-time').value = '';
+          $(prefix + '-end-date').value = $(prefix + '-start-date').value;
+        } else if (!$(prefix + '-start-time').value) {
+          // 時刻が空のままだと保存時に終日へ戻ってしまうので既定値を入れる
+          $(prefix + '-start-time').value = DEFAULT_START_TIME;
+          $(prefix + '-end-time').value = DEFAULT_END_TIME;
+          if (!$(prefix + '-end-date').value) {
+            $(prefix + '-end-date').value = $(prefix + '-start-date').value;
+          }
+        }
       }
 
       // フォームから予定データを組み立てる。開始時刻が空欄なら終日として扱う
@@ -710,6 +720,10 @@
         var endDt = combineDT(prefix, 'end') || startDt;
         var startTimeVal = $(prefix + '-start-time').value;
         var allDay = $(prefix + '-allday').checked || !startTimeVal;
+
+        if (!allDay && endDt.getTime() < startDt.getTime()) {
+          return { error: '終了日時が開始日時より前になっています。' };
+        }
 
         return {
           error: null,
@@ -786,8 +800,7 @@
             callback();
           })
           .withFailureHandler(function () {
-            // 祝日が取れなくてもカレンダー本体は表示する
-            holidayLoaded[key] = true;
+            // 祝日が取れなくてもカレンダー本体は表示する(次回また取りにいけるよう印は付けない)
             callback();
           })
           .getHolidays(toGasStr(rangeStart), toGasStr(rangeEnd));
@@ -1455,11 +1468,13 @@
           return a.s.getTime() - b.s.getTime();
         });
 
-        // ヘッダーのソート表示
+        // ヘッダーのソート表示(開始日・曜・開始時刻は同じキーなので先頭列にだけ矢印を出す)
         var ths = $('tableHead').children;
+        var marked = false;
         for (var i = 0; i < ths.length; i++) {
           var th = ths[i];
-          var isSorted = TABLE_KEYS[i] === key;
+          var isSorted = !marked && TABLE_KEYS[i] === key;
+          if (isSorted) marked = true;
           th.classList.toggle('is-sorted', isSorted);
           var base = th.textContent.replace(/[▲▼]$/, '').trim();
           th.innerHTML = escapeHtml(base) + (isSorted ? '<span class="arrow">' + (dir === 1 ? '▲' : '▼') + '</span>' : '');
@@ -1523,7 +1538,8 @@
         $('d-end-date').value = toDateInputValue(e);
         $('d-end-time').value = item.all_day ? '' : toTimeInputValue(e);
         applyAlldayVisibility('d');
-        autoEndActive.d = true;
+        // 既存予定の終了日時は勝手に書き換えない(開始を触っても+1時間に潰さない)
+        autoEndActive.d = false;
 
         $('d-memo').value = item.memo;
         $('d-timestamps').textContent = '作成 ' + item.created_at + ' / 更新 ' + item.updated_at;
@@ -1661,7 +1677,9 @@
 
         $('btnSave').disabled = true;
         google.script.run
-          .withSuccessHandler(function () {
+          .withSuccessHandler(function (newId) {
+            // 開始日を変えた場合はIDが振り直されるので、現在のIDを更新しておく
+            if (newId) currentId = newId;
             refreshAll(function () { $('btnSave').disabled = false; backToLastMainView(); });
           })
           .withFailureHandler(function (err) {
