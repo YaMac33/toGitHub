@@ -58,3 +58,21 @@ function saveLastSheet(sheetName) {
 function getLastSheet() {
   return PropertiesService.getUserProperties().getProperty('lastSheet') || '';
 }
+
+/** ============ 固定行数・固定列数の記憶(ユーザー単位・サーバー側) ============ */
+
+function saveFreezeConfig(rows, cols) {
+  const props = PropertiesService.getUserProperties();
+  props.setProperty('freezeRows', String(rows));
+  props.setProperty('freezeCols', String(cols));
+}
+
+function getFreezeConfig() {
+  const props = PropertiesService.getUserProperties();
+  const rows = parseInt(props.getProperty('freezeRows'), 10);
+  const cols = parseInt(props.getProperty('freezeCols'), 10);
+  return {
+    rows: Number.isFinite(rows) ? rows : 2,
+    cols: Number.isFinite(cols) ? cols : 1
+  };
+}
