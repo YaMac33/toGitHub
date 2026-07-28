@@ -1,0 +1,123 @@
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1c1c1e;
+    --sub: #6b7280;
+    --line: #e5e7eb;
+    --head-bg: #f3f4f6;
+    --accent: #1f6feb;
+    --error: #b91c1c;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+                 "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 12px 8px;
+  }
+
+  .header-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  #sheetSelect {
+    flex: 1;
+    min-width: 0;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--fg);
+  }
+
+  #reloadBtn {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    line-height: 1;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--accent);
+  }
+
+  #reloadBtn.spinning { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--sub);
+  }
+
+  .message {
+    margin: 24px 16px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--error);
+    background: #fef2f2;
+    white-space: pre-line;
+  }
+
+  .table-wrap {
+    overflow: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  th, td {
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 8px 10px;
+    text-align: left;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--head-bg);
+    font-weight: 600;
+  }
+
+  tbody th.rowhead,
+  thead th.corner {
+    position: sticky;
+    left: 0;
+    background: var(--head-bg);
+    font-weight: 600;
+  }
+  thead th.corner { z-index: 20; }
+  tbody th.rowhead { z-index: 5; }
+</style>
