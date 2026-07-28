@@ -1,7 +1,7 @@
 'use strict';
 
 /** GAS ウェブアプリの /exec URL */
-const API_URL = 'https://script.google.com/macros/s/〇〇/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzwJSk5hGRsgqnHfU9XxKXiNgXC5t5IkycC5lIwqsIr-UYZyqaG-LRk73z1z6iNc5nX/exec';
 
 const LS = {
   sheets:    'sheetviewer:sheets',
