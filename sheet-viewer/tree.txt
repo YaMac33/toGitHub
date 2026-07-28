@@ -1,0 +1,12 @@
+/sheet-viewer/            ← GitHub Pages リポジトリ
+  index.html
+  style.css
+  app.js
+  sw.js
+  manifest.json
+  icons/
+    icon-192.png
+    icon-512.png
+
+[GAS側・別プロジェクト]
+  Code.gs
