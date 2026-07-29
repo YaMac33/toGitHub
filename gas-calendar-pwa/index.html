@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head><meta charset="utf-8"><title>CORS疎通確認</title></head>
+<body>
+  <h1>GAS API 疎通確認</h1>
+  <button id="btn">GASにpingを送る</button>
+  <pre id="out">まだ実行していません</pre>
+  <script>
+    // ↓ここに控えたWebアプリURLを貼る
+    const GAS_URL = 'https://script.google.com/macros/s/xxxxx/exec';
+
+    document.getElementById('btn').addEventListener('click', async () => {
+      const out = document.getElementById('out');
+      out.textContent = '通信中...';
+      try {
+        const res = await fetch(GAS_URL + '?action=ping');
+        const data = await res.json();
+        out.textContent = 'OK:\n' + JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = 'NG(エラー):\n' + err.message +
+          '\n\nブラウザの開発者ツール(コンソール)に詳細なCORSエラーが出ているはずなので、そちらも見てください。';
+      }
+    });
+  </script>
+</body>
+</html>
