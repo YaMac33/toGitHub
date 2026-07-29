@@ -1,6 +1,7 @@
 <script>
 'use strict';
 
+
 const els = {
   header:       document.getElementById('appHeader'),
   select:       document.getElementById('sheetSelect'),
@@ -17,11 +18,15 @@ const els = {
   wrap:         document.getElementById('tableWrap'),
 };
 
+
 let lastSheetRequested = '';
 let currentValues = null;
+let currentFormats = null;   // ← 追加
 let freezeConfig = { rows: 2, cols: 1 };
 
+
 /* ============ google.script.run を Promise化 ============ */
+
 
 function gsRun(fnName, ...args) {
   return new Promise((resolve, reject) => {
@@ -32,11 +37,14 @@ function gsRun(fnName, ...args) {
   });
 }
 
+
 /* ============ 表示ヘルパー ============ */
+
 
 function setStatus(text) {
   els.status.textContent = text;
 }
+
 
 function showMessage(text, { retry = false } = {}) {
   els.messageText.textContent = text;
@@ -46,9 +54,11 @@ function showMessage(text, { retry = false } = {}) {
   els.wrap.innerHTML = '';
 }
 
+
 function hideMessage() {
   els.message.hidden = true;
 }
+
 
 function setBusy(busy) {
   els.reload.classList.toggle('spinning', busy);
@@ -56,15 +66,18 @@ function setBusy(busy) {
   els.select.disabled = busy;
 }
 
+
 function showSkeleton() {
   hideMessage();
   els.wrap.innerHTML = '';
   els.skeleton.hidden = false;
 }
 
+
 function hideSkeleton() {
   els.skeleton.hidden = true;
 }
+
 
 function formatTime(iso) {
   const d = new Date(iso);
@@ -74,19 +87,22 @@ function formatTime(iso) {
        + `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+
 function clampInt(value, min, max) {
   const n = parseInt(value, 10);
   if (!Number.isFinite(n)) return min;
   return Math.max(min, Math.min(max, n));
 }
 
+
 /* ============ テーブル描画 ============ */
+
 
 /**
  * 1行目を見出し行、1列目を見出し列として描画。
  * 固定行数・固定列数はfreezeで指定し、その範囲のセルにposition:stickyを付与する。
  */
-function renderTable(values, freeze) {
+function renderTable(values, formats, freeze) {
   els.wrap.innerHTML = '';
   if (!values || values.length === 0) {
     showMessage('このシートにはデータがありません。');
@@ -94,9 +110,11 @@ function renderTable(values, freeze) {
   }
   hideMessage();
 
+
   const table = document.createElement('table');
   const thead = document.createElement('thead');
   const tbody = document.createElement('tbody');
+
 
   values.forEach((row, r) => {
     const tr = document.createElement('tr');
@@ -112,27 +130,63 @@ function renderTable(values, freeze) {
         el.scope = 'row';
         el.classList.add('title-col');
       }
+
+
+      // ---- 書式の適用 ----
+      const f = formats && formats[r] && formats[r][c];
+      if (f) applyCellFormat(el, f);
+
+
       tr.appendChild(el);
     });
     (isHeaderRow ? thead : tbody).appendChild(tr);
   });
 
+
   table.appendChild(thead);
   table.appendChild(tbody);
+
 
   const frag = document.createDocumentFragment();
   frag.appendChild(table);
   els.wrap.appendChild(frag);
 
+
   applyFreeze(table, freeze);
 }
+
+
+/* セルにシートの書式(塗りつぶし・取り消し線など)を反映する */
+function applyCellFormat(el, f) {
+  // 塗りつぶし(白・既定色でない場合のみ上書き)
+  if (f.bg && f.bg !== '#ffffff' && f.bg.toLowerCase() !== '#ffffff') {
+    el.style.backgroundColor = f.bg;
+    el.classList.add('has-fill');   // 縞模様CSSに勝たせるための目印
+  }
+  // 文字色
+  if (f.color && f.color !== '#000000') {
+    el.style.color = f.color;
+  }
+  // 取り消し線 / 下線
+  if (f.line === 'line-through') {
+    el.style.textDecoration = 'line-through';
+  } else if (f.line === 'underline') {
+    el.style.textDecoration = 'underline';
+  }
+  // 太字・斜体
+  if (f.weight === 'bold')   el.style.fontWeight = '700';
+  if (f.style === 'italic')  el.style.fontStyle = 'italic';
+}
+
 
 function applyFreeze(table, freeze) {
   const rows = Array.from(table.rows);
   if (rows.length === 0) return;
 
+
   const freezeRows = Math.max(0, Math.min(freeze.rows, rows.length));
   const freezeCols = Math.max(0, Math.min(freeze.cols, rows[0].cells.length));
+
 
   const tops = [];
   let topAcc = 0;
@@ -141,6 +195,7 @@ function applyFreeze(table, freeze) {
     topAcc += rows[r].offsetHeight;
   }
 
+
   const lefts = [];
   let leftAcc = 0;
   for (let c = 0; c < freezeCols; c++) {
@@ -148,11 +203,13 @@ function applyFreeze(table, freeze) {
     leftAcc += rows[0].cells[c].offsetWidth;
   }
 
+
   rows.forEach((row, r) => {
     const isFrozenRow = r < freezeRows;
     Array.from(row.cells).forEach((cell, c) => {
       const isFrozenCol = c < freezeCols;
       if (!isFrozenRow && !isFrozenCol) return;
+
 
       if (isFrozenRow) {
         cell.classList.add('sticky-top');
@@ -169,6 +226,7 @@ function applyFreeze(table, freeze) {
   });
 }
 
+
 function fillSelect(names, selected) {
   els.select.innerHTML = '';
   names.forEach(name => {
@@ -180,12 +238,15 @@ function fillSelect(names, selected) {
   if (selected && names.includes(selected)) els.select.value = selected;
 }
 
+
 function setFreezeInputs(freeze) {
   els.freezeRows.value = freeze.rows;
   els.freezeCols.value = freeze.cols;
 }
 
+
 /* ============ 読み込みフロー ============ */
+
 
 async function loadSheet(sheetName) {
   lastSheetRequested = sheetName;
@@ -195,8 +256,9 @@ async function loadSheet(sheetName) {
   try {
     const data = await gsRun('getSheetData', sheetName);
     currentValues = data.values;
+    currentFormats = data.formats;                    // ← 追加
     hideSkeleton();
-    renderTable(currentValues, freezeConfig);
+    renderTable(currentValues, currentFormats, freezeConfig);   // ← 引数追加
     setStatus(`最終更新: ${formatTime(data.fetchedAt)} ・ ${data.rows}行 × ${data.cols}列`);
     gsRun('saveLastSheet', sheetName).catch(() => {}); // 記憶保存は失敗しても無視
   } catch (err) {
@@ -209,11 +271,13 @@ async function loadSheet(sheetName) {
   }
 }
 
+
 async function onSelectChange() {
   const name = els.select.value;
   if (!name) return;
   await loadSheet(name);
 }
+
 
 function onFreezeInputChange() {
   const maxRows = currentValues ? currentValues.length : 999;
@@ -223,9 +287,10 @@ function onFreezeInputChange() {
     cols: clampInt(els.freezeCols.value, 0, maxCols),
   };
   setFreezeInputs(freezeConfig);
-  if (currentValues) renderTable(currentValues, freezeConfig);
   gsRun('saveFreezeConfig', freezeConfig.rows, freezeConfig.cols).catch(() => {});
+  if (currentValues) renderTable(currentValues, currentFormats, freezeConfig);   // ← 引数追加
 }
+
 
 function onSettingsToggle() {
   const expanded = els.settingsBtn.getAttribute('aria-expanded') === 'true';
@@ -233,7 +298,9 @@ function onSettingsToggle() {
   els.settingsPanel.hidden = expanded;
 }
 
+
 /* ============ 起動 ============ */
+
 
 function bindEvents() {
   els.select.addEventListener('change', onSelectChange);
@@ -252,10 +319,12 @@ function bindEvents() {
   }, { passive: true });
 }
 
+
 async function boot() {
   setBusy(true);
   setStatus('シート一覧を取得中…');
   showSkeleton();
+
 
   try {
     const [names, lastSheet, freeze] = await Promise.all([
@@ -264,8 +333,10 @@ async function boot() {
       gsRun('getFreezeConfig'),
     ]);
 
+
     freezeConfig = freeze;
     setFreezeInputs(freezeConfig);
+
 
     if (!names || names.length === 0) {
       hideSkeleton();
@@ -273,6 +344,7 @@ async function boot() {
       setStatus('');
       return;
     }
+
 
     fillSelect(names, lastSheet);
     await loadSheet(els.select.value || names[0]);
@@ -285,6 +357,7 @@ async function boot() {
     setBusy(false);
   }
 }
+
 
 bindEvents();
 boot();

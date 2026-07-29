@@ -7,6 +7,7 @@
 </head>
 <body>
 
+
   <header class="app-header" id="appHeader">
     <div class="header-top">
       <div class="brand">
@@ -19,6 +20,7 @@
         <span class="brand-text">Sheet Viewer</span>
       </div>
     </div>
+
 
     <div class="header-row">
       <div class="select-wrap">
@@ -43,6 +45,7 @@
       </button>
     </div>
 
+
     <div id="settingsPanel" class="settings-panel" hidden>
       <label class="settings-field">
         <span>固定行数(上から)</span>
@@ -54,8 +57,10 @@
       </label>
     </div>
 
+
     <div id="status" class="status" aria-live="polite"></div>
   </header>
+
 
   <main id="main">
     <div class="table-card">
@@ -68,6 +73,7 @@
         <button id="messageRetry" type="button" class="retry-btn" hidden>再読み込み</button>
       </div>
 
+
       <div id="skeleton" class="skeleton" hidden aria-hidden="true">
         <div class="skeleton-row"></div>
         <div class="skeleton-row"></div>
@@ -77,10 +83,13 @@
         <div class="skeleton-row"></div>
       </div>
 
+
       <div id="tableWrap" class="table-wrap"></div>
     </div>
   </main>
 
+
   <?!= include('JavaScript'); ?>
 </body>
 </html>
+

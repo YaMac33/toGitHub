@@ -17,7 +17,9 @@
     --radius-sm: 10px;
   }
 
+
   * { box-sizing: border-box; }
+
 
   html, body {
     margin: 0;
@@ -30,6 +32,7 @@
     -webkit-text-size-adjust: 100%;
   }
 
+
   /* ページ全体は固定高さでスクロールさせず、テーブル領域(.table-wrap)だけを
      内部スクロールさせる。固定行数・固定列数の position:sticky はこの
      内部スクロールを基準に計算されるため、ここが効いていないと固定されない。 */
@@ -37,6 +40,7 @@
     display: flex;
     flex-direction: column;
   }
+
 
   #main {
     flex: 1;
@@ -46,9 +50,12 @@
     overflow: hidden;
   }
 
+
   ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
 
+
   /* ============ ヘッダー ============ */
+
 
   .app-header {
     flex: none;
@@ -63,9 +70,11 @@
     transition: box-shadow .25s ease;
   }
 
+
   .app-header.is-scrolled {
     box-shadow: var(--shadow);
   }
+
 
   .header-top {
     display: flex;
@@ -73,12 +82,14 @@
     margin-bottom: 10px;
   }
 
+
   .brand {
     display: flex;
     align-items: center;
     gap: 8px;
     color: var(--fg);
   }
+
 
   .brand-mark {
     display: inline-flex;
@@ -91,11 +102,13 @@
     color: #fff;
   }
 
+
   .brand-text {
     font-size: 15px;
     font-weight: 700;
     letter-spacing: .01em;
   }
+
 
   .header-row {
     display: flex;
@@ -103,11 +116,13 @@
     align-items: center;
   }
 
+
   .select-wrap {
     position: relative;
     flex: 1;
     min-width: 0;
   }
+
 
   #sheetSelect {
     width: 100%;
@@ -124,7 +139,9 @@
     transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
   }
 
+
   #sheetSelect:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+
 
   #sheetSelect:focus-visible {
     outline: none;
@@ -132,7 +149,9 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
   }
 
+
   #sheetSelect:disabled { opacity: .6; }
+
 
   .select-chevron {
     position: absolute;
@@ -142,6 +161,7 @@
     color: var(--sub);
     pointer-events: none;
   }
+
 
   #settingsBtn,
   #reloadBtn {
@@ -160,6 +180,7 @@
     transition: background .15s ease, transform .1s ease, border-color .15s ease;
   }
 
+
   #settingsBtn:hover,
   #reloadBtn:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
   #settingsBtn:active,
@@ -172,6 +193,7 @@
   #settingsBtn:disabled,
   #reloadBtn:disabled { opacity: .6; cursor: default; }
 
+
   #settingsBtn svg { transition: transform .2s ease; }
   #settingsBtn[aria-expanded="true"] {
     color: var(--accent-fg);
@@ -180,8 +202,10 @@
   }
   #settingsBtn[aria-expanded="true"] svg { transform: rotate(45deg); }
 
+
   #reloadBtn.spinning svg { animation: spin .9s cubic-bezier(.5, .15, .5, .85) infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
 
   .settings-panel {
     display: flex;
@@ -196,6 +220,7 @@
   }
   .settings-panel[hidden] { display: none; }
 
+
   .settings-field {
     display: flex;
     align-items: center;
@@ -203,6 +228,7 @@
     font-size: 12px;
     color: var(--sub);
   }
+
 
   .settings-field input {
     width: 56px;
@@ -216,11 +242,13 @@
     transition: border-color .15s ease, box-shadow .15s ease;
   }
 
+
   .settings-field input:focus-visible {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
   }
+
 
   .status {
     margin-top: 8px;
@@ -230,7 +258,9 @@
     transition: opacity .2s ease;
   }
 
+
   /* ============ メッセージ / エラー ============ */
+
 
   .message {
     flex: 1;
@@ -253,7 +283,9 @@
   }
   .message[hidden] { display: none; }
 
+
   .message-icon { margin-bottom: 8px; }
+
 
   .message-text {
     margin: 0;
@@ -261,6 +293,7 @@
     color: var(--fg);
     opacity: .85;
   }
+
 
   .retry-btn {
     margin-top: 14px;
@@ -278,7 +311,9 @@
   .retry-btn:hover { opacity: .92; }
   .retry-btn:active { transform: scale(.96); }
 
+
   /* ============ スケルトン読み込み ============ */
+
 
   .skeleton {
     flex: 1;
@@ -290,6 +325,7 @@
     gap: 10px;
   }
   .skeleton[hidden] { display: none; }
+
 
   .skeleton-row {
     height: 34px;
@@ -307,12 +343,15 @@
     100% { background-position: 0 50%; }
   }
 
+
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
+
   /* ============ テーブル ============ */
+
 
   /* table-card: 角丸の見た目だけを担当する非スクロール要素。
      sticky の基準(最も近いスクロール祖先)を table-wrap にするため、
@@ -329,6 +368,7 @@
     background: var(--surface);
   }
 
+
   .table-wrap {
     flex: 1;
     min-height: 0;
@@ -337,6 +377,7 @@
     -webkit-overflow-scrolling: touch;
     animation: fadeIn .3s ease;
   }
+
 
   .table-wrap::-webkit-scrollbar { width: 10px; height: 10px; }
   .table-wrap::-webkit-scrollbar-track { background: transparent; }
@@ -349,12 +390,14 @@
     background: color-mix(in srgb, var(--sub) 55%, transparent);
   }
 
+
   table {
     border-collapse: separate;
     border-spacing: 0;
     font-size: 13px;
     white-space: nowrap;
   }
+
 
   th, td {
     border-right: 1px solid var(--line);
@@ -366,25 +409,32 @@
     text-overflow: ellipsis;
   }
 
+
   tbody tr:last-child th,
   tbody tr:last-child td { border-bottom: none; }
 
+
   tr th:last-child, tr td:last-child { border-right: none; }
 
+
   tbody tr:nth-child(even) { background: var(--surface-alt); }
+
 
   tbody tr {
     transition: background-color .12s ease;
   }
 
+
   tbody tr:hover {
     background: color-mix(in srgb, var(--accent) 8%, var(--surface));
   }
+
 
   /* ---- 固定行・固定列(可変) ----
      .title-row / .title-col: 1行目・1列目の見出し書式(常に太字・見出し色)。
      .sticky-top / .sticky-left / .sticky-corner: 実際に固定するセル
      (JSが固定行数・固定列数に応じて動的に top/left を計算して付与する)。 */
+
 
   .title-row,
   .title-col {
@@ -393,14 +443,17 @@
     color: var(--fg);
   }
 
+
   .sticky-top,
   .sticky-left {
     position: sticky;
   }
 
+
   .sticky-top { z-index: 10; }
   .sticky-left { z-index: 5; }
   .sticky-corner { z-index: 20; }
+
 
   /* 見出しではない固定セルは、下に隠れる本文セルと同じ縞模様色で塗って
      スクロール時の透け(コンテンツが透けて見える現象)を防ぐ。 */
@@ -417,7 +470,20 @@
     background: color-mix(in srgb, var(--accent) 8%, var(--surface));
   }
 
+
   tbody tr:hover .title-col {
     background: color-mix(in srgb, var(--accent) 14%, var(--head-bg));
   }
+
+
+  /* シート側の塗りつぶしを最優先にする(縞模様・ホバーより優先) */
+  tbody tr td.has-fill,
+  tbody tr th.has-fill,
+  tbody tr:nth-child(even) td.has-fill,
+  tbody tr:hover td.has-fill,
+  tbody tr:hover th.has-fill {
+    background: unset;               /* 縞模様/ホバー背景を無効化 */
+    background-color: inherit;       /* インラインstyleの色を活かす */
+  }
 </style>
+
