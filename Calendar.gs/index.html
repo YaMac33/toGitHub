@@ -30,19 +30,20 @@
       --hour-h: 44px;
       --gutter-w: 46px;
 
-      /* ★軸転置(縦=日付/横=時刻)用の寸法 */
+      /* 軸転置(縦=日付/横=時刻)用の寸法 */
       --hour-w: 72px;             /* 1時間あたりの横幅 */
       --daycol-w: 88px;           /* 週ビュー: 左の固定日付列の幅 */
-      --lane-h: 46px;             /* ★時間ありイベント1レーンの高さ(30→46) */
-      --allday-lane-h: 26px;      /* ★終日レーンの高さ(22→26 バランス調整) */
-      /* ★アプリバー実高さ(JSで計測して上書き)。一覧の日付見出しstickyに使う */
+      --lane-h: 46px;             /* 時間ありイベント1レーンの高さ */
+      --allday-lane-h: 26px;      /* 終日レーンの高さ */
+      /* アプリバー実高さ(JSで計測して上書き)。一覧の日付見出し・週の固定ヘッダーの基準 */
       --appbar-h: 104px;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
     body { font-family: var(--font-body); font-size: 15px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
     .wrap { max-width: 920px; margin: 0 auto; padding: 0 var(--gap) 96px; }
-        /* ===== アプリバー(2段固定ヘッダー) ===== */
+
+    /* ===== アプリバー(2段固定ヘッダー) ===== */
     .app-bar {
       position: sticky; top: 0; z-index: 20;
       background: rgba(255,255,255,0.92);
@@ -145,7 +146,7 @@
     .filter-item .swatch { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
     .filter-item .cat-name { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .filter-backdrop { position: fixed; inset: 0; z-index: 39; background: transparent; display: none; }
-    /* ★フィルター背面レイヤーを開いている間だけ表示(外側クリック検知) */
+    /* フィルター背面レイヤーを開いている間だけ表示(外側クリック検知) */
     .filter-backdrop.is-open { display: block; }
 
     mark.hl { padding: 0 1px; border-radius: 2px; color: var(--ink); }
@@ -164,7 +165,7 @@
     .date-group { margin-top: 22px; }
     .date-group:first-child { margin-top: 10px; }
 
-    /* ★一覧の日付見出し: 強調 + アプリバー直下にstickyで追従 */
+    /* 一覧の日付見出し: 強調 + アプリバー直下にstickyで追従 */
     .date-head {
       position: sticky; top: var(--appbar-h); z-index: 10;
       font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--ink);
@@ -212,7 +213,9 @@
 
     .empty { padding: 64px 0; text-align: center; color: var(--muted); font-size: 14px; }
     .empty strong { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
-        .month-grid-head { display: grid; grid-template-columns: repeat(7, 1fr); padding-top: 10px; }
+
+    /* ===== 月ビュー ===== */
+    .month-grid-head { display: grid; grid-template-columns: repeat(7, 1fr); padding-top: 10px; }
     .month-grid-head span { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: center; padding-bottom: 6px; display: block; }
     .month-grid-head span.dow-sat { color: var(--sat); }
     .month-grid-head span.dow-sun { color: var(--holiday); }
@@ -247,13 +250,13 @@
       grid-row: 2; align-self: start; margin: 1px 2px 0; height: 17px; line-height: 17px;
       font-size: 11px; padding: 0 5px; border-radius: 3px; overflow: hidden;
       text-overflow: ellipsis; white-space: nowrap; color: #fff; cursor: pointer;
-      transition: filter 0.12s ease, box-shadow 0.12s ease;   /* ★ホバー強調用 */
+      transition: filter 0.12s ease, box-shadow 0.12s ease;
     }
     .month-bar.slot-1 { grid-row: 3; }
-    /* ★修正3: 月ビューのイベント自身をホバー強調(セルではなくバー/アイテムを強調) */
+    /* ★修正: --accent は分類パレットの1色目と同色。同化しないよう暗色リング＋暗くして強調する */
     .month-bar:hover {
-      filter: brightness(1.08);
-      box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--accent);
+      filter: brightness(0.82) saturate(1.15);
+      box-shadow: 0 0 0 1px var(--paper), 0 0 0 3px var(--ink);
       position: relative; z-index: 5;
     }
     .month-bar-cats { display: inline; }
@@ -265,13 +268,13 @@
     .month-item {
       grid-row: 2; align-self: start; margin: 1px 2px 0; height: 17px; line-height: 17px;
       font-size: 11px; padding: 0 3px; overflow: hidden; white-space: nowrap; cursor: pointer; color: var(--ink);
-      border-radius: 3px; transition: background 0.12s ease, box-shadow 0.12s ease;   /* ★ホバー強調用 */
+      border-radius: 3px; transition: background 0.12s ease, box-shadow 0.12s ease;
     }
     .month-item.slot-1 { grid-row: 3; }
-    /* ★修正3: 時間ありイベント(month-item)も自身をホバー強調 */
+    /* ★修正: 文字色(ink)が沈まない中性色の背景＋暗色リング */
     .month-item:hover {
-      background: var(--accent-soft);
-      box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--accent);
+      background: var(--rule-soft);
+      box-shadow: 0 0 0 1px var(--paper), 0 0 0 3px var(--ink);
       position: relative; z-index: 5;
     }
     .month-item .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
@@ -281,11 +284,19 @@
     }
     .month-more:hover { color: var(--accent); }
 
-    /* ===== 週・日ビュー(軸転置: 縦=日付 / 横=時刻) ★ここから全面置換 ===== */
+    /* ===== 週・日ビュー(軸転置: 縦=日付 / 横=時刻) ===== */
 
-    /* ★修正1: 週ビューの2ブロック(前半3日/後半4日)ラッパー */
-    .tl-block { margin-bottom: 26px; }
-    .tl-block:last-child { margin-bottom: 0; }
+    /* ★変更: 週ビューのナビ＋時刻目盛り＋スクロールバーをアプリバー直下に固定。
+       これにより7日ぶんを1ブロックで縦に並べても現在位置を見失わない */
+    .week-sticky {
+      position: sticky; top: var(--appbar-h); z-index: 15;
+      background: var(--paper);
+      border-bottom: 1px solid var(--rule);
+    }
+    .week-sticky .nav-bar { padding: 10px 0 6px; }
+    .week-sticky .tl-header { padding-top: 0; border-bottom: none; }
+    .week-sticky .tl-scrollbar { border-bottom: none; }
+    #view-day .tl-header { border-bottom: none; }
 
     /* 上部の時刻目盛りヘッダー */
     .tl-header { display: flex; border-bottom: 1px solid var(--rule); padding-top: 10px; }
@@ -323,8 +334,7 @@
     .tl-daycol.is-sun .d-num, .tl-daycol.is-sun .d-dow,
     .tl-daycol.is-holiday .d-num, .tl-daycol.is-holiday .d-dow { color: var(--holiday); }
 
-    /* 時刻レーン領域(横スクロール) */
-        /* 時刻レーン領域(各行のスクロールバーは隠す。ブロック共通バーで操作) ★ */
+    /* 時刻レーン領域(各行のスクロールバーは隠す。共通バーで操作する) */
     .tl-lanes-scroll {
       flex: 1 1 auto; overflow-x: auto; overflow-y: hidden;
       scrollbar-width: none;              /* Firefox: スクロールバー非表示 */
@@ -332,7 +342,7 @@
     }
     .tl-lanes-scroll::-webkit-scrollbar { height: 0; width: 0; }   /* WebKit: 非表示 */
 
-        /* ★ブロック共通の横スクロールバー(ブロック末尾に1本だけ表示) */
+    /* 共通の横スクロールバー(週・日とも1本だけ表示) */
     .tl-scrollbar {
       display: flex;
       margin-top: 0;
@@ -340,11 +350,18 @@
       border-bottom: 1px solid var(--rule);
     }
     .tl-scrollbar-spacer { flex: 0 0 var(--daycol-w); }   /* 日付列ぶんの余白 */
+    /* ★変更: auto ではなく scroll。OSのオーバーレイ表示でも帯を常に出す */
     .tl-scrollbar-track {
-      flex: 1 1 auto; min-width: 0;      /* ★flex子要素の縮小を許可(これが無いと中身が縮まずスクロールしない) */
-      overflow-x: auto; overflow-y: hidden;   /* ★ここがスクロール要素 */
+      flex: 1 1 auto; min-width: 0;      /* flex子要素の縮小を許可(無いと中身が縮まずスクロールしない) */
+      overflow-x: scroll; overflow-y: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: #c7cad2 var(--rule-soft);
     }
-    .tl-scrollbar-inner { height: 12px; }   /* ★中身に幅を持たせて横スクロールを発生させる帯 */
+    .tl-scrollbar-track::-webkit-scrollbar { height: 10px; }
+    .tl-scrollbar-track::-webkit-scrollbar-track { background: var(--rule-soft); border-radius: 999px; }
+    .tl-scrollbar-track::-webkit-scrollbar-thumb { background: #c7cad2; border-radius: 999px; }
+    .tl-scrollbar-track::-webkit-scrollbar-thumb:hover { background: #a9aeba; }
+    .tl-scrollbar-inner { height: 1px; }   /* 幅だけ持たせる。高さはスクロールバーぶんで足りる */
 
     .tl-lanes { position: relative; }
     /* 1時間ごとの薄い縦罫線 */
@@ -387,17 +404,21 @@
     .nav-label .is-sun, .nav-label .is-holiday { color: var(--holiday); }
     .day-holiday { margin-left: 10px; font-size: 12.5px; font-weight: 500; color: var(--holiday); }
 
-    /* ===== 週・日ビュー 全面置換ここまで ===== */
-
+    /* ===== 日ビュー下部の予定カード ===== */
     .day-cards-head {
       font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
       color: var(--muted); margin: 28px 0 12px;
     }
     .day-card {
       border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; margin-bottom: 12px;
-      transition: border-color 0.35s ease, box-shadow 0.35s ease;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
     }
-    .day-card.is-flash { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    /* ★修正: 枠だけでは気づけないので背景ごと変える */
+    .day-card.is-flash {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 3px var(--accent);
+    }
     .day-card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .day-card-time { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 500; }
     .day-card-cont { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
@@ -415,6 +436,7 @@
     }
     .day-card-meta { display: flex; gap: 14px; flex-wrap: wrap; }
 
+    /* ===== テーブルビュー ===== */
     .table-scroll {
       margin-top: 12px; border: 1px solid var(--rule); border-radius: 8px;
       overflow: auto; max-height: 68vh;
@@ -429,16 +451,15 @@
     .rec-table th:hover { color: var(--ink); }
     .rec-table th.is-sorted { color: var(--accent); }
     .rec-table th .arrow { margin-left: 4px; font-size: 9px; }
-    .rec-table th.col-sdate, .rec-table td.col-sdate,
-    .rec-table th.col-dow, .rec-table td.col-dow,
-    .rec-table th.col-stime, .rec-table td.col-stime { position: sticky; background: var(--paper); }
-    .rec-table th.col-sdate, .rec-table td.col-sdate { left: 0; width: 106px; min-width: 106px; }
-    .rec-table th.col-dow, .rec-table td.col-dow { left: 106px; width: 34px; min-width: 34px; text-align: center; }
-    .rec-table th.col-stime, .rec-table td.col-stime {
-      left: 140px; width: 78px; min-width: 78px; box-shadow: 1px 0 0 var(--rule);
+    /* ★変更: 固定するのは開始日の1列のみ。曜・開始時刻は一緒にスクロールする */
+    .rec-table th.col-sdate, .rec-table td.col-sdate {
+      position: sticky; left: 0; background: var(--paper);
+      width: 64px; min-width: 64px; box-shadow: 1px 0 0 var(--rule);
     }
-    .rec-table td.col-sdate, .rec-table td.col-dow, .rec-table td.col-stime { z-index: 1; }
-    .rec-table th.col-sdate, .rec-table th.col-dow, .rec-table th.col-stime { z-index: 3; }
+    .rec-table td.col-sdate { z-index: 1; }
+    .rec-table th.col-sdate { z-index: 3; }
+    .rec-table th.col-dow, .rec-table td.col-dow { width: 34px; min-width: 34px; text-align: center; }
+    .rec-table th.col-stime, .rec-table td.col-stime { width: 68px; min-width: 68px; }
     .rec-table td.col-id { color: var(--muted); }
     .rec-table td.col-dow.is-sat { color: var(--sat); }
     .rec-table td.col-dow.is-sun, .rec-table td.col-dow.is-holiday { color: var(--holiday); }
@@ -452,6 +473,7 @@
     .table-count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 10px; }
     .table-hint { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 4px; }
 
+    /* ===== 詳細・新規フォーム ===== */
     .page-head {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
       padding: 20px 0; border-bottom: 1px solid var(--rule); flex-wrap: wrap;
@@ -496,7 +518,7 @@
     @media (max-width: 640px) {
       :root {
         --gap: 16px; --hour-h: 38px; --gutter-w: 38px;
-        --hour-w: 60px; --daycol-w: 68px;   /* ★スマホ幅は狭める */
+        --hour-w: 60px; --daycol-w: 68px;   /* スマホ幅は狭める */
       }
       .app-bar-top { flex-wrap: wrap; }
       .app-bar-tabs-inner { padding: 0 8px; }
@@ -506,8 +528,8 @@
       .month-daynum { width: 17px; height: 17px; line-height: 17px; font-size: 10px; }
       .month-bar, .month-item { font-size: 9.5px; height: 15px; line-height: 15px; }
       .month-week { grid-template-rows: 19px 17px 17px 14px; }
-      .tl-daycol .d-num { font-size: 14px; }             /* ★ */
-      .tl-ev { font-size: 9.5px; padding: 0 3px; }        /* ★ */
+      .tl-daycol .d-num { font-size: 14px; }
+      .tl-ev { font-size: 9.5px; padding: 0 3px; }
     }
   </style>
 </head>
@@ -570,21 +592,34 @@
       <div class="month-weeks" id="monthBody"></div>
     </section>
 
-    <!-- ===== 週表示(軸転置: 縦=日付 / 横=時刻) ★修正1: 2ブロックをJSで動的生成するためコンテナ化 ===== -->
+    <!-- ===== 週表示(軸転置: 縦=日付 / 横=時刻) ★変更: 1ブロック7行。ナビ・時刻目盛り・スクロールバーは固定 ===== -->
     <section id="view-week" class="view">
-      <div class="nav-bar">
-        <div class="nav-label" id="weekLabel"></div>
-        <div class="nav-btns">
-          <button class="btn btn-quiet" id="btnWeekPrev">←</button>
-          <button class="btn btn-quiet" id="btnWeekToday">今週</button>
-          <button class="btn btn-quiet" id="btnWeekNext">→</button>
+      <div class="week-sticky">
+        <div class="nav-bar">
+          <div class="nav-label" id="weekLabel"></div>
+          <div class="nav-btns">
+            <button class="btn btn-quiet" id="btnWeekPrev">←</button>
+            <button class="btn btn-quiet" id="btnWeekToday">今週</button>
+            <button class="btn btn-quiet" id="btnWeekNext">→</button>
+          </div>
+        </div>
+        <div class="tl-header">
+          <div class="tl-header-spacer"></div>
+          <div class="tl-header-scroll" id="weekHourScroll">
+            <div class="tl-hours" id="weekHours"></div>
+          </div>
+        </div>
+        <div class="tl-scrollbar">
+          <div class="tl-scrollbar-spacer"></div>
+          <div class="tl-scrollbar-track" id="weekScrollTrack">
+            <div class="tl-scrollbar-inner" id="weekScrollInner"></div>
+          </div>
         </div>
       </div>
-      <!-- ★前半3日/後半4日の2ブロックを renderWeek がここに生成する -->
-      <div id="weekBody"></div>
+      <div class="tl-body" id="weekBody"></div>
     </section>
 
-    <!-- ===== 日表示(軸転置: 日付列なし) ★ ===== -->
+    <!-- ===== 日表示(軸転置: 日付列なし) ===== -->
     <section id="view-day" class="view">
       <div class="nav-bar">
         <div class="nav-label" id="dayLabel"></div>
@@ -597,6 +632,12 @@
       <div class="tl-header">
         <div class="tl-header-scroll" id="dayHourScroll">
           <div class="tl-hours" id="dayHours"></div>
+        </div>
+      </div>
+      <!-- ★追加: 週ビューと同じ共通スクロールバー -->
+      <div class="tl-scrollbar">
+        <div class="tl-scrollbar-track" id="dayScrollTrack">
+          <div class="tl-scrollbar-inner" id="dayScrollInner"></div>
         </div>
       </div>
       <div class="tl-body" id="dayBody"></div>
@@ -771,14 +812,13 @@
       var HL_COLORS = 3;
       var MONTH_BAR_MAX_CATS = 2;
 
-      /* ★軸転置(縦=日付/横=時刻)の定数 */
+      /* 軸転置(縦=日付/横=時刻)の定数 */
       var TL_START_H = 6;    // 表示開始 6時
       var TL_END_H = 22;     // 表示終了 22時
       var TL_HOURS = TL_END_H - TL_START_H;   // 16時間
       var TL_INIT_H = 8;     // 初期横スクロール位置 8時
 
-      /* ★修正1: 週ビューの2ブロック分割(前半3日 / 後半4日) */
-      var WEEK_BLOCKS = [3, 4];
+      /* ★変更: 週ビューは1ブロック7行(前半3日/後半4日のブロック分割は廃止) */
 
       var categories = [];
       var colorMap = {};
@@ -796,9 +836,13 @@
       var holidayLoaded = {};
 
       var monthState = { focus: null, grid: null, cache: {} };
-      var weekState = { focus: null, days: null, cache: {}, scrolledLeft: false, laneScrolls: [] };  // ★laneScrolls追加
-      var dayState = { focus: null, events: [], cache: {}, scrolledLeft: false };   // ★
+      var weekState = { focus: null, days: null, cache: {}, scrolledLeft: false, laneScrolls: [] };
+      var dayState = { focus: null, events: [], cache: {}, scrolledLeft: false };
       var tableState = { focus: null, rows: [], cache: {}, sortKey: 'start', sortDir: 1 };
+
+      /* ★追加: 週・日の横スクロール同期コントローラ(init で生成) */
+      var weekSync = null;
+      var daySync = null;
 
       function catColor(name) {
         return colorMap[name] || CAT_FALLBACK;
@@ -949,7 +993,7 @@
       function toDateInput(s) {
         return String(s || '').replace(/\//g, '-');
       }
-            var autoEndActive = { n: true, d: false };
+      var autoEndActive = { n: true, d: false };
 
       function wireDateTimeForm(prefix) {
         function recomputeEnd() {
@@ -1101,7 +1145,7 @@
         }
       }
 
-      /* ★アプリバー実高さを計測 → --appbar-h に反映(一覧の日付見出しstickyの基準) */
+      /* アプリバー実高さを計測 → --appbar-h に反映(一覧の日付見出し・週の固定ヘッダーの基準) */
       function updateAppbarHeight() {
         var bar = document.querySelector('.app-bar');
         if (!bar) return;
@@ -1333,7 +1377,8 @@
             (isToday ? '（今日）' : '') + '</div>' + rows + '</div>';
         }).join('');
       }
-            /* ===== 終日帯の詰め込み(月ビュー・軸転置の両方で使用) ===== */
+
+      /* ===== 終日帯の詰め込み(月ビュー・軸転置の両方で使用) ===== */
       function falseRow(n) {
         var a = [];
         for (var i = 0; i < n; i++) a.push(false);
@@ -1528,7 +1573,8 @@
           return '<div class="month-week">' + cellsHtml + barsHtml + moreHtml + '</div>';
         }).join('');
       }
-            /* ===== 軸転置(縦=日付/横=時刻)の中核ヘルパ ★ ===== */
+
+      /* ===== 軸転置(縦=日付/横=時刻)の中核ヘルパ ===== */
 
       /* 1時間あたりの横幅(px)をCSS変数から取得 */
       function hourWidth() {
@@ -1561,7 +1607,7 @@
         return html;
       }
 
-      /* 重なるイベントを縦の段(レーン)に割り当てる。戻り値: {items, laneCount} ★ */
+      /* 重なるイベントを縦の段(レーン)に割り当てる。戻り値: {items, laneCount} */
       function assignLanes(blocks) {
         var arr = blocks.slice().sort(function (a, b) {
           if (a.start !== b.start) return a.start - b.start;
@@ -1604,7 +1650,7 @@
         return blocks;
       }
 
-      /* 1日ぶんのレーン領域(終日レーン + 時間ありレーン + 罫線 + 現在時刻線)を組み立てて返す ★ */
+      /* 1日ぶんのレーン領域(終日レーン + 時間ありレーン + 罫線 + 現在時刻線)を組み立てて返す */
       function buildDayLanes(dayStart, events) {
         var dayStartMs = dayStart.getTime();
         var laneH = laneHeight();
@@ -1682,40 +1728,51 @@
         return wrap;
       }
 
-      /* 横スクロールを、ヘッダー(source)と本体の各レーン領域(targets)で同期させる ★ */
-            /* 横スクロールを、ヘッダー・各レーン領域・(任意で)共通スクロールバーで同期させる ★ */
-      function syncHorizontalScroll(headerScroll, laneScrolls, scrollbarTrack) {
+      /* ★変更: 横スクロール同期コントローラ。
+         ヘッダーと共通スクロールバーは常設要素なのでリスナーは生成時に1度だけ付ける。
+         再描画のたびに作り直されるレーン要素は setLanes() で差し替える。 */
+      function createScrollSync(headerScroll, scrollbarTrack) {
+        var lanes = [];
         var lock = false;
-
-        // 同期対象になる「スクロールを受け付ける要素」の一覧
-        var scrollers = [];
-        laneScrolls.forEach(function (s) { scrollers.push(s); });
-        if (scrollbarTrack) scrollers.push(scrollbarTrack);
 
         function setAll(x, except) {
           if (headerScroll && headerScroll !== except) headerScroll.scrollLeft = x;
-          scrollers.forEach(function (s) { if (s !== except) s.scrollLeft = x; });
+          if (scrollbarTrack && scrollbarTrack !== except) scrollbarTrack.scrollLeft = x;
+          lanes.forEach(function (s) { if (s !== except) s.scrollLeft = x; });
         }
 
-        scrollers.forEach(function (el) {
-          el.addEventListener('scroll', function () {
+        function onScroll(el) {
+          return function () {
             if (lock) return;
             lock = true;
             setAll(el.scrollLeft, el);
             window.requestAnimationFrame(function () { lock = false; });
-          }, { passive: true });
-        });
+          };
+        }
+
+        // 共通スクロールバーだけは常設なのでここで1度だけ配線する
+        if (scrollbarTrack) {
+          scrollbarTrack.addEventListener('scroll', onScroll(scrollbarTrack), { passive: true });
+        }
+
+        return {
+          // 新しく作られたレーン要素群に差し替える(古い要素はDOMごと捨てられる)
+          setLanes: function (list) {
+            lanes = list || [];
+            lanes.forEach(function (el) {
+              el.addEventListener('scroll', onScroll(el), { passive: true });
+            });
+          },
+          scrollTo: function (x) { setAll(x, null); }
+        };
       }
 
-      /* 初期横スクロール位置を 8時 に合わせる ★ */
-      function applyInitScroll(headerScroll, laneScrolls, scrollbarTrack) {
-        var x = (TL_INIT_H - TL_START_H) * hourWidth();
-        if (headerScroll) headerScroll.scrollLeft = x;
-        laneScrolls.forEach(function (s) { s.scrollLeft = x; });
-        if (scrollbarTrack) scrollbarTrack.scrollLeft = x;
+      /* 初期表示位置(8時)のpx */
+      function initScrollX() {
+        return (TL_INIT_H - TL_START_H) * hourWidth();
       }
 
-      /* ===== 週表示(軸転置) ★修正1: 前半3日/後半4日の2ブロックに分割・ブロック独立スクロール ===== */
+      /* ===== 週表示(軸転置) ===== */
       function loadWeek(focus, callback) {
         var weekStart = startOfWeek(focus);
         weekState.focus = weekStart;
@@ -1750,46 +1807,23 @@
           .getEvents(toGasStr(weekStart), toGasStr(addDays(weekStart, 7)));
       }
 
-      /* ★修正1: 週の日付配列を WEEK_BLOCKS([3,4]) に従い前半/後半へ分割 */
-      function splitWeekBlocks(days) {
-        var blocks = [];
-        var offset = 0;
-        for (var i = 0; i < WEEK_BLOCKS.length; i++) {
-          var count = WEEK_BLOCKS[i];
-          blocks.push(days.slice(offset, offset + count));
-          offset += count;
-        }
-        return blocks;
-      }
+      /* ★変更: 週ビューは1ブロック7行。時刻目盛りと共通スクロールバーは
+         week-sticky 内の常設要素(HTML側に固定配置済み)なので、ここでは中身と幅だけ更新する。 */
+      function renderWeek(events, days) {
+        var today = startOfDay(new Date());
+        var widthPx = lanesWidthPx();
 
-            /* ★修正1: 1ブロック分(時刻ヘッダー + 日付行群 + 共通スクロールバー)のDOMを組み立てて返す。
-         スクロールバーはブロックに1本だけ表示し、ヘッダー・全行と連動させる */
-      function buildWeekBlock(blockDays, today) {
-        var blockEl = document.createElement('div');
-        blockEl.className = 'tl-block';
+        // 固定ヘッダー側(常設要素)を更新
+        $('weekHours').innerHTML = buildHoursHtml();
+        $('weekHours').style.width = widthPx + 'px';
+        $('weekScrollInner').style.width = widthPx + 'px';
 
-        // このブロック専用の時刻ヘッダー
-        var header = document.createElement('div');
-        header.className = 'tl-header';
-        var spacer = document.createElement('div');
-        spacer.className = 'tl-header-spacer';
-        header.appendChild(spacer);
-        var headerScroll = document.createElement('div');
-        headerScroll.className = 'tl-header-scroll';
-        var hours = document.createElement('div');
-        hours.className = 'tl-hours';
-        hours.innerHTML = buildHoursHtml();
-        headerScroll.appendChild(hours);
-        header.appendChild(headerScroll);
-        blockEl.appendChild(header);
-
-        // 日付行群
-        var bodyEl = document.createElement('div');
-        bodyEl.className = 'tl-body';
+        var body = $('weekBody');
+        body.innerHTML = '';
         var laneScrolls = [];
 
-        blockDays.forEach(function (d) {
-          var dayEvents = weekState._events.filter(function (ev) {
+        days.forEach(function (d) {
+          var dayEvents = events.filter(function (ev) {
             var r = effRange(ev);
             return r.start.getTime() < addDays(d, 1).getTime() && r.end.getTime() > d.getTime();
           });
@@ -1813,52 +1847,19 @@
           row.appendChild(scroll);
           laneScrolls.push(scroll);
 
-          bodyEl.appendChild(row);
+          body.appendChild(row);
         });
 
-        blockEl.appendChild(bodyEl);
+        weekState.laneScrolls = laneScrolls;
+        weekSync.setLanes(laneScrolls);
 
-                // ★ブロック共通の横スクロールバー(1本)。trackがスクロール要素、innerが幅を持つ帯
-        var scrollbar = document.createElement('div');
-        scrollbar.className = 'tl-scrollbar';
-        var sbSpacer = document.createElement('div');
-        sbSpacer.className = 'tl-scrollbar-spacer';
-        scrollbar.appendChild(sbSpacer);
-        var sbTrack = document.createElement('div');
-        sbTrack.className = 'tl-scrollbar-track';
-        var sbInner = document.createElement('div');
-        sbInner.className = 'tl-scrollbar-inner';
-        sbInner.style.width = lanesWidthPx() + 'px';   // レーン全幅ぶん → はみ出してスクロール発生
-        sbTrack.appendChild(sbInner);
-        scrollbar.appendChild(sbTrack);
-        blockEl.appendChild(scrollbar);
-
-        // ★ヘッダー・全行・共通スクロールバー(sbTrackが実際のスクロール要素)を相互同期
-        syncHorizontalScroll(headerScroll, laneScrolls, sbTrack);
-        applyInitScroll(headerScroll, laneScrolls, sbTrack);
-
-        return { el: blockEl, laneScrolls: laneScrolls };
-      }
-
-      function renderWeek(events, days) {
-        var today = startOfDay(new Date());
-        weekState._events = events;   // ブロック生成側から参照するため一時保持
-
-        var body = $('weekBody');
-        body.innerHTML = '';
-        weekState.laneScrolls = [];
-
-        var blocks = splitWeekBlocks(days);
-        blocks.forEach(function (blockDays) {
-          if (blockDays.length === 0) return;
-          var built = buildWeekBlock(blockDays, today);
-          body.appendChild(built.el);
-          weekState.laneScrolls = weekState.laneScrolls.concat(built.laneScrolls);
-        });
-
+        // 週を移動しても見ていた時間帯を保つ。初回だけ8時に寄せる
+        var x = weekState.scrolledLeft ? $('weekScrollTrack').scrollLeft : initScrollX();
+        weekSync.scrollTo(x);
         weekState.scrolledLeft = true;
       }
-            /* ===== 日表示(軸転置・日付列なし) ★ ===== */
+
+      /* ===== 日表示(軸転置・日付列なし) ===== */
       function loadDay(focus, callback) {
         var dayStart = startOfDay(focus);
         dayState.focus = dayStart;
@@ -1898,6 +1899,7 @@
         // 時刻ヘッダー
         $('dayHours').innerHTML = buildHoursHtml();
         $('dayHours').style.width = lanesWidthPx() + 'px';
+        $('dayScrollInner').style.width = lanesWidthPx() + 'px';   // ★追加: 共通スクロールバーの幅
 
         // 本体(1日ぶんのレーン)
         var body = $('dayBody');
@@ -1910,10 +1912,10 @@
         row.appendChild(scroll);
         body.appendChild(row);
 
-        // ヘッダーと本体の横スクロールを同期(日ビューは1レーンぶん)
-        var headerScroll = $('dayHourScroll');
-        syncHorizontalScroll(headerScroll, [scroll]);
-        applyInitScroll(headerScroll, [scroll]);
+        // ★変更: ヘッダー・レーン・共通スクロールバーを同期
+        daySync.setLanes([scroll]);
+        var x = dayState.scrolledLeft ? $('dayScrollTrack').scrollLeft : initScrollX();
+        daySync.scrollTo(x);
         dayState.scrolledLeft = true;
 
         // 下部の予定カード一覧
@@ -1958,10 +1960,10 @@
         }).join('');
       }
 
-      /* ★修正4: 日ビューの対象カードをハイライト。カードがまだ描画されていない場合に備え、
-         見つかるまで最大10フレーム程度リトライする。上限に達しても見つからなければ静かに終了。 */
+      /* 日ビューの対象カードをハイライト。カードがまだ描画されていない場合に備え、
+         見つかるまで最大30フレーム程度リトライする。上限に達しても見つからなければ静かに終了。 */
       function flashDayCard(id) {
-        var MAX_TRIES = 10;   // 約160ms(10フレーム)を上限
+        var MAX_TRIES = 30;   // 描画が遅れても拾えるよう余裕をとる
 
         function tryFlash(triesLeft) {
           var card = $('dayCards').querySelector('.day-card[data-id="' + cssEscape(id) + '"]');
@@ -1972,20 +1974,28 @@
             // 上限到達時は何もせず静かに終了(フィルター非表示・別日へ移動済み等)
             return;
           }
-          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // ★修正: スクロールより先に強調を付ける(寄せに失敗しても見える状態にする)
           card.classList.add('is-flash');
-          window.setTimeout(function () { card.classList.remove('is-flash'); }, 1600);
+          // showView() の scrollTo(0,0) と競合しないよう1フレーム待つ。
+          // 寄せ先はアプリバーに潜り込まないよう、その高さぶん上に取る。
+          window.requestAnimationFrame(function () {
+            var bar = document.querySelector('.app-bar');
+            var offset = (bar ? bar.offsetHeight : 0) + 16;
+            var top = card.getBoundingClientRect().top + window.pageYOffset - offset;
+            window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+          });
+          window.setTimeout(function () { card.classList.remove('is-flash'); }, 2400);
         }
 
         tryFlash(MAX_TRIES);
       }
 
-      /* data-id属性セレクタ用の簡易エスケープ ★ */
+      /* data-id属性セレクタ用の簡易エスケープ */
       function cssEscape(s) {
         return String(s).replace(/["\\]/g, '\\$&');
       }
 
-      /* 月・週の予定 → 日ビューへジャンプし、その予定を強調 ★ */
+      /* 月・週の予定 → 日ビューへジャンプし、その予定を強調 */
       function goToEventInDay(id) {
         var ev = findEventById(id);
         if (!ev) return;
@@ -2063,18 +2073,19 @@
           var s = evStart(ev), e = evEnd(ev);
           var dowCls = dayClass(startOfDay(s)).replace(' is-', ' is-');
           return '<tr data-id="' + escapeHtml(ev.id) + '">' +
-            '<td class="col-sdate mono">' + fmtDate(s) + '</td>' +
+            /* ★変更: 表示形式を 7/28 に(fmtDate→fmtMD) */
+            '<td class="col-sdate mono">' + fmtMD(s) + '</td>' +
             '<td class="col-dow mono' + dowCls + '">' + DOW[s.getDay()] + '</td>' +
             '<td class="col-stime mono">' + (ev.all_day ? '—' : fmtTime(s)) + '</td>' +
-            '<td class="mono">' + fmtDate(e) + '</td>' +
+            '<td class="mono">' + fmtMD(e) + '</td>' +
             '<td class="mono">' + (ev.all_day ? '—' : fmtTime(e)) + '</td>' +
             '<td>' + (ev.all_day ? '終日' : '') + '</td>' +
             '<td class="col-cat">' + badgesHtml(ev.category) + '</td>' +
             '<td class="col-title">' + highlight(ev.title) + '</td>' +
             '<td class="col-place">' + (ev.place ? highlight(ev.place) : '<span class="dim">—</span>') + '</td>' +
             '<td class="col-memo">' + (ev.memo ? highlight(ev.memo) : '<span class="dim">—</span>') + '</td>' +
-            '<td class="mono dim">' + (ev.created ? fmtDate(parseGasStr(ev.created)) : '—') + '</td>' +
-            '<td class="mono dim">' + (ev.updated ? fmtDate(parseGasStr(ev.updated)) : '—') + '</td>' +
+            '<td class="mono dim">' + (ev.created ? fmtMD(parseGasStr(ev.created)) : '—') + '</td>' +
+            '<td class="mono dim">' + (ev.updated ? fmtMD(parseGasStr(ev.updated)) : '—') + '</td>' +
             '<td class="col-id dim">' + escapeHtml(ev.id) + '</td>' +
             '</tr>';
         }).join('');
@@ -2317,6 +2328,9 @@
       /* ===== 起動 ===== */
       function init() {
         updateAppbarHeight();
+        // ★追加: 常設要素(ヘッダー・共通スクロールバー)へのリスナーは起動時に1度だけ張る
+        weekSync = createScrollSync($('weekHourScroll'), $('weekScrollTrack'));
+        daySync = createScrollSync($('dayHourScroll'), $('dayScrollTrack'));
         bindEvents();
         loadCategories(function () {
           loadList();
@@ -2330,5 +2344,3 @@
   </script>
 </body>
 </html>
-
-
