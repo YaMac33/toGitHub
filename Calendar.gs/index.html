@@ -19,34 +19,81 @@
       --now: #e5484d;
       --sat: #1d6fd0;
       --holiday: #d92d20;
-      --cat-work: #2438c8;
-      --cat-private: #0d7a63;
-      --cat-other: #7b3ba8;
+      --cat-fallback: #767c86;
+      --hl-1: #fff3a3;
+      --hl-2: #b8f0d0;
+      --hl-3: #ffd3c4;
       --font-display: "Noto Sans JP", sans-serif;
       --font-body: "Noto Sans JP", sans-serif;
       --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       --gap: 20px;
       --hour-h: 44px;
       --gutter-w: 46px;
+
+      /* ★軸転置(縦=日付/横=時刻)用の寸法 */
+      --hour-w: 72px;             /* 1時間あたりの横幅 */
+      --daycol-w: 88px;           /* 週ビュー: 左の固定日付列の幅 */
+      --lane-h: 46px;             /* ★時間ありイベント1レーンの高さ(30→46) */
+      --allday-lane-h: 26px;      /* ★終日レーンの高さ(22→26 バランス調整) */
+      /* ★アプリバー実高さ(JSで計測して上書き)。一覧の日付見出しstickyに使う */
+      --appbar-h: 104px;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
     body { font-family: var(--font-body); font-size: 15px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
     .wrap { max-width: 920px; margin: 0 auto; padding: 0 var(--gap) 96px; }
-
-    /* ===== アプリバー ===== */
+        /* ===== アプリバー(2段固定ヘッダー) ===== */
     .app-bar {
       position: sticky; top: 0; z-index: 20;
-      background: rgba(255,255,255,0.88);
+      background: rgba(255,255,255,0.92);
       backdrop-filter: saturate(180%) blur(12px);
       border-bottom: 1px solid var(--rule);
     }
-    .app-bar-inner {
-      max-width: 920px; margin: 0 auto; padding: 14px var(--gap);
+    .app-bar-top {
+      max-width: 920px; margin: 0 auto; padding: 12px var(--gap);
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
-    .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 16px; margin: 0; }
+    .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 16px; margin: 0; flex: 0 0 auto; }
     .wordmark span { border-bottom: 2px solid var(--accent); padding-bottom: 2px; }
+    .app-bar-actions { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; justify-content: flex-end; }
+
+    /* 下段: タブ */
+    .app-bar-tabs {
+      border-top: 1px solid var(--rule-soft);
+      background: rgba(255,255,255,0.6);
+    }
+    .app-bar-tabs-inner {
+      max-width: 920px; margin: 0 auto; padding: 0 var(--gap);
+      display: flex; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .app-bar-tabs-inner::-webkit-scrollbar { height: 0; }
+    .tab-btn {
+      font-family: var(--font-body); font-size: 13px; font-weight: 500;
+      padding: 10px 16px; border: none; border-bottom: 2px solid transparent;
+      background: transparent; color: var(--muted); cursor: pointer; white-space: nowrap; flex: 0 0 auto;
+    }
+    .tab-btn:hover { color: var(--ink); }
+    .tab-btn.is-on { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .search-box { position: relative; flex: 0 1 260px; min-width: 130px; }
+    .search-box input {
+      width: 100%; font-family: var(--font-body); font-size: 13px; line-height: 1;
+      padding: 9px 30px 9px 32px; border: 1px solid var(--rule); border-radius: 999px;
+      background: var(--paper); color: var(--ink);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .search-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .search-box .search-icon {
+      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+      font-size: 13px; color: var(--muted); pointer-events: none;
+    }
+    .search-box .search-clear {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      border: none; background: none; color: var(--muted); cursor: pointer;
+      font-size: 15px; line-height: 1; padding: 4px 6px; border-radius: 50%; display: none;
+    }
+    .search-box .search-clear:hover { background: var(--rule-soft); color: var(--ink); }
+    .search-box.has-value .search-clear { display: block; }
 
     .btn {
       font-family: var(--font-body); font-size: 13px; font-weight: 500; line-height: 1;
@@ -64,44 +111,69 @@
     .btn[disabled] { opacity: 0.45; cursor: default; }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
-    /* ===== ビュータブ ===== */
-    .tabs { display: flex; gap: 4px; padding: 14px 0 4px; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
-    .tab-btn {
-      font-family: var(--font-body); font-size: 13px; font-weight: 500;
-      padding: 8px 14px; border-radius: 999px 999px 0 0; border: 1px solid transparent;
-      background: transparent; color: var(--muted); cursor: pointer;
+    .btn-filter { display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+    .btn-filter .filter-count {
+      font-family: var(--font-mono); font-size: 10.5px; line-height: 1;
+      background: var(--accent); color: #fff; border-radius: 999px; padding: 3px 6px; min-width: 18px; text-align: center;
     }
-    .tab-btn.is-on { color: var(--accent); border-bottom: 2px solid var(--accent); }
+    .btn-filter.is-all .filter-count { background: var(--muted); }
 
-    /* ===== ナビ(月・週・日・テーブル共通) ===== */
+    .filter-panel {
+      position: fixed; top: 104px; right: 16px; z-index: 40;
+      width: 260px; max-width: calc(100vw - 32px);
+      background: var(--paper); border: 1px solid var(--rule); border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(16,18,22,0.16); padding: 12px; display: none;
+    }
+    .filter-panel.is-open { display: block; }
+    .filter-panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em;
+      color: var(--muted); padding: 2px 4px 10px;
+    }
+    .filter-panel-actions { display: flex; gap: 6px; }
+    .filter-link {
+      font-family: var(--font-body); font-size: 11.5px; color: var(--accent);
+      background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+    }
+    .filter-link:hover { background: var(--accent-soft); }
+    .filter-list { max-height: 50vh; overflow-y: auto; }
+    .filter-item {
+      display: flex; align-items: center; gap: 9px; padding: 8px 6px; border-radius: 8px; cursor: pointer;
+    }
+    .filter-item:hover { background: var(--rule-soft); }
+    .filter-item input { width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--accent); }
+    .filter-item .swatch { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
+    .filter-item .cat-name { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .filter-backdrop { position: fixed; inset: 0; z-index: 39; background: transparent; display: none; }
+    /* ★フィルター背面レイヤーを開いている間だけ表示(外側クリック検知) */
+    .filter-backdrop.is-open { display: block; }
+
+    mark.hl { padding: 0 1px; border-radius: 2px; color: var(--ink); }
+    mark.hl-0 { background: var(--hl-1); }
+    mark.hl-1 { background: var(--hl-2); }
+    mark.hl-2 { background: var(--hl-3); }
+
     .nav-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 4px; gap: 10px; }
     .nav-label { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
     .nav-btns { display: flex; gap: 6px; }
 
-    /* ===== 一覧:期間表示・カテゴリ絞り込み ===== */
-    .range-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 0 4px; flex-wrap: wrap; gap: 10px;
-    }
+    .range-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 4px; flex-wrap: wrap; gap: 10px; }
     .range-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
-    .seg { display: flex; gap: 6px; flex-wrap: wrap; }
-    .seg-btn {
-      font-family: var(--font-body); font-size: 12px; font-weight: 500; letter-spacing: 0.02em;
-      padding: 7px 14px; border-radius: 999px; border: 1px solid var(--rule);
-      background: var(--paper); color: var(--muted); cursor: pointer; transition: all 0.15s ease;
-    }
-    .seg-btn:hover { border-color: #cfd3dc; color: var(--ink); }
-    .seg-btn.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 
-    /* ===== 一覧(日付グルーピング) ===== */
     .rows { margin-top: 10px; }
     .date-group { margin-top: 22px; }
     .date-group:first-child { margin-top: 10px; }
+
+    /* ★一覧の日付見出し: 強調 + アプリバー直下にstickyで追従 */
     .date-head {
-      font-family: var(--font-mono); font-size: 12px; color: var(--muted);
-      padding: 4px 0; border-bottom: 1px solid var(--rule-soft); letter-spacing: 0.04em;
+      position: sticky; top: var(--appbar-h); z-index: 10;
+      font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--ink);
+      padding: 8px 10px; margin: 0 -10px;
+      background: var(--rule-soft);
+      border-bottom: 1px solid var(--rule);
+      letter-spacing: 0.02em;
     }
-    .date-head.is-today { color: var(--accent); font-weight: 700; }
+    .date-head.is-today { color: var(--accent); background: var(--accent-soft); border-bottom-color: var(--accent); }
 
     .row {
       display: grid; grid-template-columns: 76px 1fr auto;
@@ -119,20 +191,28 @@
     .row-time { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
     .row-time.is-allday { color: var(--accent); }
     .row-title { font-size: 15.5px; font-weight: 500; line-height: 1.6; }
+    .row-place { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .row-place::before { content: "@ "; }
+    /* 一覧ビュー: メモを改行込みで全文表示 */
+    .row-memo {
+      font-size: 13px; color: #33383f; margin-top: 8px;
+      white-space: pre-wrap; word-break: break-word;
+      padding-top: 8px; border-top: 1px dashed var(--rule-soft);
+    }
     .badge {
       font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em;
       padding: 4px 8px; border: 1px solid currentColor; border-radius: 3px;
       white-space: nowrap; display: inline-block;
     }
-    .badge[data-cat="仕事"] { color: var(--cat-work); }
-    .badge[data-cat="私用"] { color: var(--cat-private); }
-    .badge[data-cat="その他"] { color: var(--cat-other); }
+    .badges { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    .badge-more {
+      font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+      padding: 3px 4px; white-space: nowrap;
+    }
 
     .empty { padding: 64px 0; text-align: center; color: var(--muted); font-size: 14px; }
     .empty strong { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
-
-    /* ===== 月表示 ===== */
-    .month-grid-head { display: grid; grid-template-columns: repeat(7, 1fr); padding-top: 10px; }
+        .month-grid-head { display: grid; grid-template-columns: repeat(7, 1fr); padding-top: 10px; }
     .month-grid-head span { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: center; padding-bottom: 6px; display: block; }
     .month-grid-head span.dow-sat { color: var(--sat); }
     .month-grid-head span.dow-sun { color: var(--holiday); }
@@ -167,115 +247,148 @@
       grid-row: 2; align-self: start; margin: 1px 2px 0; height: 17px; line-height: 17px;
       font-size: 11px; padding: 0 5px; border-radius: 3px; overflow: hidden;
       text-overflow: ellipsis; white-space: nowrap; color: #fff; cursor: pointer;
+      transition: filter 0.12s ease, box-shadow 0.12s ease;   /* ★ホバー強調用 */
     }
     .month-bar.slot-1 { grid-row: 3; }
-    .month-bar[data-cat="仕事"] { background: var(--cat-work); }
-    .month-bar[data-cat="私用"] { background: var(--cat-private); }
-    .month-bar[data-cat="その他"] { background: var(--cat-other); }
+    /* ★修正3: 月ビューのイベント自身をホバー強調(セルではなくバー/アイテムを強調) */
+    .month-bar:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--accent);
+      position: relative; z-index: 5;
+    }
+    .month-bar-cats { display: inline; }
+    .month-bar-cat {
+      display: inline-block; font-size: 9px; line-height: 1; padding: 1px 3px; margin-right: 2px;
+      border-radius: 2px; background: rgba(255,255,255,0.28); vertical-align: middle;
+    }
+    .month-bar-more { font-size: 9px; opacity: 0.9; margin-right: 2px; }
     .month-item {
       grid-row: 2; align-self: start; margin: 1px 2px 0; height: 17px; line-height: 17px;
       font-size: 11px; padding: 0 3px; overflow: hidden; white-space: nowrap; cursor: pointer; color: var(--ink);
+      border-radius: 3px; transition: background 0.12s ease, box-shadow 0.12s ease;   /* ★ホバー強調用 */
     }
     .month-item.slot-1 { grid-row: 3; }
+    /* ★修正3: 時間ありイベント(month-item)も自身をホバー強調 */
+    .month-item:hover {
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--accent);
+      position: relative; z-index: 5;
+    }
     .month-item .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
-    .month-item[data-cat="仕事"] .dot { background: var(--cat-work); }
-    .month-item[data-cat="私用"] .dot { background: var(--cat-private); }
-    .month-item[data-cat="その他"] .dot { background: var(--cat-other); }
     .month-more {
       grid-row: 4; align-self: start; margin: 0 2px; font-family: var(--font-mono);
       font-size: 10px; color: var(--muted); cursor: pointer;
     }
     .month-more:hover { color: var(--accent); }
 
-    /* ===== 週表示・日表示(共通の時間軸) ===== */
-    .week-head {
-      display: grid; grid-template-columns: var(--gutter-w) repeat(7, 1fr);
-      border-bottom: 1px solid var(--rule); padding-top: 10px;
+    /* ===== 週・日ビュー(軸転置: 縦=日付 / 横=時刻) ★ここから全面置換 ===== */
+
+    /* ★修正1: 週ビューの2ブロック(前半3日/後半4日)ラッパー */
+    .tl-block { margin-bottom: 26px; }
+    .tl-block:last-child { margin-bottom: 0; }
+
+    /* 上部の時刻目盛りヘッダー */
+    .tl-header { display: flex; border-bottom: 1px solid var(--rule); padding-top: 10px; }
+    .tl-header-spacer { flex: 0 0 var(--daycol-w); }              /* 週: 日付列ぶんの余白 */
+    .tl-header-scroll { flex: 1 1 auto; overflow: hidden; }        /* 本体と横スクロール連動 */
+    .tl-hours { display: grid; grid-auto-flow: column; grid-auto-columns: var(--hour-w); }
+    .tl-hour {
+      font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+      padding: 2px 0 6px 4px; border-left: 1px solid var(--rule-soft); white-space: nowrap;
     }
-    .week-head-cell { text-align: center; padding: 4px 0 6px; cursor: pointer; }
-    .week-head-cell:hover .week-head-num { background: var(--rule-soft); }
-    .week-head-dow { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); display: block; }
-    .week-head-num {
-      font-family: var(--font-mono); font-size: 14px; display: inline-block;
-      width: 26px; height: 26px; line-height: 26px; border-radius: 50%; margin-top: 2px;
+
+    /* 本体: 日付行を縦に積む(週=7行 / 日=1行)。ページ全体でスクロール */
+    .tl-body { }
+    .tl-row { display: flex; border-bottom: 1px solid var(--rule); }
+    .tl-row.is-today { background: #fcfcff; }
+
+    /* 週ビューの固定日付列 */
+    .tl-daycol {
+      flex: 0 0 var(--daycol-w);
+      position: sticky; left: 0; z-index: 4;
+      background: var(--paper);
+      border-right: 1px solid var(--rule);
+      padding: 6px 8px; cursor: pointer;
+      display: flex; flex-direction: column; justify-content: center;
     }
-    .week-head-holiday {
-      display: block; font-size: 9px; line-height: 1.3; color: var(--holiday);
-      padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    .tl-row.is-today .tl-daycol { background: #fcfcff; }
+    .tl-daycol:hover { background: var(--rule-soft); }
+    .tl-daycol .d-num { font-family: var(--font-mono); font-size: 16px; line-height: 1.15; }
+    .tl-daycol .d-dow { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+    .tl-daycol .d-holiday {
+      font-size: 9px; line-height: 1.2; color: var(--holiday);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .week-head-cell.is-sat .week-head-dow, .week-head-cell.is-sat .week-head-num { color: var(--sat); }
-    .week-head-cell.is-sun .week-head-dow, .week-head-cell.is-sun .week-head-num,
-    .week-head-cell.is-holiday .week-head-dow, .week-head-cell.is-holiday .week-head-num { color: var(--holiday); }
-    .week-head-cell.is-other .week-head-dow,
-    .week-head-cell.is-other .week-head-num { color: var(--muted); }
-    .week-head-cell.is-other .week-head-holiday { opacity: 0.45; }
-    .week-head-cell.is-today .week-head-num { background: var(--accent); color: #fff; }
+    .tl-daycol.is-sat .d-num, .tl-daycol.is-sat .d-dow { color: var(--sat); }
+    .tl-daycol.is-sun .d-num, .tl-daycol.is-sun .d-dow,
+    .tl-daycol.is-holiday .d-num, .tl-daycol.is-holiday .d-dow { color: var(--holiday); }
+
+    /* 時刻レーン領域(横スクロール) */
+        /* 時刻レーン領域(各行のスクロールバーは隠す。ブロック共通バーで操作) ★ */
+    .tl-lanes-scroll {
+      flex: 1 1 auto; overflow-x: auto; overflow-y: hidden;
+      scrollbar-width: none;              /* Firefox: スクロールバー非表示 */
+      -ms-overflow-style: none;           /* 旧Edge/IE */
+    }
+    .tl-lanes-scroll::-webkit-scrollbar { height: 0; width: 0; }   /* WebKit: 非表示 */
+
+        /* ★ブロック共通の横スクロールバー(ブロック末尾に1本だけ表示) */
+    .tl-scrollbar {
+      display: flex;
+      margin-top: 0;
+      overflow: hidden;                 /* 外枠はスクロールしない */
+      border-bottom: 1px solid var(--rule);
+    }
+    .tl-scrollbar-spacer { flex: 0 0 var(--daycol-w); }   /* 日付列ぶんの余白 */
+    .tl-scrollbar-track {
+      flex: 1 1 auto; min-width: 0;      /* ★flex子要素の縮小を許可(これが無いと中身が縮まずスクロールしない) */
+      overflow-x: auto; overflow-y: hidden;   /* ★ここがスクロール要素 */
+    }
+    .tl-scrollbar-inner { height: 12px; }   /* ★中身に幅を持たせて横スクロールを発生させる帯 */
+
+    .tl-lanes { position: relative; }
+    /* 1時間ごとの薄い縦罫線 */
+    .tl-grid {
+      position: absolute; inset: 0; pointer-events: none;
+      background-image: repeating-linear-gradient(
+        to right, var(--rule-soft) 0, var(--rule-soft) 1px, transparent 1px, transparent var(--hour-w));
+    }
+
+    /* 終日レーン */
+    .tl-allday { position: relative; border-bottom: 1px dashed var(--rule); }
+    .tl-allbar {
+      position: absolute; top: 2px; height: calc(var(--allday-lane-h) - 4px);
+      line-height: calc(var(--allday-lane-h) - 4px);
+      border-radius: 3px; color: #fff; font-size: 11px; padding: 0 6px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
+    }
+
+    /* 時間ありイベントのレーン群 */
+    .tl-timed { position: relative; }
+    .tl-ev {
+      position: absolute; border-radius: 4px; color: #fff; cursor: pointer;
+      font-size: 11px; line-height: 1.3; padding: 1px 6px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.7);
+      height: calc(var(--lane-h) - 4px);
+    }
+    .tl-ev .t-time { font-family: var(--font-mono); font-size: 9.5px; opacity: 0.85; display: block; }
+    .tl-ev .t-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .tl-ev.clip-left { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-style: dashed; }
+    .tl-ev.clip-right { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right-style: dashed; }
+
+    /* 現在時刻の縦線 */
+    .tl-now { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--now); z-index: 3; pointer-events: none; }
+    .tl-now::before {
+      content: ""; position: absolute; top: -4px; left: -5px; width: 8px; height: 8px;
+      border-radius: 50%; background: var(--now);
+    }
+
     .nav-label .is-sat { color: var(--sat); }
     .nav-label .is-sun, .nav-label .is-holiday { color: var(--holiday); }
     .day-holiday { margin-left: 10px; font-size: 12.5px; font-weight: 500; color: var(--holiday); }
 
-    .allday-band {
-      display: grid; border-bottom: 1px solid var(--rule); min-height: 22px;
-    }
-    .week-allday { grid-template-columns: var(--gutter-w) repeat(7, 1fr); }
-    .day-allday { grid-template-columns: var(--gutter-w) 1fr; }
-    .allday-label {
-      font-family: var(--font-mono); font-size: 9.5px; color: var(--muted);
-      text-align: right; padding: 4px 6px 0 0; grid-column: 1;
-    }
-    .allday-lanes { grid-column: 2 / -1; display: grid; gap: 2px 0; padding: 3px 0; }
-    .week-allday .allday-lanes { grid-template-columns: repeat(7, 1fr); }
-    .day-allday .allday-lanes { grid-template-columns: 1fr; }
-    .allbar {
-      height: 18px; line-height: 18px; margin: 0 2px; padding: 0 6px; border-radius: 3px;
-      font-size: 11px; color: #fff; overflow: hidden; text-overflow: ellipsis;
-      white-space: nowrap; cursor: pointer;
-    }
-    .allbar[data-cat="仕事"] { background: var(--cat-work); }
-    .allbar[data-cat="私用"] { background: var(--cat-private); }
-    .allbar[data-cat="その他"] { background: var(--cat-other); }
+    /* ===== 週・日ビュー 全面置換ここまで ===== */
 
-    .time-scroll {
-      height: 62vh; min-height: 360px; overflow-y: auto; overflow-x: hidden;
-      border-bottom: 1px solid var(--rule);
-    }
-    .time-body { display: grid; }
-    .week-body { grid-template-columns: var(--gutter-w) repeat(7, 1fr); }
-    .day-body { grid-template-columns: var(--gutter-w) 1fr; }
-    .time-gutter { grid-column: 1; }
-    .gutter-hour {
-      height: var(--hour-h); font-family: var(--font-mono); font-size: 10px;
-      color: var(--muted); text-align: right; padding-right: 6px;
-    }
-    .time-col {
-      position: relative; border-left: 1px solid var(--rule-soft);
-      background-image: repeating-linear-gradient(
-        to bottom,
-        var(--rule-soft) 0px, var(--rule-soft) 1px,
-        transparent 1px, transparent var(--hour-h)
-      );
-    }
-    .time-col.is-today { background-color: #fcfcff; }
-    .time-ev {
-      position: absolute; border-radius: 4px; padding: 1px 5px; overflow: hidden;
-      font-size: 11px; line-height: 1.35; color: #fff; cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.7);
-    }
-    .time-ev[data-cat="仕事"] { background: var(--cat-work); }
-    .time-ev[data-cat="私用"] { background: var(--cat-private); }
-    .time-ev[data-cat="その他"] { background: var(--cat-other); }
-    .time-ev-time { font-family: var(--font-mono); font-size: 9.5px; opacity: 0.85; display: block; }
-    .time-ev-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
-    .time-now {
-      position: absolute; left: 0; right: 0; height: 0;
-      border-top: 2px solid var(--now); z-index: 3; pointer-events: none;
-    }
-    .time-now::before {
-      content: ""; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px;
-      border-radius: 50%; background: var(--now);
-    }
-
-    /* ===== 日表示:詳細カード ===== */
     .day-cards-head {
       font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
       color: var(--muted); margin: 28px 0 12px;
@@ -289,6 +402,8 @@
     .day-card-time { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 500; }
     .day-card-cont { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
     .day-card-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; line-height: 1.6; margin: 8px 0 0; }
+    .day-card-place { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .day-card-place::before { content: "@ "; }
     .day-card-memo {
       white-space: pre-wrap; word-break: break-word; font-size: 14px;
       margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rule-soft); color: #33383f;
@@ -300,7 +415,6 @@
     }
     .day-card-meta { display: flex; gap: 14px; flex-wrap: wrap; }
 
-    /* ===== テーブル表示 ===== */
     .table-scroll {
       margin-top: 12px; border: 1px solid var(--rule); border-radius: 8px;
       overflow: auto; max-height: 68vh;
@@ -330,13 +444,14 @@
     .rec-table td.col-dow.is-sun, .rec-table td.col-dow.is-holiday { color: var(--holiday); }
     .rec-table td.mono { font-family: var(--font-mono); font-size: 12px; }
     .rec-table td.col-memo { max-width: 260px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
-    .rec-table td.col-title { font-weight: 500; }
-    .rec-table tbody tr { cursor: pointer; }
-    .rec-table tbody tr:hover td { background: #fbfbfd; }
-    .rec-table .dim { color: #c3c7d0; }
+    .rec-table td.col-place { max-width: 160px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+    .rec-table td.col-title { max-width: 220px; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+    .rec-table td.col-cat { white-space: normal; }
+    .rec-table td.is-expanded { max-width: none; overflow: visible; text-overflow: clip; }
+    .rec-table td .dim { color: var(--muted); }
     .table-count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 10px; }
+    .table-hint { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-    /* ===== 詳細・フォーム ===== */
     .page-head {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
       padding: 20px 0; border-bottom: 1px solid var(--rule); flex-wrap: wrap;
@@ -361,43 +476,83 @@
     .check-line input { width: 16px; height: 16px; }
     .check-line label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 
+    /* 分類チェックボックス群(新規作成・編集フォーム共用) */
+    .cat-checks {
+      border: 1px solid var(--rule); border-radius: 8px; padding: 6px;
+      display: flex; flex-direction: column; gap: 2px; max-height: 200px; overflow-y: auto;
+    }
+    .cat-check {
+      display: flex; align-items: center; gap: 9px; padding: 8px 8px; border-radius: 6px; cursor: pointer;
+    }
+    .cat-check:hover { background: var(--rule-soft); }
+    .cat-check input { width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--accent); }
+    .cat-check .swatch { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
+    .cat-check .cat-name { font-size: 14px; }
+    .cat-hint { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); margin-top: 7px; }
+
     .view { display: none; }
     .view.is-active { display: block; }
 
     @media (max-width: 640px) {
-      :root { --gap: 16px; --hour-h: 38px; --gutter-w: 38px; }
+      :root {
+        --gap: 16px; --hour-h: 38px; --gutter-w: 38px;
+        --hour-w: 60px; --daycol-w: 68px;   /* ★スマホ幅は狭める */
+      }
+      .app-bar-top { flex-wrap: wrap; }
+      .app-bar-tabs-inner { padding: 0 8px; }
+      .search-box { flex: 1 1 100%; order: 3; }
       .row-2col { grid-template-columns: 1fr; }
       .tab-btn { padding: 8px 11px; font-size: 12.5px; }
       .month-daynum { width: 17px; height: 17px; line-height: 17px; font-size: 10px; }
       .month-bar, .month-item { font-size: 9.5px; height: 15px; line-height: 15px; }
       .month-week { grid-template-rows: 19px 17px 17px 14px; }
-      .week-head-num { width: 22px; height: 22px; line-height: 22px; font-size: 12px; }
-      .time-ev { font-size: 9.5px; padding: 0 3px; }
-      .week-body .time-ev .time-ev-time { display: none; }
-      .rec-table th.col-sdate, .rec-table td.col-sdate { width: 92px; min-width: 92px; }
-      .rec-table th.col-dow, .rec-table td.col-dow { left: 92px; width: 28px; min-width: 28px; }
-      .rec-table th.col-stime, .rec-table td.col-stime { left: 120px; width: 66px; min-width: 66px; }
+      .tl-daycol .d-num { font-size: 14px; }             /* ★ */
+      .tl-ev { font-size: 9.5px; padding: 0 3px; }        /* ★ */
     }
   </style>
 </head>
+
 <body>
 
   <header class="app-bar">
-    <div class="app-bar-inner">
-      <h1 class="wordmark"><span>カレンダー</span></h1>
-      <button class="btn btn-primary" id="btnNew">予定を追加</button>
+    <div class="app-bar-top">
+      <h1 class="wordmark"><span>試作カレンダー（正式な予定ではありません）</span></h1>
+      <div class="app-bar-actions">
+        <div class="search-box" id="searchBox">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="searchInput" placeholder="検索（スペースでAND）" autocomplete="off">
+          <button class="search-clear" id="searchClear" title="クリア">×</button>
+        </div>
+        <button class="btn btn-filter" id="btnFilter">
+          分類<span class="filter-count" id="filterCount">全</span>
+        </button>
+        <button class="btn btn-primary" id="btnNew">予定を追加</button>
+      </div>
     </div>
+    <nav class="app-bar-tabs">
+      <div class="app-bar-tabs-inner" id="tabs">
+        <button class="tab-btn is-on" data-tab="month">月</button>
+        <button class="tab-btn" data-tab="week">週</button>
+        <button class="tab-btn" data-tab="day">日</button>
+        <button class="tab-btn" data-tab="list">一覧</button>
+        <button class="tab-btn" data-tab="table">テーブル</button>
+      </div>
+    </nav>
   </header>
 
-  <main class="wrap">
-
-    <div class="tabs" id="tabs">
-      <button class="tab-btn is-on" data-tab="month">月</button>
-      <button class="tab-btn" data-tab="week">週</button>
-      <button class="tab-btn" data-tab="day">日</button>
-      <button class="tab-btn" data-tab="list">一覧</button>
-      <button class="tab-btn" data-tab="table">テーブル</button>
+  <div class="filter-backdrop" id="filterBackdrop"></div>
+  <div class="filter-panel" id="filterPanel">
+    <div class="filter-panel-head">
+      <span>分類でしぼり込み</span>
+      <div class="filter-panel-actions">
+        <button class="filter-link" id="filterAll">すべて</button>
+        <button class="filter-link" id="filterClear">解除</button>
+      </div>
     </div>
+    <div class="filter-list" id="filterList"></div>
+  </div>
+
+  <main class="wrap">
 
     <!-- ===== 月表示 ===== -->
     <section id="view-month" class="view is-active">
@@ -415,7 +570,7 @@
       <div class="month-weeks" id="monthBody"></div>
     </section>
 
-    <!-- ===== 週表示 ===== -->
+    <!-- ===== 週表示(軸転置: 縦=日付 / 横=時刻) ★修正1: 2ブロックをJSで動的生成するためコンテナ化 ===== -->
     <section id="view-week" class="view">
       <div class="nav-bar">
         <div class="nav-label" id="weekLabel"></div>
@@ -425,23 +580,11 @@
           <button class="btn btn-quiet" id="btnWeekNext">→</button>
         </div>
       </div>
-      <div class="week-head" id="weekHead"></div>
-      <div class="allday-band week-allday" id="weekAllDay"></div>
-      <div class="time-scroll" id="weekScroll">
-        <div class="time-body week-body">
-          <div class="time-gutter" id="weekGutter"></div>
-          <div class="time-col" data-col="0"></div>
-          <div class="time-col" data-col="1"></div>
-          <div class="time-col" data-col="2"></div>
-          <div class="time-col" data-col="3"></div>
-          <div class="time-col" data-col="4"></div>
-          <div class="time-col" data-col="5"></div>
-          <div class="time-col" data-col="6"></div>
-        </div>
-      </div>
+      <!-- ★前半3日/後半4日の2ブロックを renderWeek がここに生成する -->
+      <div id="weekBody"></div>
     </section>
 
-    <!-- ===== 日表示 ===== -->
+    <!-- ===== 日表示(軸転置: 日付列なし) ★ ===== -->
     <section id="view-day" class="view">
       <div class="nav-bar">
         <div class="nav-label" id="dayLabel"></div>
@@ -451,13 +594,13 @@
           <button class="btn btn-quiet" id="btnDayNext">→</button>
         </div>
       </div>
-      <div class="allday-band day-allday" id="dayAllDay"></div>
-      <div class="time-scroll" id="dayScroll">
-        <div class="time-body day-body">
-          <div class="time-gutter" id="dayGutter"></div>
-          <div class="time-col" id="dayCol"></div>
+      <div class="tl-header">
+        <div class="tl-header-scroll" id="dayHourScroll">
+          <div class="tl-hours" id="dayHours"></div>
         </div>
       </div>
+      <div class="tl-body" id="dayBody"></div>
+
       <div class="day-cards-head" id="dayCardsHead">この日の予定</div>
       <div id="dayCards"></div>
     </section>
@@ -466,12 +609,6 @@
     <section id="view-list" class="view">
       <div class="range-bar">
         <span class="range-label" id="rangeLabel"></span>
-        <div class="seg" id="seg">
-          <button class="seg-btn is-on" data-cat="">すべて</button>
-          <button class="seg-btn" data-cat="仕事">仕事</button>
-          <button class="seg-btn" data-cat="私用">私用</button>
-          <button class="seg-btn" data-cat="その他">その他</button>
-        </div>
       </div>
       <div class="rows" id="listBody"></div>
     </section>
@@ -498,6 +635,7 @@
               <th data-key="allday">終日</th>
               <th data-key="category">分類</th>
               <th data-key="title">予定名</th>
+              <th data-key="place">場所</th>
               <th data-key="memo">メモ</th>
               <th data-key="created">作成日時</th>
               <th data-key="updated">更新日時</th>
@@ -508,6 +646,7 @@
         </table>
       </div>
       <div class="table-count" id="tableCount"></div>
+      <div class="table-hint">セルをクリックすると、その内容を1行で全文表示します（もう一度クリックで元に戻ります）。検索語はスペース区切りでAND・最大3色でハイライトします。</div>
     </section>
 
     <!-- ===== 詳細・編集 ===== -->
@@ -516,18 +655,24 @@
         <button class="btn btn-quiet" id="btnBackFromDetail">← 戻る</button>
         <div class="page-head-actions">
           <span class="meta-id" id="d-id"></span>
+          <button class="btn" id="btnDuplicate">複写して新規作成</button>
           <button class="btn" id="btnDelete">削除</button>
           <button class="btn btn-primary" id="btnSave">保存</button>
         </div>
       </div>
 
       <div class="field">
-        <span class="label">分類</span>
-        <select class="select" id="d-category"></select>
+        <span class="label">分類（複数選択可）</span>
+        <div class="cat-checks" id="d-category-checks"></div>
+        <div class="cat-hint">チェックした分類がこの予定に付きます。先頭の分類の色が月・週の予定バーに使われます。</div>
       </div>
       <div class="field">
         <span class="label">予定名</span>
         <input type="text" class="input" id="d-title">
+      </div>
+      <div class="field">
+        <span class="label">場所</span>
+        <input type="text" class="input" id="d-place">
       </div>
       <div class="check-line">
         <input type="checkbox" id="d-allday">
@@ -540,7 +685,7 @@
         </div>
         <div class="field">
           <span class="label">開始時刻</span>
-          <input type="time" class="input" id="d-start-time">
+          <input type="time" class="input" id="d-start-time" step="900">
         </div>
       </div>
       <div class="row-2col">
@@ -550,7 +695,7 @@
         </div>
         <div class="field">
           <span class="label">終了時刻</span>
-          <input type="time" class="input" id="d-end-time">
+          <input type="time" class="input" id="d-end-time" step="900">
         </div>
       </div>
       <div class="field">
@@ -568,12 +713,17 @@
       </div>
 
       <div class="field">
-        <span class="label">分類</span>
-        <select class="select" id="n-category"></select>
+        <span class="label">分類（複数選択可）</span>
+        <div class="cat-checks" id="n-category-checks"></div>
+        <div class="cat-hint">複数選択すると、1件の予定に複数の分類が付きます。先頭の分類の色が月・週の予定バーに使われます。未選択の場合は「分類なし」で作成します。</div>
       </div>
       <div class="field">
         <span class="label">予定名</span>
         <input type="text" class="input" id="n-title" placeholder="例:定例ミーティング">
+      </div>
+      <div class="field">
+        <span class="label">場所</span>
+        <input type="text" class="input" id="n-place" placeholder="例:第1会議室">
       </div>
       <div class="check-line">
         <input type="checkbox" id="n-allday">
@@ -586,7 +736,7 @@
         </div>
         <div class="field">
           <span class="label">開始時刻</span>
-          <input type="time" class="input" id="n-start-time">
+          <input type="time" class="input" id="n-start-time" step="900">
         </div>
       </div>
       <div class="row-2col">
@@ -596,7 +746,7 @@
         </div>
         <div class="field">
           <span class="label">終了時刻</span>
-          <input type="time" class="input" id="n-end-time">
+          <input type="time" class="input" id="n-end-time" step="900">
         </div>
       </div>
       <div class="field">
@@ -612,26 +762,153 @@
       'use strict';
 
       var $ = function (id) { return document.getElementById(id); };
-      var CATEGORIES = ['仕事', '私用', 'その他'];
       var DOW = ['日', '月', '火', '水', '木', '金', '土'];
       var DAY_MS = 86400000;
       var HOUR_MS = 3600000;
-      var DEFAULT_START_TIME = '09:00';   // 終日を解除したときに入れる既定値
+      var DEFAULT_START_TIME = '09:00';
       var DEFAULT_END_TIME = '10:00';
+      var CAT_FALLBACK = '#767c86';
+      var HL_COLORS = 3;
+      var MONTH_BAR_MAX_CATS = 2;
+
+      /* ★軸転置(縦=日付/横=時刻)の定数 */
+      var TL_START_H = 6;    // 表示開始 6時
+      var TL_END_H = 22;     // 表示終了 22時
+      var TL_HOURS = TL_END_H - TL_START_H;   // 16時間
+      var TL_INIT_H = 8;     // 初期横スクロール位置 8時
+
+      /* ★修正1: 週ビューの2ブロック分割(前半3日 / 後半4日) */
+      var WEEK_BLOCKS = [3, 4];
+
+      var categories = [];
+      var colorMap = {};
 
       var allEvents = [];
-      var currentCat = '';
+      var selectedCats = {};
+      var filterInited = false;
+      var filterOpen = false;
+      var searchTerms = [];
       var currentId = null;
       var listRange = null;
       var lastMainView = 'month';
 
-      var holidays = {};       // 'yyyyMMdd' → 祝日名
-      var holidayLoaded = {};  // 取得済みの期間キー
+      var holidays = {};
+      var holidayLoaded = {};
 
       var monthState = { focus: null, grid: null, cache: {} };
-      var weekState = { focus: null, days: null, cache: {}, scrolled: false };
-      var dayState = { focus: null, events: [], cache: {}, scrolled: false };
+      var weekState = { focus: null, days: null, cache: {}, scrolledLeft: false, laneScrolls: [] };  // ★laneScrolls追加
+      var dayState = { focus: null, events: [], cache: {}, scrolledLeft: false };   // ★
       var tableState = { focus: null, rows: [], cache: {}, sortKey: 'start', sortDir: 1 };
+
+      function catColor(name) {
+        return colorMap[name] || CAT_FALLBACK;
+      }
+
+      /* ===== 分類の共通ヘルパ(カンマ区切り文字列 ⇄ 配列) ===== */
+      function catList(raw) {
+        return String(raw || '').split(',').map(function (s) { return s.trim(); })
+          .filter(function (s) { return s.length > 0; });
+      }
+      function primaryCat(raw) {
+        var arr = catList(raw);
+        return arr.length ? arr[0] : '';
+      }
+      function primaryColor(raw) {
+        var arr = catList(raw);
+        return arr.length ? catColor(arr[0]) : CAT_FALLBACK;
+      }
+
+      /* ===== 分類フィルター(複数選択・デフォルト全チェック・OR判定) ===== */
+      function allFilterKeys() {
+        var keys = [''];
+        categories.forEach(function (c) { keys.push(c.name); });
+        return keys;
+      }
+      function selectedCount() {
+        var n = 0;
+        for (var k in selectedCats) if (selectedCats[k]) n++;
+        return n;
+      }
+      function isAllSelected() {
+        var keys = allFilterKeys();
+        for (var i = 0; i < keys.length; i++) if (!selectedCats[keys[i]]) return false;
+        return true;
+      }
+      function selectAllCats() {
+        selectedCats = {};
+        allFilterKeys().forEach(function (k) { selectedCats[k] = true; });
+      }
+      function clearAllCats() {
+        selectedCats = {};
+      }
+      function passCatFilter(ev) {
+        var arr = catList(ev.category);
+        if (arr.length === 0) return !!selectedCats[''];
+        for (var i = 0; i < arr.length; i++) {
+          if (selectedCats[arr[i]]) return true;
+        }
+        return false;
+      }
+
+      /* ===== テキスト検索(AND) ===== */
+      function parseSearch(raw) {
+        var parts = String(raw || '').replace(/\u3000/g, ' ').split(' ');
+        var terms = [];
+        for (var i = 0; i < parts.length; i++) {
+          var t = parts[i].trim().toLowerCase();
+          if (t) terms.push(t);
+        }
+        return terms;
+      }
+      function passSearch(ev) {
+        if (searchTerms.length === 0) return true;
+        var hay = ((ev.title || '') + '\n' + (ev.place || '') + '\n' + (ev.memo || '')).toLowerCase();
+        for (var i = 0; i < searchTerms.length; i++) {
+          if (hay.indexOf(searchTerms[i]) === -1) return false;
+        }
+        return true;
+      }
+      function passAll(ev) {
+        return passCatFilter(ev) && passSearch(ev);
+      }
+      function filterEvents(list) {
+        return list.filter(passAll);
+      }
+
+      function highlight(text) {
+        var safe = escapeHtml(text);
+        if (searchTerms.length === 0) return safe;
+
+        var lower = String(text || '').toLowerCase();
+        var marks = [];
+        for (var i = 0; i < searchTerms.length; i++) {
+          var term = searchTerms[i];
+          var from = 0, idx;
+          while ((idx = lower.indexOf(term, from)) !== -1) {
+            marks.push({ start: idx, end: idx + term.length, color: i % HL_COLORS });
+            from = idx + term.length;
+          }
+        }
+        if (marks.length === 0) return safe;
+
+        marks.sort(function (a, b) { return a.start - b.start || b.end - a.end; });
+        var merged = [];
+        var lastEnd = -1;
+        for (var m = 0; m < marks.length; m++) {
+          if (marks[m].start >= lastEnd) { merged.push(marks[m]); lastEnd = marks[m].end; }
+        }
+
+        var out = '';
+        var pos = 0;
+        for (var k = 0; k < merged.length; k++) {
+          var seg = merged[k];
+          out += escapeHtml(text.slice(pos, seg.start));
+          out += '<mark class="hl hl-' + seg.color + '">' + escapeHtml(text.slice(seg.start, seg.end)) + '</mark>';
+          pos = seg.end;
+        }
+        out += escapeHtml(text.slice(pos));
+        return out;
+      }
 
       /* ===== 日付ユーティリティ ===== */
       function pad2(n) { return ('0' + n).slice(-2); }
@@ -653,7 +930,6 @@
       function fromLocalInputValue(v) {
         return new Date(v.replace('T', ' ').replace(/-/g, '/'));
       }
-      // 日付欄+時刻欄(空欄可)を合成してDateにする。日付が空ならnull、時刻が空なら00:00扱い
       function combineDT(prefix, which) {
         var dv = $(prefix + '-' + which + '-date').value;
         var tv = $(prefix + '-' + which + '-time').value;
@@ -661,8 +937,19 @@
         return fromLocalInputValue(dv + 'T' + (tv || '00:00'));
       }
 
-      // 終了日時の自動補完(開始+1時間)。終了欄を手で編集したら以後は自動補完しない
-      var autoEndActive = { n: true, d: false };
+      function evStart(ev) {
+        var t = ev.all_day ? '' : (ev.start_time || '');
+        return fromLocalInputValue(toDateInput(ev.start_day) + 'T' + (t || '00:00'));
+      }
+      function evEnd(ev) {
+        var day = ev.end_day || ev.start_day;
+        var t = ev.all_day ? '' : (ev.end_time || '');
+        return fromLocalInputValue(toDateInput(day) + 'T' + (t || '00:00'));
+      }
+      function toDateInput(s) {
+        return String(s || '').replace(/\//g, '-');
+      }
+            var autoEndActive = { n: true, d: false };
 
       function wireDateTimeForm(prefix) {
         function recomputeEnd() {
@@ -671,7 +958,6 @@
           var st = $(prefix + '-start-time').value;
           if (!sd) return;
           if (!st) {
-            // 開始時刻が空欄 = 終日想定。終了日は開始日と同日、時刻は空欄のまま
             $(prefix + '-end-date').value = sd;
             $(prefix + '-end-time').value = '';
             return;
@@ -687,7 +973,6 @@
         $(prefix + '-end-date').addEventListener('input', function () { autoEndActive[prefix] = false; });
         $(prefix + '-end-time').addEventListener('input', function () { autoEndActive[prefix] = false; });
 
-        // 「終日」チェックボックスと時刻欄の表示を連動させる
         var cb = $(prefix + '-allday');
         cb.addEventListener('change', function () { applyAlldayVisibility(prefix); });
       }
@@ -704,7 +989,6 @@
           $(prefix + '-end-time').value = '';
           $(prefix + '-end-date').value = $(prefix + '-start-date').value;
         } else if (!$(prefix + '-start-time').value) {
-          // 時刻が空のままだと保存時に終日へ戻ってしまうので既定値を入れる
           $(prefix + '-start-time').value = DEFAULT_START_TIME;
           $(prefix + '-end-time').value = DEFAULT_END_TIME;
           if (!$(prefix + '-end-date').value) {
@@ -713,32 +997,69 @@
         }
       }
 
-      // フォームから予定データを組み立てる。開始時刻が空欄なら終日として扱う
-      function readEventForm(prefix) {
-        var startDt = combineDT(prefix, 'start');
+      function readCategoryChecks(prefix) {
+        var cbs = $(prefix + '-category-checks').querySelectorAll('input[type="checkbox"]');
+        var names = [];
+        for (var i = 0; i < cbs.length; i++) {
+          if (cbs[i].checked) names.push(cbs[i].getAttribute('data-cat'));
+        }
+        return names;
+      }
+
+      function readNewBase() {
+        var startDt = combineDT('n', 'start');
         if (!startDt) return { error: '開始日を入力してください。' };
-        var endDt = combineDT(prefix, 'end') || startDt;
-        var startTimeVal = $(prefix + '-start-time').value;
-        var allDay = $(prefix + '-allday').checked || !startTimeVal;
+        var endDt = combineDT('n', 'end') || startDt;
+        var startTimeVal = $('n-start-time').value;
+        var allDay = $('n-allday').checked || !startTimeVal;
 
         if (!allDay && endDt.getTime() < startDt.getTime()) {
           return { error: '終了日時が開始日時より前になっています。' };
         }
-
         return {
           error: null,
           data: {
-            category: $(prefix + '-category').value,
-            title: $(prefix + '-title').value,
+            title: $('n-title').value,
+            place: $('n-place').value,
             all_day: allDay,
-            start_at: toGasStr(startDt),
-            end_at: toGasStr(endDt),
-            memo: $(prefix + '-memo').value
+            start_day: toDateOut(startDt),
+            start_time: allDay ? '' : toTimeInputValue(startDt),
+            end_day: toDateOut(endDt),
+            end_time: allDay ? '' : toTimeInputValue(endDt),
+            memo: $('n-memo').value
           }
         };
       }
+
+      function readDetailForm() {
+        var startDt = combineDT('d', 'start');
+        if (!startDt) return { error: '開始日を入力してください。' };
+        var endDt = combineDT('d', 'end') || startDt;
+        var startTimeVal = $('d-start-time').value;
+        var allDay = $('d-allday').checked || !startTimeVal;
+
+        if (!allDay && endDt.getTime() < startDt.getTime()) {
+          return { error: '終了日時が開始日時より前になっています。' };
+        }
+        return {
+          error: null,
+          data: {
+            category: readCategoryChecks('d').join(','),
+            title: $('d-title').value,
+            place: $('d-place').value,
+            all_day: allDay,
+            start_day: toDateOut(startDt),
+            start_time: allDay ? '' : toTimeInputValue(startDt),
+            end_day: toDateOut(endDt),
+            end_time: allDay ? '' : toTimeInputValue(endDt),
+            memo: $('d-memo').value
+          }
+        };
+      }
+      function toDateOut(d) { return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()); }
+
       function fmtDate(d) { return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()); }
-      function fmtMD(d) { return (d.getMonth() + 1) + '/' + d.getDate(); } // テーブル用:年は見出し側で表示済み
+      function fmtMD(d) { return (d.getMonth() + 1) + '/' + d.getDate(); }
       function fmtDateHead(d) { return fmtDate(d) + '(' + DOW[d.getDay()] + ')'; }
       function fmtTime(d) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
       function isSameDay(a, b) {
@@ -746,10 +1067,9 @@
       }
       function dateKey(d) { return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()); }
 
-      // 予定の実効期間(終日は inclusive → exclusive に正規化)
       function effRange(ev) {
-        var s = parseGasStr(ev.start_at);
-        var e = parseGasStr(ev.end_at) || s;
+        var s = evStart(ev);
+        var e = evEnd(ev);
         if (ev.all_day) return { start: startOfDay(s), end: addDays(startOfDay(e), 1) };
         if (e.getTime() <= s.getTime()) e = new Date(s.getTime() + 60000);
         return { start: s, end: e };
@@ -781,14 +1101,122 @@
         }
       }
 
-      function fillCategorySelect(sel) {
-        sel.innerHTML = CATEGORIES.map(function (c) {
-          return '<option value="' + c + '">' + c + '</option>';
-        }).join('');
+      /* ★アプリバー実高さを計測 → --appbar-h に反映(一覧の日付見出しstickyの基準) */
+      function updateAppbarHeight() {
+        var bar = document.querySelector('.app-bar');
+        if (!bar) return;
+        document.documentElement.style.setProperty('--appbar-h', bar.offsetHeight + 'px');
+      }
+
+      /* ===== 分類(Categories駆動) ===== */
+      function loadCategories(callback) {
+        google.script.run
+          .withSuccessHandler(function (list) {
+            categories = list || [];
+            colorMap = {};
+            categories.forEach(function (c) { colorMap[c.name] = c.color; });
+            if (!filterInited) { selectAllCats(); filterInited = true; }
+            fillCategoryChecks('n');
+            fillCategoryChecks('d');
+            buildFilterList();
+            updateFilterButton();
+            if (callback) callback();
+          })
+          .withFailureHandler(function () {
+            categories = [];
+            colorMap = {};
+            if (!filterInited) { selectAllCats(); filterInited = true; }
+            fillCategoryChecks('n');
+            fillCategoryChecks('d');
+            buildFilterList();
+            updateFilterButton();
+            if (callback) callback();
+          })
+          .getCategories();
+      }
+
+      function fillCategoryChecks(prefix) {
+        var items = categories.map(function (c) {
+          return '<label class="cat-check">' +
+            '<input type="checkbox" data-cat="' + escapeHtml(c.name) + '">' +
+            '<span class="swatch" style="background:' + c.color + ';"></span>' +
+            '<span class="cat-name">' + escapeHtml(c.name) + '</span>' +
+            '</label>';
+        });
+        $(prefix + '-category-checks').innerHTML = items.join('') ||
+          '<div class="cat-hint" style="margin:6px;">分類が登録されていません。「分類なし」で作成されます。</div>';
+      }
+
+      function setCategoryChecks(prefix, names) {
+        var set = {};
+        (names || []).forEach(function (n) { set[n] = true; });
+        var cbs = $(prefix + '-category-checks').querySelectorAll('input[type="checkbox"]');
+        for (var i = 0; i < cbs.length; i++) {
+          cbs[i].checked = !!set[cbs[i].getAttribute('data-cat')];
+        }
+      }
+
+      function buildFilterList() {
+        var items = [];
+        items.push(filterItemHtml('', '(なし)', CAT_FALLBACK));
+        categories.forEach(function (c) {
+          items.push(filterItemHtml(c.name, c.name, c.color));
+        });
+        $('filterList').innerHTML = items.join('');
+      }
+      function filterItemHtml(value, label, color) {
+        var checked = selectedCats[value] ? ' checked' : '';
+        return '<label class="filter-item">' +
+          '<input type="checkbox" data-cat="' + escapeHtml(value) + '"' + checked + '>' +
+          '<span class="swatch" style="background:' + color + ';"></span>' +
+          '<span class="cat-name">' + escapeHtml(label) + '</span>' +
+          '</label>';
+      }
+
+      function updateFilterButton() {
+        var btn = $('btnFilter');
+        if (isAllSelected()) {
+          $('filterCount').textContent = '全';
+          btn.classList.add('is-all');
+        } else {
+          $('filterCount').textContent = selectedCount();
+          btn.classList.remove('is-all');
+        }
+      }
+
+      function openFilter() {
+        filterOpen = true;
+        $('filterPanel').classList.add('is-open');
+        $('filterBackdrop').classList.add('is-open');
+      }
+      function closeFilter() {
+        filterOpen = false;
+        $('filterPanel').classList.remove('is-open');
+        $('filterBackdrop').classList.remove('is-open');
+      }
+
+      function rerenderActiveView() {
+        var activeTab = document.querySelector('.tab-btn.is-on');
+        var tab = activeTab ? activeTab.getAttribute('data-tab') : 'month';
+        if (tab === 'month' && monthState.focus) loadMonth(monthState.focus);
+        else if (tab === 'week' && weekState.focus) loadWeek(weekState.focus);
+        else if (tab === 'day' && dayState.focus) loadDay(dayState.focus);
+        else if (tab === 'list') renderList();
+        else if (tab === 'table' && tableState.focus) renderTable();
+      }
+
+      function badgesHtml(raw) {
+        var arr = catList(raw);
+        if (arr.length === 0) {
+          return '<span class="badges"><span class="badge" style="color:' + CAT_FALLBACK + ';">(なし)</span></span>';
+        }
+        var chips = arr.map(function (name) {
+          return '<span class="badge" style="color:' + catColor(name) + ';">' + escapeHtml(name) + '</span>';
+        });
+        return '<span class="badges">' + chips.join('') + '</span>';
       }
 
       /* ===== 祝日 ===== */
-      // 祝日は変わらないので、一度取得した期間は再取得しない
       function loadHolidays(rangeStart, rangeEnd, callback) {
         var key = dateKey(rangeStart) + '-' + dateKey(rangeEnd);
         if (holidayLoaded[key]) { callback(); return; }
@@ -799,14 +1227,10 @@
             holidayLoaded[key] = true;
             callback();
           })
-          .withFailureHandler(function () {
-            // 祝日が取れなくてもカレンダー本体は表示する(次回また取りにいけるよう印は付けない)
-            callback();
-          })
+          .withFailureHandler(function () { callback(); })
           .getHolidays(toGasStr(rangeStart), toGasStr(rangeEnd));
       }
 
-      // 祝日 > 日曜 > 土曜 の優先で色分けクラスを返す
       function dayClass(d) {
         if (holidays[dateKey(d)]) return ' is-holiday';
         if (d.getDay() === 0) return ' is-sun';
@@ -827,7 +1251,6 @@
                scanCache(dayState.cache, id) || scanCache(tableState.cache, id);
       }
 
-      // 保存・削除・登録のあと、全ビューのキャッシュを作り直す
       function refreshAll(callback) {
         monthState.cache = {};
         weekState.cache = {};
@@ -866,11 +1289,14 @@
 
       function renderList() {
         var today = startOfDay(new Date());
-        var filtered = allEvents.filter(function (ev) { return !currentCat || ev.category === currentCat; });
+        var filtered = filterEvents(allEvents);
         var body = $('listBody');
 
         if (filtered.length === 0) {
-          body.innerHTML = '<div class="empty"><strong>この期間に予定はありません</strong>右上の「予定を追加」から登録できます。</div>';
+          var msg = (searchTerms.length || !isAllSelected())
+            ? '<strong>条件に合う予定はありません</strong>検索語や分類のしぼり込みを見直してください。'
+            : '<strong>この期間に予定はありません</strong>右上の「予定を追加」から登録できます。';
+          body.innerHTML = '<div class="empty">' + msg + '</div>';
           return;
         }
 
@@ -891,33 +1317,33 @@
           var rows = g.events.map(function (ev) {
             var timeHtml = ev.all_day
               ? '<span class="row-time is-allday">終日</span>'
-              : '<span class="row-time">' + fmtTime(parseGasStr(ev.start_at)) + '</span>';
+              : '<span class="row-time">' + fmtTime(evStart(ev)) + '</span>';
+            var titleBlock = '<div class="row-title">' + highlight(ev.title) + '</div>' +
+              (ev.place ? '<div class="row-place">' + highlight(ev.place) + '</div>' : '') +
+              (ev.memo ? '<div class="row-memo">' + highlight(ev.memo) + '</div>' : '');
             return '<div class="row" data-id="' + escapeHtml(ev.id) + '">' +
               '<div>' + timeHtml + '</div>' +
-              '<div class="row-title">' + escapeHtml(ev.title) + '</div>' +
-              '<div><span class="badge" data-cat="' + escapeHtml(ev.category) + '">' + escapeHtml(ev.category) + '</span></div>' +
+              '<div>' + titleBlock + '</div>' +
+              '<div>' + badgesHtml(ev.category) + '</div>' +
               '</div>';
           }).join('');
           var isToday = isSameDay(g.date, today);
           return '<div class="date-group" id="dg-' + dateKey(g.date) + '">' +
             '<div class="date-head' + (isToday ? ' is-today' : '') + '">' + fmtDateHead(g.date) +
-            (isToday ? '(今日)' : '') + '</div>' + rows + '</div>';
+            (isToday ? '（今日）' : '') + '</div>' + rows + '</div>';
         }).join('');
       }
-
-      /* ===== 終日帯の詰め込み(月・週・日で共通) ===== */
+            /* ===== 終日帯の詰め込み(月ビュー・軸転置の両方で使用) ===== */
       function falseRow(n) {
         var a = [];
         for (var i = 0; i < n; i++) a.push(false);
         return a;
       }
-
       function dayIndexIn(days, date) {
         for (var i = 0; i < days.length; i++) if (isSameDay(days[i], date)) return i;
         return -1;
       }
 
-      // 終日予定を days の列範囲にクリップして、重ならない最小スロットに割り当てる
       function packAllDay(events, days) {
         var n = days.length;
         var rangeStart = days[0];
@@ -957,23 +1383,6 @@
         return items;
       }
 
-      function renderAllDayBand(containerId, events, days) {
-        var items = packAllDay(events, days);
-        var laneCount = 0;
-        items.forEach(function (it) { if (it.slot + 1 > laneCount) laneCount = it.slot + 1; });
-
-        var lanes = items.map(function (it) {
-          return '<div class="allbar" style="grid-column:' + (it.colStart + 1) + '/' + (it.colEnd + 2) +
-            ';grid-row:' + (it.slot + 1) + ';" data-cat="' + escapeHtml(it.ev.category) +
-            '" data-id="' + escapeHtml(it.ev.id) + '">' + escapeHtml(it.ev.title) + '</div>';
-        }).join('');
-
-        $(containerId).innerHTML =
-          '<div class="allday-label">終日</div>' +
-          '<div class="allday-lanes" style="grid-template-rows:repeat(' + Math.max(laneCount, 1) + ', 18px);">' +
-          lanes + '</div>';
-      }
-
       /* ===== 月表示 ===== */
       function ymKey(d) { return d.getFullYear() + '-' + d.getMonth(); }
 
@@ -1002,13 +1411,13 @@
         var key = ymKey(focus);
         var events = null;
         var errMsg = '';
-        var pending = 2;   // 予定 + 祝日
+        var pending = 2;
         var done = function () {
           if (--pending > 0) return;
           if (errMsg) {
             $('monthBody').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(errMsg) + '</div>';
           } else {
-            renderMonth(events, grid);
+            renderMonth(filterEvents(events), grid);
           }
           if (callback) callback();
         };
@@ -1023,7 +1432,6 @@
           .getEvents(toGasStr(grid.rangeStart), toGasStr(grid.rangeEnd));
       }
 
-      // 月表示は終日バー + 時間指定(開始日のみ)を同じスロットに詰める
       function packMonthWeek(events, week) {
         var items = packAllDay(events, week);
         var occupied = [];
@@ -1035,7 +1443,7 @@
         var timed = [];
         events.forEach(function (ev) {
           if (ev.all_day) return;
-          var s = parseGasStr(ev.start_at);
+          var s = evStart(ev);
           var idx = dayIndexIn(week, startOfDay(s));
           if (idx === -1) return;
           timed.push({ ev: ev, colStart: idx, colEnd: idx, startTime: s });
@@ -1058,6 +1466,18 @@
         });
 
         return items;
+      }
+
+      function monthBarCatsHtml(raw) {
+        var arr = catList(raw);
+        if (arr.length === 0) return '';
+        var shown = arr.slice(0, MONTH_BAR_MAX_CATS);
+        var rest = arr.length - shown.length;
+        var chips = shown.map(function (name) {
+          return '<span class="month-bar-cat">' + escapeHtml(name) + '</span>';
+        }).join('');
+        var more = rest > 0 ? '<span class="month-bar-more">+' + rest + '</span>' : '';
+        return '<span class="month-bar-cats">' + chips + more + '</span>';
       }
 
       function renderMonth(events, grid) {
@@ -1087,12 +1507,15 @@
             }
             var colStyle = 'grid-column:' + (item.colStart + 1) + '/' + (item.colEnd + 2) + ';';
             var slotCls = item.slot === 1 ? ' slot-1' : '';
+            var color = primaryColor(item.ev.category);
             if (item.ev.all_day) {
-              return '<div class="month-bar' + slotCls + '" style="' + colStyle + '" data-cat="' + escapeHtml(item.ev.category) +
-                '" data-id="' + escapeHtml(item.ev.id) + '">' + escapeHtml(item.ev.title) + '</div>';
+              return '<div class="month-bar' + slotCls + '" style="' + colStyle + 'background:' + color +
+                ';" data-id="' + escapeHtml(item.ev.id) + '">' +
+                monthBarCatsHtml(item.ev.category) +
+                escapeHtml(item.ev.title) + '</div>';
             }
-            return '<div class="month-item' + slotCls + '" style="' + colStyle + '" data-cat="' + escapeHtml(item.ev.category) +
-              '" data-id="' + escapeHtml(item.ev.id) + '"><span class="dot"></span>' +
+            return '<div class="month-item' + slotCls + '" style="' + colStyle + '" data-id="' + escapeHtml(item.ev.id) + '">' +
+              '<span class="dot" style="background:' + color + ';"></span>' +
               fmtTime(item.startTime) + ' ' + escapeHtml(item.ev.title) + '</div>';
           }).join('');
 
@@ -1105,109 +1528,194 @@
           return '<div class="month-week">' + cellsHtml + barsHtml + moreHtml + '</div>';
         }).join('');
       }
+            /* ===== 軸転置(縦=日付/横=時刻)の中核ヘルパ ★ ===== */
 
-      /* ===== 時間軸の共通処理 ===== */
-      function hourHeight() {
-        var v = getComputedStyle(document.documentElement).getPropertyValue('--hour-h');
-        return parseFloat(v) || 44;
+      /* 1時間あたりの横幅(px)をCSS変数から取得 */
+      function hourWidth() {
+        var v = getComputedStyle(document.documentElement).getPropertyValue('--hour-w');
+        return parseFloat(v) || 72;
+      }
+      function laneHeight() {
+        var v = getComputedStyle(document.documentElement).getPropertyValue('--lane-h');
+        return parseFloat(v) || 30;
+      }
+      function alldayLaneHeight() {
+        var v = getComputedStyle(document.documentElement).getPropertyValue('--allday-lane-h');
+        return parseFloat(v) || 22;
+      }
+      function lanesWidthPx() { return hourWidth() * TL_HOURS; }
+
+      /* その日の0:00基準で、時刻(Dateまたはms)→横位置(px)に変換。6時基準・範囲外はそのまま返す */
+      function timeToX(timeMs, dayStartMs) {
+        var minutes = (timeMs - dayStartMs) / 60000;   // その日の0:00からの分
+        var fromStart = minutes - TL_START_H * 60;     // 6:00基準の分
+        return (fromStart / 60) * hourWidth();
       }
 
-      function renderGutter(id) {
+      /* 時刻目盛りヘッダー(6〜22時)のHTML */
+      function buildHoursHtml() {
         var html = '';
-        for (var h = 0; h < 24; h++) html += '<div class="gutter-hour">' + pad2(h) + ':00</div>';
-        $(id).innerHTML = html;
+        for (var h = TL_START_H; h < TL_END_H; h++) {
+          html += '<div class="tl-hour">' + pad2(h) + ':00</div>';
+        }
+        return html;
       }
 
-      // 1日分の時間指定予定を、重なりクラスタごとに列分割する
-      function layoutDayColumn(events, dayStart) {
-        var dayEnd = addDays(dayStart, 1);
-        var blocks = [];
+      /* 重なるイベントを縦の段(レーン)に割り当てる。戻り値: {items, laneCount} ★ */
+      function assignLanes(blocks) {
+        var arr = blocks.slice().sort(function (a, b) {
+          if (a.start !== b.start) return a.start - b.start;
+          return a.end - b.end;
+        });
+        var laneEnd = [];   // 各レーンの現在の終了時刻(ms)
+        arr.forEach(function (b) {
+          var placed = -1;
+          for (var i = 0; i < laneEnd.length; i++) {
+            if (b.start >= laneEnd[i]) { placed = i; break; }
+          }
+          if (placed === -1) { placed = laneEnd.length; laneEnd.push(b.end); }
+          else laneEnd[placed] = b.end;
+          b.lane = placed;
+        });
+        return { items: arr, laneCount: Math.max(1, laneEnd.length) };
+      }
 
+      /* 1日ぶんの時間ありイベントを、表示範囲(6〜22時)でクリップしたブロック配列にする */
+      function buildTimedBlocks(events, dayStartMs) {
+        var winStart = dayStartMs + TL_START_H * HOUR_MS;
+        var winEnd = dayStartMs + TL_END_H * HOUR_MS;
+        var blocks = [];
         events.forEach(function (ev) {
           if (ev.all_day) return;
           var r = effRange(ev);
-          var os = Math.max(r.start.getTime(), dayStart.getTime());
-          var oe = Math.min(r.end.getTime(), dayEnd.getTime());
-          if (oe <= os) return;
-          blocks.push({ ev: ev, start: os, end: oe, origStart: r.start, origEnd: r.end });
+          var os = Math.max(r.start.getTime(), winStart);
+          var oe = Math.min(r.end.getTime(), winEnd);
+          if (oe <= os) return;   // この時間帯に見える部分がない
+          blocks.push({
+            ev: ev,
+            start: os,
+            end: oe,
+            clipL: r.start.getTime() < winStart,
+            clipR: r.end.getTime() > winEnd,
+            origStart: r.start,
+            origEnd: r.end
+          });
         });
-
-        blocks.sort(function (a, b) {
-          if (a.start !== b.start) return a.start - b.start;
-          return (b.end - b.start) - (a.end - a.start);
-        });
-
-        var i = 0;
-        while (i < blocks.length) {
-          var clusterEnd = blocks[i].end;
-          var j = i + 1;
-          while (j < blocks.length && blocks[j].start < clusterEnd) {
-            if (blocks[j].end > clusterEnd) clusterEnd = blocks[j].end;
-            j++;
-          }
-          assignColumns(blocks.slice(i, j));
-          i = j;
-        }
         return blocks;
       }
 
-      // クラスタ内で、重ならない最小の列に置き、右に空きがあれば幅を広げる
-      function assignColumns(cluster) {
-        var cols = [];
-        cluster.forEach(function (b) {
-          for (var c = 0; c < cols.length; c++) {
-            if (cols[c][cols[c].length - 1].end <= b.start) { cols[c].push(b); b.col = c; return; }
-          }
-          b.col = cols.length;
-          cols.push([b]);
-        });
+      /* 1日ぶんのレーン領域(終日レーン + 時間ありレーン + 罫線 + 現在時刻線)を組み立てて返す ★ */
+      function buildDayLanes(dayStart, events) {
+        var dayStartMs = dayStart.getTime();
+        var laneH = laneHeight();
+        var alldayH = alldayLaneHeight();
+        var widthPx = lanesWidthPx();
 
-        var n = cols.length;
-        cluster.forEach(function (b) {
-          var span = 1;
-          for (var c = b.col + 1; c < n; c++) {
-            var conflict = false;
-            for (var k = 0; k < cols[c].length; k++) {
-              var o = cols[c][k];
-              if (o.start < b.end && o.end > b.start) { conflict = true; break; }
-            }
-            if (conflict) break;
-            span++;
-          }
-          b.ncols = n;
-          b.span = span;
-        });
-      }
+        var wrap = document.createElement('div');
+        wrap.className = 'tl-lanes';
+        wrap.style.width = widthPx + 'px';
 
-      // 1列分のブロックHTMLを組み立てる
-      function renderTimeColumn(col, events, day, H, opts) {
+        // 背景の縦罫線
+        var grid = document.createElement('div');
+        grid.className = 'tl-grid';
+        wrap.appendChild(grid);
+
+        // --- 終日レーン ---
+        var allday = events.filter(function (ev) { return ev.all_day; });
+        var adLane = document.createElement('div');
+        adLane.className = 'tl-allday';
+        adLane.style.height = alldayH + 'px';
+        var adX = 0;
+        allday.forEach(function (ev) {
+          var bar = document.createElement('div');
+          bar.className = 'tl-allbar';
+          var w = Math.max(90, (ev.title || '').length * 12 + 24);
+          if (adX + w > widthPx) w = Math.max(60, widthPx - adX);
+          bar.style.left = adX + 'px';
+          bar.style.width = w + 'px';
+          bar.style.background = primaryColor(ev.category);
+          bar.setAttribute('data-id', ev.id);
+          bar.textContent = ev.title || '(無題)';
+          bar.title = ev.title || '';
+          adLane.appendChild(bar);
+          adX += w + 4;
+        });
+        wrap.appendChild(adLane);
+
+        // --- 時間ありレーン ---
+        var blocks = buildTimedBlocks(events, dayStartMs);
+        var laid = assignLanes(blocks);
+        var timedBox = document.createElement('div');
+        timedBox.className = 'tl-timed';
+        timedBox.style.height = (laid.laneCount * laneH) + 'px';
+
+        laid.items.forEach(function (b) {
+          var left = timeToX(b.start, dayStartMs);
+          var right = timeToX(b.end, dayStartMs);
+          var w = Math.max(hourWidth() * 0.25, right - left);
+          var el = document.createElement('div');
+          el.className = 'tl-ev' + (b.clipL ? ' clip-left' : '') + (b.clipR ? ' clip-right' : '');
+          el.style.left = left + 'px';
+          el.style.width = w + 'px';
+          el.style.top = (b.lane * laneH + 2) + 'px';
+          el.style.background = primaryColor(b.ev.category);
+          el.setAttribute('data-id', b.ev.id);
+          el.innerHTML =
+            '<span class="t-time">' + fmtTime(b.origStart) + '–' + fmtTime(b.origEnd) + '</span>' +
+            '<span class="t-title">' + escapeHtml(b.ev.title) + '</span>';
+          el.title = (b.ev.title || '') + '\n' + fmtTime(b.origStart) + '–' + fmtTime(b.origEnd);
+          timedBox.appendChild(el);
+        });
+        wrap.appendChild(timedBox);
+
+        // --- 現在時刻の縦線(今日のみ) ---
         var today = startOfDay(new Date());
-        var now = new Date();
-        col.style.height = (24 * H) + 'px';
-        col.classList.toggle('is-today', isSameDay(day, today));
-
-        var blocks = layoutDayColumn(events, day);
-        var html = blocks.map(function (b) {
-          var top = (b.start - day.getTime()) / HOUR_MS * H;
-          var height = Math.max((b.end - b.start) / HOUR_MS * H - 2, 15);
-          var widthPct = (b.span / b.ncols) * 100;
-          var leftPct = (b.col / b.ncols) * 100;
-          var label = fmtTime(b.origStart) + '–' + fmtTime(b.origEnd);
-          return '<div class="time-ev" data-cat="' + escapeHtml(b.ev.category) + '" data-id="' + escapeHtml(b.ev.id) +
-            '"' + (opts && opts.scrollTarget ? ' data-scroll="1"' : '') +
-            ' style="top:' + top + 'px;height:' + height + 'px;left:calc(' + leftPct + '% + 1px);width:calc(' + widthPct + '% - 3px);">' +
-            '<span class="time-ev-time">' + label + '</span>' +
-            '<span class="time-ev-title">' + escapeHtml(b.ev.title) + '</span></div>';
-        }).join('');
-
-        if (isSameDay(day, today)) {
-          var nowTop = (now.getHours() * 60 + now.getMinutes()) / 60 * H;
-          html += '<div class="time-now" style="top:' + nowTop + 'px;"></div>';
+        if (isSameDay(dayStart, today)) {
+          var nowX = timeToX(Date.now(), dayStartMs);
+          if (nowX >= 0 && nowX <= widthPx) {
+            var line = document.createElement('div');
+            line.className = 'tl-now';
+            line.style.left = nowX + 'px';
+            wrap.appendChild(line);
+          }
         }
-        col.innerHTML = html;
+        return wrap;
       }
 
-      /* ===== 週表示 ===== */
+      /* 横スクロールを、ヘッダー(source)と本体の各レーン領域(targets)で同期させる ★ */
+            /* 横スクロールを、ヘッダー・各レーン領域・(任意で)共通スクロールバーで同期させる ★ */
+      function syncHorizontalScroll(headerScroll, laneScrolls, scrollbarTrack) {
+        var lock = false;
+
+        // 同期対象になる「スクロールを受け付ける要素」の一覧
+        var scrollers = [];
+        laneScrolls.forEach(function (s) { scrollers.push(s); });
+        if (scrollbarTrack) scrollers.push(scrollbarTrack);
+
+        function setAll(x, except) {
+          if (headerScroll && headerScroll !== except) headerScroll.scrollLeft = x;
+          scrollers.forEach(function (s) { if (s !== except) s.scrollLeft = x; });
+        }
+
+        scrollers.forEach(function (el) {
+          el.addEventListener('scroll', function () {
+            if (lock) return;
+            lock = true;
+            setAll(el.scrollLeft, el);
+            window.requestAnimationFrame(function () { lock = false; });
+          }, { passive: true });
+        });
+      }
+
+      /* 初期横スクロール位置を 8時 に合わせる ★ */
+      function applyInitScroll(headerScroll, laneScrolls, scrollbarTrack) {
+        var x = (TL_INIT_H - TL_START_H) * hourWidth();
+        if (headerScroll) headerScroll.scrollLeft = x;
+        laneScrolls.forEach(function (s) { s.scrollLeft = x; });
+        if (scrollbarTrack) scrollbarTrack.scrollLeft = x;
+      }
+
+      /* ===== 週表示(軸転置) ★修正1: 前半3日/後半4日の2ブロックに分割・ブロック独立スクロール ===== */
       function loadWeek(focus, callback) {
         var weekStart = startOfWeek(focus);
         weekState.focus = weekStart;
@@ -1221,14 +1729,13 @@
         var key = dateKey(weekStart);
         var events = null;
         var errMsg = '';
-        var pending = 2;   // 予定 + 祝日
+        var pending = 2;
         var done = function () {
           if (--pending > 0) return;
           if (errMsg) {
-            $('weekAllDay').innerHTML = '<div class="empty" style="grid-column:1/-1"><strong>読み込めませんでした</strong>' +
-              escapeHtml(errMsg) + '</div>';
+            $('weekBody').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(errMsg) + '</div>';
           } else {
-            renderWeek(events, days);
+            renderWeek(filterEvents(events), days);
           }
           if (callback) callback();
         };
@@ -1243,492 +1750,585 @@
           .getEvents(toGasStr(weekStart), toGasStr(addDays(weekStart, 7)));
       }
 
-      function renderWeek(events, days) {
-        var today = startOfDay(new Date());
-        var H = hourHeight();
-        var thisMonth = weekState.focus.getMonth();
-
-        $('weekHead').innerHTML = '<div></div>' + days.map(function (d) {
-          var holiday = holidays[dateKey(d)];
-          var cls = 'week-head-cell' + dayClass(d) + (isSameDay(d, today) ? ' is-today' : '') +
-            (d.getMonth() !== thisMonth ? ' is-other' : '');
-          return '<div class="' + cls + '" data-date="' + dateKey(d) + '">' +
-            '<span class="week-head-dow">' + DOW[d.getDay()] + '</span>' +
-            '<span class="week-head-num">' + d.getDate() + '</span>' +
-            '<span class="week-head-holiday">' + (holiday ? escapeHtml(holiday) : '&nbsp;') + '</span></div>';
-        }).join('');
-
-        renderAllDayBand('weekAllDay', events, days);
-        renderGutter('weekGutter');
-
-        days.forEach(function (d, i) {
-          renderTimeColumn(document.querySelector('.week-body .time-col[data-col="' + i + '"]'), events, d, H, null);
-        });
-
-        if (!weekState.scrolled) {
-          $('weekScroll').scrollTop = 8 * H;
-          weekState.scrolled = true;
+      /* ★修正1: 週の日付配列を WEEK_BLOCKS([3,4]) に従い前半/後半へ分割 */
+      function splitWeekBlocks(days) {
+        var blocks = [];
+        var offset = 0;
+        for (var i = 0; i < WEEK_BLOCKS.length; i++) {
+          var count = WEEK_BLOCKS[i];
+          blocks.push(days.slice(offset, offset + count));
+          offset += count;
         }
+        return blocks;
       }
 
-      /* ===== 日表示 ===== */
-      function loadDay(focus, callback) {
-        var day = startOfDay(focus);
-        dayState.focus = day;
-        setDayLabel(day);
+            /* ★修正1: 1ブロック分(時刻ヘッダー + 日付行群 + 共通スクロールバー)のDOMを組み立てて返す。
+         スクロールバーはブロックに1本だけ表示し、ヘッダー・全行と連動させる */
+      function buildWeekBlock(blockDays, today) {
+        var blockEl = document.createElement('div');
+        blockEl.className = 'tl-block';
 
-        var key = dateKey(day);
+        // このブロック専用の時刻ヘッダー
+        var header = document.createElement('div');
+        header.className = 'tl-header';
+        var spacer = document.createElement('div');
+        spacer.className = 'tl-header-spacer';
+        header.appendChild(spacer);
+        var headerScroll = document.createElement('div');
+        headerScroll.className = 'tl-header-scroll';
+        var hours = document.createElement('div');
+        hours.className = 'tl-hours';
+        hours.innerHTML = buildHoursHtml();
+        headerScroll.appendChild(hours);
+        header.appendChild(headerScroll);
+        blockEl.appendChild(header);
+
+        // 日付行群
+        var bodyEl = document.createElement('div');
+        bodyEl.className = 'tl-body';
+        var laneScrolls = [];
+
+        blockDays.forEach(function (d) {
+          var dayEvents = weekState._events.filter(function (ev) {
+            var r = effRange(ev);
+            return r.start.getTime() < addDays(d, 1).getTime() && r.end.getTime() > d.getTime();
+          });
+
+          var row = document.createElement('div');
+          row.className = 'tl-row' + (isSameDay(d, today) ? ' is-today' : '');
+
+          var col = document.createElement('div');
+          col.className = 'tl-daycol' + dayClass(d);
+          col.setAttribute('data-date', dateKey(d));
+          var holiday = holidays[dateKey(d)];
+          col.innerHTML =
+            '<span class="d-num">' + d.getDate() + '</span>' +
+            '<span class="d-dow">' + DOW[d.getDay()] + '</span>' +
+            (holiday ? '<span class="d-holiday">' + escapeHtml(holiday) + '</span>' : '');
+          row.appendChild(col);
+
+          var scroll = document.createElement('div');
+          scroll.className = 'tl-lanes-scroll';
+          scroll.appendChild(buildDayLanes(d, dayEvents));
+          row.appendChild(scroll);
+          laneScrolls.push(scroll);
+
+          bodyEl.appendChild(row);
+        });
+
+        blockEl.appendChild(bodyEl);
+
+                // ★ブロック共通の横スクロールバー(1本)。trackがスクロール要素、innerが幅を持つ帯
+        var scrollbar = document.createElement('div');
+        scrollbar.className = 'tl-scrollbar';
+        var sbSpacer = document.createElement('div');
+        sbSpacer.className = 'tl-scrollbar-spacer';
+        scrollbar.appendChild(sbSpacer);
+        var sbTrack = document.createElement('div');
+        sbTrack.className = 'tl-scrollbar-track';
+        var sbInner = document.createElement('div');
+        sbInner.className = 'tl-scrollbar-inner';
+        sbInner.style.width = lanesWidthPx() + 'px';   // レーン全幅ぶん → はみ出してスクロール発生
+        sbTrack.appendChild(sbInner);
+        scrollbar.appendChild(sbTrack);
+        blockEl.appendChild(scrollbar);
+
+        // ★ヘッダー・全行・共通スクロールバー(sbTrackが実際のスクロール要素)を相互同期
+        syncHorizontalScroll(headerScroll, laneScrolls, sbTrack);
+        applyInitScroll(headerScroll, laneScrolls, sbTrack);
+
+        return { el: blockEl, laneScrolls: laneScrolls };
+      }
+
+      function renderWeek(events, days) {
+        var today = startOfDay(new Date());
+        weekState._events = events;   // ブロック生成側から参照するため一時保持
+
+        var body = $('weekBody');
+        body.innerHTML = '';
+        weekState.laneScrolls = [];
+
+        var blocks = splitWeekBlocks(days);
+        blocks.forEach(function (blockDays) {
+          if (blockDays.length === 0) return;
+          var built = buildWeekBlock(blockDays, today);
+          body.appendChild(built.el);
+          weekState.laneScrolls = weekState.laneScrolls.concat(built.laneScrolls);
+        });
+
+        weekState.scrolledLeft = true;
+      }
+            /* ===== 日表示(軸転置・日付列なし) ★ ===== */
+      function loadDay(focus, callback) {
+        var dayStart = startOfDay(focus);
+        dayState.focus = dayStart;
+
+        var holiday = holidays[dateKey(dayStart)];
+        $('dayLabel').innerHTML =
+          '<span class="' + (dayClass(dayStart).trim() || '') + '">' +
+          fmtDateHead(dayStart) + '</span>' +
+          (holiday ? '<span class="day-holiday">' + escapeHtml(holiday) + '</span>' : '');
+
+        var key = dateKey(dayStart);
         var events = null;
         var errMsg = '';
-        var pending = 2;   // 予定 + 祝日
+        var pending = 2;
         var done = function () {
           if (--pending > 0) return;
-          setDayLabel(day);
           if (errMsg) {
-            $('dayCards').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(errMsg) + '</div>';
+            $('dayBody').innerHTML = '<div class="empty"><strong>読み込めませんでした</strong>' + escapeHtml(errMsg) + '</div>';
+            $('dayCards').innerHTML = '';
           } else {
-            renderDay(events, day);
+            renderDay(filterEvents(events), dayStart);
           }
           if (callback) callback();
         };
 
-        loadHolidays(day, addDays(day, 1), done);
+        loadHolidays(dayStart, addDays(dayStart, 1), done);
 
         if (dayState.cache[key]) { events = dayState.cache[key]; done(); return; }
 
         google.script.run
           .withSuccessHandler(function (items) { dayState.cache[key] = items; events = items; done(); })
           .withFailureHandler(function (err) { errMsg = err.message; done(); })
-          .getEvents(toGasStr(day), toGasStr(addDays(day, 1)));
+          .getEvents(toGasStr(dayStart), toGasStr(addDays(dayStart, 1)));
       }
 
-      function setDayLabel(day) {
-        var holiday = holidays[dateKey(day)];
-        $('dayLabel').innerHTML =
-          '<span class="' + dayClass(day).trim() + '">' + fmtDateHead(day) + '</span>' +
-          (holiday ? '<span class="day-holiday">' + escapeHtml(holiday) + '</span>' : '');
+      function renderDay(events, dayStart) {
+        // 時刻ヘッダー
+        $('dayHours').innerHTML = buildHoursHtml();
+        $('dayHours').style.width = lanesWidthPx() + 'px';
+
+        // 本体(1日ぶんのレーン)
+        var body = $('dayBody');
+        body.innerHTML = '';
+        var row = document.createElement('div');
+        row.className = 'tl-row' + (isSameDay(dayStart, startOfDay(new Date())) ? ' is-today' : '');
+        var scroll = document.createElement('div');
+        scroll.className = 'tl-lanes-scroll';
+        scroll.appendChild(buildDayLanes(dayStart, events));
+        row.appendChild(scroll);
+        body.appendChild(row);
+
+        // ヘッダーと本体の横スクロールを同期(日ビューは1レーンぶん)
+        var headerScroll = $('dayHourScroll');
+        syncHorizontalScroll(headerScroll, [scroll]);
+        applyInitScroll(headerScroll, [scroll]);
+        dayState.scrolledLeft = true;
+
+        // 下部の予定カード一覧
+        renderDayCards(events, dayStart);
       }
 
-      // その日の時刻表記(前日から続く / 翌日まで続く を補う)
-      function dayTimeLabel(ev, day) {
-        var dayEnd = addDays(day, 1);
-        var r = effRange(ev);
-
-        if (ev.all_day) {
-          var s = parseGasStr(ev.start_at);
-          var e = parseGasStr(ev.end_at) || s;
-          if (isSameDay(s, e)) return { main: '終日', note: '' };
-          return { main: '終日', note: fmtDate(s) + ' 〜 ' + fmtDate(e) + ' の期間中' };
-        }
-
-        var startsBefore = r.start.getTime() < day.getTime();
-        var endsAfter = r.end.getTime() > dayEnd.getTime();
-        var main = fmtTime(r.start) + ' – ' + fmtTime(r.end);
-        var note = '';
-        if (startsBefore && endsAfter) note = fmtDate(r.start) + ' から ' + fmtDate(r.end) + ' まで連続';
-        else if (startsBefore) note = '前日 ' + fmtTime(r.start) + ' から続く';
-        else if (endsAfter) note = '翌日 ' + fmtTime(r.end) + ' まで続く';
-        return { main: main, note: note };
-      }
-
-      function renderDay(events, day) {
-        var H = hourHeight();
-
-        renderAllDayBand('dayAllDay', events, [day]);
-        renderGutter('dayGutter');
-        renderTimeColumn($('dayCol'), events, day, H, { scrollTarget: true });
-
-        // --- 詳細カード(終日を先に、その後は開始時刻順) ---
+      function renderDayCards(events, dayStart) {
         var sorted = events.slice().sort(function (a, b) {
           if (a.all_day !== b.all_day) return a.all_day ? -1 : 1;
-          return effRange(a).start - effRange(b).start;
+          return evStart(a) - evStart(b);
         });
 
-        $('dayCardsHead').textContent = 'この日の予定 ' + sorted.length + '件';
-
         if (sorted.length === 0) {
-          $('dayCards').innerHTML = '<div class="empty"><strong>この日に予定はありません</strong>右上の「予定を追加」から登録できます。</div>';
-        } else {
-          $('dayCards').innerHTML = sorted.map(function (ev) {
-            var t = dayTimeLabel(ev, day);
-            return '<article class="day-card" id="dc-' + escapeHtml(ev.id) + '">' +
-              '<div class="day-card-head">' +
-                '<span class="day-card-time">' + escapeHtml(t.main) + '</span>' +
-                '<span class="badge" data-cat="' + escapeHtml(ev.category) + '">' + escapeHtml(ev.category) + '</span>' +
-                (t.note ? '<span class="day-card-cont">' + escapeHtml(t.note) + '</span>' : '') +
-              '</div>' +
-              '<h3 class="day-card-title">' + escapeHtml(ev.title) + '</h3>' +
-              (ev.memo ? '<div class="day-card-memo">' + escapeHtml(ev.memo) + '</div>' : '') +
-              '<div class="day-card-foot">' +
-                '<span class="day-card-meta">' +
-                  '<span>ID ' + escapeHtml(ev.id) + '</span>' +
-                  '<span>作成 ' + escapeHtml(ev.created_at) + '</span>' +
-                  '<span>更新 ' + escapeHtml(ev.updated_at) + '</span>' +
-                '</span>' +
-                '<button class="btn btn-mini" data-edit="' + escapeHtml(ev.id) + '">編集する</button>' +
-              '</div>' +
-              '</article>';
-          }).join('');
+          $('dayCardsHead').style.display = 'none';
+          $('dayCards').innerHTML = '<div class="empty"><strong>この日の予定はありません</strong>時間帯をタップ、または「予定を追加」から登録できます。</div>';
+          return;
         }
+        $('dayCardsHead').style.display = '';
 
-        if (!dayState.scrolled) {
-          $('dayScroll').scrollTop = 8 * H;
-          dayState.scrolled = true;
-        }
+        $('dayCards').innerHTML = sorted.map(function (ev) {
+          var timeStr = ev.all_day ? '終日' : (fmtTime(evStart(ev)) + ' – ' + fmtTime(evEnd(ev)));
+          var contStr = '';
+          var r = effRange(ev);
+          if (!ev.all_day && !isSameDay(r.start, r.end) && !isSameDay(dayStart, startOfDay(r.start))) {
+            contStr = '<span class="day-card-cont">(継続)</span>';
+          }
+          return '<div class="day-card" data-id="' + escapeHtml(ev.id) + '">' +
+            '<div class="day-card-head">' +
+              '<span class="day-card-time">' + timeStr + '</span>' + contStr +
+              badgesHtml(ev.category) +
+            '</div>' +
+            '<div class="day-card-title">' + highlight(ev.title) + '</div>' +
+            (ev.place ? '<div class="day-card-place">' + highlight(ev.place) + '</div>' : '') +
+            (ev.memo ? '<div class="day-card-memo">' + highlight(ev.memo) + '</div>' : '') +
+            '<div class="day-card-foot">' +
+              '<div class="day-card-meta">' +
+                '<span>ID: ' + escapeHtml(ev.id) + '</span>' +
+              '</div>' +
+              '<button class="btn btn-mini" data-edit="' + escapeHtml(ev.id) + '">編集</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
       }
 
+      /* ★修正4: 日ビューの対象カードをハイライト。カードがまだ描画されていない場合に備え、
+         見つかるまで最大10フレーム程度リトライする。上限に達しても見つからなければ静かに終了。 */
       function flashDayCard(id) {
-        var card = document.getElementById('dc-' + id);
-        if (!card) return;
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        card.classList.add('is-flash');
-        setTimeout(function () { card.classList.remove('is-flash'); }, 1600);
+        var MAX_TRIES = 10;   // 約160ms(10フレーム)を上限
+
+        function tryFlash(triesLeft) {
+          var card = $('dayCards').querySelector('.day-card[data-id="' + cssEscape(id) + '"]');
+          if (!card) {
+            if (triesLeft > 0) {
+              window.requestAnimationFrame(function () { tryFlash(triesLeft - 1); });
+            }
+            // 上限到達時は何もせず静かに終了(フィルター非表示・別日へ移動済み等)
+            return;
+          }
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.add('is-flash');
+          window.setTimeout(function () { card.classList.remove('is-flash'); }, 1600);
+        }
+
+        tryFlash(MAX_TRIES);
+      }
+
+      /* data-id属性セレクタ用の簡易エスケープ ★ */
+      function cssEscape(s) {
+        return String(s).replace(/["\\]/g, '\\$&');
+      }
+
+      /* 月・週の予定 → 日ビューへジャンプし、その予定を強調 ★ */
+      function goToEventInDay(id) {
+        var ev = findEventById(id);
+        if (!ev) return;
+        var dayStart = startOfDay(evStart(ev));
+        setActiveTab('day');
+        showView('day');
+        lastMainView = 'day';
+        loadDay(dayStart, function () {
+          flashDayCard(id);
+        });
       }
 
       /* ===== テーブル表示 ===== */
-      var TABLE_KEYS = ['start', 'start', 'start', 'end', 'end', 'allday', 'category', 'title', 'memo', 'created', 'updated', 'id'];
-
       function loadTable(focus, callback) {
-        var monthStart = startOfMonth(focus);
-        var monthEnd = new Date(focus.getFullYear(), focus.getMonth() + 1, 1);
-        tableState.focus = monthStart;
-        $('tableLabel').textContent = monthStart.getFullYear() + '年' + (monthStart.getMonth() + 1) + '月';
+        tableState.focus = startOfMonth(focus);
+        var rangeStart = startOfMonth(focus);
+        var rangeEnd = new Date(focus.getFullYear(), focus.getMonth() + 1, 1);
+        $('tableLabel').textContent = focus.getFullYear() + '年' + (focus.getMonth() + 1) + '月';
 
-        var key = ymKey(monthStart);
-        var items = null;
-        var errMsg = '';
-        var pending = 2;   // 予定 + 祝日
-        var done = function () {
-          if (--pending > 0) return;
-          if (errMsg) {
-            $('tableBody').innerHTML = '<tr><td colspan="12"><div class="empty"><strong>読み込めませんでした</strong>' +
-              escapeHtml(errMsg) + '</div></td></tr>';
-          } else {
-            buildTableRows(items, monthStart, monthEnd);
-            renderTable();
-          }
+        var key = ymKey(focus);
+        if (tableState.cache[key]) {
+          tableState.rows = tableState.cache[key];
+          renderTable();
           if (callback) callback();
-        };
-
-        loadHolidays(monthStart, monthEnd, done);
-
-        if (tableState.cache[key]) { items = tableState.cache[key]; done(); return; }
-
-        google.script.run
-          .withSuccessHandler(function (list) { tableState.cache[key] = list; items = list; done(); })
-          .withFailureHandler(function (err) { errMsg = err.message; done(); })
-          .getEvents(toGasStr(monthStart), toGasStr(monthEnd));
-      }
-
-      // getEvents は月にまたがる予定も返すので、開始日がその月にあるレコードだけを行にする
-      function buildTableRows(items, monthStart, monthEnd) {
-        tableState.rows = items.filter(function (ev) {
-          var s = parseGasStr(ev.start_at);
-          return s.getTime() >= monthStart.getTime() && s.getTime() < monthEnd.getTime();
-        }).map(function (ev) {
-          var s = parseGasStr(ev.start_at);
-          var e = parseGasStr(ev.end_at) || s;
-          var c = parseGasStr(ev.created_at);
-          var u = parseGasStr(ev.updated_at);
-          return {
-            ev: ev,
-            id: ev.id,
-            s: s, e: e,
-            allday: ev.all_day ? 1 : 0,
-            category: ev.category || '',
-            title: ev.title || '',
-            memo: ev.memo || '',
-            created: c ? c.getTime() : 0,
-            updated: u ? u.getTime() : 0,
-            createdStr: ev.created_at,
-            updatedStr: ev.updated_at
-          };
-        });
-      }
-
-      function sortValue(row, key) {
-        if (key === 'id') return row.id;
-        if (key === 'start') return row.s.getTime();
-        if (key === 'end') return row.e.getTime();
-        if (key === 'allday') return row.allday;
-        if (key === 'category') return row.category;
-        if (key === 'title') return row.title;
-        if (key === 'memo') return row.memo;
-        if (key === 'created') return row.created;
-        if (key === 'updated') return row.updated;
-        return 0;
-      }
-
-      function renderTable() {
-        var key = tableState.sortKey, dir = tableState.sortDir;
-        var rows = tableState.rows.slice().sort(function (a, b) {
-          var va = sortValue(a, key), vb = sortValue(b, key);
-          if (va < vb) return -1 * dir;
-          if (va > vb) return 1 * dir;
-          return a.s.getTime() - b.s.getTime();
-        });
-
-        // ヘッダーのソート表示(開始日・曜・開始時刻は同じキーなので先頭列にだけ矢印を出す)
-        var ths = $('tableHead').children;
-        var marked = false;
-        for (var i = 0; i < ths.length; i++) {
-          var th = ths[i];
-          var isSorted = !marked && TABLE_KEYS[i] === key;
-          if (isSorted) marked = true;
-          th.classList.toggle('is-sorted', isSorted);
-          var base = th.textContent.replace(/[▲▼]$/, '').trim();
-          th.innerHTML = escapeHtml(base) + (isSorted ? '<span class="arrow">' + (dir === 1 ? '▲' : '▼') + '</span>' : '');
-        }
-
-        if (rows.length === 0) {
-          $('tableBody').innerHTML = '<tr><td colspan="12"><div class="empty"><strong>この月にレコードはありません</strong>' +
-            '開始日がこの月にある予定が表示されます。</div></td></tr>';
-          $('tableCount').textContent = '0件';
           return;
         }
 
-        $('tableBody').innerHTML = rows.map(function (r) {
-          var allDay = r.allday === 1;
-          return '<tr data-id="' + escapeHtml(r.id) + '">' +
-            '<td class="col-sdate mono">' + fmtMD(r.s) + '</td>' +
-            '<td class="col-dow mono' + dayClass(r.s) + '">' + DOW[r.s.getDay()] + '</td>' +
-            '<td class="col-stime mono">' + (allDay ? '<span class="dim">—</span>' : fmtTime(r.s)) + '</td>' +
-            '<td class="mono">' + fmtMD(r.e) + '</td>' +
-            '<td class="mono">' + (allDay ? '<span class="dim">—</span>' : fmtTime(r.e)) + '</td>' +
-            '<td class="mono">' + (allDay ? '✓' : '<span class="dim">—</span>') + '</td>' +
-            '<td><span class="badge" data-cat="' + escapeHtml(r.category) + '">' + escapeHtml(r.category) + '</span></td>' +
-            '<td class="col-title">' + escapeHtml(r.title) + '</td>' +
-            '<td class="col-memo">' + (r.memo ? escapeHtml(r.memo.replace(/\n/g, ' ')) : '<span class="dim">—</span>') + '</td>' +
-            '<td class="mono">' + escapeHtml(r.createdStr) + '</td>' +
-            '<td class="mono">' + escapeHtml(r.updatedStr) + '</td>' +
-            '<td class="col-id mono">' + escapeHtml(r.id) + '</td>' +
+        google.script.run
+          .withSuccessHandler(function (items) {
+            tableState.cache[key] = items;
+            tableState.rows = items;
+            renderTable();
+            if (callback) callback();
+          })
+          .withFailureHandler(function (err) {
+            $('tableBody').innerHTML = '<tr><td colspan="13">' + escapeHtml(err.message) + '</td></tr>';
+            if (callback) callback();
+          })
+          .getEvents(toGasStr(rangeStart), toGasStr(rangeEnd));
+      }
+
+      function renderTable() {
+        var filtered = filterEvents(tableState.rows);
+        var key = tableState.sortKey;
+        var dir = tableState.sortDir;
+
+        filtered.sort(function (a, b) {
+          var va, vb;
+          if (key === 'start') { va = evStart(a).getTime(); vb = evStart(b).getTime(); }
+          else if (key === 'end') { va = evEnd(a).getTime(); vb = evEnd(b).getTime(); }
+          else if (key === 'allday') { va = a.all_day ? 1 : 0; vb = b.all_day ? 1 : 0; }
+          else if (key === 'created') { va = (parseGasStr(a.created) || 0); vb = (parseGasStr(b.created) || 0); }
+          else if (key === 'updated') { va = (parseGasStr(a.updated) || 0); vb = (parseGasStr(b.updated) || 0); }
+          else { va = String(a[key] || '').toLowerCase(); vb = String(b[key] || '').toLowerCase(); }
+          if (va < vb) return -1 * dir;
+          if (va > vb) return 1 * dir;
+          return 0;
+        });
+
+        var heads = $('tableHead').querySelectorAll('th');
+        for (var h = 0; h < heads.length; h++) {
+          var k = heads[h].getAttribute('data-key');
+          heads[h].classList.toggle('is-sorted', k === key);
+          var old = heads[h].querySelector('.arrow');
+          if (old) old.remove();
+          if (k === key) {
+            var arrow = document.createElement('span');
+            arrow.className = 'arrow';
+            arrow.textContent = dir === 1 ? '▲' : '▼';
+            heads[h].appendChild(arrow);
+          }
+        }
+
+        $('tableBody').innerHTML = filtered.map(function (ev) {
+          var s = evStart(ev), e = evEnd(ev);
+          var dowCls = dayClass(startOfDay(s)).replace(' is-', ' is-');
+          return '<tr data-id="' + escapeHtml(ev.id) + '">' +
+            '<td class="col-sdate mono">' + fmtDate(s) + '</td>' +
+            '<td class="col-dow mono' + dowCls + '">' + DOW[s.getDay()] + '</td>' +
+            '<td class="col-stime mono">' + (ev.all_day ? '—' : fmtTime(s)) + '</td>' +
+            '<td class="mono">' + fmtDate(e) + '</td>' +
+            '<td class="mono">' + (ev.all_day ? '—' : fmtTime(e)) + '</td>' +
+            '<td>' + (ev.all_day ? '終日' : '') + '</td>' +
+            '<td class="col-cat">' + badgesHtml(ev.category) + '</td>' +
+            '<td class="col-title">' + highlight(ev.title) + '</td>' +
+            '<td class="col-place">' + (ev.place ? highlight(ev.place) : '<span class="dim">—</span>') + '</td>' +
+            '<td class="col-memo">' + (ev.memo ? highlight(ev.memo) : '<span class="dim">—</span>') + '</td>' +
+            '<td class="mono dim">' + (ev.created ? fmtDate(parseGasStr(ev.created)) : '—') + '</td>' +
+            '<td class="mono dim">' + (ev.updated ? fmtDate(parseGasStr(ev.updated)) : '—') + '</td>' +
+            '<td class="col-id dim">' + escapeHtml(ev.id) + '</td>' +
             '</tr>';
         }).join('');
 
-        $('tableCount').textContent = rows.length + '件(開始日がこの月にあるレコード)';
+        $('tableCount').textContent = filtered.length + ' 件';
       }
 
-      /* ===== 画面遷移 ===== */
-      function goToDay(key) {
-        var y = parseInt(key.slice(0, 4), 10);
-        var m = parseInt(key.slice(4, 6), 10) - 1;
-        var d = parseInt(key.slice(6, 8), 10);
-        setActiveTab('day');
-        showView('day');
-        loadDay(new Date(y, m, d));
-      }
-
+      /* ===== 詳細・新規 ===== */
       function openDetail(id) {
-        var item = findEventById(id);
-        if (!item) return;
+        var ev = findEventById(id);
+        if (!ev) return;
         currentId = id;
 
-        var activeTab = document.querySelector('.tab-btn.is-on');
-        lastMainView = activeTab ? activeTab.getAttribute('data-tab') : 'list';
-
-        $('d-id').textContent = item.id;
-        $('d-category').value = item.category;
-        $('d-title').value = item.title;
-        $('d-allday').checked = item.all_day;
-
-        var s = parseGasStr(item.start_at);
-        var e = parseGasStr(item.end_at) || s;
-        $('d-start-date').value = toDateInputValue(s);
-        $('d-start-time').value = item.all_day ? '' : toTimeInputValue(s);
-        $('d-end-date').value = toDateInputValue(e);
-        $('d-end-time').value = item.all_day ? '' : toTimeInputValue(e);
-        applyAlldayVisibility('d');
-        // 既存予定の終了日時は勝手に書き換えない(開始を触っても+1時間に潰さない)
+        setCategoryChecks('d', catList(ev.category));
+        $('d-title').value = ev.title || '';
+        $('d-place').value = ev.place || '';
+        $('d-allday').checked = !!ev.all_day;
+        $('d-start-date').value = toDateInput(ev.start_day);
+        $('d-start-time').value = ev.all_day ? '' : (ev.start_time || '');
+        $('d-end-date').value = toDateInput(ev.end_day || ev.start_day);
+        $('d-end-time').value = ev.all_day ? '' : (ev.end_time || '');
+        $('d-memo').value = ev.memo || '';
+        $('d-id').textContent = 'ID: ' + id;
         autoEndActive.d = false;
+        applyAlldayVisibility('d');
 
-        $('d-memo').value = item.memo;
-        $('d-timestamps').textContent = '作成 ' + item.created_at + ' / 更新 ' + item.updated_at;
+        var ts = '';
+        if (ev.created) ts += '作成: ' + ev.created;
+        if (ev.updated) ts += (ts ? ' / ' : '') + '更新: ' + ev.updated;
+        $('d-timestamps').textContent = ts;
 
         showView('detail');
       }
 
-      function backToLastMainView() {
-        setActiveTab(lastMainView);
-        showView(lastMainView);
+      function openNew(prefillDate) {
+        setCategoryChecks('n', []);
+        $('n-title').value = '';
+        $('n-place').value = '';
+        $('n-allday').checked = false;
+        var base = prefillDate || new Date();
+        $('n-start-date').value = toDateInputValue(base);
+        $('n-start-time').value = DEFAULT_START_TIME;
+        $('n-end-date').value = toDateInputValue(base);
+        $('n-end-time').value = DEFAULT_END_TIME;
+        $('n-memo').value = '';
+        autoEndActive.n = true;
+        applyAlldayVisibility('n');
+        showView('new');
       }
 
-      /* ===== イベント ===== */
-      $('tabs').addEventListener('click', function (e) {
-        var btn = e.target.closest('.tab-btn');
-        if (!btn) return;
-        var tab = btn.getAttribute('data-tab');
-        setActiveTab(tab);
-        showView(tab);
-        if (tab === 'month') loadMonth(monthState.focus || new Date());
-        if (tab === 'week') loadWeek(weekState.focus || new Date());
-        if (tab === 'day') loadDay(dayState.focus || new Date());
-        if (tab === 'table') loadTable(tableState.focus || new Date());
-      });
+      /* ===== イベント配線 ===== */
+      function bindEvents() {
+        $('tabs').addEventListener('click', function (e) {
+          var btn = e.target.closest('.tab-btn');
+          if (!btn) return;
+          var tab = btn.getAttribute('data-tab');
+          setActiveTab(tab);
+          showView(tab);
+          lastMainView = tab;
+          if (tab === 'month') loadMonth(monthState.focus || startOfMonth(new Date()));
+          else if (tab === 'week') loadWeek(weekState.focus || new Date());
+          else if (tab === 'day') loadDay(dayState.focus || new Date());
+          else if (tab === 'list') renderList();
+          else if (tab === 'table') loadTable(tableState.focus || new Date());
+        });
 
-      $('btnMonthPrev').addEventListener('click', function () {
-        var f = monthState.focus; loadMonth(new Date(f.getFullYear(), f.getMonth() - 1, 1));
-      });
-      $('btnMonthNext').addEventListener('click', function () {
-        var f = monthState.focus; loadMonth(new Date(f.getFullYear(), f.getMonth() + 1, 1));
-      });
-      $('btnMonthToday').addEventListener('click', function () {
-        var t = new Date(); loadMonth(startOfMonth(t));
-      });
+        $('btnNew').addEventListener('click', function () { openNew(); });
+        $('btnBackFromNew').addEventListener('click', function () { setActiveTab(lastMainView); showView(lastMainView); });
+        $('btnBackFromDetail').addEventListener('click', function () { setActiveTab(lastMainView); showView(lastMainView); });
 
-      $('btnWeekPrev').addEventListener('click', function () { loadWeek(addDays(weekState.focus, -7)); });
-      $('btnWeekNext').addEventListener('click', function () { loadWeek(addDays(weekState.focus, 7)); });
-      $('btnWeekToday').addEventListener('click', function () { loadWeek(new Date()); });
+        $('btnMonthPrev').addEventListener('click', function () { loadMonth(new Date(monthState.focus.getFullYear(), monthState.focus.getMonth() - 1, 1)); });
+        $('btnMonthNext').addEventListener('click', function () { loadMonth(new Date(monthState.focus.getFullYear(), monthState.focus.getMonth() + 1, 1)); });
+        $('btnMonthToday').addEventListener('click', function () { loadMonth(startOfMonth(new Date())); });
 
-      $('btnDayPrev').addEventListener('click', function () { loadDay(addDays(dayState.focus, -1)); });
-      $('btnDayNext').addEventListener('click', function () { loadDay(addDays(dayState.focus, 1)); });
-      $('btnDayToday').addEventListener('click', function () { loadDay(new Date()); });
+        $('btnWeekPrev').addEventListener('click', function () { loadWeek(addDays(weekState.focus, -7)); });
+        $('btnWeekNext').addEventListener('click', function () { loadWeek(addDays(weekState.focus, 7)); });
+        $('btnWeekToday').addEventListener('click', function () { loadWeek(new Date()); });
 
-      $('btnTablePrev').addEventListener('click', function () {
-        var f = tableState.focus; loadTable(new Date(f.getFullYear(), f.getMonth() - 1, 1));
-      });
-      $('btnTableNext').addEventListener('click', function () {
-        var f = tableState.focus; loadTable(new Date(f.getFullYear(), f.getMonth() + 1, 1));
-      });
-      $('btnTableToday').addEventListener('click', function () { loadTable(startOfMonth(new Date())); });
+        $('btnDayPrev').addEventListener('click', function () { loadDay(addDays(dayState.focus, -1)); });
+        $('btnDayNext').addEventListener('click', function () { loadDay(addDays(dayState.focus, 1)); });
+        $('btnDayToday').addEventListener('click', function () { loadDay(new Date()); });
 
-      $('monthBody').addEventListener('click', function (e) {
-        var bar = e.target.closest('.month-bar, .month-item');
-        if (bar) { openDetail(bar.getAttribute('data-id')); return; }
-        var more = e.target.closest('.month-more');
-        if (more) { goToDay(more.getAttribute('data-date')); return; }
-        var cell = e.target.closest('.month-cell');
-        if (cell) goToDay(cell.getAttribute('data-date'));
-      });
+        $('btnTablePrev').addEventListener('click', function () { loadTable(new Date(tableState.focus.getFullYear(), tableState.focus.getMonth() - 1, 1)); });
+        $('btnTableNext').addEventListener('click', function () { loadTable(new Date(tableState.focus.getFullYear(), tableState.focus.getMonth() + 1, 1)); });
+        $('btnTableToday').addEventListener('click', function () { loadTable(startOfMonth(new Date())); });
 
-      $('view-week').addEventListener('click', function (e) {
-        var ev = e.target.closest('.time-ev, .allbar');
-        if (ev) { openDetail(ev.getAttribute('data-id')); return; }
-        var head = e.target.closest('.week-head-cell');
-        if (head) goToDay(head.getAttribute('data-date'));
-      });
+        // 月ビュー: バー/アイテムは日ビューへジャンプ、セル/moreは日ビューへ
+        $('monthBody').addEventListener('click', function (e) {
+          var bar = e.target.closest('.month-bar, .month-item');
+          if (bar) { goToEventInDay(bar.getAttribute('data-id')); return; }
+          var more = e.target.closest('.month-more');
+          if (more) { setActiveTab('day'); showView('day'); lastMainView = 'day'; loadDay(fromKey(more.getAttribute('data-date'))); return; }
+          var cell = e.target.closest('.month-cell');
+          if (cell) { setActiveTab('day'); showView('day'); lastMainView = 'day'; loadDay(fromKey(cell.getAttribute('data-date'))); }
+        });
 
-      // 日表示:時間軸のブロック・終日バーは下の詳細カードへスクロール、編集ボタンで編集画面へ
-      $('view-day').addEventListener('click', function (e) {
-        var editBtn = e.target.closest('[data-edit]');
-        if (editBtn) { openDetail(editBtn.getAttribute('data-edit')); return; }
-        var block = e.target.closest('.time-ev, .allbar');
-        if (block) flashDayCard(block.getAttribute('data-id'));
-      });
+        // 週ビュー: イベントは日ビューへジャンプ、日付列は日ビューへ
+        $('weekBody').addEventListener('click', function (e) {
+          var ev = e.target.closest('.tl-ev, .tl-allbar');
+          if (ev) { goToEventInDay(ev.getAttribute('data-id')); return; }
+          var col = e.target.closest('.tl-daycol');
+          if (col) { setActiveTab('day'); showView('day'); lastMainView = 'day'; loadDay(fromKey(col.getAttribute('data-date'))); }
+        });
 
-      $('seg').addEventListener('click', function (e) {
-        var btn = e.target.closest('.seg-btn');
-        if (!btn) return;
-        var btns = document.querySelectorAll('#seg .seg-btn');
-        for (var i = 0; i < btns.length; i++) btns[i].classList.remove('is-on');
-        btn.classList.add('is-on');
-        currentCat = btn.getAttribute('data-cat');
-        renderList();
-      });
+        // 日ビュー: レーン上のイベントはカードへスクロール、カード内の編集ボタンは詳細へ
+        $('dayBody').addEventListener('click', function (e) {
+          var ev = e.target.closest('.tl-ev, .tl-allbar');
+          if (ev) { flashDayCard(ev.getAttribute('data-id')); }
+        });
+        $('dayCards').addEventListener('click', function (e) {
+          var editBtn = e.target.closest('[data-edit]');
+          if (editBtn) { openDetail(editBtn.getAttribute('data-edit')); return; }
+          var card = e.target.closest('.day-card');
+          if (card) { openDetail(card.getAttribute('data-id')); }
+        });
 
-      $('listBody').addEventListener('click', function (e) {
-        var row = e.target.closest('.row');
-        if (row) openDetail(row.getAttribute('data-id'));
-      });
+        $('listBody').addEventListener('click', function (e) {
+          var row = e.target.closest('.row');
+          if (row) openDetail(row.getAttribute('data-id'));
+        });
 
-      $('tableHead').addEventListener('click', function (e) {
-        var th = e.target.closest('th');
-        if (!th) return;
-        var key = th.getAttribute('data-key');
-        if (tableState.sortKey === key) tableState.sortDir *= -1;
-        else { tableState.sortKey = key; tableState.sortDir = 1; }
-        renderTable();
-      });
+        $('tableBody').addEventListener('click', function (e) {
+          var cell = e.target.closest('td');
+          if (cell && (cell.classList.contains('col-memo') || cell.classList.contains('col-place') ||
+                       cell.classList.contains('col-title'))) {
+            cell.classList.toggle('is-expanded');
+            return;
+          }
+          var tr = e.target.closest('tr');
+          if (tr && tr.getAttribute('data-id')) openDetail(tr.getAttribute('data-id'));
+        });
 
-      $('tableBody').addEventListener('click', function (e) {
-        var tr = e.target.closest('tr[data-id]');
-        if (tr) openDetail(tr.getAttribute('data-id'));
-      });
+        $('tableHead').addEventListener('click', function (e) {
+          var th = e.target.closest('th');
+          if (!th) return;
+          var k = th.getAttribute('data-key');
+          if (tableState.sortKey === k) tableState.sortDir *= -1;
+          else { tableState.sortKey = k; tableState.sortDir = 1; }
+          renderTable();
+        });
 
-      $('btnNew').addEventListener('click', function () {
-        var activeTab = document.querySelector('.tab-btn.is-on');
-        lastMainView = activeTab ? activeTab.getAttribute('data-tab') : 'list';
+        // 検索
+        var searchInput = $('searchInput');
+        searchInput.addEventListener('input', function () {
+          $('searchBox').classList.toggle('has-value', searchInput.value.length > 0);
+          searchTerms = parseSearch(searchInput.value);
+          rerenderActiveView();
+        });
+        $('searchClear').addEventListener('click', function () {
+          searchInput.value = '';
+          $('searchBox').classList.remove('has-value');
+          searchTerms = [];
+          rerenderActiveView();
+          searchInput.focus();
+        });
 
-        $('n-category').value = CATEGORIES[0];
-        $('n-title').value = '';
-        $('n-allday').checked = false;
-        var now = new Date();
-        now.setMinutes(0, 0, 0);
-        $('n-start-date').value = toDateInputValue(now);
-        $('n-start-time').value = toTimeInputValue(now);
-        var later = new Date(now.getTime() + HOUR_MS);
-        $('n-end-date').value = toDateInputValue(later);
-        $('n-end-time').value = toTimeInputValue(later);
-        applyAlldayVisibility('n');
-        autoEndActive.n = true;
-        $('n-memo').value = '';
-        showView('new');
-        $('n-title').focus();
-      });
+        // 分類フィルター
+        $('btnFilter').addEventListener('click', function () { filterOpen ? closeFilter() : openFilter(); });
+        $('filterBackdrop').addEventListener('click', closeFilter);
+        $('filterAll').addEventListener('click', function () { selectAllCats(); syncFilterCheckboxes(); updateFilterButton(); rerenderActiveView(); });
+        $('filterClear').addEventListener('click', function () { clearAllCats(); syncFilterCheckboxes(); updateFilterButton(); rerenderActiveView(); });
+        $('filterList').addEventListener('change', function (e) {
+          var cb = e.target.closest('input[type="checkbox"]');
+          if (!cb) return;
+          selectedCats[cb.getAttribute('data-cat')] = cb.checked;
+          updateFilterButton();
+          rerenderActiveView();
+        });
 
-      $('btnBackFromDetail').addEventListener('click', backToLastMainView);
-      $('btnBackFromNew').addEventListener('click', backToLastMainView);
+        // 保存・作成・削除・複写
+        $('btnCreate').addEventListener('click', doCreate);
+        $('btnSave').addEventListener('click', doSave);
+        $('btnDelete').addEventListener('click', doDelete);
+        $('btnDuplicate').addEventListener('click', doDuplicate);
 
-      $('btnSave').addEventListener('click', function () {
-        var form = readEventForm('d');
-        if (form.error) { alert(form.error); return; }
-        if (!form.data.title.trim()) { alert('予定名を入力してください。'); return; }
-        var data = form.data;
-        data.id = currentId;
+        wireDateTimeForm('n');
+        wireDateTimeForm('d');
 
-        $('btnSave').disabled = true;
-        google.script.run
-          .withSuccessHandler(function (newId) {
-            // 開始日を変えた場合はIDが振り直されるので、現在のIDを更新しておく
-            if (newId) currentId = newId;
-            refreshAll(function () { $('btnSave').disabled = false; backToLastMainView(); });
-          })
-          .withFailureHandler(function (err) {
-            $('btnSave').disabled = false;
-            alert('保存できませんでした。' + err.message);
-          })
-          .updateItem(data);
-      });
+        window.addEventListener('resize', updateAppbarHeight);
+      }
 
-      $('btnDelete').addEventListener('click', function () {
-        if (!confirm('この予定を削除します。よろしいですか?')) return;
-        $('btnDelete').disabled = true;
-        google.script.run
-          .withSuccessHandler(function () {
-            refreshAll(function () { $('btnDelete').disabled = false; backToLastMainView(); });
-          })
-          .withFailureHandler(function (err) {
-            $('btnDelete').disabled = false;
-            alert('削除できませんでした。' + err.message);
-          })
-          .deleteItem(currentId);
-      });
+      function syncFilterCheckboxes() {
+        var cbs = $('filterList').querySelectorAll('input[type="checkbox"]');
+        for (var i = 0; i < cbs.length; i++) {
+          cbs[i].checked = !!selectedCats[cbs[i].getAttribute('data-cat')];
+        }
+      }
 
-      $('btnCreate').addEventListener('click', function () {
-        var form = readEventForm('n');
-        if (form.error) { alert(form.error); return; }
-        if (!form.data.title.trim()) { alert('予定名を入力してください。'); return; }
-        var data = form.data;
+      function fromKey(key) {
+        return new Date(parseInt(key.slice(0, 4), 10), parseInt(key.slice(4, 6), 10) - 1, parseInt(key.slice(6, 8), 10));
+      }
 
+      function doCreate() {
+        var res = readNewBase();
+        if (res.error) { alert(res.error); return; }
+        res.data.category = readCategoryChecks('n').join(',');
         $('btnCreate').disabled = true;
         google.script.run
-          .withSuccessHandler(function () {
-            refreshAll(function () { $('btnCreate').disabled = false; backToLastMainView(); });
-          })
-          .withFailureHandler(function (err) {
-            $('btnCreate').disabled = false;
-            alert('登録できませんでした。' + err.message);
-          })
-          .addItem(data);
-      });
+          .withSuccessHandler(function () { $('btnCreate').disabled = false; refreshAll(function () { setActiveTab(lastMainView); showView(lastMainView); }); })
+          .withFailureHandler(function (err) { $('btnCreate').disabled = false; alert('登録に失敗しました: ' + err.message); })
+          .createEvent(res.data);
+      }
 
-      /* ===== 初期化 ===== */
-      fillCategorySelect($('n-category'));
-      fillCategorySelect($('d-category'));
-      wireDateTimeForm('n');
-      wireDateTimeForm('d');
-      loadMonth(new Date());
-      loadList();
+      function doSave() {
+        var res = readDetailForm();
+        if (res.error) { alert(res.error); return; }
+        $('btnSave').disabled = true;
+        google.script.run
+          .withSuccessHandler(function () { $('btnSave').disabled = false; refreshAll(function () { setActiveTab(lastMainView); showView(lastMainView); }); })
+          .withFailureHandler(function (err) { $('btnSave').disabled = false; alert('保存に失敗しました: ' + err.message); })
+          .updateEvent(currentId, res.data);
+      }
+
+      function doDelete() {
+        if (!confirm('この予定を削除します。よろしいですか？')) return;
+        $('btnDelete').disabled = true;
+        google.script.run
+          .withSuccessHandler(function () { $('btnDelete').disabled = false; refreshAll(function () { setActiveTab(lastMainView); showView(lastMainView); }); })
+          .withFailureHandler(function (err) { $('btnDelete').disabled = false; alert('削除に失敗しました: ' + err.message); })
+          .deleteEvent(currentId);
+      }
+
+      function doDuplicate() {
+        var ev = findEventById(currentId);
+        if (!ev) return;
+        setCategoryChecks('n', catList(ev.category));
+        $('n-title').value = (ev.title || '') + '(複写)';
+        $('n-place').value = ev.place || '';
+        $('n-allday').checked = !!ev.all_day;
+        $('n-start-date').value = toDateInput(ev.start_day);
+        $('n-start-time').value = ev.all_day ? '' : (ev.start_time || '');
+        $('n-end-date').value = toDateInput(ev.end_day || ev.start_day);
+        $('n-end-time').value = ev.all_day ? '' : (ev.end_time || '');
+        $('n-memo').value = ev.memo || '';
+        autoEndActive.n = false;
+        applyAlldayVisibility('n');
+        showView('new');
+      }
+
+      /* ===== 起動 ===== */
+      function init() {
+        updateAppbarHeight();
+        bindEvents();
+        loadCategories(function () {
+          loadList();
+          loadMonth(startOfMonth(new Date()));
+        });
+      }
+
+      init();
+
     })();
   </script>
 </body>
 </html>
+
+
