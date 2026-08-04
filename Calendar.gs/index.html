@@ -1104,6 +1104,8 @@
 
       function fmtDate(d) { return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()); }
       function fmtMD(d) { return (d.getMonth() + 1) + '/' + d.getDate(); }
+      /* ★追加: Date → '8/4 8:30'(月/日 時:分。時は先頭ゼロなし・分は2桁) */
+      function fmtMDHM(d) { return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + pad2(d.getMinutes()); }
       function fmtDateHead(d) { return fmtDate(d) + '(' + DOW[d.getDay()] + ')'; }
       function fmtTime(d) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
       function isSameDay(a, b) {
@@ -2084,8 +2086,9 @@
             '<td class="col-title">' + highlight(ev.title) + '</td>' +
             '<td class="col-place">' + (ev.place ? highlight(ev.place) : '<span class="dim">—</span>') + '</td>' +
             '<td class="col-memo">' + (ev.memo ? highlight(ev.memo) : '<span class="dim">—</span>') + '</td>' +
-            '<td class="mono dim">' + (ev.created ? fmtMD(parseGasStr(ev.created)) : '—') + '</td>' +
-            '<td class="mono dim">' + (ev.updated ? fmtMD(parseGasStr(ev.updated)) : '—') + '</td>' +
+            /* ★変更: 作成日時・更新日時を「8/4 8:30」形式に(fmtMD→fmtMDHM) */
+            '<td class="mono dim">' + (ev.created ? fmtMDHM(parseGasStr(ev.created)) : '—') + '</td>' +
+            '<td class="mono dim">' + (ev.updated ? fmtMDHM(parseGasStr(ev.updated)) : '—') + '</td>' +
             '<td class="col-id dim">' + escapeHtml(ev.id) + '</td>' +
             '</tr>';
         }).join('');
@@ -2207,6 +2210,8 @@
           if (row) openDetail(row.getAttribute('data-id'));
         });
 
+        // ★変更: テーブルの行クリックは日ビューへジャンプ(従来は編集画面 openDetail)。
+        // ただし memo/place/title セルは従来どおり全文展開を優先する。
         $('tableBody').addEventListener('click', function (e) {
           var cell = e.target.closest('td');
           if (cell && (cell.classList.contains('col-memo') || cell.classList.contains('col-place') ||
@@ -2215,7 +2220,7 @@
             return;
           }
           var tr = e.target.closest('tr');
-          if (tr && tr.getAttribute('data-id')) openDetail(tr.getAttribute('data-id'));
+          if (tr && tr.getAttribute('data-id')) goToEventInDay(tr.getAttribute('data-id'));
         });
 
         $('tableHead').addEventListener('click', function (e) {
@@ -2344,3 +2349,5 @@
   </script>
 </body>
 </html>
+
+
