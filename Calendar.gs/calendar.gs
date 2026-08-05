@@ -312,6 +312,7 @@ function toObject_(row, map) {
 // 指定期間と「重なる」予定をすべて返す(月跨ぎの終日予定も拾える)
 // rangeStart / rangeEnd は 'yyyy/MM/dd HH:mm' 形式の文字列
 function getEvents(rangeStart, rangeEnd) {
+  requireAuth_();                   // requireAuth_ は auth.gs で定義
   const rs = toDate_(rangeStart);
   const re = toDate_(rangeEnd);
   if (!rs || !re) throw new Error('取得期間が不正です');
@@ -345,6 +346,7 @@ function getEvents(rangeStart, rangeEnd) {
 }
 
 function getItem(id) {
+  requireAuth_();
   const sh = getSheet_();
   const map = getColMap_(sh);
   const rows = getRows_(sh);
@@ -355,6 +357,7 @@ function getItem(id) {
 }
 
 function addItem(data) {
+  requireAuth_();
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -392,6 +395,7 @@ function addItem(data) {
 
 // 戻り値は更新後のID(開始日を変えた場合は新しいIDになる)
 function updateItem(data) {
+  requireAuth_();
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -426,6 +430,7 @@ function updateItem(data) {
 }
 
 function deleteItem(id) {
+  requireAuth_();
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -443,13 +448,14 @@ function deleteItem(id) {
 // フロントの分類プルダウン・バッジ色の元になるデータを渡す。
 // [{ name:'仕事', color:'#2438c8' }, ...] の形。分類が空なら空配列。
 function getCategories() {
+  requireAuth_();
   return getCategoryList_().map(function (name, i) {
     return { name: name, color: colorForIndex_(i) };
   });
 }
 
 
-/** ===== フロント向けラッパー ★追加 =====
+/** ===== フロント向けラッパー =====
  * index.html は createEvent / updateEvent / deleteEvent という名前で呼ぶ。
  * google.script.run は存在しない関数名だと例外になり
  * withFailureHandler も発火しない(=画面が無反応になる)ため、
@@ -479,6 +485,7 @@ const HOLIDAY_EXCLUDE = ['節分', 'ひな祭り', '雛祭り', '母の日', '�
 
 // 指定期間の祝日を [{date:'yyyyMMdd', name:'海の日'}, ...] で返す
 function getHolidays(rangeStart, rangeEnd) {
+  requireAuth_();
   const rs = toDate_(rangeStart);
   const re = toDate_(rangeEnd);
   if (!rs || !re) throw new Error('取得期間が不正です');
@@ -531,6 +538,8 @@ function include(filename) {
 /** ===== テスト用 ===== */
 // 更新・削除のテストは自前で予定を作ってから操作するので、
 // シートの中身に依存せず何度でも実行できる。
+// requireAuth_() が Session.getActiveUser() を見るため、
+// スクリプトエディタで実行する本人がWhitelistに登録されている必要がある。
 
 // 0. 現在のIDを一覧する
 function test_listIds() {
@@ -713,7 +722,7 @@ function test_fetchHolidayMap() {
   Logger.log(JSON.stringify(map, null, 2));
 }
 
-// ★追加: 12. フロント向けラッパーが通るか(作成→更新→削除)
+// 12. フロント向けラッパーが通るか(作成→更新→削除)
 function test_frontWrappers() {
   const id = createEvent({
     title: 'テスト:ラッパー経由',
@@ -733,3 +742,5 @@ function test_frontWrappers() {
 
   Logger.log('deleteEvent: ' + deleteEvent(newId));
 }
+
+
