@@ -1,0 +1,4 @@
+ID	予定名	場所	開始日	開始時刻	終了日	終了時刻	終日	分類	メモ	作成日時	更新日時
+id	title	place	start_day	start_time	end_day	end_time	all_day	category	memo	created_at	updated_at
+26072801	夏季休暇(○○)		2026/07/28		2026/07/28		TRUE			2026/7/27 18:53	2026/7/27 18:53
+26072901	監査	２階会議室４	2026/07/29	16:00	2026/07/29	17:00	FALSE	全体		2026/07/28 18:53	2026/07/30 09:09
