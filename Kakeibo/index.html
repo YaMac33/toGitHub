@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<base target="_top">
+<meta charset="UTF-8">
+<style>
+  :root {
+    --bg: #F1F3F2;
+    --surface: #FFFFFF;
+    --ink: #24302A;
+    --ink-mute: #7C8983;
+    --border: #DFE4E1;
+    --expense: #D9564B;
+    --expense-bg: #FBEAE8;
+    --income: #2C7A73;
+    --income-bg: #E7F3F1;
+    --accent: #24302A;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .num {
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #app {
+    max-width: 640px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 76px;
+  }
+
+  /* ---------- ローディング ---------- */
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    font-size: 13px;
+    color: var(--ink-mute);
+  }
+  #loading.hidden { display: none; }
+
+  /* ---------- ヘッダー ---------- */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .month-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-bottom: 12px;
+  }
+
+  .month-switch button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--ink-mute);
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 8px;
+  }
+  .month-switch button:hover { background: var(--bg); }
+
+  .month-label {
+    font-size: 17px;
+    font-weight: 600;
+    min-width: 110px;
+    text-align: center;
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  .summary .cell {
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: var(--radius);
+    background: var(--bg);
+  }
+
+  .summary .cell .label {
+    font-size: 11px;
+    color: var(--ink-mute);
+    margin-bottom: 2px;
+  }
+
+  .summary .cell .value {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .summary .income .value { color: var(--income); }
+  .summary .expense .value { color: var(--expense); }
+
+  /* ---------- タブ本体 ---------- */
+  main { flex: 1; padding: 14px 16px 24px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ---------- 取引一覧 ---------- */
+  .tx-day-group { margin-bottom: 18px; }
+  .tx-day-label {
+    font-size: 12px;
+    color: var(--ink-mute);
+    margin: 0 0 6px 4px;
+  }
+
+  .tx-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    cursor: pointer;
+  }
+  .tx-item:hover { border-color: #C7CFCB; }
+
+  .tx-main { min-width: 0; }
+  .tx-category { font-size: 14px; font-weight: 600; }
+  .tx-memo {
+    font-size: 12px;
+    color: var(--ink-mute);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+  }
+  .tx-amount {
+    font-size: 15px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+  .tx-amount.expense { color: var(--expense); }
+  .tx-amount.income { color: var(--income); }
+
+  .empty-state {
+    text-align: center;
+    color: var(--ink-mute);
+    font-size: 13px;
+    padding: 40px 20px;
+  }
+
+  /* ---------- フォーム共通 ---------- */
+  .form-group { margin-bottom: 14px; }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-mute);
+    margin-bottom: 4px;
+  }
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    font-family: inherit;
+  }
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .amount-type-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .amount-type-toggle button {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-mute);
+    cursor: pointer;
+  }
+  .amount-type-toggle button.active[data-type="expense"] {
+    background: var(--expense-bg);
+    border-color: var(--expense);
+    color: var(--expense);
+  }
+  .amount-type-toggle button.active[data-type="income"] {
+    background: var(--income-bg);
+    border-color: var(--income);
+    color: var(--income);
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+
+  .btn-secondary {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .btn-danger {
+    color: var(--expense);
+    background: var(--expense-bg);
+    border: 1px solid var(--expense);
+  }
+
+  h2.section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-mute);
+    margin: 0 0 12px;
+  }
+
+  /* ---------- CSV取込 ---------- */
+  .csv-drop {
+    display: block;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 28px 16px;
+    text-align: center;
+    color: var(--ink-mute);
+    font-size: 13px;
+    margin-bottom: 16px;
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .csv-format-hint {
+    font-size: 11px;
+    color: var(--ink-mute);
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .csv-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+  .csv-preview-table th, .csv-preview-table td {
+    border-bottom: 1px solid var(--border);
+    padding: 6px;
+    text-align: left;
+  }
+  .csv-preview-table th { color: var(--ink-mute); font-weight: 600; }
+
+  /* ---------- カテゴリ管理 ---------- */
+  .cat-list-group { margin-bottom: 18px; }
+  .cat-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 6px;
+  }
+  .cat-item .cat-name { font-size: 14px; }
+  .cat-item .delete-cat {
+    font-size: 12px;
+    color: var(--ink-mute);
+    cursor: pointer;
+  }
+  .cat-add-row { display: flex; gap: 8px; margin-top: 4px; }
+  .cat-add-row input {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+  }
+  .cat-add-row select {
+    width: 90px;
+    padding: 10px 8px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+  }
+  .cat-add-row button {
+    padding: 0 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* ---------- 下タブ ---------- */
+  nav.tabbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    max-width: 640px;
+    margin: 0 auto;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 20;
+  }
+  nav.tabbar button {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px 4px 8px;
+    font-size: 11px;
+    color: var(--ink-mute);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-family: inherit;
+  }
+  nav.tabbar button .icon { font-size: 20px; }
+  nav.tabbar button.active { color: var(--accent); font-weight: 700; }
+
+  /* ---------- モーダル ---------- */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 30;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-sheet {
+    background: var(--surface);
+    width: 100%;
+    max-width: 640px;
+    border-radius: 16px 16px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .modal-header h3 { margin: 0; font-size: 15px; }
+  .modal-header .close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--ink-mute);
+    cursor: pointer;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    z-index: 40;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    max-width: 90%;
+    text-align: center;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="loading">読み込んでいます…</div>
+
+<div id="app">
+  <header>
+    <div class="month-switch">
+      <button id="prevMonth">&#8249;</button>
+      <div class="month-label" id="monthLabel">-</div>
+      <button id="nextMonth">&#8250;</button>
+    </div>
+    <div class="summary">
+      <div class="cell income">
+        <div class="label">収入</div>
+        <div class="value num" id="sumIncome">¥0</div>
+      </div>
+      <div class="cell expense">
+        <div class="label">支出</div>
+        <div class="value num" id="sumExpense">¥0</div>
+      </div>
+      <div class="cell">
+        <div class="label">差引</div>
+        <div class="value num" id="sumBalance">¥0</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 一覧 -->
+    <div class="view active" id="view-list">
+      <div id="txListContainer"></div>
+    </div>
+
+    <!-- 入力 -->
+    <div class="view" id="view-add">
+      <h2 class="section-title">取引を入力</h2>
+      <div class="amount-type-toggle" id="addTypeToggle">
+        <button type="button" class="active" data-type="expense">支出</button>
+        <button type="button" data-type="income">収入</button>
+      </div>
+      <div class="form-group">
+        <label>日付</label>
+        <input type="date" id="inputDate">
+      </div>
+      <div class="form-group">
+        <label>金額</label>
+        <input type="number" id="inputAmount" inputmode="numeric" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>カテゴリ</label>
+        <select id="inputCategory"></select>
+      </div>
+      <div class="form-group">
+        <label>支払い方法</label>
+        <input type="text" id="inputPayment" placeholder="現金・カード・PayPayなど">
+      </div>
+      <div class="form-group">
+        <label>摘要</label>
+        <input type="text" id="inputMemo" placeholder="任意">
+      </div>
+      <div class="form-group">
+        <label>タグ</label>
+        <input type="text" id="inputTag" placeholder="任意">
+      </div>
+      <button class="btn-primary" id="submitTx">登録する</button>
+    </div>
+
+    <!-- CSV取込 -->
+    <div class="view" id="view-csv">
+      <h2 class="section-title">CSVから取り込む</h2>
+      <div class="csv-format-hint">
+        対応フォーマット：1行目ヘッダーあり、6列<br>
+        <span class="num">date, amount, category, memo, payment, tag</span><br>
+        date は YYYY-MM-DD、amount は支出マイナス／収入プラスで統一してください。
+      </div>
+      <label class="csv-drop" for="csvFile">
+        タップしてCSVファイルを選択
+      </label>
+      <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
+      <div id="csvPreviewArea"></div>
+    </div>
+
+    <!-- カテゴリ管理 -->
+    <div class="view" id="view-category">
+      <h2 class="section-title">支出カテゴリ</h2>
+      <div class="cat-list-group" id="catListExpense"></div>
+      <h2 class="section-title">収入カテゴリ</h2>
+      <div class="cat-list-group" id="catListIncome"></div>
+
+      <h2 class="section-title">カテゴリを追加</h2>
+      <div class="cat-add-row">
+        <input type="text" id="newCatName" placeholder="カテゴリ名">
+        <select id="newCatType">
+          <option value="expense">支出</option>
+          <option value="income">収入</option>
+        </select>
+        <button id="addCatBtn">追加</button>
+      </div>
+    </div>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab-btn active" data-view="list"><span class="icon">&#128220;</span>一覧</button>
+    <button class="tab-btn" data-view="add"><span class="icon">&#65291;</span>入力</button>
+    <button class="tab-btn" data-view="csv"><span class="icon">&#128190;</span>CSV</button>
+    <button class="tab-btn" data-view="category"><span class="icon">&#127991;</span>カテゴリ</button>
+  </nav>
+</div>
+
+<!-- 編集モーダル -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <h3>取引を編集</h3>
+      <button class="close-btn" id="closeModal">&times;</button>
+    </div>
+    <div class="amount-type-toggle" id="editTypeToggle">
+      <button type="button" data-type="expense">支出</button>
+      <button type="button" data-type="income">収入</button>
+    </div>
+    <div class="form-group">
+      <label>日付</label>
+      <input type="date" id="editDate">
+    </div>
+    <div class="form-group">
+      <label>金額</label>
+      <input type="number" id="editAmount" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label>カテゴリ</label>
+      <select id="editCategory"></select>
+    </div>
+    <div class="form-group">
+      <label>支払い方法</label>
+      <input type="text" id="editPayment">
+    </div>
+    <div class="form-group">
+      <label>摘要</label>
+      <input type="text" id="editMemo">
+    </div>
+    <div class="form-group">
+      <label>タグ</label>
+      <input type="text" id="editTag">
+    </div>
+    <button class="btn-primary" id="saveEdit">保存する</button>
+    <div style="height:8px"></div>
+    <button class="btn-secondary btn-danger" id="deleteEdit">削除する</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   状態
+   ============================================================ */
+var state = {
+  currentMonth: currentYYYYMM_(),
+  transactions: [],
+  categories: [],
+  editingId: null,
+};
+
+function currentYYYYMM_() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad2_(d.getMonth() + 1);
+}
+function pad2_(n) { return ('0' + n).slice(-2); }
+function todayStr_() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad2_(d.getMonth() + 1) + '-' + pad2_(d.getDate());
+}
+
+/* ============================================================
+   GAS呼び出しをPromise化するラッパー
+   ============================================================ */
+function callGas(fnName, arg) {
+  return new Promise(function (resolve, reject) {
+    var runner = google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(function (err) { reject(new Error(err.message || String(err))); });
+    if (arg === undefined) {
+      runner[fnName]();
+    } else {
+      runner[fnName](arg);
+    }
+  });
+}
+
+/* ============================================================
+   初期化
+   ============================================================ */
+function init() {
+  bindEvents();
+  document.getElementById('inputDate').value = todayStr_();
+  updateMonthLabel();
+
+  callGas('apiGetInitialData', state.currentMonth)
+    .then(function (data) {
+      state.transactions = data.transactions;
+      state.categories = data.categories;
+      populateCategorySelect(document.getElementById('inputCategory'), 'expense');
+      renderCategoryLists();
+      renderSummary();
+      renderTxList();
+      document.getElementById('loading').classList.add('hidden');
+    })
+    .catch(function (err) {
+      document.getElementById('loading').textContent = '読み込みに失敗しました: ' + err.message;
+    });
+}
+
+/* ============================================================
+   イベント
+   ============================================================ */
+function bindEvents() {
+  var tabs = document.querySelectorAll('.tab-btn');
+  for (var i = 0; i < tabs.length; i++) {
+    (function (btn) {
+      btn.addEventListener('click', function () { switchView(btn.dataset.view); });
+    })(tabs[i]);
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', function () { changeMonth(-1); });
+  document.getElementById('nextMonth').addEventListener('click', function () { changeMonth(1); });
+
+  bindTypeToggle('addTypeToggle', 'inputCategory');
+  bindTypeToggle('editTypeToggle', 'editCategory');
+
+  document.getElementById('submitTx').addEventListener('click', submitNewTransaction);
+  document.getElementById('csvFile').addEventListener('change', handleCsvFile);
+  document.getElementById('addCatBtn').addEventListener('click', addCategory);
+
+  document.getElementById('closeModal').addEventListener('click', closeModal);
+  document.getElementById('editModal').addEventListener('click', function (e) {
+    if (e.target === this) closeModal();
+  });
+  document.getElementById('saveEdit').addEventListener('click', saveEditedTransaction);
+  document.getElementById('deleteEdit').addEventListener('click', deleteEditedTransaction);
+}
+
+function bindTypeToggle(toggleId, selectId) {
+  var group = document.getElementById(toggleId);
+  var btns = group.querySelectorAll('button');
+  for (var i = 0; i < btns.length; i++) {
+    (function (btn) {
+      btn.addEventListener('click', function () {
+        for (var j = 0; j < btns.length; j++) btns[j].classList.remove('active');
+        btn.classList.add('active');
+        populateCategorySelect(document.getElementById(selectId), btn.dataset.type);
+      });
+    })(btns[i]);
+  }
+}
+
+function switchView(name) {
+  var views = document.querySelectorAll('.view');
+  for (var i = 0; i < views.length; i++) views[i].classList.remove('active');
+  var tabs = document.querySelectorAll('.tab-btn');
+  for (var k = 0; k < tabs.length; k++) tabs[k].classList.remove('active');
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelector('.tab-btn[data-view="' + name + '"]').classList.add('active');
+}
+
+/* ============================================================
+   月切り替え
+   ============================================================ */
+function changeMonth(delta) {
+  var parts = state.currentMonth.split('-');
+  var d = new Date(Number(parts[0]), Number(parts[1]) - 1 + delta, 1);
+  state.currentMonth = d.getFullYear() + '-' + pad2_(d.getMonth() + 1);
+  loadMonth();
+}
+
+function updateMonthLabel() {
+  var parts = state.currentMonth.split('-');
+  document.getElementById('monthLabel').textContent = Number(parts[0]) + '年' + Number(parts[1]) + '月';
+}
+
+function loadMonth() {
+  updateMonthLabel();
+  return callGas('apiListTransactions', state.currentMonth)
+    .then(function (rows) {
+      state.transactions = rows;
+      renderSummary();
+      renderTxList();
+    })
+    .catch(function (err) {
+      showToast('読み込みに失敗しました: ' + err.message);
+    });
+}
+
+/* ============================================================
+   描画
+   ============================================================ */
+function renderSummary() {
+  var income = 0, expense = 0;
+  state.transactions.forEach(function (t) {
+    var a = Number(t.amount);
+    if (a >= 0) income += a; else expense += a;
+  });
+  document.getElementById('sumIncome').textContent = fmtYen_(income);
+  document.getElementById('sumExpense').textContent = fmtYen_(expense);
+  document.getElementById('sumBalance').textContent = fmtYen_(income + expense);
+}
+
+function fmtYen_(n) {
+  var sign = n < 0 ? '-' : '';
+  return sign + '¥' + Math.abs(Math.round(n)).toLocaleString('ja-JP');
+}
+
+function renderTxList() {
+  var container = document.getElementById('txListContainer');
+  if (state.transactions.length === 0) {
+    container.innerHTML = '<div class="empty-state">この月の取引はまだありません</div>';
+    return;
+  }
+
+  var groups = {};
+  state.transactions.forEach(function (t) {
+    if (!groups[t.date]) groups[t.date] = [];
+    groups[t.date].push(t);
+  });
+
+  var dates = Object.keys(groups).sort().reverse();
+  var html = dates.map(function (date) {
+    var items = groups[date].map(function (t) {
+      var isExpense = Number(t.amount) < 0;
+      var sub = escapeHtml_(t.memo || '');
+      if (t.payment) sub += (sub ? ' ・ ' : '') + escapeHtml_(t.payment);
+      return '<div class="tx-item" data-id="' + escapeHtml_(t.id) + '">' +
+               '<div class="tx-main">' +
+                 '<div class="tx-category">' + escapeHtml_(t.category || '未分類') + '</div>' +
+                 '<div class="tx-memo">' + sub + '</div>' +
+               '</div>' +
+               '<div class="tx-amount num ' + (isExpense ? 'expense' : 'income') + '">' + fmtYen_(Number(t.amount)) + '</div>' +
+             '</div>';
+    }).join('');
+    return '<div class="tx-day-group"><div class="tx-day-label">' + fmtDateLabel_(date) + '</div>' + items + '</div>';
+  }).join('');
+
+  container.innerHTML = html;
+
+  var items = container.querySelectorAll('.tx-item');
+  for (var i = 0; i < items.length; i++) {
+    (function (el) {
+      el.addEventListener('click', function () { openEditModal(el.dataset.id); });
+    })(items[i]);
+  }
+}
+
+function fmtDateLabel_(dateStr) {
+  var p = dateStr.split('-');
+  var wd = ['日', '月', '火', '水', '木', '金', '土'][new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay()];
+  return Number(p[1]) + '/' + Number(p[2]) + '(' + wd + ')';
+}
+
+function escapeHtml_(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+/* ============================================================
+   カテゴリ
+   ============================================================ */
+function populateCategorySelect(selectEl, type) {
+  var list = state.categories.filter(function (c) { return c.type === type; });
+  selectEl.innerHTML = list.map(function (c) {
+    return '<option value="' + escapeHtml_(c.name) + '">' + escapeHtml_(c.name) + '</option>';
+  }).join('');
+}
+
+function renderCategoryLists() {
+  var exp = state.categories.filter(function (c) { return c.type === 'expense'; })
+    .sort(function (a, b) { return Number(a.order) - Number(b.order); });
+  var inc = state.categories.filter(function (c) { return c.type === 'income'; })
+    .sort(function (a, b) { return Number(a.order) - Number(b.order); });
+
+  document.getElementById('catListExpense').innerHTML =
+    exp.map(catItemHtml_).join('') || '<div class="empty-state">なし</div>';
+  document.getElementById('catListIncome').innerHTML =
+    inc.map(catItemHtml_).join('') || '<div class="empty-state">なし</div>';
+
+  var dels = document.querySelectorAll('.delete-cat');
+  for (var i = 0; i < dels.length; i++) {
+    (function (el) {
+      el.addEventListener('click', function () { deleteCategoryByName(el.dataset.name); });
+    })(dels[i]);
+  }
+}
+
+function catItemHtml_(c) {
+  return '<div class="cat-item">' +
+           '<div class="cat-name">' + escapeHtml_(c.name) + '</div>' +
+           '<div class="delete-cat" data-name="' + escapeHtml_(c.name) + '">削除</div>' +
+         '</div>';
+}
+
+function addCategory() {
+  var name = document.getElementById('newCatName').value.trim();
+  var type = document.getElementById('newCatType').value;
+  if (!name) { showToast('カテゴリ名を入力してください'); return; }
+
+  callGas('apiAddCategory', { name: name, type: type })
+    .then(function () { return callGas('apiListCategories'); })
+    .then(function (cats) {
+      state.categories = cats;
+      document.getElementById('newCatName').value = '';
+      renderCategoryLists();
+      var activeType = document.querySelector('#addTypeToggle button.active').dataset.type;
+      populateCategorySelect(document.getElementById('inputCategory'), activeType);
+      showToast('カテゴリを追加しました');
+    })
+    .catch(function (err) { showToast('追加に失敗しました: ' + err.message); });
+}
+
+function deleteCategoryByName(name) {
+  if (!confirm('「' + name + '」を削除しますか？')) return;
+  callGas('apiDeleteCategory', name)
+    .then(function () { return callGas('apiListCategories'); })
+    .then(function (cats) {
+      state.categories = cats;
+      renderCategoryLists();
+      var activeType = document.querySelector('#addTypeToggle button.active').dataset.type;
+      populateCategorySelect(document.getElementById('inputCategory'), activeType);
+      showToast('削除しました');
+    })
+    .catch(function (err) { showToast('削除に失敗しました: ' + err.message); });
+}
+
+/* ============================================================
+   取引の新規登録
+   ============================================================ */
+function submitNewTransaction() {
+  var type = document.querySelector('#addTypeToggle button.active').dataset.type;
+  var raw = Number(document.getElementById('inputAmount').value);
+  if (!raw) { showToast('金額を入力してください'); return; }
+
+  var btn = document.getElementById('submitTx');
+  btn.disabled = true;
+
+  var payload = {
+    date: document.getElementById('inputDate').value,
+    amount: type === 'expense' ? -Math.abs(raw) : Math.abs(raw),
+    category: document.getElementById('inputCategory').value,
+    memo: document.getElementById('inputMemo').value,
+    payment: document.getElementById('inputPayment').value,
+    tag: document.getElementById('inputTag').value,
+    source: 'manual',
+  };
+
+  callGas('apiAddTransaction', payload)
+    .then(function () {
+      document.getElementById('inputAmount').value = '';
+      document.getElementById('inputMemo').value = '';
+      showToast('登録しました');
+      if (payload.date.slice(0, 7) === state.currentMonth) {
+        return loadMonth();
+      }
+    })
+    .then(function () { switchView('list'); })
+    .catch(function (err) { showToast('登録に失敗しました: ' + err.message); })
+    .then(function () { btn.disabled = false; });
+}
+
+/* ============================================================
+   編集モーダル
+   ============================================================ */
+function openEditModal(id) {
+  var tx = null;
+  for (var i = 0; i < state.transactions.length; i++) {
+    if (String(state.transactions[i].id) === String(id)) { tx = state.transactions[i]; break; }
+  }
+  if (!tx) return;
+  state.editingId = id;
+
+  var type = Number(tx.amount) < 0 ? 'expense' : 'income';
+  var btns = document.querySelectorAll('#editTypeToggle button');
+  for (var j = 0; j < btns.length; j++) {
+    btns[j].classList.toggle('active', btns[j].dataset.type === type);
+  }
+  populateCategorySelect(document.getElementById('editCategory'), type);
+
+  document.getElementById('editDate').value = tx.date;
+  document.getElementById('editAmount').value = Math.abs(Number(tx.amount));
+  document.getElementById('editCategory').value = tx.category;
+  document.getElementById('editPayment').value = tx.payment || '';
+  document.getElementById('editMemo').value = tx.memo || '';
+  document.getElementById('editTag').value = tx.tag || '';
+
+  document.getElementById('editModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('active');
+  state.editingId = null;
+}
+
+function saveEditedTransaction() {
+  if (!state.editingId) return;
+  var type = document.querySelector('#editTypeToggle button.active').dataset.type;
+  var raw = Number(document.getElementById('editAmount').value);
+
+  var btn = document.getElementById('saveEdit');
+  btn.disabled = true;
+
+  var payload = {
+    id: state.editingId,
+    date: document.getElementById('editDate').value,
+    amount: type === 'expense' ? -Math.abs(raw) : Math.abs(raw),
+    category: document.getElementById('editCategory').value,
+    payment: document.getElementById('editPayment').value,
+    memo: document.getElementById('editMemo').value,
+    tag: document.getElementById('editTag').value,
+  };
+
+  callGas('apiUpdateTransaction', payload)
+    .then(function () {
+      closeModal();
+      showToast('更新しました');
+      return loadMonth();
+    })
+    .catch(function (err) { showToast('更新に失敗しました: ' + err.message); })
+    .then(function () { btn.disabled = false; });
+}
+
+function deleteEditedTransaction() {
+  if (!state.editingId) return;
+  if (!confirm('この取引を削除しますか？')) return;
+
+  callGas('apiDeleteTransaction', state.editingId)
+    .then(function () {
+      closeModal();
+      showToast('削除しました');
+      return loadMonth();
+    })
+    .catch(function (err) { showToast('削除に失敗しました: ' + err.message); });
+}
+
+/* ============================================================
+   CSV取込
+   ============================================================ */
+var pendingCsvRows = [];
+
+function handleCsvFile(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    try {
+      pendingCsvRows = parseCsv_(ev.target.result);
+      renderCsvPreview();
+    } catch (err) {
+      showToast('CSVの読み込みに失敗しました: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCsv_(text) {
+  var lines = text.replace(/\r\n/g, '\n').split('\n').filter(function (l) { return l.trim() !== ''; });
+  if (lines.length < 2) throw new Error('データ行がありません');
+  var expected = ['date', 'amount', 'category', 'memo', 'payment', 'tag'];
+  return lines.slice(1).map(function (line) {
+    var cols = line.split(',').map(function (c) { return c.trim(); });
+    var obj = {};
+    expected.forEach(function (key, i) { obj[key] = cols[i] !== undefined ? cols[i] : ''; });
+    return obj;
+  });
+}
+
+function renderCsvPreview() {
+  var area = document.getElementById('csvPreviewArea');
+  if (pendingCsvRows.length === 0) { area.innerHTML = ''; return; }
+
+  var rowsHtml = pendingCsvRows.slice(0, 10).map(function (r) {
+    return '<tr><td>' + escapeHtml_(r.date) + '</td>' +
+           '<td class="num">' + escapeHtml_(r.amount) + '</td>' +
+           '<td>' + escapeHtml_(r.category) + '</td>' +
+           '<td>' + escapeHtml_(r.memo) + '</td></tr>';
+  }).join('');
+
+  area.innerHTML =
+    '<table class="csv-preview-table">' +
+      '<thead><tr><th>日付</th><th>金額</th><th>カテゴリ</th><th>摘要</th></tr></thead>' +
+      '<tbody>' + rowsHtml + '</tbody>' +
+    '</table>' +
+    '<div style="font-size:12px;color:var(--ink-mute);margin-bottom:12px;">' +
+      pendingCsvRows.length + '件を読み込みました' +
+      (pendingCsvRows.length > 10 ? '（先頭10件を表示）' : '') +
+    '</div>' +
+    '<button class="btn-primary" id="csvImportBtn">この内容で取り込む</button>';
+
+  document.getElementById('csvImportBtn').addEventListener('click', importCsvRows);
+}
+
+function importCsvRows() {
+  if (pendingCsvRows.length === 0) return;
+  var btn = document.getElementById('csvImportBtn');
+  btn.disabled = true;
+  var count = pendingCsvRows.length;
+
+  callGas('apiBulkAddTransactions', pendingCsvRows)
+    .then(function () {
+      showToast(count + '件取り込みました');
+      pendingCsvRows = [];
+      document.getElementById('csvPreviewArea').innerHTML = '';
+      document.getElementById('csvFile').value = '';
+      return loadMonth();
+    })
+    .then(function () { switchView('list'); })
+    .catch(function (err) {
+      showToast('取り込みに失敗しました: ' + err.message);
+      btn.disabled = false;
+    });
+}
+
+/* ============================================================
+   トースト
+   ============================================================ */
+var toastTimer = null;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2600);
+}
+
+init();
+</script>
+</body>
+</html>
