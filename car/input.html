@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>公用車 利用履歴 入力</title>
+<style>
+/* ==========================================================
+   デザイントークン
+   道路案内標識の配色（濃紺・案内青）＋メーター表示の等幅数字
+   ========================================================== */
+:root{
+  --ink:      #16202b;   /* 文字・濃色面 */
+  --ink-2:    #4a5b6d;   /* 補助文字 */
+  --paper:    #eef1f5;   /* 背景 */
+  --surface:  #ffffff;
+  --rule:     #d3dae2;
+  --signal:   #0b5fa5;   /* 案内標識の青＝主要操作 */
+  --signal-d: #094e88;   /* 同 濃色（hover） */
+  --caution:  #b03a12;   /* 異常・NG */
+  --caution-bg:#fdeee8;
+  --ok:       #17603f;
+  --ok-bg:    #e8f3ed;
+
+  --r: 10px;
+  --gap: 14px;
+  --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP",
+          "Yu Gothic UI", Meiryo, sans-serif;
+}
+
+*{ box-sizing:border-box; }
+
+html,body{ margin:0; padding:0; }
+
+body{
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+  padding-bottom: 96px; /* 固定フッター分 */
+}
+
+/* ---------- ヘッダー ---------- */
+.topbar{
+  background: var(--ink);
+  color: #fff;
+  padding: 12px 16px calc(12px + env(safe-area-inset-top));
+  padding-top: calc(12px + env(safe-area-inset-top));
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  position:sticky; top:0; z-index:20;
+}
+.topbar h1{
+  font-size: 15px; font-weight:700; margin:0; letter-spacing:.04em;
+}
+.topbar a{
+  color:#cfe0f0; font-size:13px; text-decoration:none;
+  border:1px solid #3d5266; border-radius:999px; padding:4px 12px;
+  white-space:nowrap;
+}
+.topbar a:hover{ background:#243447; }
+
+.wrap{ max-width: 640px; margin:0 auto; padding: var(--gap); }
+
+/* ---------- 車両表示（QR固定時） ---------- */
+.vehicle-lock{
+  background: var(--signal);
+  color:#fff;
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: var(--gap);
+}
+.vehicle-lock .label{
+  font-size:11px; letter-spacing:.14em; opacity:.8; margin-bottom:2px;
+}
+.vehicle-lock .name{ font-size:20px; font-weight:700; line-height:1.3; }
+.vehicle-lock .plate{
+  font-family: var(--mono); font-size:13px; opacity:.9; margin-top:2px;
+}
+
+/* ---------- 前回記録パネル（署名要素：メーター表示） ---------- */
+.meter{
+  background: var(--ink);
+  color:#fff;
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: var(--gap);
+  display:flex; align-items:flex-end; justify-content:space-between; gap:12px;
+}
+.meter .label{
+  font-size:11px; letter-spacing:.14em; color:#8fa5ba; margin-bottom:4px;
+}
+.meter .value{
+  font-family: var(--mono);
+  font-size: 34px; font-weight:600; line-height:1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing:-.02em;
+}
+.meter .unit{ font-size:15px; margin-left:4px; color:#8fa5ba; }
+.meter .sub{
+  font-size:12px; color:#8fa5ba; text-align:right; line-height:1.5;
+}
+.meter.empty .value{ font-size:18px; color:#8fa5ba; font-family:var(--sans); }
+
+/* ---------- カード ---------- */
+.card{
+  background: var(--surface);
+  border:1px solid var(--rule);
+  border-radius: var(--r);
+  margin-bottom: var(--gap);
+  overflow:hidden;
+}
+.card > h2{
+  font-size:12px; font-weight:700; letter-spacing:.12em;
+  color: var(--ink-2);
+  margin:0; padding:12px 16px 0;
+}
+.card .body{ padding: 12px 16px 16px; }
+
+/* ---------- フィールド ---------- */
+.field{ margin-top:14px; }
+.field:first-child{ margin-top:6px; }
+.field > label{
+  display:block; font-size:13px; font-weight:600; margin-bottom:6px;
+}
+.req{
+  color: var(--caution); font-size:11px; margin-left:6px; font-weight:700;
+}
+.hint{ font-size:12px; color: var(--ink-2); margin-top:5px; }
+
+input[type=text], input[type=date], input[type=number], select, textarea{
+  width:100%;
+  font-family: var(--sans);
+  font-size:16px; /* iOSの自動ズーム防止 */
+  color: var(--ink);
+  background:#fff;
+  border:1px solid var(--rule);
+  border-radius:8px;
+  padding:11px 12px;
+  appearance:none;
+}
+input[type=number]{ font-family: var(--mono); font-variant-numeric: tabular-nums; }
+textarea{ min-height:78px; resize:vertical; line-height:1.6; }
+select{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%234a5b6d' stroke-width='2'/></svg>");
+  background-repeat:no-repeat; background-position:right 12px center;
+  padding-right:34px;
+}
+input:focus, select:focus, textarea:focus{
+  outline:2px solid var(--signal); outline-offset:1px; border-color:var(--signal);
+}
+input.err, select.err, textarea.err{ border-color: var(--caution); background: var(--caution-bg); }
+
+.row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:400px){ .row2{ grid-template-columns:1fr; } }
+
+/* ---------- セグメント選択（OK/NG・良/否） ---------- */
+.seg{ display:flex; gap:8px; }
+.seg button{
+  flex:1;
+  font-family:var(--sans); font-size:15px; font-weight:700;
+  padding:11px 8px;
+  border:1px solid var(--rule); border-radius:8px;
+  background:#fff; color:var(--ink-2);
+  cursor:pointer;
+}
+.seg button:hover{ border-color:#9fb0c0; }
+.seg button:focus-visible{ outline:2px solid var(--signal); outline-offset:1px; }
+.seg button[aria-pressed="true"]{
+  background: var(--ok-bg); border-color:var(--ok); color:var(--ok);
+}
+.seg button[aria-pressed="true"][data-tone="bad"]{
+  background: var(--caution-bg); border-color:var(--caution); color:var(--caution);
+}
+.seg.err button{ border-color: var(--caution); }
+
+/* ---------- 点検リスト ---------- */
+.inspect-row{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 0; border-top:1px solid var(--rule);
+}
+.inspect-row:first-child{ border-top:none; }
+.inspect-row .nm{ flex:1; font-size:15px; font-weight:600; }
+.inspect-row .seg{ width:150px; flex:none; }
+.inspect-row .seg button{ padding:8px 4px; font-size:14px; }
+
+/* ---------- 給油トグル ---------- */
+.toggle{
+  display:flex; align-items:center; gap:10px;
+  font-size:15px; font-weight:600; cursor:pointer;
+  padding:4px 0;
+}
+.toggle input{ width:20px; height:20px; accent-color: var(--signal); }
+
+/* ---------- 通知バナー ---------- */
+.banner{
+  border-radius: var(--r); padding:12px 14px; margin-bottom: var(--gap);
+  font-size:14px; line-height:1.6;
+}
+.banner.warn{ background: var(--caution-bg); border:1px solid var(--caution); color:var(--caution); }
+.banner.err{ background: var(--caution-bg); border:1px solid var(--caution); color:var(--caution); white-space:pre-wrap; }
+
+/* ---------- 送信バー ---------- */
+.submitbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  background:rgba(255,255,255,.96);
+  border-top:1px solid var(--rule);
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  backdrop-filter: blur(6px);
+}
+.submitbar .inner{ max-width:640px; margin:0 auto; }
+.btn-primary{
+  width:100%;
+  font-family:var(--sans); font-size:17px; font-weight:700;
+  color:#fff; background: var(--signal);
+  border:none; border-radius:10px; padding:15px;
+  cursor:pointer;
+}
+.btn-primary:hover{ background: var(--signal-d); }
+.btn-primary:disabled{ background:#9fb0c0; cursor:default; }
+.btn-primary:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+
+.btn-sub{
+  font-family:var(--sans); font-size:14px; font-weight:600;
+  color: var(--signal); background:#fff;
+  border:1px solid var(--rule); border-radius:8px; padding:10px 14px;
+  cursor:pointer; width:100%; margin-top:10px;
+}
+.btn-sub:hover{ border-color: var(--signal); }
+
+/* ---------- 完了画面 ---------- */
+.done{ text-align:center; padding:48px 16px; }
+.done .mark{
+  width:64px; height:64px; margin:0 auto 18px;
+  border-radius:50%; background: var(--ok-bg);
+  display:flex; align-items:center; justify-content:center;
+}
+.done .mark svg{ width:30px; height:30px; }
+.done h2{ font-size:19px; margin:0 0 6px; }
+.done .id{
+  font-family:var(--mono); font-size:26px; font-weight:600;
+  letter-spacing:.06em; margin:14px 0 4px;
+}
+.done .idlabel{ font-size:11px; letter-spacing:.14em; color:var(--ink-2); }
+
+/* ---------- 読み込み中 ---------- */
+.loading{ text-align:center; padding:64px 16px; color:var(--ink-2); font-size:14px; }
+
+.hidden{ display:none !important; }
+
+@media (prefers-reduced-motion: no-preference){
+  .card, .meter, .vehicle-lock{ animation: rise .32s ease both; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none;} }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>公用車 利用履歴 入力</h1>
+  <a id="linkList" href="#" target="_top">履歴を見る</a>
+</div>
+
+<div id="loading" class="loading">読み込んでいます…</div>
+
+<!-- ============ 入力フォーム ============ -->
+<div id="form" class="wrap hidden">
+
+  <div id="bannerUnknown" class="banner warn hidden"></div>
+
+  <!-- 車両 -->
+  <div id="vehicleLock" class="vehicle-lock hidden">
+    <div class="label">対象車両</div>
+    <div class="name" id="lockName"></div>
+    <div class="plate" id="lockPlate"></div>
+  </div>
+
+  <div id="vehiclePick" class="card hidden">
+    <h2>車両</h2>
+    <div class="body">
+      <div class="field">
+        <label for="vehicleId">使用した車両<span class="req">必須</span></label>
+        <select id="vehicleId"></select>
+      </div>
+      <button type="button" class="btn-sub" id="btnNewVehicle">車両を新しく登録する</button>
+    </div>
+  </div>
+
+  <!-- 前回記録（署名要素） -->
+  <div id="meter" class="meter">
+    <div>
+      <div class="label">この車両の前回記録</div>
+      <div><span class="value" id="meterValue">—</span><span class="unit" id="meterUnit">km</span></div>
+    </div>
+    <div class="sub" id="meterSub"></div>
+  </div>
+
+  <!-- 運行内容 -->
+  <div class="card">
+    <h2>運行内容</h2>
+    <div class="body">
+      <div class="row2">
+        <div class="field">
+          <label for="useDate">利用日<span class="req">必須</span></label>
+          <input type="date" id="useDate">
+        </div>
+        <div class="field">
+          <label for="userName">利用者氏名<span class="req">必須</span></label>
+          <input type="text" id="userName" autocomplete="off" placeholder="〇〇 太郎">
+        </div>
+      </div>
+      <div class="field">
+        <label for="destination">行先<span class="req">必須</span></label>
+        <input type="text" id="destination" autocomplete="off" placeholder="〇〇市役所">
+      </div>
+      <div class="field">
+        <label for="distance">走行距離<span class="req">必須</span></label>
+        <input type="number" id="distance" inputmode="decimal" step="0.1" min="0" placeholder="0.0">
+        <div class="hint">単位はkm。上の前回記録を目安にしてください。</div>
+      </div>
+      <div class="field">
+        <label class="toggle">
+          <input type="checkbox" id="hasFuel">
+          今回、給油した
+        </label>
+        <div id="fuelWrap" class="hidden" style="margin-top:8px">
+          <input type="number" id="fuel" inputmode="decimal" step="0.1" min="0" placeholder="給油量（L）">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- アルコールチェック -->
+  <div class="card">
+    <h2>アルコールチェック</h2>
+    <div class="body">
+      <div class="field">
+        <label>出発前の測定結果<span class="req">必須</span></label>
+        <div class="seg" id="segAlcBefore"></div>
+      </div>
+      <div class="field">
+        <label for="alcBeforeChecker">出発前の確認者<span class="req">必須</span></label>
+        <input type="text" id="alcBeforeChecker" autocomplete="off" placeholder="〇〇 課長">
+      </div>
+      <div class="field" style="margin-top:20px">
+        <label>帰着後の測定結果<span class="req">必須</span></label>
+        <div class="seg" id="segAlcAfter"></div>
+      </div>
+      <div class="field">
+        <label for="alcAfterChecker">帰着後の確認者<span class="req">必須</span></label>
+        <input type="text" id="alcAfterChecker" autocomplete="off" placeholder="〇〇 課長">
+      </div>
+    </div>
+  </div>
+
+  <!-- 日常点検 -->
+  <div class="card">
+    <h2>日常点検</h2>
+    <div class="body">
+      <div id="inspectList"></div>
+      <div class="field" style="margin-top:16px">
+        <label for="inspectNote">点検備考</label>
+        <textarea id="inspectNote" placeholder="「否」がある場合は状況と対応を記入してください。"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="bannerError" class="banner err hidden"></div>
+</div>
+
+<!-- ============ 完了画面 ============ -->
+<div id="done" class="wrap done hidden">
+  <div class="mark">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#17603f" stroke-width="3"
+         stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 6"/></svg>
+  </div>
+  <h2>登録しました</h2>
+  <div class="idlabel">記録番号</div>
+  <div class="id" id="doneId"></div>
+  <div style="margin-top:28px">
+    <button type="button" class="btn-primary" id="btnAgain">続けて入力する</button>
+    <a class="btn-sub" id="doneToList" href="#" target="_top"
+       style="display:block; text-align:center; text-decoration:none">履歴一覧を見る</a>
+  </div>
+</div>
+
+<!-- ============ 送信バー ============ -->
+<div id="submitbar" class="submitbar hidden">
+  <div class="inner">
+    <button type="button" class="btn-primary" id="btnSubmit">この内容で登録する</button>
+  </div>
+</div>
+
+<script>
+// GASテンプレートからQRの車両IDを受け取る
+var QR_VEHICLE_ID = '<?= vehicleId ?>';
+
+var STATE = {
+  init: null,
+  alcBefore: '',
+  alcAfter: '',
+  inspect: {},
+  submitting: false
+};
+
+var $ = function(id){ return document.getElementById(id); };
+
+// ============================================================
+// 起動
+// ============================================================
+window.addEventListener('DOMContentLoaded', function(){
+  google.script.run
+    .withSuccessHandler(onInit)
+    .withFailureHandler(onFatal)
+    .getInputInitData(QR_VEHICLE_ID);
+
+  google.script.run.withSuccessHandler(function(url){
+    $('linkList').href    = url + '?page=list';
+    $('doneToList').href  = url + '?page=list';
+  }).getWebAppUrl();
+});
+
+function onFatal(err){
+  $('loading').innerHTML =
+    '<div class="banner err">読み込みに失敗しました。<br>' + esc(err.message) + '</div>';
+}
+
+function onInit(data){
+  STATE.init = data;
+
+  // 車両の表示切り替え
+  if (data.fixedVehicle){
+    $('lockName').textContent  = data.fixedVehicle.name;
+    $('lockPlate').textContent = data.fixedVehicle.plate;
+    $('vehicleLock').classList.remove('hidden');
+  } else {
+    if (data.unknownVehicleId){
+      $('bannerUnknown').textContent =
+        'QRコードの車両（' + data.unknownVehicleId + '）が車両マスタに見つかりません。'
+        + '下の一覧から車両を選んでください。';
+      $('bannerUnknown').classList.remove('hidden');
+    }
+    buildVehicleSelect(data.vehicles);
+    $('vehiclePick').classList.remove('hidden');
+  }
+
+  $('useDate').value = data.today;
+  $('useDate').max   = data.today;
+
+  buildSeg('segAlcBefore', data.alcOptions, 'alcBefore');
+  buildSeg('segAlcAfter',  data.alcOptions, 'alcAfter');
+  buildInspect(data.inspectItems, data.inspectOptions);
+  renderMeter(data.lastRecord);
+
+  $('loading').classList.add('hidden');
+  $('form').classList.remove('hidden');
+  $('submitbar').classList.remove('hidden');
+}
+
+// ============================================================
+// 画面部品の生成
+// ============================================================
+function buildVehicleSelect(list){
+  var sel = $('vehicleId');
+  sel.innerHTML = '<option value="">選択してください</option>';
+  list.forEach(function(v){
+    var o = document.createElement('option');
+    o.value = v.vehicleId;
+    o.textContent = v.name + '（' + v.plate + '）';
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', function(){
+    sel.classList.remove('err');
+    if (!sel.value){ renderMeter(null); return; }
+    renderMeter(null, true);
+    google.script.run.withSuccessHandler(function(rec){
+      renderMeter(rec);
+    }).getLastRecordFor(sel.value);
+  });
+}
+
+function buildSeg(containerId, options, stateKey){
+  var box = $(containerId);
+  box.innerHTML = '';
+  options.forEach(function(opt){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = opt;
+    b.setAttribute('aria-pressed', 'false');
+    if (opt === 'NG' || opt === '否') b.setAttribute('data-tone', 'bad');
+    b.addEventListener('click', function(){
+      STATE[stateKey] = opt;
+      Array.prototype.forEach.call(box.children, function(c){
+        c.setAttribute('aria-pressed', c === b ? 'true' : 'false');
+      });
+      box.classList.remove('err');
+    });
+    box.appendChild(b);
+  });
+}
+
+function buildInspect(items, options){
+  var box = $('inspectList');
+  box.innerHTML = '';
+  items.forEach(function(it){
+    var row = document.createElement('div');
+    row.className = 'inspect-row';
+
+    var nm = document.createElement('div');
+    nm.className = 'nm';
+    nm.textContent = it.name;
+
+    var seg = document.createElement('div');
+    seg.className = 'seg';
+    seg.setAttribute('data-item', it.name);
+
+    options.forEach(function(opt){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = opt;
+      b.setAttribute('aria-pressed', 'false');
+      if (opt === '否') b.setAttribute('data-tone', 'bad');
+      b.addEventListener('click', function(){
+        STATE.inspect[it.name] = opt;
+        Array.prototype.forEach.call(seg.children, function(c){
+          c.setAttribute('aria-pressed', c === b ? 'true' : 'false');
+        });
+        seg.classList.remove('err');
+      });
+      seg.appendChild(b);
+    });
+
+    row.appendChild(nm);
+    row.appendChild(seg);
+    box.appendChild(row);
+  });
+}
+
+function renderMeter(rec, loading){
+  var m = $('meter');
+  if (loading){
+    m.classList.add('empty');
+    $('meterValue').textContent = '取得中…';
+    $('meterUnit').classList.add('hidden');
+    $('meterSub').textContent = '';
+    return;
+  }
+  if (!rec){
+    m.classList.add('empty');
+    $('meterValue').textContent = 'この車両の記録はまだありません';
+    $('meterUnit').classList.add('hidden');
+    $('meterSub').textContent = '';
+    return;
+  }
+  m.classList.remove('empty');
+  $('meterUnit').classList.remove('hidden');
+  $('meterValue').textContent = Number(rec.distance).toFixed(1);
+  $('meterSub').innerHTML =
+    esc(rec.useDate) + '<br>' + esc(rec.userName) + ' ／ ' + esc(rec.destination);
+}
+
+// ============================================================
+// 給油トグル
+// ============================================================
+$('hasFuel').addEventListener('change', function(){
+  $('fuelWrap').classList.toggle('hidden', !this.checked);
+  if (!this.checked) $('fuel').value = '';
+  else $('fuel').focus();
+});
+
+// ============================================================
+// 車両の新規登録
+// ============================================================
+$('btnNewVehicle').addEventListener('click', function(){
+  var name = window.prompt('車両名を入力してください（例：公用車13号車（〇〇））');
+  if (name === null) return;
+  name = name.trim();
+  if (!name){ alert('車両名が入力されていません。'); return; }
+
+  var plate = window.prompt('ナンバープレートを入力してください（例：〇〇 500 あ 1234）');
+  if (plate === null) return;
+  plate = plate.trim();
+  if (!plate){ alert('ナンバープレートが入力されていません。'); return; }
+
+  this.disabled = true;
+  this.textContent = '登録しています…';
+  var btn = this;
+
+  google.script.run
+    .withSuccessHandler(function(v){
+      var sel = $('vehicleId');
+      var o = document.createElement('option');
+      o.value = v.vehicleId;
+      o.textContent = v.name + '（' + v.plate + '）';
+      sel.appendChild(o);
+      sel.value = v.vehicleId;
+      renderMeter(null);
+      btn.disabled = false;
+      btn.textContent = '車両を新しく登録する';
+      alert('登録しました（車両ID: ' + v.vehicleId + '）');
+    })
+    .withFailureHandler(function(err){
+      btn.disabled = false;
+      btn.textContent = '車両を新しく登録する';
+      alert(err.message);
+    })
+    .registerVehicle({ name: name, plate: plate });
+});
+
+// ============================================================
+// 送信
+// ============================================================
+$('btnSubmit').addEventListener('click', function(){
+  if (STATE.submitting) return;
+
+  var p = collect();
+  var errs = validate(p);
+
+  if (errs.length){
+    showError('入力内容を確認してください。\n・' + errs.join('\n・'));
+    var firstErr = document.querySelector('.err');
+    if (firstErr) firstErr.scrollIntoView({ block:'center', behavior:'smooth' });
+    return;
+  }
+
+  hideError();
+  STATE.submitting = true;
+  this.disabled = true;
+  this.textContent = '登録しています…';
+
+  google.script.run
+    .withSuccessHandler(onSaved)
+    .withFailureHandler(onSaveFailed)
+    .saveRecord(p);
+});
+
+function collect(){
+  var vid = STATE.init.fixedVehicle
+    ? STATE.init.fixedVehicle.vehicleId
+    : $('vehicleId').value;
+
+  return {
+    useDate:          $('useDate').value,
+    vehicleId:        vid,
+    userName:         $('userName').value.trim(),
+    destination:      $('destination').value.trim(),
+    distance:         $('distance').value,
+    fuel:             $('hasFuel').checked ? $('fuel').value : '',
+    alcBefore:        STATE.alcBefore,
+    alcBeforeChecker: $('alcBeforeChecker').value.trim(),
+    alcAfter:         STATE.alcAfter,
+    alcAfterChecker:  $('alcAfterChecker').value.trim(),
+    inspect:          STATE.inspect,
+    inspectNote:      $('inspectNote').value.trim(),
+    registrant:       $('userName').value.trim()
+  };
+}
+
+function validate(p){
+  var e = [];
+  clearErrors();
+
+  if (!p.vehicleId){ e.push('車両を選んでください'); mark('vehicleId'); }
+  if (!p.useDate){ e.push('利用日を入力してください'); mark('useDate'); }
+  if (!p.userName){ e.push('利用者氏名を入力してください'); mark('userName'); }
+  if (!p.destination){ e.push('行先を入力してください'); mark('destination'); }
+
+  if (p.distance === '' || isNaN(Number(p.distance)) || Number(p.distance) < 0){
+    e.push('走行距離を0以上の数値で入力してください'); mark('distance');
+  }
+  if ($('hasFuel').checked && (p.fuel === '' || isNaN(Number(p.fuel)) || Number(p.fuel) < 0)){
+    e.push('給油量を0以上の数値で入力してください'); mark('fuel');
+  }
+
+  if (!p.alcBefore){ e.push('出発前のアルコールチェック結果を選んでください'); markSeg('segAlcBefore'); }
+  if (!p.alcBeforeChecker){ e.push('出発前の確認者を入力してください'); mark('alcBeforeChecker'); }
+  if (!p.alcAfter){ e.push('帰着後のアルコールチェック結果を選んでください'); markSeg('segAlcAfter'); }
+  if (!p.alcAfterChecker){ e.push('帰着後の確認者を入力してください'); mark('alcAfterChecker'); }
+
+  STATE.init.inspectItems.forEach(function(it){
+    if (!p.inspect[it.name]){
+      e.push('点検項目「' + it.name + '」を選んでください');
+      var seg = document.querySelector('.seg[data-item="' + it.name + '"]');
+      if (seg) seg.classList.add('err');
+    }
+  });
+
+  return e;
+}
+
+function mark(id){ var el = $(id); if (el) el.classList.add('err'); }
+function markSeg(id){ var el = $(id); if (el) el.classList.add('err'); }
+function clearErrors(){
+  Array.prototype.forEach.call(document.querySelectorAll('.err'), function(el){
+    el.classList.remove('err');
+  });
+}
+
+function onSaved(res){
+  $('doneId').textContent = res.id;
+  $('form').classList.add('hidden');
+  $('submitbar').classList.add('hidden');
+  $('done').classList.remove('hidden');
+  window.scrollTo(0, 0);
+  STATE.submitting = false;
+}
+
+function onSaveFailed(err){
+  STATE.submitting = false;
+  var b = $('btnSubmit');
+  b.disabled = false;
+  b.textContent = 'この内容で登録する';
+  showError(err.message);
+}
+
+function showError(msg){
+  var b = $('bannerError');
+  b.textContent = msg;
+  b.classList.remove('hidden');
+  b.scrollIntoView({ block:'center', behavior:'smooth' });
+}
+function hideError(){ $('bannerError').classList.add('hidden'); }
+
+// ============================================================
+// 続けて入力
+// ============================================================
+$('btnAgain').addEventListener('click', function(){
+  location.reload();
+});
+
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
