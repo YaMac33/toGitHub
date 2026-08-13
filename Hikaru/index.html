@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>料金試算</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16202E;
+    --canvas:#EDF0F4;
+    --paper:#FFFFFF;
+    --rule:#D8DEE7;
+    --muted:#667488;
+    --accent:#0B6E5F;
+    --accent-soft:#E6F1EE;
+    --focus:#1D6FD0;
+    --shadow:0 1px 2px rgba(22,32,46,.06), 0 8px 24px rgba(22,32,46,.07);
+    --num:"SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--canvas);
+    color:var(--ink);
+    font-family:"BIZ UDPGothic", system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    font-size:15px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  .num{font-family:var(--num); font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;}
+
+  /* ---------- ヘッダー ---------- */
+  .masthead{
+    background:var(--ink);
+    color:#fff;
+    padding:18px 24px;
+  }
+  .masthead-inner{max-width:1080px; margin:0 auto; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .masthead-title{font-size:17px; font-weight:700; margin:0; letter-spacing:.04em;}
+  .masthead-note{font-size:12.5px; color:#9FB0C4; margin:0;}
+
+  /* ---------- レイアウト ---------- */
+  .app{max-width:1080px; margin:0 auto; padding:24px 24px 120px;}
+  .layout{display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:28px; align-items:start;}
+  @media (max-width:900px){
+    .layout{grid-template-columns:minmax(0,1fr);}
+    .app{padding-bottom:96px;}
+  }
+
+  /* ---------- サービス選択 ---------- */
+  .picker{margin:0 0 22px;}
+  .picker-label{display:block; font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--muted); margin-bottom:7px;}
+  .picker-select{
+    width:100%; max-width:420px;
+    font-family:inherit; font-size:16px; color:var(--ink);
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-bottom:2px solid var(--ink);
+    border-radius:3px;
+    padding:11px 13px;
+    appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);
+    background-position:calc(100% - 19px) 50%, calc(100% - 13px) 50%;
+    background-size:6px 6px, 6px 6px;
+    background-repeat:no-repeat;
+  }
+  .picker-select:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  /* ---------- 明細リスト ---------- */
+  .items{background:var(--paper); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); overflow:hidden;}
+  .items-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:12px 18px; border-bottom:1px solid var(--rule);
+    font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--muted);
+  }
+  .line{
+    display:grid; grid-template-columns:1fr auto; gap:10px 16px;
+    align-items:center;
+    padding:13px 18px;
+    border-bottom:1px solid #EDF0F4;
+  }
+  .line:last-child{border-bottom:none;}
+  .line-pick{cursor:pointer;}
+  .line-pick:hover{background:#F7F9FB;}
+  .line-on{background:var(--accent-soft);}
+  .line-on:hover{background:#DCEBE7;}
+  .line-base{background:#F4F6F9;}
+  .line-main{display:flex; align-items:center; gap:11px; min-width:0;}
+  .line-name{font-weight:700; word-break:break-word;}
+  .line-sub{display:block; font-size:12.5px; font-weight:400; color:var(--muted);}
+  .line-amount{font-size:15px; white-space:nowrap;}
+  .line-amount-zero{color:#9AA6B6;}
+
+  .tick{appearance:none; flex:none; width:21px; height:21px; margin:0; border:1.5px solid #98A5B6; border-radius:3px; background:var(--paper); cursor:pointer; position:relative;}
+  .tick:checked{background:var(--accent); border-color:var(--accent);}
+  .tick:checked::after{content:""; position:absolute; left:6.5px; top:2.5px; width:5px; height:10px; border:solid #fff; border-width:0 2.5px 2.5px 0; transform:rotate(42deg);}
+  .tick:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  .badge{flex:none; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--accent); background:var(--accent-soft); border-radius:2px; padding:3px 7px;}
+
+  .stepper{display:flex; align-items:center; gap:0; justify-self:start;}
+  .stepper-btn{
+    width:34px; height:36px; flex:none;
+    font-family:inherit; font-size:17px; line-height:1; color:var(--ink);
+    background:var(--paper); border:1px solid var(--rule); cursor:pointer;
+  }
+  .stepper-btn:first-child{border-radius:3px 0 0 3px;}
+  .stepper-btn:last-child{border-radius:0 3px 3px 0;}
+  .stepper-btn:hover{background:#F2F5F8;}
+  .stepper-btn:focus-visible{outline:2px solid var(--focus); outline-offset:1px; position:relative;}
+  .stepper-input{
+    width:64px; height:36px; flex:none;
+    font-family:var(--num); font-variant-numeric:tabular-nums; font-size:15px;
+    text-align:center; color:var(--ink);
+    border:1px solid var(--rule); border-left:none; border-right:none; border-radius:0;
+    background:var(--paper);
+  }
+  .stepper-input:focus-visible{outline:2px solid var(--focus); outline-offset:1px; position:relative;}
+  .stepper-unit{font-size:12.5px; color:var(--muted); margin-left:9px;}
+
+  /* ---------- 見積書プレビュー ---------- */
+  .aside{position:sticky; top:24px;}
+  @media (max-width:900px){ .aside{position:static;} }
+  .aside-label{font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--muted); margin:0 0 7px;}
+
+  .sheet{
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    box-shadow:var(--shadow);
+    padding:26px 24px 22px;
+  }
+  .sheet-eyebrow{margin:0; font-size:11.5px; font-weight:700; letter-spacing:.18em; color:var(--muted);}
+  .sheet-service{margin:2px 0 18px; font-size:19px; font-weight:700; line-height:1.4;}
+  .sheet-rule{border:none; border-top:1.5px solid var(--ink); margin:0 0 4px;}
+  .sheet-empty{color:var(--muted); font-size:13.5px; padding:14px 0 6px; margin:0;}
+
+  .sheet-list{list-style:none; margin:0; padding:0;}
+  .sheet-item{display:flex; justify-content:space-between; gap:14px; align-items:baseline; padding:9px 0; border-bottom:1px dotted var(--rule);}
+  .sheet-item-name{font-size:13.5px; min-width:0; word-break:break-word;}
+  .sheet-item-qty{display:block; font-size:12px; color:var(--muted);}
+  .sheet-item-amount{font-size:13.5px; white-space:nowrap;}
+
+  .sheet-totals{margin:14px 0 0; padding:0;}
+  .sheet-total-row{display:flex; justify-content:space-between; align-items:baseline; gap:14px; padding:5px 0;}
+  .sheet-total-key{font-size:12.5px; color:var(--muted);}
+  .sheet-total-val{font-size:14px;}
+  .sheet-grand{margin-top:8px; padding-top:12px; border-top:1.5px solid var(--ink); display:flex; justify-content:space-between; align-items:baseline; gap:14px;}
+  .sheet-grand-key{font-size:12.5px; font-weight:700; letter-spacing:.06em;}
+  .sheet-grand-val{font-size:27px; font-weight:700; color:var(--accent); line-height:1.2;}
+  .sheet-grand-yen{font-size:14px; font-weight:700; margin-left:2px;}
+
+  .print-btn{
+    width:100%; margin-top:16px; padding:13px;
+    font-family:inherit; font-size:15px; font-weight:700; letter-spacing:.06em;
+    color:#fff; background:var(--ink); border:none; border-radius:3px; cursor:pointer;
+  }
+  .print-btn:hover{background:#22314A;}
+  .print-btn:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+  .print-btn[disabled]{background:#AEB8C6; cursor:not-allowed;}
+
+  /* ---------- モバイル固定バー ---------- */
+  .dock{
+    position:fixed; left:0; right:0; bottom:0; z-index:10;
+    display:none; align-items:center; justify-content:space-between; gap:14px;
+    padding:11px 20px;
+    background:var(--ink); color:#fff;
+  }
+  @media (max-width:900px){ .dock{display:flex;} }
+  .dock-key{font-size:12px; color:#9FB0C4; display:block; letter-spacing:.06em;}
+  .dock-val{font-size:20px; font-weight:700;}
+  .dock-btn{
+    font-family:inherit; font-size:14px; font-weight:700; color:var(--ink);
+    background:#fff; border:none; border-radius:3px; padding:10px 18px; cursor:pointer; white-space:nowrap;
+  }
+
+  /* ---------- 状態表示 ---------- */
+  .notice{background:var(--paper); border:1px solid var(--rule); border-left:3px solid var(--ink); border-radius:4px; padding:20px 22px; margin:0 0 22px;}
+  .notice-title{margin:0 0 5px; font-size:15px; font-weight:700;}
+  .notice-body{margin:0; font-size:13.5px; color:var(--muted);}
+  .is-hidden{display:none !important;}
+
+  /* ---------- 印刷 ---------- */
+  .print-root{display:none;}
+  @media print{
+    body{background:#fff;}
+    body > *{display:none !important;}
+    body > .print-root{display:block !important;}
+    .print-root{padding:0; font-size:12pt;}
+    .print-root .sheet{border:none; box-shadow:none; border-radius:0; padding:0;}
+    .print-root .print-btn{display:none;}
+    .print-root .sheet-grand-val{color:#000;}
+  }
+  @page{margin:18mm;}
+  @media (prefers-reduced-motion:no-preference){
+    .line, .stepper-btn, .print-btn{transition:background-color .12s ease;}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <h1 class="masthead-title">料金試算</h1>
+    <p class="masthead-note">単価はスプレッドシートの「単価マスタ」から読み込んでいます</p>
+  </div>
+</header>
+
+<div class="app">
+  <div class="notice" id="status">
+    <p class="notice-title" id="statusTitle">読み込んでいます</p>
+    <p class="notice-body" id="statusBody">単価マスタを取得しています。</p>
+  </div>
+
+  <div class="layout is-hidden" id="layout">
+    <div>
+      <div class="picker">
+        <label class="picker-label" for="serviceSelect">サービス</label>
+        <select class="picker-select" id="serviceSelect"></select>
+      </div>
+
+      <section class="items">
+        <div class="items-head">
+          <span>項目</span>
+          <span>金額</span>
+        </div>
+        <div id="lines"></div>
+      </section>
+    </div>
+
+    <aside class="aside">
+      <p class="aside-label">印刷される内容</p>
+      <div class="sheet" id="sheet"></div>
+      <button class="print-btn" id="printBtn" type="button">この内容で印刷する</button>
+    </aside>
+  </div>
+</div>
+
+<div class="dock is-hidden" id="dock">
+  <div>
+    <span class="dock-key">税込合計</span>
+    <span class="dock-val num" id="dockTotal">0円</span>
+  </div>
+  <button class="dock-btn" id="dockPrint" type="button">印刷する</button>
+</div>
+
+<div class="print-root" id="printRoot"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var TAX_RATE = 0.1;
+  var services = [];
+  var state = {};          // { サービス名: { 項目名: true | 数量 } }
+  var current = null;
+
+  var el = {
+    status: document.getElementById('status'),
+    statusTitle: document.getElementById('statusTitle'),
+    statusBody: document.getElementById('statusBody'),
+    layout: document.getElementById('layout'),
+    select: document.getElementById('serviceSelect'),
+    lines: document.getElementById('lines'),
+    sheet: document.getElementById('sheet'),
+    printBtn: document.getElementById('printBtn'),
+    dock: document.getElementById('dock'),
+    dockTotal: document.getElementById('dockTotal'),
+    dockPrint: document.getElementById('dockPrint'),
+    printRoot: document.getElementById('printRoot')
+  };
+
+  function yen(n) { return Number(n).toLocaleString('ja-JP') + '円'; }
+
+  // ---------- 読み込み ----------
+  function load() {
+    if (!window.google || !google.script || !google.script.run) {
+      fail('サーバーに接続できません', 'このページはGASのWebアプリとして公開したURLから開いてください。');
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(onLoaded)
+      .withFailureHandler(function (err) {
+        fail('マスタを読み込めませんでした', (err && err.message) ? err.message : String(err));
+      })
+      .getMasterData();
+  }
+
+  function fail(title, body) {
+    el.statusTitle.textContent = title;
+    el.statusBody.textContent = body;
+    el.status.classList.remove('is-hidden');
+    el.layout.classList.add('is-hidden');
+    el.dock.classList.add('is-hidden');
+  }
+
+  function onLoaded(data) {
+    services = data || [];
+    if (!services.length) {
+      fail('表示できるサービスがありません', '単価マスタに行を追加してください。');
+      return;
+    }
+    services.forEach(function (service) { state[service.name] = {}; });
+
+    el.select.innerHTML = '';
+    services.forEach(function (service, i) {
+      var option = document.createElement('option');
+      option.value = String(i);
+      option.textContent = service.name;
+      el.select.appendChild(option);
+    });
+    el.select.addEventListener('change', function () {
+      current = services[Number(el.select.value)];
+      renderLines();
+      renderSheet();
+    });
+
+    current = services[0];
+    el.status.classList.add('is-hidden');
+    el.layout.classList.remove('is-hidden');
+    el.dock.classList.remove('is-hidden');
+    renderLines();
+    renderSheet();
+  }
+
+  // ---------- 入力状態 ----------
+  function valueOf(item) {
+    var saved = state[current.name][item.label];
+    if (item.type === 'qty') return Number(saved) || 0;
+    return saved === true;
+  }
+
+  function setValue(item, value) {
+    state[current.name][item.label] = value;
+    renderLines();
+    renderSheet();
+  }
+
+  function amountOf(item) {
+    if (item.type === 'base') return item.price;
+    if (item.type === 'check') return valueOf(item) ? item.price : 0;
+    return item.price * valueOf(item);
+  }
+
+  // ---------- 明細リスト ----------
+  function renderLines() {
+    el.lines.innerHTML = '';
+    current.items.forEach(function (item) {
+      el.lines.appendChild(
+        item.type === 'base' ? baseLine(item) :
+        item.type === 'check' ? checkLine(item) : qtyLine(item)
+      );
+    });
+  }
+
+  function nameBlock(item, extra) {
+    var name = document.createElement('span');
+    name.className = 'line-name';
+    name.appendChild(document.createTextNode(item.label));
+    var sub = extra || item.note;
+    if (sub) {
+      var s = document.createElement('span');
+      s.className = 'line-sub';
+      s.textContent = sub;
+      name.appendChild(s);
+    }
+    return name;
+  }
+
+  function amountBlock(value) {
+    var span = document.createElement('span');
+    span.className = 'line-amount num' + (value === 0 ? ' line-amount-zero' : '');
+    span.textContent = yen(value);
+    return span;
+  }
+
+  function baseLine(item) {
+    var row = document.createElement('div');
+    row.className = 'line line-base';
+    var main = document.createElement('div');
+    main.className = 'line-main';
+    var badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.textContent = '基本料';
+    main.appendChild(badge);
+    main.appendChild(nameBlock(item, item.note || '常に計上されます'));
+    row.appendChild(main);
+    row.appendChild(amountBlock(item.price));
+    return row;
+  }
+
+  function checkLine(item) {
+    var checked = valueOf(item);
+    var row = document.createElement('label');
+    row.className = 'line line-pick' + (checked ? ' line-on' : '');
+    var main = document.createElement('div');
+    main.className = 'line-main';
+    var box = document.createElement('input');
+    box.type = 'checkbox';
+    box.className = 'tick';
+    box.checked = checked;
+    box.addEventListener('change', function () { setValue(item, box.checked); });
+    main.appendChild(box);
+    main.appendChild(nameBlock(item));
+    row.appendChild(main);
+    row.appendChild(amountBlock(checked ? item.price : 0));
+    return row;
+  }
+
+  function qtyLine(item) {
+    var qty = valueOf(item);
+    var row = document.createElement('div');
+    row.className = 'line' + (qty > 0 ? ' line-on' : '');
+
+    var main = document.createElement('div');
+    main.className = 'line-main';
+    main.appendChild(nameBlock(item, yen(item.price) + ' × 数量' + (item.note ? '　' + item.note : '')));
+    row.appendChild(main);
+    row.appendChild(amountBlock(item.price * qty));
+
+    var stepper = document.createElement('div');
+    stepper.className = 'stepper';
+
+    var minus = document.createElement('button');
+    minus.type = 'button';
+    minus.className = 'stepper-btn';
+    minus.textContent = '−';
+    minus.setAttribute('aria-label', item.label + 'の数量を減らす');
+    minus.addEventListener('click', function () { setValue(item, Math.max(0, qty - 1)); });
+
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'stepper-input num';
+    input.min = '0';
+    input.value = String(qty);
+    input.setAttribute('aria-label', item.label + 'の数量');
+    input.addEventListener('change', function () {
+      var next = Math.max(0, Math.floor(Number(input.value) || 0));
+      setValue(item, next);
+    });
+
+    var plus = document.createElement('button');
+    plus.type = 'button';
+    plus.className = 'stepper-btn';
+    plus.textContent = '＋';
+    plus.setAttribute('aria-label', item.label + 'の数量を増やす');
+    plus.addEventListener('click', function () { setValue(item, qty + 1); });
+
+    stepper.appendChild(minus);
+    stepper.appendChild(input);
+    stepper.appendChild(plus);
+
+    var unit = document.createElement('span');
+    unit.className = 'stepper-unit';
+    unit.textContent = '個';
+    stepper.appendChild(unit);
+
+    row.appendChild(stepper);
+    return row;
+  }
+
+  // ---------- 見積書 ----------
+  function renderSheet() {
+    var picked = current.items.filter(function (item) { return amountOf(item) > 0; });
+    var subtotal = picked.reduce(function (sum, item) { return sum + amountOf(item); }, 0);
+    var tax = Math.floor(subtotal * TAX_RATE);
+    var total = subtotal + tax;
+
+    var html = '';
+    html += '<p class="sheet-eyebrow">料金試算</p>';
+    html += '<h2 class="sheet-service">' + escape(current.name) + '</h2>';
+    html += '<hr class="sheet-rule">';
+
+    if (!picked.length) {
+      html += '<p class="sheet-empty">左の項目を選ぶと、ここに明細と合計が表示されます。</p>';
+    } else {
+      html += '<ul class="sheet-list">';
+      picked.forEach(function (item) {
+        var qtyText = item.type === 'qty'
+          ? yen(item.price) + ' × ' + valueOf(item) + '個'
+          : '';
+        html += '<li class="sheet-item">';
+        html += '<span class="sheet-item-name">' + escape(item.label);
+        if (qtyText) html += '<span class="sheet-item-qty num">' + qtyText + '</span>';
+        html += '</span>';
+        html += '<span class="sheet-item-amount num">' + yen(amountOf(item)) + '</span>';
+        html += '</li>';
+      });
+      html += '</ul>';
+    }
+
+    html += '<div class="sheet-totals">';
+    html += totalRow('税抜合計', subtotal);
+    html += totalRow('消費税（10%）', tax);
+    html += '</div>';
+    html += '<div class="sheet-grand"><span class="sheet-grand-key">税込合計</span>';
+    html += '<span class="sheet-grand-val num">' + Number(total).toLocaleString('ja-JP') + '<span class="sheet-grand-yen">円</span></span></div>';
+
+    el.sheet.innerHTML = html;
+    el.dockTotal.textContent = yen(total);
+    el.printBtn.disabled = !picked.length;
+  }
+
+  function totalRow(key, value) {
+    return '<div class="sheet-total-row"><span class="sheet-total-key">' + key +
+      '</span><span class="sheet-total-val num">' + yen(value) + '</span></div>';
+  }
+
+  function escape(text) {
+    return String(text).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // ---------- 印刷 ----------
+  function print() {
+    el.printRoot.innerHTML = '<div class="sheet">' + el.sheet.innerHTML + '</div>';
+    window.print();
+  }
+  el.printBtn.addEventListener('click', print);
+  el.dockPrint.addEventListener('click', print);
+
+  load();
+})();
+</script>
+</body>
+</html>
