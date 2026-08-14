@@ -12,76 +12,70 @@
     --canvas:#EDF0F4;
     --paper:#FFFFFF;
     --rule:#D8DEE7;
+    --hair:#EDF0F4;
     --muted:#667488;
     --accent:#0B6E5F;
     --accent-soft:#E6F1EE;
     --focus:#1D6FD0;
     --shadow:0 1px 2px rgba(22,32,46,.06), 0 8px 24px rgba(22,32,46,.07);
-    --num:"SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace;
+    --num:"SFMono-Regular","Roboto Mono",Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  html,body{margin:0; padding:0;}
   body{
     background:var(--canvas);
     color:var(--ink);
     font-family:"BIZ UDPGothic", system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-    font-size:15px;
-    line-height:1.7;
+    font-size:15px; line-height:1.7;
     -webkit-font-smoothing:antialiased;
   }
   .num{font-family:var(--num); font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;}
+  .is-hidden{display:none !important;}
 
   /* ---------- ヘッダー ---------- */
-  .masthead{
-    background:var(--ink);
-    color:#fff;
-    padding:18px 24px;
-  }
-  .masthead-inner{max-width:1080px; margin:0 auto; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .masthead{background:var(--ink); color:#fff; padding:18px 24px;}
+  .masthead-inner{max-width:960px; margin:0 auto; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
   .masthead-title{font-size:17px; font-weight:700; margin:0; letter-spacing:.04em;}
   .masthead-note{font-size:12.5px; color:#9FB0C4; margin:0;}
 
-  /* ---------- レイアウト ---------- */
-  .app{max-width:1080px; margin:0 auto; padding:24px 24px 120px;}
-  .layout{display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:28px; align-items:start;}
-  @media (max-width:900px){
-    .layout{grid-template-columns:minmax(0,1fr);}
-    .app{padding-bottom:96px;}
-  }
+  .app{max-width:960px; margin:0 auto; padding:24px 24px 200px;}
+  .eyebrow{font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--muted); margin:0 0 9px;}
 
   /* ---------- サービス選択 ---------- */
-  .picker{margin:0 0 22px;}
-  .picker-label{display:block; font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--muted); margin-bottom:7px;}
-  .picker-select{
-    width:100%; max-width:420px;
-    font-family:inherit; font-size:16px; color:var(--ink);
-    background:var(--paper);
-    border:1px solid var(--rule);
-    border-bottom:2px solid var(--ink);
-    border-radius:3px;
-    padding:11px 13px;
-    appearance:none;
-    background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);
-    background-position:calc(100% - 19px) 50%, calc(100% - 13px) 50%;
-    background-size:6px 6px, 6px 6px;
-    background-repeat:no-repeat;
+  .picker{margin:0 0 26px;}
+  .chips{display:flex; flex-wrap:wrap; gap:9px; margin:0; padding:0;}
+  .chip{
+    display:inline-flex; align-items:center; gap:9px;
+    background:var(--paper); border:1px solid var(--rule); border-radius:3px;
+    padding:9px 15px 9px 12px; cursor:pointer; font-size:14.5px;
   }
-  .picker-select:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+  .chip:hover{background:#F7F9FB;}
+  .chip-on{background:var(--accent-soft); border-color:var(--accent); font-weight:700;}
+  .chip-on:hover{background:#DCEBE7;}
 
-  /* ---------- 明細リスト ---------- */
-  .items{background:var(--paper); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); overflow:hidden;}
-  .items-head{
-    display:flex; justify-content:space-between; align-items:baseline;
-    padding:12px 18px; border-bottom:1px solid var(--rule);
-    font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--muted);
+  .tick{appearance:none; flex:none; width:19px; height:19px; margin:0; border:1.5px solid #98A5B6; border-radius:3px; background:var(--paper); cursor:pointer; position:relative;}
+  .tick:checked{background:var(--accent); border-color:var(--accent);}
+  .tick:checked::after{content:""; position:absolute; left:5.5px; top:2px; width:5px; height:9px; border:solid #fff; border-width:0 2.5px 2.5px 0; transform:rotate(42deg);}
+  .tick:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+  /* ---------- タブ ---------- */
+  .tabs{display:flex; gap:3px; overflow-x:auto; border-bottom:1.5px solid var(--ink); margin:0 0 -1px; padding:0 0 0 1px; scrollbar-width:thin;}
+  .tab{
+    flex:none; font-family:inherit; font-size:14.5px; color:var(--muted);
+    background:#E2E7EE; border:1px solid var(--rule); border-bottom:none;
+    border-radius:4px 4px 0 0; padding:10px 17px; cursor:pointer; white-space:nowrap;
   }
-  .line{
-    display:grid; grid-template-columns:1fr auto; gap:10px 16px;
-    align-items:center;
-    padding:13px 18px;
-    border-bottom:1px solid #EDF0F4;
-  }
-  .line:last-child{border-bottom:none;}
+  .tab:hover{background:#DDE3EB; color:var(--ink);}
+  .tab-on{background:var(--paper); color:var(--ink); font-weight:700; border-color:var(--ink); border-bottom:1.5px solid var(--paper); position:relative; z-index:1;}
+  .tab:focus-visible{outline:2px solid var(--focus); outline-offset:-3px;}
+  .tab-sum{display:block; font-size:11.5px; font-weight:400; color:var(--muted); letter-spacing:.02em;}
+  .tab-on .tab-sum{color:var(--accent); font-weight:700;}
+
+  /* ---------- 明細 ---------- */
+  .panel{background:var(--paper); border:1px solid var(--rule); border-top:none; border-radius:0 0 4px 4px; box-shadow:var(--shadow);}
+  .panel-head{display:flex; justify-content:space-between; align-items:baseline; padding:13px 20px; border-bottom:1px solid var(--rule); font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--muted);}
+
+  .line{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 18px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--hair);}
   .line-pick{cursor:pointer;}
   .line-pick:hover{background:#F7F9FB;}
   .line-on{background:var(--accent-soft);}
@@ -90,97 +84,79 @@
   .line-main{display:flex; align-items:center; gap:11px; min-width:0;}
   .line-name{font-weight:700; word-break:break-word;}
   .line-sub{display:block; font-size:12.5px; font-weight:400; color:var(--muted);}
-  .line-amount{font-size:15px; white-space:nowrap;}
-  .line-amount-zero{color:#9AA6B6;}
-
-  .tick{appearance:none; flex:none; width:21px; height:21px; margin:0; border:1.5px solid #98A5B6; border-radius:3px; background:var(--paper); cursor:pointer; position:relative;}
-  .tick:checked{background:var(--accent); border-color:var(--accent);}
-  .tick:checked::after{content:""; position:absolute; left:6.5px; top:2.5px; width:5px; height:10px; border:solid #fff; border-width:0 2.5px 2.5px 0; transform:rotate(42deg);}
-  .tick:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
-
   .badge{flex:none; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--accent); background:var(--accent-soft); border-radius:2px; padding:3px 7px;}
 
-  .stepper{display:flex; align-items:center; gap:0; justify-self:start;}
-  .stepper-btn{
-    width:34px; height:36px; flex:none;
-    font-family:inherit; font-size:17px; line-height:1; color:var(--ink);
-    background:var(--paper); border:1px solid var(--rule); cursor:pointer;
-  }
+  .amount{text-align:right; white-space:nowrap;}
+  .amount-m{display:block; font-size:15px;}
+  .amount-y{display:block; font-size:12px; color:var(--muted); margin-top:1px;}
+  .amount-zero .amount-m{color:#9AA6B6;}
+
+  .stepper{display:flex; align-items:center; grid-column:1 / -1; justify-self:start;}
+  .stepper-btn{width:34px; height:36px; flex:none; font-family:inherit; font-size:17px; line-height:1; color:var(--ink); background:var(--paper); border:1px solid var(--rule); cursor:pointer;}
   .stepper-btn:first-child{border-radius:3px 0 0 3px;}
-  .stepper-btn:last-child{border-radius:0 3px 3px 0;}
+  .stepper-btn:last-of-type{border-radius:0 3px 3px 0;}
   .stepper-btn:hover{background:#F2F5F8;}
   .stepper-btn:focus-visible{outline:2px solid var(--focus); outline-offset:1px; position:relative;}
-  .stepper-input{
-    width:64px; height:36px; flex:none;
-    font-family:var(--num); font-variant-numeric:tabular-nums; font-size:15px;
-    text-align:center; color:var(--ink);
-    border:1px solid var(--rule); border-left:none; border-right:none; border-radius:0;
-    background:var(--paper);
-  }
+  .stepper-input{width:64px; height:36px; flex:none; font-family:var(--num); font-variant-numeric:tabular-nums; font-size:15px; text-align:center; color:var(--ink); background:var(--paper); border:1px solid var(--rule); border-left:none; border-right:none; border-radius:0;}
   .stepper-input:focus-visible{outline:2px solid var(--focus); outline-offset:1px; position:relative;}
   .stepper-unit{font-size:12.5px; color:var(--muted); margin-left:9px;}
 
-  /* ---------- 見積書プレビュー ---------- */
-  .aside{position:sticky; top:24px;}
-  @media (max-width:900px){ .aside{position:static;} }
-  .aside-label{font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--muted); margin:0 0 7px;}
+  /* ---------- サービス小計 ---------- */
+  .subtotal{padding:16px 20px 18px; background:#F4F6F9; border-top:1.5px solid var(--ink); border-radius:0 0 4px 4px;}
+  .subtotal-key{font-size:12.5px; font-weight:700; letter-spacing:.08em; color:var(--muted); margin:0 0 9px;}
+  .grid4{display:grid; grid-template-columns:auto repeat(2, minmax(0,1fr)); gap:4px 14px; align-items:baseline;}
+  .grid4-head{font-size:11.5px; font-weight:700; letter-spacing:.06em; color:var(--muted); text-align:right;}
+  .grid4-row{font-size:12.5px; color:var(--muted);}
+  .grid4-val{text-align:right; font-size:15px;}
+  .grid4-strong{font-weight:700; color:var(--accent);}
 
-  .sheet{
-    background:var(--paper);
-    border:1px solid var(--rule);
-    border-radius:4px;
-    box-shadow:var(--shadow);
-    padding:26px 24px 22px;
+  /* ---------- 下部固定バー ---------- */
+  .dock{position:fixed; left:0; right:0; bottom:0; z-index:20;}
+  .dock-panel{background:#1E2B40; color:#fff; border-top:1px solid #34435C; max-height:44vh; overflow-y:auto;}
+  .dock-panel-inner{max-width:960px; margin:0 auto; padding:16px 24px;}
+  .dock-caption{font-size:11.5px; font-weight:700; letter-spacing:.1em; color:#9FB0C4; margin:0 0 10px;}
+  .split{display:flex; justify-content:space-between; align-items:baseline; gap:14px; padding:7px 0; border-bottom:1px dotted #3D4C66; font-size:13.5px;}
+  .split:last-child{border-bottom:none;}
+  .split-name{min-width:0; word-break:break-word;}
+  .split-val{white-space:nowrap; text-align:right;}
+  .split-y{display:block; font-size:11.5px; color:#9FB0C4;}
+
+  .bar{background:var(--ink); color:#fff;}
+  .bar-inner{max-width:960px; margin:0 auto; padding:11px 24px; display:flex; align-items:center; gap:18px;}
+  .bar-toggle{
+    flex:none; font-family:inherit; font-size:12.5px; color:#fff;
+    background:transparent; border:1px solid #4A5A75; border-radius:3px;
+    padding:8px 13px; cursor:pointer; white-space:nowrap;
   }
-  .sheet-eyebrow{margin:0; font-size:11.5px; font-weight:700; letter-spacing:.18em; color:var(--muted);}
-  .sheet-service{margin:2px 0 18px; font-size:19px; font-weight:700; line-height:1.4;}
-  .sheet-rule{border:none; border-top:1.5px solid var(--ink); margin:0 0 4px;}
-  .sheet-empty{color:var(--muted); font-size:13.5px; padding:14px 0 6px; margin:0;}
+  .bar-toggle:hover{background:#22314A;}
+  .bar-toggle:focus-visible{outline:2px solid #7FB3F0; outline-offset:2px;}
+  .bar-totals{flex:1 1 auto; display:flex; gap:26px; flex-wrap:wrap; min-width:0;}
+  .bar-block{min-width:0;}
+  .bar-key{display:block; font-size:11.5px; color:#9FB0C4; letter-spacing:.06em;}
+  .bar-val{font-size:21px; font-weight:700; line-height:1.3;}
+  .bar-sub{font-size:11.5px; color:#9FB0C4;}
+  .bar-print{flex:none; font-family:inherit; font-size:14px; font-weight:700; color:var(--ink); background:#fff; border:none; border-radius:3px; padding:11px 20px; cursor:pointer; white-space:nowrap;}
+  .bar-print:hover{background:#E4E9F0;}
+  .bar-print:focus-visible{outline:2px solid #7FB3F0; outline-offset:2px;}
+  .bar-print[disabled]{background:#5C6A80; color:#C3CCDA; cursor:not-allowed;}
 
-  .sheet-list{list-style:none; margin:0; padding:0;}
-  .sheet-item{display:flex; justify-content:space-between; gap:14px; align-items:baseline; padding:9px 0; border-bottom:1px dotted var(--rule);}
-  .sheet-item-name{font-size:13.5px; min-width:0; word-break:break-word;}
-  .sheet-item-qty{display:block; font-size:12px; color:var(--muted);}
-  .sheet-item-amount{font-size:13.5px; white-space:nowrap;}
-
-  .sheet-totals{margin:14px 0 0; padding:0;}
-  .sheet-total-row{display:flex; justify-content:space-between; align-items:baseline; gap:14px; padding:5px 0;}
-  .sheet-total-key{font-size:12.5px; color:var(--muted);}
-  .sheet-total-val{font-size:14px;}
-  .sheet-grand{margin-top:8px; padding-top:12px; border-top:1.5px solid var(--ink); display:flex; justify-content:space-between; align-items:baseline; gap:14px;}
-  .sheet-grand-key{font-size:12.5px; font-weight:700; letter-spacing:.06em;}
-  .sheet-grand-val{font-size:27px; font-weight:700; color:var(--accent); line-height:1.2;}
-  .sheet-grand-yen{font-size:14px; font-weight:700; margin-left:2px;}
-
-  .print-btn{
-    width:100%; margin-top:16px; padding:13px;
-    font-family:inherit; font-size:15px; font-weight:700; letter-spacing:.06em;
-    color:#fff; background:var(--ink); border:none; border-radius:3px; cursor:pointer;
-  }
-  .print-btn:hover{background:#22314A;}
-  .print-btn:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
-  .print-btn[disabled]{background:#AEB8C6; cursor:not-allowed;}
-
-  /* ---------- モバイル固定バー ---------- */
-  .dock{
-    position:fixed; left:0; right:0; bottom:0; z-index:10;
-    display:none; align-items:center; justify-content:space-between; gap:14px;
-    padding:11px 20px;
-    background:var(--ink); color:#fff;
-  }
-  @media (max-width:900px){ .dock{display:flex;} }
-  .dock-key{font-size:12px; color:#9FB0C4; display:block; letter-spacing:.06em;}
-  .dock-val{font-size:20px; font-weight:700;}
-  .dock-btn{
-    font-family:inherit; font-size:14px; font-weight:700; color:var(--ink);
-    background:#fff; border:none; border-radius:3px; padding:10px 18px; cursor:pointer; white-space:nowrap;
+  @media (max-width:760px){
+    .app{padding:20px 16px 220px;}
+    .masthead-inner,.bar-inner,.dock-panel-inner{padding-left:16px; padding-right:16px;}
+    .bar-inner{flex-wrap:wrap; gap:12px;}
+    .bar-totals{gap:18px; order:1; width:100%;}
+    .bar-val{font-size:19px;}
+    .bar-toggle{order:2;}
+    .bar-print{order:3; margin-left:auto;}
+    .grid4{grid-template-columns:auto minmax(0,1fr);}
+    .grid4-y{display:none;}
   }
 
   /* ---------- 状態表示 ---------- */
-  .notice{background:var(--paper); border:1px solid var(--rule); border-left:3px solid var(--ink); border-radius:4px; padding:20px 22px; margin:0 0 22px;}
+  .notice{background:var(--paper); border:1px solid var(--rule); border-left:3px solid var(--ink); border-radius:4px; padding:20px 22px;}
   .notice-title{margin:0 0 5px; font-size:15px; font-weight:700;}
   .notice-body{margin:0; font-size:13.5px; color:var(--muted);}
-  .is-hidden{display:none !important;}
+  .empty{background:var(--paper); border:1px dashed var(--rule); border-radius:4px; padding:34px 22px; text-align:center; color:var(--muted); font-size:13.5px;}
 
   /* ---------- 印刷 ---------- */
   .print-root{display:none;}
@@ -188,14 +164,25 @@
     body{background:#fff;}
     body > *{display:none !important;}
     body > .print-root{display:block !important;}
-    .print-root{padding:0; font-size:12pt;}
-    .print-root .sheet{border:none; box-shadow:none; border-radius:0; padding:0;}
-    .print-root .print-btn{display:none;}
-    .print-root .sheet-grand-val{color:#000;}
+    .print-root{font-size:11pt; color:#000;}
+    .doc-title{font-size:11pt; letter-spacing:.18em; color:#444; margin:0 0 2px;}
+    .doc-head{font-size:16pt; font-weight:700; margin:0 0 14px;}
+    .doc-rule{border:none; border-top:1.5px solid #000; margin:0 0 12px;}
+    .doc-section{margin:0 0 20px; page-break-inside:avoid;}
+    .doc-service{font-size:13pt; font-weight:700; margin:0 0 8px; padding-bottom:5px; border-bottom:1px solid #000;}
+    .doc-table{width:100%; border-collapse:collapse;}
+    .doc-table th{font-size:9.5pt; font-weight:400; color:#444; text-align:right; padding:0 0 5px; border-bottom:1px solid #BBB;}
+    .doc-table th.doc-left{text-align:left;}
+    .doc-table td{font-size:10.5pt; padding:5px 0; border-bottom:1px dotted #BBB; text-align:right;}
+    .doc-table td.doc-left{text-align:left;}
+    .doc-table tr.doc-sum td{font-weight:700; border-bottom:none; border-top:1.5px solid #000; padding-top:7px;}
+    .doc-grand{border:1.5px solid #000; padding:12px 14px; margin:0 0 22px;}
+    .doc-note{font-size:9pt; color:#555; margin:14px 0 0;}
+    .num{font-family:var(--num); font-variant-numeric:tabular-nums;}
   }
   @page{margin:18mm;}
   @media (prefers-reduced-motion:no-preference){
-    .line, .stepper-btn, .print-btn{transition:background-color .12s ease;}
+    .line,.chip,.tab,.stepper-btn,.bar-print,.bar-toggle{transition:background-color .12s ease;}
   }
 </style>
 </head>
@@ -204,7 +191,7 @@
 <header class="masthead">
   <div class="masthead-inner">
     <h1 class="masthead-title">料金試算</h1>
-    <p class="masthead-note">単価はスプレッドシートの「単価マスタ」から読み込んでいます</p>
+    <p class="masthead-note">単価は「単価マスタ」の月額です。年額は月額×12で計算します</p>
   </div>
 </header>
 
@@ -214,36 +201,46 @@
     <p class="notice-body" id="statusBody">単価マスタを取得しています。</p>
   </div>
 
-  <div class="layout is-hidden" id="layout">
-    <div>
-      <div class="picker">
-        <label class="picker-label" for="serviceSelect">サービス</label>
-        <select class="picker-select" id="serviceSelect"></select>
-      </div>
+  <div class="is-hidden" id="main">
+    <section class="picker">
+      <p class="eyebrow">試算するサービス（複数選択できます）</p>
+      <div class="chips" id="chips"></div>
+    </section>
 
-      <section class="items">
-        <div class="items-head">
-          <span>項目</span>
-          <span>金額</span>
-        </div>
-        <div id="lines"></div>
-      </section>
-    </div>
+    <section id="workspace">
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <div id="panelWrap"></div>
+    </section>
 
-    <aside class="aside">
-      <p class="aside-label">印刷される内容</p>
-      <div class="sheet" id="sheet"></div>
-      <button class="print-btn" id="printBtn" type="button">この内容で印刷する</button>
-    </aside>
+    <div class="empty is-hidden" id="empty">上のサービスを選ぶと、明細の入力欄が表示されます。</div>
   </div>
 </div>
 
 <div class="dock is-hidden" id="dock">
-  <div>
-    <span class="dock-key">税込合計</span>
-    <span class="dock-val num" id="dockTotal">0円</span>
+  <div class="dock-panel is-hidden" id="dockPanel">
+    <div class="dock-panel-inner">
+      <p class="dock-caption">サービス別の内訳（税込）</p>
+      <div id="breakdown"></div>
+    </div>
   </div>
-  <button class="dock-btn" id="dockPrint" type="button">印刷する</button>
+  <div class="bar">
+    <div class="bar-inner">
+      <button class="bar-toggle" id="toggleBtn" type="button" aria-expanded="false">内訳を開く</button>
+      <div class="bar-totals">
+        <div class="bar-block">
+          <span class="bar-key">全体合計・月額（税込）</span>
+          <span class="bar-val num" id="totalMonth">0円</span>
+          <span class="bar-sub num" id="totalMonthNet">税抜 0円</span>
+        </div>
+        <div class="bar-block">
+          <span class="bar-key">全体合計・年額（税込）</span>
+          <span class="bar-val num" id="totalYear">0円</span>
+          <span class="bar-sub num" id="totalYearNet">税抜 0円</span>
+        </div>
+      </div>
+      <button class="bar-print" id="printBtn" type="button">印刷する</button>
+    </div>
+  </div>
 </div>
 
 <div class="print-root" id="printRoot"></div>
@@ -253,114 +250,213 @@
   'use strict';
 
   var TAX_RATE = 0.1;
+  var MONTHS = 12;
+
   var services = [];
-  var state = {};          // { サービス名: { 項目名: true | 数量 } }
-  var current = null;
+  var state = {};        // { サービス名: { 項目名: true | 数量 } }  チェックを外しても保持
+  var selected = {};     // { サービス名: true }
+  var activeName = null;
 
   var el = {
     status: document.getElementById('status'),
     statusTitle: document.getElementById('statusTitle'),
     statusBody: document.getElementById('statusBody'),
-    layout: document.getElementById('layout'),
-    select: document.getElementById('serviceSelect'),
-    lines: document.getElementById('lines'),
-    sheet: document.getElementById('sheet'),
-    printBtn: document.getElementById('printBtn'),
+    main: document.getElementById('main'),
+    chips: document.getElementById('chips'),
+    workspace: document.getElementById('workspace'),
+    tabs: document.getElementById('tabs'),
+    panelWrap: document.getElementById('panelWrap'),
+    empty: document.getElementById('empty'),
     dock: document.getElementById('dock'),
-    dockTotal: document.getElementById('dockTotal'),
-    dockPrint: document.getElementById('dockPrint'),
+    dockPanel: document.getElementById('dockPanel'),
+    breakdown: document.getElementById('breakdown'),
+    toggleBtn: document.getElementById('toggleBtn'),
+    totalMonth: document.getElementById('totalMonth'),
+    totalMonthNet: document.getElementById('totalMonthNet'),
+    totalYear: document.getElementById('totalYear'),
+    totalYearNet: document.getElementById('totalYearNet'),
+    printBtn: document.getElementById('printBtn'),
     printRoot: document.getElementById('printRoot')
   };
 
-  function yen(n) { return Number(n).toLocaleString('ja-JP') + '円'; }
+  function yen(n){ return Number(n).toLocaleString('ja-JP') + '円'; }
+  function tax(n){ return Math.floor(n * TAX_RATE); }
+  function esc(t){
+    return String(t).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
 
   // ---------- 読み込み ----------
-  function load() {
-    if (!window.google || !google.script || !google.script.run) {
+  function load(){
+    if (!window.google || !google.script || !google.script.run){
       fail('サーバーに接続できません', 'このページはGASのWebアプリとして公開したURLから開いてください。');
       return;
     }
     google.script.run
       .withSuccessHandler(onLoaded)
-      .withFailureHandler(function (err) {
+      .withFailureHandler(function(err){
         fail('マスタを読み込めませんでした', (err && err.message) ? err.message : String(err));
       })
       .getMasterData();
   }
 
-  function fail(title, body) {
+  function fail(title, body){
     el.statusTitle.textContent = title;
     el.statusBody.textContent = body;
     el.status.classList.remove('is-hidden');
-    el.layout.classList.add('is-hidden');
+    el.main.classList.add('is-hidden');
     el.dock.classList.add('is-hidden');
   }
 
-  function onLoaded(data) {
+  function onLoaded(data){
     services = data || [];
-    if (!services.length) {
+    if (!services.length){
       fail('表示できるサービスがありません', '単価マスタに行を追加してください。');
       return;
     }
-    services.forEach(function (service) { state[service.name] = {}; });
-
-    el.select.innerHTML = '';
-    services.forEach(function (service, i) {
-      var option = document.createElement('option');
-      option.value = String(i);
-      option.textContent = service.name;
-      el.select.appendChild(option);
-    });
-    el.select.addEventListener('change', function () {
-      current = services[Number(el.select.value)];
-      renderLines();
-      renderSheet();
-    });
-
-    current = services[0];
+    services.forEach(function(s){ state[s.name] = {}; });
     el.status.classList.add('is-hidden');
-    el.layout.classList.remove('is-hidden');
+    el.main.classList.remove('is-hidden');
     el.dock.classList.remove('is-hidden');
-    renderLines();
-    renderSheet();
+    renderChips();
+    renderAll();
   }
 
-  // ---------- 入力状態 ----------
-  function valueOf(item) {
-    var saved = state[current.name][item.label];
+  // ---------- 計算 ----------
+  function valueOf(service, item){
+    var saved = state[service.name][item.label];
     if (item.type === 'qty') return Number(saved) || 0;
     return saved === true;
   }
-
-  function setValue(item, value) {
-    state[current.name][item.label] = value;
-    renderLines();
-    renderSheet();
-  }
-
-  function amountOf(item) {
+  function monthlyOf(service, item){
     if (item.type === 'base') return item.price;
-    if (item.type === 'check') return valueOf(item) ? item.price : 0;
-    return item.price * valueOf(item);
+    if (item.type === 'check') return valueOf(service, item) ? item.price : 0;
+    return item.price * valueOf(service, item);
+  }
+  function pickedItems(service){
+    return service.items.filter(function(item){ return monthlyOf(service, item) > 0; });
+  }
+  function serviceMonthly(service){
+    return pickedItems(service).reduce(function(sum, item){ return sum + monthlyOf(service, item); }, 0);
+  }
+  function selectedServices(){
+    return services.filter(function(s){ return selected[s.name]; });
+  }
+  function figures(monthlyNet){
+    var yearlyNet = monthlyNet * MONTHS;
+    return {
+      mNet: monthlyNet, mTax: tax(monthlyNet), mGross: monthlyNet + tax(monthlyNet),
+      yNet: yearlyNet, yTax: tax(yearlyNet), yGross: yearlyNet + tax(yearlyNet)
+    };
   }
 
-  // ---------- 明細リスト ----------
-  function renderLines() {
-    el.lines.innerHTML = '';
-    current.items.forEach(function (item) {
-      el.lines.appendChild(
-        item.type === 'base' ? baseLine(item) :
-        item.type === 'check' ? checkLine(item) : qtyLine(item)
-      );
+  // ---------- サービス選択 ----------
+  function renderChips(){
+    el.chips.innerHTML = '';
+    services.forEach(function(service){
+      var on = !!selected[service.name];
+      var chip = document.createElement('label');
+      chip.className = 'chip' + (on ? ' chip-on' : '');
+      var box = document.createElement('input');
+      box.type = 'checkbox';
+      box.className = 'tick';
+      box.checked = on;
+      box.addEventListener('change', function(){
+        if (box.checked) {
+          selected[service.name] = true;
+          activeName = service.name;
+        } else {
+          delete selected[service.name];   // 入力値（state）は保持
+          if (activeName === service.name) activeName = null;
+        }
+        renderChips();
+        renderAll();
+      });
+      chip.appendChild(box);
+      chip.appendChild(document.createTextNode(service.name));
+      el.chips.appendChild(chip);
     });
   }
 
-  function nameBlock(item, extra) {
+  // ---------- 全体描画 ----------
+  function renderAll(){
+    var list = selectedServices();
+    if (!list.length){
+      el.workspace.classList.add('is-hidden');
+      el.empty.classList.remove('is-hidden');
+    } else {
+      el.workspace.classList.remove('is-hidden');
+      el.empty.classList.add('is-hidden');
+      if (!activeName || !selected[activeName]) activeName = list[0].name;
+      renderTabs(list);
+      renderPanel(activeService());
+    }
+    renderTotals(list);
+  }
+
+  function activeService(){
+    return services.filter(function(s){ return s.name === activeName; })[0] || null;
+  }
+
+  function renderTabs(list){
+    el.tabs.innerHTML = '';
+    list.forEach(function(service){
+      var on = service.name === activeName;
+      var tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'tab' + (on ? ' tab-on' : '');
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+
+      var name = document.createElement('span');
+      name.textContent = service.name;
+      tab.appendChild(name);
+
+      var sum = document.createElement('span');
+      sum.className = 'tab-sum num';
+      sum.textContent = '月 ' + yen(figures(serviceMonthly(service)).mGross);
+      tab.appendChild(sum);
+
+      tab.addEventListener('click', function(){
+        activeName = service.name;
+        renderAll();
+      });
+      el.tabs.appendChild(tab);
+    });
+  }
+
+  // ---------- 明細 ----------
+  function renderPanel(service){
+    el.panelWrap.innerHTML = '';
+    if (!service) return;
+
+    var panel = document.createElement('section');
+    panel.className = 'panel';
+
+    var head = document.createElement('div');
+    head.className = 'panel-head';
+    head.innerHTML = '<span>' + esc(service.name) + ' の項目</span><span>月額 / 年額</span>';
+    panel.appendChild(head);
+
+    service.items.forEach(function(item){
+      panel.appendChild(
+        item.type === 'base'  ? baseLine(service, item) :
+        item.type === 'check' ? checkLine(service, item) :
+                                qtyLine(service, item)
+      );
+    });
+
+    panel.appendChild(subtotalBlock(service));
+    el.panelWrap.appendChild(panel);
+  }
+
+  function nameBlock(item, extra){
     var name = document.createElement('span');
     name.className = 'line-name';
     name.appendChild(document.createTextNode(item.label));
     var sub = extra || item.note;
-    if (sub) {
+    if (sub){
       var s = document.createElement('span');
       s.className = 'line-sub';
       s.textContent = sub;
@@ -369,14 +465,21 @@
     return name;
   }
 
-  function amountBlock(value) {
-    var span = document.createElement('span');
-    span.className = 'line-amount num' + (value === 0 ? ' line-amount-zero' : '');
-    span.textContent = yen(value);
-    return span;
+  function amountBlock(monthly){
+    var wrap = document.createElement('span');
+    wrap.className = 'amount' + (monthly === 0 ? ' amount-zero' : '');
+    var m = document.createElement('span');
+    m.className = 'amount-m num';
+    m.textContent = yen(monthly);
+    var y = document.createElement('span');
+    y.className = 'amount-y num';
+    y.textContent = '年 ' + yen(monthly * MONTHS);
+    wrap.appendChild(m);
+    wrap.appendChild(y);
+    return wrap;
   }
 
-  function baseLine(item) {
+  function baseLine(service, item){
     var row = document.createElement('div');
     row.className = 'line line-base';
     var main = document.createElement('div');
@@ -391,8 +494,8 @@
     return row;
   }
 
-  function checkLine(item) {
-    var checked = valueOf(item);
+  function checkLine(service, item){
+    var checked = valueOf(service, item);
     var row = document.createElement('label');
     row.className = 'line line-pick' + (checked ? ' line-on' : '');
     var main = document.createElement('div');
@@ -401,7 +504,10 @@
     box.type = 'checkbox';
     box.className = 'tick';
     box.checked = checked;
-    box.addEventListener('change', function () { setValue(item, box.checked); });
+    box.addEventListener('change', function(){
+      state[service.name][item.label] = box.checked;
+      renderAll();
+    });
     main.appendChild(box);
     main.appendChild(nameBlock(item));
     row.appendChild(main);
@@ -409,8 +515,8 @@
     return row;
   }
 
-  function qtyLine(item) {
-    var qty = valueOf(item);
+  function qtyLine(service, item){
+    var qty = valueOf(service, item);
     var row = document.createElement('div');
     row.className = 'line' + (qty > 0 ? ' line-on' : '');
 
@@ -420,6 +526,11 @@
     row.appendChild(main);
     row.appendChild(amountBlock(item.price * qty));
 
+    function apply(next){
+      state[service.name][item.label] = Math.max(0, Math.floor(next) || 0);
+      renderAll();
+    }
+
     var stepper = document.createElement('div');
     stepper.className = 'stepper';
 
@@ -428,7 +539,7 @@
     minus.className = 'stepper-btn';
     minus.textContent = '−';
     minus.setAttribute('aria-label', item.label + 'の数量を減らす');
-    minus.addEventListener('click', function () { setValue(item, Math.max(0, qty - 1)); });
+    minus.addEventListener('click', function(){ apply(qty - 1); });
 
     var input = document.createElement('input');
     input.type = 'number';
@@ -436,91 +547,121 @@
     input.min = '0';
     input.value = String(qty);
     input.setAttribute('aria-label', item.label + 'の数量');
-    input.addEventListener('change', function () {
-      var next = Math.max(0, Math.floor(Number(input.value) || 0));
-      setValue(item, next);
-    });
+    input.addEventListener('change', function(){ apply(Number(input.value)); });
 
     var plus = document.createElement('button');
     plus.type = 'button';
     plus.className = 'stepper-btn';
     plus.textContent = '＋';
     plus.setAttribute('aria-label', item.label + 'の数量を増やす');
-    plus.addEventListener('click', function () { setValue(item, qty + 1); });
-
-    stepper.appendChild(minus);
-    stepper.appendChild(input);
-    stepper.appendChild(plus);
+    plus.addEventListener('click', function(){ apply(qty + 1); });
 
     var unit = document.createElement('span');
     unit.className = 'stepper-unit';
     unit.textContent = '個';
-    stepper.appendChild(unit);
 
+    stepper.appendChild(minus);
+    stepper.appendChild(input);
+    stepper.appendChild(plus);
+    stepper.appendChild(unit);
     row.appendChild(stepper);
     return row;
   }
 
-  // ---------- 見積書 ----------
-  function renderSheet() {
-    var picked = current.items.filter(function (item) { return amountOf(item) > 0; });
-    var subtotal = picked.reduce(function (sum, item) { return sum + amountOf(item); }, 0);
-    var tax = Math.floor(subtotal * TAX_RATE);
-    var total = subtotal + tax;
-
+  function subtotalBlock(service){
+    var f = figures(serviceMonthly(service));
+    var box = document.createElement('div');
+    box.className = 'subtotal';
     var html = '';
-    html += '<p class="sheet-eyebrow">料金試算</p>';
-    html += '<h2 class="sheet-service">' + escape(current.name) + '</h2>';
-    html += '<hr class="sheet-rule">';
-
-    if (!picked.length) {
-      html += '<p class="sheet-empty">左の項目を選ぶと、ここに明細と合計が表示されます。</p>';
-    } else {
-      html += '<ul class="sheet-list">';
-      picked.forEach(function (item) {
-        var qtyText = item.type === 'qty'
-          ? yen(item.price) + ' × ' + valueOf(item) + '個'
-          : '';
-        html += '<li class="sheet-item">';
-        html += '<span class="sheet-item-name">' + escape(item.label);
-        if (qtyText) html += '<span class="sheet-item-qty num">' + qtyText + '</span>';
-        html += '</span>';
-        html += '<span class="sheet-item-amount num">' + yen(amountOf(item)) + '</span>';
-        html += '</li>';
-      });
-      html += '</ul>';
-    }
-
-    html += '<div class="sheet-totals">';
-    html += totalRow('税抜合計', subtotal);
-    html += totalRow('消費税（10%）', tax);
+    html += '<p class="subtotal-key">' + esc(service.name) + ' の小計</p>';
+    html += '<div class="grid4">';
+    html += '<span></span><span class="grid4-head">税抜</span><span class="grid4-head">税込</span>';
+    html += '<span class="grid4-row">月額</span>';
+    html += '<span class="grid4-val num">' + yen(f.mNet) + '</span>';
+    html += '<span class="grid4-val num grid4-strong">' + yen(f.mGross) + '</span>';
+    html += '<span class="grid4-row">年額</span>';
+    html += '<span class="grid4-val num">' + yen(f.yNet) + '</span>';
+    html += '<span class="grid4-val num grid4-strong">' + yen(f.yGross) + '</span>';
     html += '</div>';
-    html += '<div class="sheet-grand"><span class="sheet-grand-key">税込合計</span>';
-    html += '<span class="sheet-grand-val num">' + Number(total).toLocaleString('ja-JP') + '<span class="sheet-grand-yen">円</span></span></div>';
-
-    el.sheet.innerHTML = html;
-    el.dockTotal.textContent = yen(total);
-    el.printBtn.disabled = !picked.length;
+    box.innerHTML = html;
+    return box;
   }
 
-  function totalRow(key, value) {
-    return '<div class="sheet-total-row"><span class="sheet-total-key">' + key +
-      '</span><span class="sheet-total-val num">' + yen(value) + '</span></div>';
-  }
+  // ---------- 合計・内訳 ----------
+  function renderTotals(list){
+    var monthly = list.reduce(function(sum, s){ return sum + serviceMonthly(s); }, 0);
+    var f = figures(monthly);
 
-  function escape(text) {
-    return String(text).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    el.totalMonth.textContent = yen(f.mGross);
+    el.totalMonthNet.textContent = '税抜 ' + yen(f.mNet);
+    el.totalYear.textContent = yen(f.yGross);
+    el.totalYearNet.textContent = '税抜 ' + yen(f.yNet);
+    el.printBtn.disabled = monthly === 0;
+
+    if (!list.length){
+      el.breakdown.innerHTML = '<p class="split"><span class="split-name">サービスが選択されていません。</span></p>';
+      return;
+    }
+    var html = '';
+    list.forEach(function(service){
+      var sf = figures(serviceMonthly(service));
+      html += '<div class="split"><span class="split-name">' + esc(service.name) + '</span>';
+      html += '<span class="split-val"><span class="num">月 ' + yen(sf.mGross) + '</span>';
+      html += '<span class="split-y num">年 ' + yen(sf.yGross) + '</span></span></div>';
     });
+    el.breakdown.innerHTML = html;
   }
+
+  el.toggleBtn.addEventListener('click', function(){
+    var open = el.dockPanel.classList.toggle('is-hidden') === false;
+    el.toggleBtn.textContent = open ? '内訳を閉じる' : '内訳を開く';
+    el.toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
 
   // ---------- 印刷 ----------
-  function print() {
-    el.printRoot.innerHTML = '<div class="sheet">' + el.sheet.innerHTML + '</div>';
-    window.print();
+  function buildDoc(){
+    var list = selectedServices().filter(function(s){ return serviceMonthly(s) > 0; });
+    var f = figures(list.reduce(function(sum, s){ return sum + serviceMonthly(s); }, 0));
+
+    var html = '';
+    html += '<p class="doc-title">料金試算</p>';
+    html += '<h1 class="doc-head">全体合計</h1>';
+    html += '<hr class="doc-rule">';
+
+    html += '<div class="doc-grand"><table class="doc-table">';
+    html += '<tr><th class="doc-left"></th><th>税抜</th><th>消費税（10%）</th><th>税込</th></tr>';
+    html += '<tr><td class="doc-left">月額</td><td class="num">' + yen(f.mNet) + '</td><td class="num">' + yen(f.mTax) + '</td><td class="num">' + yen(f.mGross) + '</td></tr>';
+    html += '<tr class="doc-sum"><td class="doc-left">年額</td><td class="num">' + yen(f.yNet) + '</td><td class="num">' + yen(f.yTax) + '</td><td class="num">' + yen(f.yGross) + '</td></tr>';
+    html += '</table></div>';
+
+    list.forEach(function(service){
+      var sf = figures(serviceMonthly(service));
+      html += '<div class="doc-section">';
+      html += '<h2 class="doc-service">' + esc(service.name) + '</h2>';
+      html += '<table class="doc-table">';
+      html += '<tr><th class="doc-left">項目</th><th>月額</th><th>年額</th></tr>';
+      pickedItems(service).forEach(function(item){
+        var monthly = monthlyOf(service, item);
+        var label = esc(item.label);
+        if (item.type === 'qty') label += '（' + yen(item.price) + ' × ' + valueOf(service, item) + '個）';
+        if (item.type === 'base') label += '（基本料）';
+        html += '<tr><td class="doc-left">' + label + '</td>';
+        html += '<td class="num">' + yen(monthly) + '</td>';
+        html += '<td class="num">' + yen(monthly * MONTHS) + '</td></tr>';
+      });
+      html += '<tr class="doc-sum"><td class="doc-left">小計（税抜）</td><td class="num">' + yen(sf.mNet) + '</td><td class="num">' + yen(sf.yNet) + '</td></tr>';
+      html += '<tr class="doc-sum"><td class="doc-left">小計（税込）</td><td class="num">' + yen(sf.mGross) + '</td><td class="num">' + yen(sf.yGross) + '</td></tr>';
+      html += '</table></div>';
+    });
+
+    html += '<p class="doc-note">年額は月額×12で計算しています。消費税は税抜額に10%を乗じ、円未満を切り捨てています。</p>';
+    return html;
   }
-  el.printBtn.addEventListener('click', print);
-  el.dockPrint.addEventListener('click', print);
+
+  el.printBtn.addEventListener('click', function(){
+    el.printRoot.innerHTML = buildDoc();
+    window.print();
+  });
 
   load();
 })();
