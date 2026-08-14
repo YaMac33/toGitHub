@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>公用車 利用履歴 一覧・検索</title>
+<style>
+/* ==========================================================
+   入力画面と同じトークンを使用（道路案内標識の青＋メーター等幅数字）
+   ========================================================== */
+:root{
+  --ink:      #16202b;
+  --ink-2:    #4a5b6d;
+  --paper:    #eef1f5;
+  --surface:  #ffffff;
+  --rule:     #d3dae2;
+  --signal:   #0b5fa5;
+  --signal-d: #094e88;
+  --caution:  #b03a12;
+  --caution-bg:#fdeee8;
+  --ok:       #17603f;
+  --ok-bg:    #e8f3ed;
+
+  --r: 10px;
+  --gap: 14px;
+  --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP",
+          "Yu Gothic UI", Meiryo, sans-serif;
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  font-size:16px; line-height:1.6;
+  -webkit-text-size-adjust:100%;
+}
+
+/* ---------- ヘッダー ---------- */
+.topbar{
+  background: var(--ink); color:#fff;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  position:sticky; top:0; z-index:20;
+}
+.topbar h1{ font-size:15px; font-weight:700; margin:0; letter-spacing:.04em; }
+.topbar a{
+  color:#cfe0f0; font-size:13px; text-decoration:none;
+  border:1px solid #3d5266; border-radius:999px; padding:4px 12px; white-space:nowrap;
+}
+.topbar a:hover{ background:#243447; }
+
+.wrap{ max-width:1080px; margin:0 auto; padding: var(--gap); }
+
+/* ---------- 検索パネル ---------- */
+.panel{
+  background: var(--surface);
+  border:1px solid var(--rule);
+  border-radius: var(--r);
+  margin-bottom: var(--gap);
+}
+.panel > h2{
+  font-size:12px; font-weight:700; letter-spacing:.12em;
+  color: var(--ink-2); margin:0; padding:12px 16px 0;
+}
+.panel .body{ padding:12px 16px 16px; }
+
+.grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+@media (max-width:860px){ .grid{ grid-template-columns:repeat(2,1fr); } }
+@media (max-width:460px){ .grid{ grid-template-columns:1fr; } }
+
+.f{ display:flex; flex-direction:column; }
+.f > label{ font-size:12px; font-weight:600; margin-bottom:5px; color:var(--ink-2); }
+
+input[type=text], input[type=date], select{
+  width:100%; font-family:var(--sans); font-size:15px; color:var(--ink);
+  background:#fff; border:1px solid var(--rule); border-radius:8px;
+  padding:9px 11px; appearance:none;
+}
+select{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%234a5b6d' stroke-width='2'/></svg>");
+  background-repeat:no-repeat; background-position:right 11px center; padding-right:32px;
+}
+input:focus, select:focus{ outline:2px solid var(--signal); outline-offset:1px; border-color:var(--signal); }
+
+.presets{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.chip{
+  font-family:var(--sans); font-size:13px; font-weight:600;
+  color:var(--ink-2); background:#fff;
+  border:1px solid var(--rule); border-radius:999px; padding:6px 13px; cursor:pointer;
+}
+.chip:hover{ border-color:var(--signal); color:var(--signal); }
+.chip:focus-visible{ outline:2px solid var(--signal); outline-offset:1px; }
+
+.toggle{
+  display:inline-flex; align-items:center; gap:9px;
+  font-size:14px; font-weight:600; cursor:pointer; margin-top:14px;
+}
+.toggle input{ width:19px; height:19px; accent-color:var(--caution); }
+
+.actions{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+.btn{
+  font-family:var(--sans); font-size:15px; font-weight:700;
+  border-radius:9px; padding:11px 20px; cursor:pointer; border:1px solid transparent;
+}
+.btn-primary{ background:var(--signal); color:#fff; }
+.btn-primary:hover{ background:var(--signal-d); }
+.btn-primary:disabled{ background:#9fb0c0; cursor:default; }
+.btn-ghost{ background:#fff; color:var(--ink-2); border-color:var(--rule); }
+.btn-ghost:hover{ border-color:#9fb0c0; }
+.btn:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+
+/* ---------- 集計ストリップ（署名要素） ---------- */
+.summary{
+  background: var(--ink); color:#fff;
+  border-radius: var(--r);
+  padding:14px 18px; margin-bottom: var(--gap);
+  display:flex; gap:32px; flex-wrap:wrap;
+}
+.summary .s-item .label{
+  font-size:11px; letter-spacing:.14em; color:#8fa5ba; margin-bottom:3px;
+}
+.summary .s-item .value{
+  font-family:var(--mono); font-size:26px; font-weight:600; line-height:1.1;
+  font-variant-numeric: tabular-nums; letter-spacing:-.02em;
+}
+.summary .s-item .value .u{ font-size:13px; color:#8fa5ba; margin-left:3px; }
+.summary .s-item.alert .value{ color:#ffb4a0; }
+
+/* ---------- 結果ヘッダー ---------- */
+.resbar{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin-bottom:10px; flex-wrap:wrap;
+}
+.resbar .cnt{ font-size:14px; font-weight:600; color:var(--ink-2); }
+.resbar select{ width:auto; font-size:14px; padding:7px 30px 7px 10px; }
+
+/* ---------- テーブル（PC） ---------- */
+.tablewrap{
+  background:var(--surface); border:1px solid var(--rule);
+  border-radius:var(--r); overflow:hidden;
+}
+table{ width:100%; border-collapse:collapse; font-size:14px; }
+thead th{
+  background:#e3e8ee; color:var(--ink-2);
+  font-size:11px; letter-spacing:.1em; font-weight:700;
+  text-align:left; padding:10px 12px; white-space:nowrap;
+  border-bottom:1px solid var(--rule);
+}
+tbody td{ padding:11px 12px; border-top:1px solid var(--rule); vertical-align:top; }
+tbody tr.main{ cursor:pointer; }
+tbody tr.main:hover{ background:#f6f8fa; }
+tbody tr.issue td{ background:var(--caution-bg); }
+tbody tr.issue:hover td{ background:#fbe4db; }
+.num{ font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+.idcell{ font-family:var(--mono); font-size:13px; color:var(--ink-2); white-space:nowrap; }
+.datecell{ white-space:nowrap; }
+
+.tag{
+  display:inline-block; font-size:11px; font-weight:700;
+  padding:2px 8px; border-radius:999px; white-space:nowrap;
+}
+.tag.ok{ background:var(--ok-bg); color:var(--ok); }
+.tag.ng{ background:#f7c9bb; color:var(--caution); }
+
+/* 詳細行 */
+tr.detail td{ background:#f6f8fa; padding:14px 16px; }
+.dgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px 24px; font-size:13px; }
+@media (max-width:760px){ .dgrid{ grid-template-columns:1fr; } }
+.dgrid .k{ font-size:11px; letter-spacing:.1em; color:var(--ink-2); margin-bottom:2px; }
+.dgrid .v{ font-weight:600; }
+.inspect-tags{ display:flex; flex-wrap:wrap; gap:6px; }
+
+/* ---------- カード（スマホ） ---------- */
+.cards{ display:none; }
+.rec{
+  background:var(--surface); border:1px solid var(--rule);
+  border-radius:var(--r); padding:13px 15px; margin-bottom:10px;
+}
+.rec.issue{ border-color:var(--caution); background:var(--caution-bg); }
+.rec .r1{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+.rec .r1 .d{ font-weight:700; font-size:15px; }
+.rec .r1 .id{ font-family:var(--mono); font-size:12px; color:var(--ink-2); }
+.rec .veh{ font-size:14px; color:var(--signal); font-weight:600; margin-top:2px; }
+.rec .r2{ display:flex; justify-content:space-between; align-items:flex-end; gap:10px; margin-top:6px; }
+.rec .who{ font-size:14px; }
+.rec .who .dest{ color:var(--ink-2); font-size:13px; }
+.rec .km{ font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:20px; font-weight:600; white-space:nowrap; }
+.rec .km .u{ font-size:12px; color:var(--ink-2); margin-left:2px; }
+.rec .tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.rec .note{
+  margin-top:9px; padding-top:9px; border-top:1px solid var(--rule);
+  font-size:13px; color:var(--ink-2); white-space:pre-wrap;
+}
+
+@media (max-width:760px){
+  .tablewrap{ display:none; }
+  .cards{ display:block; }
+  .summary{ gap:20px; }
+  .summary .s-item .value{ font-size:21px; }
+}
+
+/* ---------- 状態表示 ---------- */
+.empty, .loading{
+  background:var(--surface); border:1px solid var(--rule); border-radius:var(--r);
+  padding:56px 20px; text-align:center; color:var(--ink-2); font-size:14px;
+}
+.empty strong{ display:block; font-size:16px; color:var(--ink); margin-bottom:6px; }
+
+.banner{
+  border-radius:var(--r); padding:12px 14px; margin-bottom:var(--gap);
+  font-size:14px; white-space:pre-wrap;
+  background:var(--caution-bg); border:1px solid var(--caution); color:var(--caution);
+}
+
+/* ---------- CSVフォールバック ---------- */
+.modal{
+  position:fixed; inset:0; z-index:50;
+  background:rgba(22,32,43,.6);
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.modal .box{
+  background:#fff; border-radius:var(--r); padding:18px;
+  max-width:640px; width:100%; max-height:80vh; display:flex; flex-direction:column;
+}
+.modal h3{ margin:0 0 8px; font-size:16px; }
+.modal p{ margin:0 0 10px; font-size:13px; color:var(--ink-2); }
+.modal textarea{
+  flex:1; min-height:220px; font-family:var(--mono); font-size:12px;
+  border:1px solid var(--rule); border-radius:8px; padding:10px; resize:vertical;
+}
+.modal .mact{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px; }
+
+.hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>公用車 利用履歴</h1>
+  <a id="linkInput" href="#" target="_top">新しく記録する</a>
+</div>
+
+<div class="wrap">
+
+  <!-- 検索条件 -->
+  <div class="panel">
+    <h2>検索条件</h2>
+    <div class="body">
+      <div class="grid">
+        <div class="f">
+          <label for="dateFrom">利用日（開始）</label>
+          <input type="date" id="dateFrom">
+        </div>
+        <div class="f">
+          <label for="dateTo">利用日（終了）</label>
+          <input type="date" id="dateTo">
+        </div>
+        <div class="f">
+          <label for="vehicleId">車両</label>
+          <select id="vehicleId"><option value="">すべての車両</option></select>
+        </div>
+        <div class="f">
+          <label for="userName">利用者氏名</label>
+          <input type="text" id="userName" placeholder="部分一致">
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:12px">
+        <div class="f" style="grid-column:1 / -1">
+          <label for="keyword">キーワード</label>
+          <input type="text" id="keyword" placeholder="行先・車両名・点検備考・記録番号から検索">
+        </div>
+      </div>
+
+      <div class="presets">
+        <button type="button" class="chip" data-preset="thisMonth">今月</button>
+        <button type="button" class="chip" data-preset="lastMonth">先月</button>
+        <button type="button" class="chip" data-preset="d30">直近30日</button>
+        <button type="button" class="chip" data-preset="thisFY">今年度</button>
+        <button type="button" class="chip" data-preset="clear">期間をクリア</button>
+      </div>
+
+      <label class="toggle">
+        <input type="checkbox" id="onlyIssue">
+        異常があった記録だけを表示（アルコールNG・点検「否」）
+      </label>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="btnSearch">検索する</button>
+        <button type="button" class="btn btn-ghost" id="btnReset">条件をリセット</button>
+        <button type="button" class="btn btn-ghost" id="btnCsv">CSVで書き出す</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="banner" class="banner hidden"></div>
+
+  <!-- 集計 -->
+  <div id="summary" class="summary hidden"></div>
+
+  <!-- 結果 -->
+  <div id="resbar" class="resbar hidden">
+    <div class="cnt" id="cnt"></div>
+    <select id="sort">
+      <option value="date_desc">利用日が新しい順</option>
+      <option value="date_asc">利用日が古い順</option>
+      <option value="dist_desc">走行距離が長い順</option>
+      <option value="veh">車両ごと</option>
+    </select>
+  </div>
+
+  <div id="loading" class="loading">読み込んでいます…</div>
+
+  <div id="empty" class="empty hidden">
+    <strong>該当する記録はありません</strong>
+    条件を広げるか、期間をクリアして検索してください。
+  </div>
+
+  <div id="tablewrap" class="tablewrap hidden">
+    <table>
+      <thead>
+        <tr>
+          <th>記録番号</th><th>利用日</th><th>車両</th><th>利用者</th><th>行先</th>
+          <th style="text-align:right">走行距離</th><th style="text-align:right">給油</th><th>状態</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="cards" class="cards"></div>
+</div>
+
+<!-- CSVフォールバック -->
+<div id="csvModal" class="modal hidden">
+  <div class="box">
+    <h3>CSVを書き出しました</h3>
+    <p>自動ダウンロードができない環境のため、以下の内容をコピーしてテキストエディタに貼り付け、
+       文字コードUTF-8のCSVファイルとして保存してください。</p>
+    <textarea id="csvText" readonly></textarea>
+    <div class="mact">
+      <button type="button" class="btn btn-ghost" id="csvClose">閉じる</button>
+      <button type="button" class="btn btn-primary" id="csvCopy">すべてコピー</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var STATE = { records: [], items: [], vehicles: [] };
+var $ = function(id){ return document.getElementById(id); };
+
+// ============================================================
+// 起動
+// ============================================================
+window.addEventListener('DOMContentLoaded', function(){
+  google.script.run.withSuccessHandler(function(url){
+    $('linkInput').href = url + '?page=input';
+  }).getWebAppUrl();
+
+  google.script.run
+    .withSuccessHandler(function(d){
+      STATE.vehicles = d.vehicles;
+      STATE.items    = d.inspectItems;
+      var sel = $('vehicleId');
+      d.vehicles.forEach(function(v){
+        var o = document.createElement('option');
+        o.value = v.vehicleId;
+        o.textContent = v.name + (v.active ? '' : '（登録解除）');
+        sel.appendChild(o);
+      });
+      applyPreset('thisMonth');
+      search();
+    })
+    .withFailureHandler(fail)
+    .getListInitData();
+});
+
+// ============================================================
+// 期間プリセット
+// ============================================================
+Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(c){
+  c.addEventListener('click', function(){ applyPreset(c.getAttribute('data-preset')); });
+});
+
+function applyPreset(kind){
+  var now = new Date();
+  var y = now.getFullYear(), m = now.getMonth();
+  var from, to;
+
+  if (kind === 'thisMonth'){ from = new Date(y, m, 1); to = new Date(y, m + 1, 0); }
+  else if (kind === 'lastMonth'){ from = new Date(y, m - 1, 1); to = new Date(y, m, 0); }
+  else if (kind === 'd30'){ to = now; from = new Date(y, m, now.getDate() - 29); }
+  else if (kind === 'thisFY'){
+    var fy = (m >= 3) ? y : y - 1;           // 4月始まり
+    from = new Date(fy, 3, 1); to = new Date(fy + 1, 2, 31);
+  }
+  else { $('dateFrom').value = ''; $('dateTo').value = ''; return; }
+
+  $('dateFrom').value = iso(from);
+  $('dateTo').value   = iso(to);
+}
+
+function iso(d){
+  var p = function(n){ return ('0' + n).slice(-2); };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+
+// ============================================================
+// 検索
+// ============================================================
+$('btnSearch').addEventListener('click', search);
+$('btnReset').addEventListener('click', function(){
+  $('dateFrom').value = ''; $('dateTo').value = '';
+  $('vehicleId').value = ''; $('userName').value = '';
+  $('keyword').value = ''; $('onlyIssue').checked = false;
+  search();
+});
+$('sort').addEventListener('change', render);
+
+['keyword','userName'].forEach(function(id){
+  $(id).addEventListener('keydown', function(e){ if (e.key === 'Enter') search(); });
+});
+
+function criteria(){
+  return {
+    dateFrom:  $('dateFrom').value,
+    dateTo:    $('dateTo').value,
+    vehicleId: $('vehicleId').value,
+    userName:  $('userName').value.trim(),
+    keyword:   $('keyword').value.trim(),
+    onlyIssue: $('onlyIssue').checked
+  };
+}
+
+function search(){
+  hideBanner();
+  $('loading').classList.remove('hidden');
+  $('tablewrap').classList.add('hidden');
+  $('cards').innerHTML = '';
+  $('empty').classList.add('hidden');
+  $('summary').classList.add('hidden');
+  $('resbar').classList.add('hidden');
+  $('btnSearch').disabled = true;
+
+  google.script.run
+    .withSuccessHandler(function(res){
+      $('btnSearch').disabled = false;
+      $('loading').classList.add('hidden');
+      STATE.records = res.records;
+      STATE.items   = res.inspectItems;
+      render();
+    })
+    .withFailureHandler(function(err){
+      $('btnSearch').disabled = false;
+      $('loading').classList.add('hidden');
+      fail(err);
+    })
+    .searchRecords(criteria());
+}
+
+// ============================================================
+// 描画
+// ============================================================
+function render(){
+  var recs = STATE.records.slice();
+  var mode = $('sort').value;
+
+  if (mode === 'date_asc')       recs.sort(cmp('useDate', 1, 'id', 1));
+  else if (mode === 'dist_desc') recs.sort(function(a,b){ return num(b.distance) - num(a.distance); });
+  else if (mode === 'veh')       recs.sort(function(a,b){
+    if (a.vehicleId !== b.vehicleId) return a.vehicleId < b.vehicleId ? -1 : 1;
+    return a.useDate < b.useDate ? 1 : -1;
+  });
+  else recs.sort(cmp('useDate', -1, 'id', -1));
+
+  renderSummary(recs);
+
+  if (!recs.length){
+    $('empty').classList.remove('hidden');
+    return;
+  }
+
+  $('cnt').textContent = recs.length + '件';
+  $('resbar').classList.remove('hidden');
+  renderTable(recs);
+  renderCards(recs);
+  $('tablewrap').classList.remove('hidden');
+}
+
+function cmp(k1, d1, k2, d2){
+  return function(a,b){
+    if (a[k1] !== b[k1]) return a[k1] < b[k1] ? -d1 : d1;
+    return a[k2] < b[k2] ? -d2 : d2;
+  };
+}
+function num(v){ return (v === '' || v == null || isNaN(Number(v))) ? 0 : Number(v); }
+
+function renderSummary(recs){
+  var dist = 0, fuel = 0, issue = 0, vset = {};
+  recs.forEach(function(r){
+    dist += num(r.distance);
+    fuel += num(r.fuel);
+    if (r.hasIssue) issue++;
+    vset[r.vehicleId] = 1;
+  });
+
+  var html =
+    item('件数', recs.length, '件') +
+    item('走行距離 合計', dist.toFixed(1), 'km') +
+    item('給油量 合計', fuel.toFixed(1), 'L') +
+    item('使用車両', Object.keys(vset).length, '台') +
+    item('異常あり', issue, '件', issue > 0);
+
+  $('summary').innerHTML = html;
+  $('summary').classList.remove('hidden');
+
+  function item(label, val, unit, alert){
+    return '<div class="s-item' + (alert ? ' alert' : '') + '">'
+      + '<div class="label">' + label + '</div>'
+      + '<div class="value">' + val + '<span class="u">' + unit + '</span></div></div>';
+  }
+}
+
+function renderTable(recs){
+  var tb = $('tbody');
+  tb.innerHTML = '';
+
+  recs.forEach(function(r, i){
+    var tr = document.createElement('tr');
+    tr.className = 'main' + (r.hasIssue ? ' issue' : '');
+    tr.innerHTML =
+      '<td class="idcell">' + esc(r.id) + '</td>' +
+      '<td class="datecell">' + esc(r.useDate) + '</td>' +
+      '<td>' + esc(r.vehicleName) + '</td>' +
+      '<td>' + esc(r.userName) + '</td>' +
+      '<td>' + esc(r.destination) + '</td>' +
+      '<td class="num">' + fmt(r.distance) + '</td>' +
+      '<td class="num">' + (r.fuel === '' || r.fuel == null ? '—' : fmt(r.fuel)) + '</td>' +
+      '<td>' + statusTag(r) + '</td>';
+
+    var dtr = document.createElement('tr');
+    dtr.className = 'detail hidden';
+    dtr.innerHTML = '<td colspan="8">' + detailHtml(r) + '</td>';
+
+    tr.addEventListener('click', function(){ dtr.classList.toggle('hidden'); });
+
+    tb.appendChild(tr);
+    tb.appendChild(dtr);
+  });
+}
+
+function renderCards(recs){
+  var box = $('cards');
+  box.innerHTML = '';
+  recs.forEach(function(r){
+    var d = document.createElement('div');
+    d.className = 'rec' + (r.hasIssue ? ' issue' : '');
+    d.innerHTML =
+      '<div class="r1"><div class="d">' + esc(r.useDate) + '</div>'
+        + '<div class="id">' + esc(r.id) + '</div></div>'
+      + '<div class="veh">' + esc(r.vehicleName) + '</div>'
+      + '<div class="r2">'
+        + '<div class="who">' + esc(r.userName)
+          + '<div class="dest">' + esc(r.destination) + '</div></div>'
+        + '<div class="km">' + fmt(r.distance) + '<span class="u">km</span></div>'
+      + '</div>'
+      + '<div class="tags">' + statusTag(r)
+        + (r.fuel !== '' && r.fuel != null
+            ? '<span class="tag ok">給油 ' + fmt(r.fuel) + 'L</span>' : '')
+      + '</div>'
+      + (r.inspectNote ? '<div class="note">' + esc(r.inspectNote) + '</div>' : '');
+    box.appendChild(d);
+  });
+}
+
+function statusTag(r){
+  if (!r.hasIssue) return '<span class="tag ok">異常なし</span>';
+
+  var bad = [];
+  if (r.alcBefore === 'NG') bad.push('酒気帯び（出発前）');
+  if (r.alcAfter === 'NG')  bad.push('酒気帯び（帰着後）');
+  Object.keys(r.inspect).forEach(function(k){
+    if (r.inspect[k] === '否') bad.push(k);
+  });
+  return bad.map(function(b){
+    return '<span class="tag ng">' + esc(b) + '</span>';
+  }).join(' ');
+}
+
+function detailHtml(r){
+  var insp = STATE.items.map(function(it){
+    var v = r.inspect[it.name] || '—';
+    var cls = (v === '否') ? 'ng' : 'ok';
+    return '<span class="tag ' + cls + '">' + esc(it.name) + ' ' + esc(v) + '</span>';
+  }).join('');
+
+  return '<div class="dgrid">'
+    + cell('アルコール（出発前）', esc(r.alcBefore) + '　確認者：' + esc(r.alcBeforeChecker))
+    + cell('アルコール（帰着後）', esc(r.alcAfter) + '　確認者：' + esc(r.alcAfterChecker))
+    + cell('給油量', r.fuel === '' || r.fuel == null ? 'なし' : fmt(r.fuel) + ' L')
+    + '<div style="grid-column:1 / -1">'
+      + '<div class="k">日常点検</div>'
+      + '<div class="inspect-tags">' + insp + '</div></div>'
+    + (r.inspectNote
+        ? '<div style="grid-column:1 / -1">' + cellInner('点検備考', esc(r.inspectNote)) + '</div>'
+        : '')
+    + cell('登録日時', esc(r.registeredAt))
+    + cell('登録者', esc(r.registrant))
+    + cell('車両ID', esc(r.vehicleId))
+    + '</div>';
+
+  function cell(k, v){ return '<div>' + cellInner(k, v) + '</div>'; }
+  function cellInner(k, v){
+    return '<div class="k">' + k + '</div><div class="v">' + v + '</div>';
+  }
+}
+
+function fmt(v){
+  if (v === '' || v == null || isNaN(Number(v))) return '—';
+  return Number(v).toFixed(1);
+}
+
+// ============================================================
+// CSV出力
+// ============================================================
+$('btnCsv').addEventListener('click', function(){
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = '書き出しています…';
+  hideBanner();
+
+  google.script.run
+    .withSuccessHandler(function(res){
+      btn.disabled = false;
+      btn.textContent = 'CSVで書き出す';
+      if (!res.count){
+        showBanner('該当する記録がないため、CSVは作成されませんでした。');
+        return;
+      }
+      downloadCsv(res.csv, res.filename);
+    })
+    .withFailureHandler(function(err){
+      btn.disabled = false;
+      btn.textContent = 'CSVで書き出す';
+      fail(err);
+    })
+    .exportCsv(criteria());
+});
+
+function downloadCsv(text, filename){
+  try{
+    var blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  } catch(e){
+    // 一部のブラウザ／セキュリティ設定ではダウンロードが遮断されるため代替手段を出す
+    $('csvText').value = text;
+    $('csvModal').classList.remove('hidden');
+  }
+}
+
+$('csvClose').addEventListener('click', function(){
+  $('csvModal').classList.add('hidden');
+});
+$('csvCopy').addEventListener('click', function(){
+  var ta = $('csvText');
+  ta.select();
+  try{ document.execCommand('copy'); this.textContent = 'コピーしました'; }
+  catch(e){ this.textContent = 'コピーできませんでした'; }
+  var b = this;
+  setTimeout(function(){ b.textContent = 'すべてコピー'; }, 2000);
+});
+
+// ============================================================
+// 共通
+// ============================================================
+function fail(err){ showBanner(err && err.message ? err.message : '処理に失敗しました。'); }
+function showBanner(msg){
+  var b = $('banner');
+  b.textContent = msg;
+  b.classList.remove('hidden');
+}
+function hideBanner(){ $('banner').classList.add('hidden'); }
+
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
