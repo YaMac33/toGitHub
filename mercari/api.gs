@@ -42,15 +42,33 @@ function include(filename) {
 
 /**
  * 画面初期表示に必要なデータを一括で返す
- * @return {Object} { shippingOptions, feeRate, recentSales, summary }
+ * 売上一覧は表示する期間が決まってから getSalesByPeriod() で取得する
+ * @return {Object} { shippingOptions, feeRate, summary, today }
  */
 function getInitialData() {
+  const tz = getSpreadsheet_().getSpreadsheetTimeZone();
   return {
     shippingOptions: getShippingOptions(),
     feeRate: CONFIG.FEE_RATE,
-    recentSales: getRecentSales(50),
     summary: getSummary(),
+    today: Utilities.formatDate(new Date(), tz, 'yyyy/MM/dd'),
   };
+}
+
+
+/**
+ * 指定した期間の売上データを取得する（新しい順）
+ * @param {string} prefix 'yyyy/MM'（月単位）または 'yyyy'（年単位）
+ * @return {Array<Object>} 売上データの配列
+ */
+function getSalesByPeriod(prefix) {
+  const all = getRecentSales(0); // 0 = 全件
+  if (!prefix) return all;
+
+  const key = String(prefix);
+  return all.filter(function(row) {
+    return String(row.saleDate).indexOf(key) === 0;
+  });
 }
 
 
@@ -88,8 +106,8 @@ function getShippingOptions() {
 
 
 /**
- * 直近の売上データを取得する（新しい順）
- * @param {number} limit 取得件数
+ * 売上データを取得する（新しい順）
+ * @param {number} limit 取得件数。0 または未指定で全件
  * @return {Array<Object>} 売上データの配列
  */
 function getRecentSales(limit) {
