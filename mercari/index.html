@@ -13,16 +13,16 @@
    モチーフ：取引伝票・複写式の control slip
    ============================================================ */
 :root {
-  --ink:        #14212b;  /* 濃紺インク：文字・主要面 */
-  --ink-soft:   #5c6b74;  /* 補助テキスト */
-  --paper:      #eef1ec;  /* 伝票用紙の地色（冷たい紙白） */
+  --ink:        #14212b;
+  --ink-soft:   #5c6b74;
+  --paper:      #eef1ec;
   --card:       #ffffff;
-  --rule:       #c6cfc8;  /* 罫線 */
-  --profit:     #0b6b50;  /* 収入：深緑 */
-  --deduct:     #a3402d;  /* 控除：煉瓦色 */
+  --rule:       #c6cfc8;
+  --profit:     #0b6b50;
+  --deduct:     #a3402d;
   --focus:      #1f6feb;
 
-  --r: 4px;               /* 伝票なので角丸は最小限 */
+  --r: 4px;
   --gap: 16px;
 }
 
@@ -39,7 +39,6 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* 数値はすべて等幅・タビュラー */
 .num {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
@@ -53,7 +52,7 @@ html, body {
 }
 
 /* ============================================================
-   ヘッダー：伝票の見出し
+   ヘッダーとタブ
    ============================================================ */
 header {
   display: flex;
@@ -62,7 +61,6 @@ header {
   gap: 12px;
   padding-bottom: 10px;
   border-bottom: 2px solid var(--ink);
-  margin-bottom: 24px;
 }
 header h1 {
   margin: 0;
@@ -74,11 +72,37 @@ header .meta {
   font-size: 11px;
   color: var(--ink-soft);
   letter-spacing: 0.14em;
-  text-transform: uppercase;
 }
 
+/* 伝票の見出しインデックスとしてのタブ */
+.tabs {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 20px;
+}
+.tab {
+  flex: 1;
+  padding: 11px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  background: #dfe4df;
+  border: 1px solid var(--rule);
+  border-top: none;
+  border-radius: 0 0 var(--r) var(--r);
+  cursor: pointer;
+}
+.tab[aria-selected="true"] {
+  color: var(--card);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.panel[hidden] { display: none; }
+
 /* ============================================================
-   カード（伝票の1枚）
+   カード
    ============================================================ */
 .card {
   background: var(--card);
@@ -110,7 +134,7 @@ label {
   margin-bottom: 6px;
 }
 
-input, select {
+input, select, textarea {
   width: 100%;
   padding: 11px 12px;
   font-size: 16px; /* iOSの自動ズーム防止 */
@@ -121,20 +145,25 @@ input, select {
   border-radius: var(--r);
   appearance: none;
 }
-input.num, select.num { font-size: 16px; }
+textarea { resize: vertical; line-height: 1.5; min-height: 62px; }
 
-input:focus-visible, select:focus-visible, button:focus-visible {
+.optional {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-soft);
+  letter-spacing: 0.06em;
+  margin-left: 4px;
+}
+
+input:focus-visible, select:focus-visible,
+textarea:focus-visible, button:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
-select:disabled {
-  background: #f3f5f2;
-  color: #9aa5ab;
-}
+select:disabled { background: #f3f5f2; color: #9aa5ab; }
 
 /* ============================================================
    署名要素：計算伝票
-   販売価格から控除を引いて収入に着地する過程を帳簿として見せる
    ============================================================ */
 .slip {
   margin-top: 20px;
@@ -149,15 +178,10 @@ select:disabled {
   font-size: 14px;
 }
 .slip-row .label { color: var(--ink-soft); }
-.slip-row .label small {
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  margin-left: 5px;
-}
+.slip-row .label small { font-size: 11px; letter-spacing: 0.06em; margin-left: 5px; }
 .slip-row .value { font-size: 15px; }
 .slip-row.deduct .value { color: var(--deduct); }
 
-/* 合計行：会計の二重罫線 */
 .slip-total {
   display: flex;
   justify-content: space-between;
@@ -166,27 +190,15 @@ select:disabled {
   padding-top: 12px;
   border-top: 3px double var(--ink);
 }
-.slip-total .label {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-}
-.slip-total .value {
-  font-size: 27px;
-  font-weight: 800;
-  color: var(--profit);
-}
+.slip-total .label { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; }
+.slip-total .value { font-size: 27px; font-weight: 800; color: var(--profit); }
 .slip-total .value.negative { color: var(--deduct); }
 
 /* ============================================================
    ボタン
    ============================================================ */
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border-radius: var(--r);
-  border: 1px solid transparent;
-}
+button { font-family: inherit; cursor: pointer; border-radius: var(--r); border: 1px solid transparent; }
+
 .btn-primary {
   width: 100%;
   margin-top: 18px;
@@ -209,32 +221,154 @@ button {
 }
 .btn-del:hover { color: var(--deduct); border-color: var(--deduct); }
 
-/* ============================================================
-   売上一覧
-   ============================================================ */
-.entry {
-  padding: 13px 0;
-  border-bottom: 1px solid var(--rule);
+.btn-ghost {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  background: transparent;
+  border-color: var(--rule);
 }
-.entry:last-child { border-bottom: none; }
+.btn-ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--ink); }
+.btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.entry-head {
+/* ============================================================
+   年ナビゲーション
+   ============================================================ */
+.year-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.year-nav .yr { font-size: 21px; font-weight: 700; letter-spacing: 0.04em; }
+.nav-btn {
+  width: 38px;
+  height: 38px;
+  font-size: 15px;
+  color: var(--ink);
+  background: transparent;
+  border-color: var(--rule);
+}
+.nav-btn:hover:not(:disabled) { background: var(--paper); }
+.nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+/* 年間集計：伝票の総括欄 */
+.annual {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.annual div { background: var(--card); padding: 10px 12px; }
+.annual .k { font-size: 10px; letter-spacing: 0.12em; color: var(--ink-soft); }
+.annual .v { font-size: 17px; font-weight: 700; }
+.annual .v.profit { color: var(--profit); }
+.annual .v.deduct { color: var(--deduct); }
+.annual .full { grid-column: 1 / -1; }
+.annual .full .v { font-size: 25px; font-weight: 800; }
+
+/* ============================================================
+   月別グラフ
+   バー全体 = 売上 / 緑 = 収入 / 斜線 = 手数料+送料
+   ============================================================ */
+.legend {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.legend span { display: flex; align-items: center; gap: 5px; }
+.legend i { width: 10px; height: 10px; border-radius: 1px; display: inline-block; }
+.legend i.inc { background: var(--profit); }
+.legend i.ded { background: #c3ccc6; }
+
+.month {
+  width: 100%;
+  display: block;
+  text-align: left;
+  padding: 9px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+}
+.month:hover { background: #f6f8f5; }
+.month[aria-pressed="true"] {
+  background: #f2f6f3;
+  border-color: var(--ink);
+  border-radius: var(--r);
+}
+.month.empty { cursor: default; opacity: 0.5; }
+.month.empty:hover { background: transparent; }
+
+.month-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 5px;
+}
+.month-head .ym { font-weight: 700; font-size: 14px; color: var(--ink); letter-spacing: 0.04em; }
+.month-head .inc { font-size: 15px; font-weight: 700; color: var(--profit); }
+
+.bar { display: flex; height: 18px; background: #edf0ec; border-radius: 2px; overflow: hidden; }
+.bar-inc { background: var(--profit); }
+.bar-ded {
+  background: repeating-linear-gradient(
+    -45deg, #c3ccc6, #c3ccc6 3px, #d3dad5 3px, #d3dad5 6px
+  );
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bar-inc, .bar-ded { transition: width .35s ease; }
+}
+
+.month-foot {
+  display: flex;
+  gap: 12px;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+/* ============================================================
+   記録一覧
+   ============================================================ */
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 10px;
+  margin: 0 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
 }
-.entry-name {
-  font-weight: 500;
-  font-size: 15px;
-  word-break: break-word;
+.list-head .t { font-size: 12px; font-weight: 700; letter-spacing: 0.18em; color: var(--ink-soft); }
+.list-head .scope { font-size: 12px; color: var(--ink-soft); }
+.list-head .scope button {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: transparent;
+  border-color: var(--rule);
 }
-.entry-income {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--profit);
-  white-space: nowrap;
-}
+
+.entry { padding: 13px 0; border-bottom: 1px solid var(--rule); }
+.entry:last-child { border-bottom: none; }
+
+.entry-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.entry-name { font-weight: 500; font-size: 15px; word-break: break-word; }
+.entry-income { font-size: 17px; font-weight: 700; color: var(--profit); white-space: nowrap; }
+
 .entry-sub {
   display: flex;
   flex-wrap: wrap;
@@ -244,39 +378,23 @@ button {
   font-size: 12px;
   color: var(--ink-soft);
 }
-.tag {
-  padding: 1px 7px;
-  font-size: 11px;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-}
+.tag { padding: 1px 7px; font-size: 11px; border: 1px solid var(--rule); border-radius: 2px; }
 
-/* 集計バー */
-.totals {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--rule);
-}
-.totals div { flex: 1; }
-.totals .k {
-  font-size: 10px;
-  letter-spacing: 0.12em;
+.entry-note {
+  margin-top: 7px;
+  padding: 6px 10px;
+  font-size: 12.5px;
   color: var(--ink-soft);
+  background: #f6f8f5;
+  border-left: 2px solid var(--rule);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
-.totals .v { font-size: 17px; font-weight: 700; }
-.totals .v.profit { color: var(--profit); }
 
 /* ============================================================
    状態表示
    ============================================================ */
-.state {
-  padding: 28px 0;
-  text-align: center;
-  font-size: 13px;
-  color: var(--ink-soft);
-}
+.state { padding: 28px 0; text-align: center; font-size: 13px; color: var(--ink-soft); }
 .msg {
   margin-top: 14px;
   padding: 11px 13px;
@@ -287,10 +405,6 @@ button {
 .msg.ok  { color: var(--profit); border-color: var(--profit); background: #f0f7f4; }
 .msg.err { color: var(--deduct); border-color: var(--deduct); background: #fbf1ef; }
 .hidden { display: none; }
-
-@media (prefers-reduced-motion: no-preference) {
-  .slip-total .value { transition: color .15s ease; }
-}
 </style>
 </head>
 <body>
@@ -301,70 +415,111 @@ button {
     <span class="meta" id="feeLabel">手数料 10%</span>
   </header>
 
-  <!-- ========== 売上を記録する ========== -->
-  <section class="card">
-    <h2>売上を記録する</h2>
+  <nav class="tabs" role="tablist">
+    <button class="tab" id="tabRecord" role="tab" aria-selected="true"  aria-controls="panelRecord">記録する</button>
+    <button class="tab" id="tabReview" role="tab" aria-selected="false" aria-controls="panelReview">集計を見る</button>
+  </nav>
 
-    <div class="field">
-      <label for="itemName">商品名</label>
-      <input type="text" id="itemName" placeholder="例：〇〇のスニーカー 26cm" maxlength="200">
-    </div>
+  <!-- ============ 記録する ============ -->
+  <div class="panel" id="panelRecord" role="tabpanel" aria-labelledby="tabRecord">
+    <section class="card">
+      <h2>売上を記録する</h2>
 
-    <div class="field">
-      <label for="price">販売価格</label>
-      <input type="number" id="price" class="num" placeholder="0" min="1" step="1" inputmode="numeric">
-    </div>
-
-    <div class="field">
-      <label for="shippingMethod">配送方法</label>
-      <select id="shippingMethod">
-        <option value="">選択してください</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label for="sizeCategory">サイズ区分</label>
-      <select id="sizeCategory" disabled>
-        <option value="">先に配送方法を選択</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label for="saleDate">販売日</label>
-      <input type="date" id="saleDate" class="num">
-    </div>
-
-    <!-- 署名要素：計算伝票 -->
-    <div class="slip">
-      <div class="slip-row">
-        <span class="label">販売価格</span>
-        <span class="value num" id="slipPrice">¥0</span>
+      <div class="field">
+        <label for="itemName">商品名</label>
+        <input type="text" id="itemName" placeholder="例：〇〇のスニーカー 26cm" maxlength="200">
       </div>
-      <div class="slip-row deduct">
-        <span class="label">販売手数料<small id="slipFeeRate">10%</small></span>
-        <span class="value num" id="slipFee">−¥0</span>
-      </div>
-      <div class="slip-row deduct">
-        <span class="label">送料<small id="slipSizeName"></small></span>
-        <span class="value num" id="slipShipping">−¥0</span>
-      </div>
-      <div class="slip-total">
-        <span class="label">収入</span>
-        <span class="value num" id="slipIncome">¥0</span>
-      </div>
-    </div>
 
-    <button class="btn-primary" id="saveBtn" disabled>記録する</button>
-    <div class="msg hidden" id="formMsg"></div>
-  </section>
+      <div class="field">
+        <label for="price">販売価格</label>
+        <input type="number" id="price" class="num" placeholder="0" min="1" step="1" inputmode="numeric">
+      </div>
 
-  <!-- ========== 記録一覧 ========== -->
-  <section class="card">
-    <h2>記録一覧</h2>
-    <div id="listArea">
-      <div class="state">読み込み中…</div>
-    </div>
-  </section>
+      <div class="field">
+        <label for="shippingMethod">配送方法</label>
+        <select id="shippingMethod">
+          <option value="">選択してください</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="sizeCategory">サイズ区分</label>
+        <select id="sizeCategory" disabled>
+          <option value="">先に配送方法を選択</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="saleDate">販売日</label>
+        <input type="date" id="saleDate" class="num">
+      </div>
+
+      <div class="field">
+        <label for="note">備考 <span class="optional">任意</span></label>
+        <textarea id="note" rows="2" maxlength="500"
+          placeholder="値下げ交渉あり、梱包材を別途購入、リピーター など"></textarea>
+      </div>
+
+      <!-- 署名要素：計算伝票 -->
+      <div class="slip">
+        <div class="slip-row">
+          <span class="label">販売価格</span>
+          <span class="value num" id="slipPrice">¥0</span>
+        </div>
+        <div class="slip-row deduct">
+          <span class="label">販売手数料<small id="slipFeeRate">10%</small></span>
+          <span class="value num" id="slipFee">−¥0</span>
+        </div>
+        <div class="slip-row deduct">
+          <span class="label">送料<small id="slipSizeName"></small></span>
+          <span class="value num" id="slipShipping">−¥0</span>
+        </div>
+        <div class="slip-total">
+          <span class="label">収入</span>
+          <span class="value num" id="slipIncome">¥0</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="saveBtn" disabled>記録する</button>
+      <div class="msg hidden" id="formMsg"></div>
+    </section>
+  </div>
+
+  <!-- ============ 集計を見る ============ -->
+  <div class="panel" id="panelReview" role="tabpanel" aria-labelledby="tabReview" hidden>
+
+    <section class="card">
+      <div class="year-nav">
+        <button class="nav-btn" id="prevYear" aria-label="前の年">◀</button>
+        <span class="yr num" id="yearLabel">—</span>
+        <button class="nav-btn" id="nextYear" aria-label="次の年">▶</button>
+      </div>
+
+      <div class="annual" id="annualArea"></div>
+
+      <div class="legend">
+        <span><i class="inc"></i>収入</span>
+        <span><i class="ded"></i>手数料・送料</span>
+      </div>
+      <div id="monthArea">
+        <div class="state">読み込み中…</div>
+      </div>
+
+      <button class="btn-ghost" id="exportBtn">スプレッドシートに集計を書き出す</button>
+      <div class="msg hidden" id="summaryMsg"></div>
+    </section>
+
+    <section class="card">
+      <div class="list-head">
+        <span class="t">記録一覧</span>
+        <span class="scope" id="listScope"></span>
+      </div>
+      <div id="listArea">
+        <div class="state">読み込み中…</div>
+      </div>
+    </section>
+
+  </div>
 
 </div>
 
@@ -373,9 +528,13 @@ button {
    状態
    ============================================================ */
 var state = {
-  shippingOptions: {},  // { 配送方法: [{size, cost}, ...] }
+  shippingOptions: {},   // { 配送方法: [{size, cost}, ...] }
   feeRate: 0.10,
-  sales: [],
+  summary: [],           // [{yearMonth:'2026/08', count, totalPrice, ...}]
+  years: [],             // データが存在する年の配列（昇順）
+  selectedYear: null,    // 表示中の年
+  selectedMonth: null,   // 'yyyy/MM'。nullなら年全体を表示
+  sales: [],             // 表示中の期間の売上
   saving: false
 };
 
@@ -386,20 +545,25 @@ var yen = function(n) { return '¥' + Number(n || 0).toLocaleString('ja-JP'); };
    初期化
    ============================================================ */
 window.addEventListener('DOMContentLoaded', function() {
-  el('saleDate').value = new Date().toISOString().slice(0, 10);
-
   ['itemName', 'price', 'shippingMethod', 'sizeCategory'].forEach(function(id) {
-    el(id).addEventListener('input', onInputChange);
+    el(id).addEventListener('input', updateSlip);
   });
   el('shippingMethod').addEventListener('change', onMethodChange);
   el('saveBtn').addEventListener('click', onSave);
+  el('exportBtn').addEventListener('click', onExport);
+
+  el('tabRecord').addEventListener('click', function() { switchTab('record'); });
+  el('tabReview').addEventListener('click', function() { switchTab('review'); });
+  el('prevYear').addEventListener('click', function() { changeYear(-1); });
+  el('nextYear').addEventListener('click', function() { changeYear(1); });
 
   google.script.run
     .withSuccessHandler(onInitialData)
     .withFailureHandler(function(err) {
-      el('listArea').innerHTML =
-        '<div class="state">データを読み込めませんでした。' +
+      var msg = '<div class="state">データを読み込めませんでした。' +
         '画面を再読み込みしてください。<br>' + escapeHtml(err.message) + '</div>';
+      el('monthArea').innerHTML = msg;
+      el('listArea').innerHTML = msg;
     })
     .getInitialData();
 });
@@ -407,13 +571,15 @@ window.addEventListener('DOMContentLoaded', function() {
 function onInitialData(data) {
   state.shippingOptions = data.shippingOptions || {};
   state.feeRate = data.feeRate;
-  state.sales = data.recentSales || [];
+  state.summary = data.summary || [];
+
+  // 販売日の初期値はサーバー側の今日（タイムゾーンのずれを避ける）
+  el('saleDate').value = String(data.today || '').replace(/\//g, '-');
 
   var pct = Math.round(state.feeRate * 100) + '%';
   el('feeLabel').textContent = '手数料 ' + pct;
   el('slipFeeRate').textContent = pct;
 
-  // 配送方法のプルダウンを組み立てる
   var sel = el('shippingMethod');
   Object.keys(state.shippingOptions).forEach(function(method) {
     var o = document.createElement('option');
@@ -422,8 +588,286 @@ function onInitialData(data) {
     sel.appendChild(o);
   });
 
-  renderList();
+  rebuildYears(Number(String(data.today || '').slice(0, 4)));
   updateSlip();
+}
+
+/* ============================================================
+   タブ切り替え
+   ============================================================ */
+function switchTab(name) {
+  var isRecord = (name === 'record');
+  el('tabRecord').setAttribute('aria-selected', isRecord);
+  el('tabReview').setAttribute('aria-selected', !isRecord);
+  el('panelRecord').hidden = !isRecord;
+  el('panelReview').hidden = isRecord;
+  window.scrollTo(0, 0);
+}
+
+/* ============================================================
+   年の管理
+   ============================================================ */
+/**
+ * 集計データから対象年の一覧を組み立てる
+ * @param {number} preferYear 優先して表示したい年
+ */
+function rebuildYears(preferYear) {
+  var set = {};
+  state.summary.forEach(function(m) { set[String(m.yearMonth).slice(0, 4)] = true; });
+
+  var thisYear = String(new Date().getFullYear());
+  set[thisYear] = true;                       // データが無くても今年は表示できるようにする
+  if (preferYear) set[String(preferYear)] = true;
+
+  state.years = Object.keys(set).sort();
+
+  // 表示中の年が一覧から消えた場合は最新年に寄せる
+  var target = preferYear || state.selectedYear || Number(thisYear);
+  if (state.years.indexOf(String(target)) === -1) {
+    target = Number(state.years[state.years.length - 1]);
+  }
+  state.selectedYear = Number(target);
+
+  renderReview();
+}
+
+function changeYear(delta) {
+  var idx = state.years.indexOf(String(state.selectedYear));
+  var next = idx + delta;
+  if (next < 0 || next >= state.years.length) return;
+
+  state.selectedYear = Number(state.years[next]);
+  state.selectedMonth = null;   // 年を変えたら年全体の表示に戻す
+  renderReview();
+}
+
+/* ============================================================
+   集計画面の描画
+   ============================================================ */
+function renderReview() {
+  var year = state.selectedYear;
+  el('yearLabel').textContent = year + '年';
+
+  var idx = state.years.indexOf(String(year));
+  el('prevYear').disabled = (idx <= 0);
+  el('nextYear').disabled = (idx >= state.years.length - 1);
+
+  renderAnnual();
+  renderMonths();
+  loadSales();
+}
+
+/**
+ * 指定年の月別データを 'yyyy/MM' をキーに引ける形で返す
+ */
+function monthMapOfYear() {
+  var prefix = String(state.selectedYear) + '/';
+  var map = {};
+  state.summary.forEach(function(m) {
+    if (String(m.yearMonth).indexOf(prefix) === 0) map[m.yearMonth] = m;
+  });
+  return map;
+}
+
+/**
+ * 年間集計を描画する
+ */
+function renderAnnual() {
+  var map = monthMapOfYear();
+  var t = { count: 0, price: 0, fee: 0, shipping: 0, income: 0 };
+
+  Object.keys(map).forEach(function(k) {
+    var m = map[k];
+    t.count    += Number(m.count) || 0;
+    t.price    += Number(m.totalPrice) || 0;
+    t.fee      += Number(m.totalFee) || 0;
+    t.shipping += Number(m.totalShipping) || 0;
+    t.income   += Number(m.totalIncome) || 0;
+  });
+
+  el('annualArea').innerHTML =
+    '<div class="full">' +
+      '<div class="k">' + state.selectedYear + '年の収入</div>' +
+      '<div class="v profit num">' + yen(t.income) + '</div>' +
+    '</div>' +
+    '<div><div class="k">売上</div><div class="v num">' + yen(t.price) + '</div></div>' +
+    '<div><div class="k">販売件数</div><div class="v num">' + t.count + '</div></div>' +
+    '<div><div class="k">手数料</div><div class="v deduct num">' + yen(t.fee) + '</div></div>' +
+    '<div><div class="k">送料</div><div class="v deduct num">' + yen(t.shipping) + '</div></div>';
+}
+
+/**
+ * 1月〜12月のバーを描画する（データが無い月も枠として表示）
+ */
+function renderMonths() {
+  var map = monthMapOfYear();
+  var year = state.selectedYear;
+
+  // バーの長さの基準はその年で最も売上の大きい月
+  var maxPrice = 0;
+  Object.keys(map).forEach(function(k) {
+    maxPrice = Math.max(maxPrice, Number(map[k].totalPrice) || 0);
+  });
+
+  if (maxPrice <= 0) {
+    el('monthArea').innerHTML =
+      '<div class="state">' + year + '年の記録はまだありません。</div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 1; i <= 12; i++) {
+    var ym = year + '/' + (i < 10 ? '0' + i : i);
+    var m = map[ym];
+    var selected = (state.selectedMonth === ym);
+
+    if (!m) {
+      html +=
+        '<div class="month empty">' +
+          '<div class="month-head"><span class="ym num">' + i + '月</span>' +
+          '<span class="num">—</span></div>' +
+        '</div>';
+      continue;
+    }
+
+    var price  = Number(m.totalPrice) || 0;
+    var income = Number(m.totalIncome) || 0;
+    var deduct = (Number(m.totalFee) || 0) + (Number(m.totalShipping) || 0);
+    var scale  = price / maxPrice;
+    var incW   = price > 0 ? (income / price) * scale * 100 : 0;
+    var dedW   = price > 0 ? (deduct / price) * scale * 100 : 0;
+
+    html +=
+      '<button class="month" data-ym="' + ym + '" aria-pressed="' + selected + '">' +
+        '<div class="month-head">' +
+          '<span class="ym num">' + i + '月</span>' +
+          '<span class="inc num">' + yen(income) + '</span>' +
+        '</div>' +
+        '<div class="bar">' +
+          '<div class="bar-inc" style="width:' + incW.toFixed(1) + '%"></div>' +
+          '<div class="bar-ded" style="width:' + dedW.toFixed(1) + '%"></div>' +
+        '</div>' +
+        '<div class="month-foot">' +
+          '<span class="num">' + m.count + '件</span>' +
+          '<span class="num">売上 ' + yen(price) + '</span>' +
+          '<span class="num">控除 ' + yen(deduct) + '</span>' +
+        '</div>' +
+      '</button>';
+  }
+
+  el('monthArea').innerHTML = html;
+
+  // 月をタップすると一覧をその月に絞り込む（再タップで解除）
+  Array.prototype.forEach.call(
+    el('monthArea').querySelectorAll('.month[data-ym]'),
+    function(btn) {
+      btn.addEventListener('click', function() {
+        var ym = btn.getAttribute('data-ym');
+        state.selectedMonth = (state.selectedMonth === ym) ? null : ym;
+        renderMonths();
+        loadSales();
+      });
+    }
+  );
+}
+
+/* ============================================================
+   記録一覧
+   ============================================================ */
+/**
+ * 表示中の期間（年 or 月）の売上を取得する
+ */
+function loadSales() {
+  var prefix = state.selectedMonth || String(state.selectedYear);
+
+  el('listScope').innerHTML = state.selectedMonth
+    ? escapeHtml(state.selectedMonth.replace('/', '年') + '月')
+        + '<button id="clearMonth">年全体に戻す</button>'
+    : state.selectedYear + '年';
+
+  var clearBtn = el('clearMonth');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      state.selectedMonth = null;
+      renderMonths();
+      loadSales();
+    });
+  }
+
+  el('listArea').innerHTML = '<div class="state">読み込み中…</div>';
+
+  google.script.run
+    .withSuccessHandler(function(sales) {
+      state.sales = sales || [];
+      renderList();
+    })
+    .withFailureHandler(function(err) {
+      el('listArea').innerHTML =
+        '<div class="state">読み込めませんでした。' + escapeHtml(err.message) + '</div>';
+    })
+    .getSalesByPeriod(prefix);
+}
+
+function renderList() {
+  var area = el('listArea');
+
+  if (!state.sales.length) {
+    area.innerHTML = '<div class="state">この期間の記録はありません。</div>';
+    return;
+  }
+
+  var html = '';
+  state.sales.forEach(function(s) {
+    var noteHtml = s.note ? '<div class="entry-note">' + escapeHtml(s.note) + '</div>' : '';
+
+    html +=
+      '<div class="entry">' +
+        '<div class="entry-head">' +
+          '<span class="entry-name">' + escapeHtml(s.itemName) + '</span>' +
+          '<span class="entry-income num">' + yen(s.income) + '</span>' +
+        '</div>' +
+        '<div class="entry-sub">' +
+          '<span class="num">' + escapeHtml(String(s.saleDate)) + '</span>' +
+          '<span class="tag">' + escapeHtml(s.sizeCategory) + '</span>' +
+          '<span class="num">' + yen(s.price) + ' − ' + yen(s.fee) + ' − ' + yen(s.shippingCost) + '</span>' +
+          '<button class="btn-del" data-row="' + s.rowIndex + '">削除</button>' +
+        '</div>' +
+        noteHtml +
+      '</div>';
+  });
+
+  area.innerHTML = html;
+
+  Array.prototype.forEach.call(area.querySelectorAll('.btn-del'), function(btn) {
+    btn.addEventListener('click', function() {
+      onDelete(Number(btn.getAttribute('data-row')), btn);
+    });
+  });
+}
+
+function onDelete(rowIndex, btn) {
+  if (!confirm('この記録を削除します。取り消せません。')) return;
+
+  btn.disabled = true;
+  btn.textContent = '削除中…';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res.success) {
+        btn.disabled = false;
+        btn.textContent = '削除';
+        alert(res.message);
+        return;
+      }
+      // 行番号がずれるため、集計と一覧を取り直す
+      refreshSummary();
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      btn.textContent = '削除';
+      alert('削除に失敗しました。' + err.message);
+    })
+    .deleteSale(rowIndex);
 }
 
 /* ============================================================
@@ -443,7 +887,6 @@ function onMethodChange() {
 
   sizeSel.disabled = false;
   sizeSel.appendChild(newOption('', '選択してください'));
-
   (state.shippingOptions[method] || []).forEach(function(opt) {
     sizeSel.appendChild(newOption(opt.size, opt.size + '  ' + yen(opt.cost)));
   });
@@ -457,8 +900,6 @@ function newOption(value, text) {
   o.textContent = text;
   return o;
 }
-
-function onInputChange() { updateSlip(); }
 
 /* ============================================================
    計算伝票をリアルタイム更新
@@ -491,7 +932,6 @@ function updateSlip() {
   incomeEl.textContent = yen(income);
   incomeEl.classList.toggle('negative', income < 0);
 
-  // 保存可否
   var ready = !!el('itemName').value.trim() && price > 0 && shipping !== null;
   el('saveBtn').disabled = !ready || state.saving;
 }
@@ -504,7 +944,7 @@ function onSave() {
   state.saving = true;
   el('saveBtn').disabled = true;
   el('saveBtn').textContent = '記録中…';
-  hideMsg();
+  el('formMsg').className = 'msg hidden';
 
   google.script.run
     .withSuccessHandler(onSaved)
@@ -517,7 +957,8 @@ function onSave() {
       price: Math.floor(Number(el('price').value) || 0),
       shippingMethod: el('shippingMethod').value,
       sizeCategory: el('sizeCategory').value,
-      saleDate: el('saleDate').value
+      saleDate: el('saleDate').value,
+      note: el('note').value.trim()
     });
 }
 
@@ -529,15 +970,16 @@ function onSaved(res) {
     return;
   }
 
-  state.sales.unshift(res.record);
-  renderList();
   showMsg('ok', '記録しました　収入 ' + yen(res.record.income));
 
-  // 商品名と価格だけ消し、配送方法・日付は次の入力用に残す
+  // 商品名・価格・備考を消し、配送方法と日付は次の入力用に残す
   el('itemName').value = '';
   el('price').value = '';
+  el('note').value = '';
   el('itemName').focus();
   updateSlip();
+
+  refreshSummary();
 }
 
 function finishSave() {
@@ -547,82 +989,43 @@ function finishSave() {
 }
 
 /* ============================================================
-   一覧の描画
+   集計の再取得
    ============================================================ */
-function renderList() {
-  var area = el('listArea');
-
-  if (!state.sales.length) {
-    area.innerHTML = '<div class="state">まだ記録がありません。上のフォームから最初の売上を追加してください。</div>';
-    return;
-  }
-
-  var totalPrice = 0, totalIncome = 0;
-  state.sales.forEach(function(s) {
-    totalPrice += Number(s.price) || 0;
-    totalIncome += Number(s.income) || 0;
-  });
-
-  var html =
-    '<div class="totals">' +
-      '<div><div class="k">件数</div><div class="v num">' + state.sales.length + '</div></div>' +
-      '<div><div class="k">売上合計</div><div class="v num">' + yen(totalPrice) + '</div></div>' +
-      '<div><div class="k">収入合計</div><div class="v num profit">' + yen(totalIncome) + '</div></div>' +
-    '</div>';
-
-  state.sales.forEach(function(s) {
-    html +=
-      '<div class="entry" data-row="' + s.rowIndex + '">' +
-        '<div class="entry-head">' +
-          '<span class="entry-name">' + escapeHtml(s.itemName) + '</span>' +
-          '<span class="entry-income num">' + yen(s.income) + '</span>' +
-        '</div>' +
-        '<div class="entry-sub">' +
-          '<span class="num">' + escapeHtml(String(s.saleDate)) + '</span>' +
-          '<span class="tag">' + escapeHtml(s.sizeCategory) + '</span>' +
-          '<span class="num">' + yen(s.price) + ' − ' + yen(s.fee) + ' − ' + yen(s.shippingCost) + '</span>' +
-          '<button class="btn-del" data-row="' + s.rowIndex + '">削除</button>' +
-        '</div>' +
-      '</div>';
-  });
-
-  area.innerHTML = html;
-
-  Array.prototype.forEach.call(area.querySelectorAll('.btn-del'), function(btn) {
-    btn.addEventListener('click', function() {
-      onDelete(Number(btn.getAttribute('data-row')), btn);
-    });
-  });
+function refreshSummary() {
+  google.script.run
+    .withSuccessHandler(function(rows) {
+      state.summary = rows || [];
+      rebuildYears(state.selectedYear);
+    })
+    .getSummary();
 }
 
-function onDelete(rowIndex, btn) {
-  if (!confirm('この記録を削除します。取り消せません。')) return;
-
+/**
+ * スプレッドシートのSummaryシートへ書き出す
+ */
+function onExport() {
+  var btn = el('exportBtn');
   btn.disabled = true;
-  btn.textContent = '削除中…';
+  btn.textContent = '書き出し中…';
+  el('summaryMsg').className = 'msg hidden';
+
+  var done = function(cls, text) {
+    btn.disabled = false;
+    btn.textContent = 'スプレッドシートに集計を書き出す';
+    var m = el('summaryMsg');
+    m.className = 'msg ' + cls;
+    m.textContent = text;
+  };
 
   google.script.run
     .withSuccessHandler(function(res) {
-      if (!res.success) {
-        btn.disabled = false;
-        btn.textContent = '削除';
-        showMsg('err', res.message);
-        return;
-      }
-      // 行番号がずれるためサーバーから取り直す
-      google.script.run
-        .withSuccessHandler(function(sales) {
-          state.sales = sales;
-          renderList();
-        })
-        .getRecentSales(50);
+      done(res.success ? 'ok' : 'err',
+        res.success ? res.message + '。Summaryシートにグラフも作成しました。' : res.message);
     })
     .withFailureHandler(function(err) {
-      btn.disabled = false;
-      btn.textContent = '削除';
-      showMsg('err', '削除に失敗しました。' + err.message);
+      done('err', '書き出しに失敗しました。' + err.message);
     })
-    .deleteSale(rowIndex);
+    .updateSummary();
 }
 
 /* ============================================================
@@ -633,7 +1036,6 @@ function showMsg(type, text) {
   m.className = 'msg ' + type;
   m.textContent = text;
 }
-function hideMsg() { el('formMsg').className = 'msg hidden'; }
 
 function escapeHtml(str) {
   return String(str == null ? '' : str)
