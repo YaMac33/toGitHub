@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>メルカリ売上管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   デザイントークン
+   モチーフ：取引伝票・複写式の control slip
+   ============================================================ */
+:root {
+  --ink:        #14212b;  /* 濃紺インク：文字・主要面 */
+  --ink-soft:   #5c6b74;  /* 補助テキスト */
+  --paper:      #eef1ec;  /* 伝票用紙の地色（冷たい紙白） */
+  --card:       #ffffff;
+  --rule:       #c6cfc8;  /* 罫線 */
+  --profit:     #0b6b50;  /* 収入：深緑 */
+  --deduct:     #a3402d;  /* 控除：煉瓦色 */
+  --focus:      #1f6feb;
+
+  --r: 4px;               /* 伝票なので角丸は最小限 */
+  --gap: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Zen Kaku Gothic New', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 数値はすべて等幅・タビュラー */
+.num {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 64px;
+}
+
+/* ============================================================
+   ヘッダー：伝票の見出し
+   ============================================================ */
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 24px;
+}
+header h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+header .meta {
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   カード（伝票の1枚）
+   ============================================================ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  padding: 20px 18px;
+  margin-bottom: var(--gap);
+}
+.card > h2 {
+  margin: 0 0 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* ============================================================
+   入力フィールド
+   ============================================================ */
+.field { margin-bottom: 16px; }
+.field:last-child { margin-bottom: 0; }
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+input, select {
+  width: 100%;
+  padding: 11px 12px;
+  font-size: 16px; /* iOSの自動ズーム防止 */
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  appearance: none;
+}
+input.num, select.num { font-size: 16px; }
+
+input:focus-visible, select:focus-visible, button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+select:disabled {
+  background: #f3f5f2;
+  color: #9aa5ab;
+}
+
+/* ============================================================
+   署名要素：計算伝票
+   販売価格から控除を引いて収入に着地する過程を帳簿として見せる
+   ============================================================ */
+.slip {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--rule);
+}
+.slip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  font-size: 14px;
+}
+.slip-row .label { color: var(--ink-soft); }
+.slip-row .label small {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  margin-left: 5px;
+}
+.slip-row .value { font-size: 15px; }
+.slip-row.deduct .value { color: var(--deduct); }
+
+/* 合計行：会計の二重罫線 */
+.slip-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 3px double var(--ink);
+}
+.slip-total .label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.slip-total .value {
+  font-size: 27px;
+  font-weight: 800;
+  color: var(--profit);
+}
+.slip-total .value.negative { color: var(--deduct); }
+
+/* ============================================================
+   ボタン
+   ============================================================ */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: var(--r);
+  border: 1px solid transparent;
+}
+.btn-primary {
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: var(--ink);
+}
+.btn-primary:hover:not(:disabled) { background: #223442; }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-del {
+  padding: 3px 9px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: transparent;
+  border-color: var(--rule);
+}
+.btn-del:hover { color: var(--deduct); border-color: var(--deduct); }
+
+/* ============================================================
+   売上一覧
+   ============================================================ */
+.entry {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.entry:last-child { border-bottom: none; }
+
+.entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.entry-name {
+  font-weight: 500;
+  font-size: 15px;
+  word-break: break-word;
+}
+.entry-income {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--profit);
+  white-space: nowrap;
+}
+.entry-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 10px;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.tag {
+  padding: 1px 7px;
+  font-size: 11px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+/* 集計バー */
+.totals {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.totals div { flex: 1; }
+.totals .k {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+}
+.totals .v { font-size: 17px; font-weight: 700; }
+.totals .v.profit { color: var(--profit); }
+
+/* ============================================================
+   状態表示
+   ============================================================ */
+.state {
+  padding: 28px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.msg {
+  margin-top: 14px;
+  padding: 11px 13px;
+  font-size: 13px;
+  border-radius: var(--r);
+  border: 1px solid;
+}
+.msg.ok  { color: var(--profit); border-color: var(--profit); background: #f0f7f4; }
+.msg.err { color: var(--deduct); border-color: var(--deduct); background: #fbf1ef; }
+.hidden { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .slip-total .value { transition: color .15s ease; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>メルカリ売上管理</h1>
+    <span class="meta" id="feeLabel">手数料 10%</span>
+  </header>
+
+  <!-- ========== 売上を記録する ========== -->
+  <section class="card">
+    <h2>売上を記録する</h2>
+
+    <div class="field">
+      <label for="itemName">商品名</label>
+      <input type="text" id="itemName" placeholder="例：〇〇のスニーカー 26cm" maxlength="200">
+    </div>
+
+    <div class="field">
+      <label for="price">販売価格</label>
+      <input type="number" id="price" class="num" placeholder="0" min="1" step="1" inputmode="numeric">
+    </div>
+
+    <div class="field">
+      <label for="shippingMethod">配送方法</label>
+      <select id="shippingMethod">
+        <option value="">選択してください</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="sizeCategory">サイズ区分</label>
+      <select id="sizeCategory" disabled>
+        <option value="">先に配送方法を選択</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="saleDate">販売日</label>
+      <input type="date" id="saleDate" class="num">
+    </div>
+
+    <!-- 署名要素：計算伝票 -->
+    <div class="slip">
+      <div class="slip-row">
+        <span class="label">販売価格</span>
+        <span class="value num" id="slipPrice">¥0</span>
+      </div>
+      <div class="slip-row deduct">
+        <span class="label">販売手数料<small id="slipFeeRate">10%</small></span>
+        <span class="value num" id="slipFee">−¥0</span>
+      </div>
+      <div class="slip-row deduct">
+        <span class="label">送料<small id="slipSizeName"></small></span>
+        <span class="value num" id="slipShipping">−¥0</span>
+      </div>
+      <div class="slip-total">
+        <span class="label">収入</span>
+        <span class="value num" id="slipIncome">¥0</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="saveBtn" disabled>記録する</button>
+    <div class="msg hidden" id="formMsg"></div>
+  </section>
+
+  <!-- ========== 記録一覧 ========== -->
+  <section class="card">
+    <h2>記録一覧</h2>
+    <div id="listArea">
+      <div class="state">読み込み中…</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   状態
+   ============================================================ */
+var state = {
+  shippingOptions: {},  // { 配送方法: [{size, cost}, ...] }
+  feeRate: 0.10,
+  sales: [],
+  saving: false
+};
+
+var el = function(id) { return document.getElementById(id); };
+var yen = function(n) { return '¥' + Number(n || 0).toLocaleString('ja-JP'); };
+
+/* ============================================================
+   初期化
+   ============================================================ */
+window.addEventListener('DOMContentLoaded', function() {
+  el('saleDate').value = new Date().toISOString().slice(0, 10);
+
+  ['itemName', 'price', 'shippingMethod', 'sizeCategory'].forEach(function(id) {
+    el(id).addEventListener('input', onInputChange);
+  });
+  el('shippingMethod').addEventListener('change', onMethodChange);
+  el('saveBtn').addEventListener('click', onSave);
+
+  google.script.run
+    .withSuccessHandler(onInitialData)
+    .withFailureHandler(function(err) {
+      el('listArea').innerHTML =
+        '<div class="state">データを読み込めませんでした。' +
+        '画面を再読み込みしてください。<br>' + escapeHtml(err.message) + '</div>';
+    })
+    .getInitialData();
+});
+
+function onInitialData(data) {
+  state.shippingOptions = data.shippingOptions || {};
+  state.feeRate = data.feeRate;
+  state.sales = data.recentSales || [];
+
+  var pct = Math.round(state.feeRate * 100) + '%';
+  el('feeLabel').textContent = '手数料 ' + pct;
+  el('slipFeeRate').textContent = pct;
+
+  // 配送方法のプルダウンを組み立てる
+  var sel = el('shippingMethod');
+  Object.keys(state.shippingOptions).forEach(function(method) {
+    var o = document.createElement('option');
+    o.value = method;
+    o.textContent = method;
+    sel.appendChild(o);
+  });
+
+  renderList();
+  updateSlip();
+}
+
+/* ============================================================
+   連動プルダウン：配送方法 → サイズ区分
+   ============================================================ */
+function onMethodChange() {
+  var method = el('shippingMethod').value;
+  var sizeSel = el('sizeCategory');
+  sizeSel.innerHTML = '';
+
+  if (!method) {
+    sizeSel.disabled = true;
+    sizeSel.appendChild(newOption('', '先に配送方法を選択'));
+    updateSlip();
+    return;
+  }
+
+  sizeSel.disabled = false;
+  sizeSel.appendChild(newOption('', '選択してください'));
+
+  (state.shippingOptions[method] || []).forEach(function(opt) {
+    sizeSel.appendChild(newOption(opt.size, opt.size + '  ' + yen(opt.cost)));
+  });
+
+  updateSlip();
+}
+
+function newOption(value, text) {
+  var o = document.createElement('option');
+  o.value = value;
+  o.textContent = text;
+  return o;
+}
+
+function onInputChange() { updateSlip(); }
+
+/* ============================================================
+   計算伝票をリアルタイム更新
+   ※ サーバー側 calcIncome() と同じ計算式（手数料は切り捨て）
+   ============================================================ */
+function currentShippingCost() {
+  var method = el('shippingMethod').value;
+  var size = el('sizeCategory').value;
+  if (!method || !size) return null;
+
+  var list = state.shippingOptions[method] || [];
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].size === size) return list[i].cost;
+  }
+  return null;
+}
+
+function updateSlip() {
+  var price = Math.floor(Number(el('price').value) || 0);
+  var fee = Math.floor(price * state.feeRate);
+  var shipping = currentShippingCost();
+  var income = price - fee - (shipping || 0);
+
+  el('slipPrice').textContent = yen(price);
+  el('slipFee').textContent = price ? '−' + yen(fee) : '−¥0';
+  el('slipShipping').textContent = (shipping === null) ? '—' : '−' + yen(shipping);
+  el('slipSizeName').textContent = el('sizeCategory').value || '';
+
+  var incomeEl = el('slipIncome');
+  incomeEl.textContent = yen(income);
+  incomeEl.classList.toggle('negative', income < 0);
+
+  // 保存可否
+  var ready = !!el('itemName').value.trim() && price > 0 && shipping !== null;
+  el('saveBtn').disabled = !ready || state.saving;
+}
+
+/* ============================================================
+   保存
+   ============================================================ */
+function onSave() {
+  if (state.saving) return;
+  state.saving = true;
+  el('saveBtn').disabled = true;
+  el('saveBtn').textContent = '記録中…';
+  hideMsg();
+
+  google.script.run
+    .withSuccessHandler(onSaved)
+    .withFailureHandler(function(err) {
+      finishSave();
+      showMsg('err', '通信に失敗しました。' + err.message);
+    })
+    .addSale({
+      itemName: el('itemName').value.trim(),
+      price: Math.floor(Number(el('price').value) || 0),
+      shippingMethod: el('shippingMethod').value,
+      sizeCategory: el('sizeCategory').value,
+      saleDate: el('saleDate').value
+    });
+}
+
+function onSaved(res) {
+  finishSave();
+
+  if (!res.success) {
+    showMsg('err', res.message);
+    return;
+  }
+
+  state.sales.unshift(res.record);
+  renderList();
+  showMsg('ok', '記録しました　収入 ' + yen(res.record.income));
+
+  // 商品名と価格だけ消し、配送方法・日付は次の入力用に残す
+  el('itemName').value = '';
+  el('price').value = '';
+  el('itemName').focus();
+  updateSlip();
+}
+
+function finishSave() {
+  state.saving = false;
+  el('saveBtn').textContent = '記録する';
+  updateSlip();
+}
+
+/* ============================================================
+   一覧の描画
+   ============================================================ */
+function renderList() {
+  var area = el('listArea');
+
+  if (!state.sales.length) {
+    area.innerHTML = '<div class="state">まだ記録がありません。上のフォームから最初の売上を追加してください。</div>';
+    return;
+  }
+
+  var totalPrice = 0, totalIncome = 0;
+  state.sales.forEach(function(s) {
+    totalPrice += Number(s.price) || 0;
+    totalIncome += Number(s.income) || 0;
+  });
+
+  var html =
+    '<div class="totals">' +
+      '<div><div class="k">件数</div><div class="v num">' + state.sales.length + '</div></div>' +
+      '<div><div class="k">売上合計</div><div class="v num">' + yen(totalPrice) + '</div></div>' +
+      '<div><div class="k">収入合計</div><div class="v num profit">' + yen(totalIncome) + '</div></div>' +
+    '</div>';
+
+  state.sales.forEach(function(s) {
+    html +=
+      '<div class="entry" data-row="' + s.rowIndex + '">' +
+        '<div class="entry-head">' +
+          '<span class="entry-name">' + escapeHtml(s.itemName) + '</span>' +
+          '<span class="entry-income num">' + yen(s.income) + '</span>' +
+        '</div>' +
+        '<div class="entry-sub">' +
+          '<span class="num">' + escapeHtml(String(s.saleDate)) + '</span>' +
+          '<span class="tag">' + escapeHtml(s.sizeCategory) + '</span>' +
+          '<span class="num">' + yen(s.price) + ' − ' + yen(s.fee) + ' − ' + yen(s.shippingCost) + '</span>' +
+          '<button class="btn-del" data-row="' + s.rowIndex + '">削除</button>' +
+        '</div>' +
+      '</div>';
+  });
+
+  area.innerHTML = html;
+
+  Array.prototype.forEach.call(area.querySelectorAll('.btn-del'), function(btn) {
+    btn.addEventListener('click', function() {
+      onDelete(Number(btn.getAttribute('data-row')), btn);
+    });
+  });
+}
+
+function onDelete(rowIndex, btn) {
+  if (!confirm('この記録を削除します。取り消せません。')) return;
+
+  btn.disabled = true;
+  btn.textContent = '削除中…';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res.success) {
+        btn.disabled = false;
+        btn.textContent = '削除';
+        showMsg('err', res.message);
+        return;
+      }
+      // 行番号がずれるためサーバーから取り直す
+      google.script.run
+        .withSuccessHandler(function(sales) {
+          state.sales = sales;
+          renderList();
+        })
+        .getRecentSales(50);
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      btn.textContent = '削除';
+      showMsg('err', '削除に失敗しました。' + err.message);
+    })
+    .deleteSale(rowIndex);
+}
+
+/* ============================================================
+   ユーティリティ
+   ============================================================ */
+function showMsg(type, text) {
+  var m = el('formMsg');
+  m.className = 'msg ' + type;
+  m.textContent = text;
+}
+function hideMsg() { el('formMsg').className = 'msg hidden'; }
+
+function escapeHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+</script>
+</body>
+</html>
