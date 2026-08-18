@@ -1,0 +1,319 @@
+<script>
+  // ============================================================
+  // タブ切り替え
+  // ============================================================
+  document.querySelectorAll('.tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function (s) { s.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'history') loadHistory();
+    });
+  });
+
+  // ============================================================
+  // 日付ユーティリティ
+  // ============================================================
+  function fmt(d) {
+    var y = d.getFullYear(), m = ('0' + (d.getMonth() + 1)).slice(-2), day = ('0' + d.getDate()).slice(-2);
+    return y + '-' + m + '-' + day;
+  }
+
+  // 月曜始まりの週範囲を offset 週分ずらして返す
+  function getWeekRange(offset) {
+    var now = new Date();
+    var dow = now.getDay(); // 0=Sun
+    var diffToMonday = dow === 0 ? -6 : 1 - dow;
+    var monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday + offset * 7);
+    var sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return { start: monday, end: sunday };
+  }
+
+  function getMonthRange(offset) {
+    var now = new Date();
+    var y = now.getFullYear(), m = now.getMonth() + offset;
+    var start = new Date(y, m, 1);
+    var end = new Date(y, m + 1, 0);
+    return { start: start, end: end };
+  }
+
+  // ============================================================
+  // グラフタブ
+  // ============================================================
+  var periodType = 'week';
+  var periodOffset = 0;
+  var chartInstance = null;
+
+  document.querySelectorAll('.period-type-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.period-type-btn').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      periodType = btn.dataset.type;
+      periodOffset = 0;
+      loadGraph();
+    });
+  });
+  document.getElementById('prev-period').addEventListener('click', function () { periodOffset--; loadGraph(); });
+  document.getElementById('next-period').addEventListener('click', function () { periodOffset++; loadGraph(); });
+
+  function currentRange() {
+    return periodType === 'week' ? getWeekRange(periodOffset) : getMonthRange(periodOffset);
+  }
+
+  function updatePeriodLabel(range) {
+    var label;
+    if (periodType === 'week') {
+      label = (range.start.getMonth() + 1) + '/' + range.start.getDate() + ' 〜 ' +
+        (range.end.getMonth() + 1) + '/' + range.end.getDate();
+    } else {
+      label = range.start.getFullYear() + '年' + (range.start.getMonth() + 1) + '月';
+    }
+    document.getElementById('period-label').textContent = label;
+  }
+
+  function loadGraph() {
+    var range = currentRange();
+    updatePeriodLabel(range);
+    google.script.run.withSuccessHandler(function (logs) {
+      renderChart(range, logs);
+      renderTargetSummary(logs);
+    }).withFailureHandler(showFatalError).getDailyLogs(fmt(range.start), fmt(range.end));
+  }
+
+  function buildDateList(range) {
+    var list = [];
+    var d = new Date(range.start);
+    while (d <= range.end) {
+      list.push(fmt(d));
+      d.setDate(d.getDate() + 1);
+    }
+    return list;
+  }
+
+  function renderChart(range, logs) {
+    var dateList = buildDateList(range);
+    var logMap = {};
+    logs.forEach(function (l) { logMap[l.date] = l; });
+
+    var labels = dateList.map(function (d) { return d.slice(5).replace('-', '/'); });
+    var balanceData = dateList.map(function (d) { return logMap[d] ? logMap[d].balance_kcal : null; });
+    var weightData = dateList.map(function (d) { return logMap[d] ? logMap[d].weight_kg : null; });
+
+    var ctx = document.getElementById('balanceChart').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: '収支 (kcal)',
+            data: balanceData,
+            backgroundColor: balanceData.map(function (v) { return (v || 0) <= 0 ? '#2f6f4f' : '#b3452e'; }),
+            yAxisID: 'y'
+          },
+          {
+            type: 'line',
+            label: '体重 (kg)',
+            data: weightData,
+            borderColor: '#3f6fa8',
+            backgroundColor: '#3f6fa8',
+            spanGaps: true,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          y: { position: 'left', title: { display: true, text: '収支 (kcal)' } },
+          y1: { position: 'right', title: { display: true, text: '体重 (kg)' }, grid: { drawOnChartArea: false } }
+        }
+      }
+    });
+  }
+
+  function renderTargetSummary(logs) {
+    google.script.run.withSuccessHandler(function (profile) {
+      var latestWeight = null;
+      for (var i = logs.length - 1; i >= 0; i--) {
+        if (logs[i].weight_kg) { latestWeight = logs[i].weight_kg; break; }
+      }
+      var el = document.getElementById('target-summary');
+      if (latestWeight && profile.target_weight_kg) {
+        var diff = (latestWeight - profile.target_weight_kg).toFixed(1);
+        el.textContent = '現在体重 ' + latestWeight + 'kg ／ 目標まで ' +
+          (diff > 0 ? 'あと ' + diff + 'kg' : '目標達成！');
+      } else {
+        el.textContent = '';
+      }
+    }).getProfile();
+  }
+
+  // ============================================================
+  // データ入力タブ：JSON取込み
+  // ============================================================
+  var pendingImportData = null;
+
+  document.getElementById('import-json-btn').addEventListener('click', function () {
+    var raw = document.getElementById('json-input').value.trim();
+    var resultEl = document.getElementById('import-result');
+    resultEl.textContent = '';
+    resultEl.className = 'result-msg';
+
+    var parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      resultEl.textContent = 'JSONの形式が正しくありません。';
+      resultEl.className = 'result-msg error';
+      return;
+    }
+    var jsonArray = Array.isArray(parsed) ? parsed : [parsed];
+
+    google.script.run.withSuccessHandler(function (checkResult) {
+      pendingImportData = jsonArray;
+      if (checkResult.duplicates.length > 0) {
+        document.getElementById('dialog-message').textContent =
+          '既存データと重複する日付が ' + checkResult.duplicates.length + ' 件あります（' +
+          checkResult.duplicates.join(', ') + '）。全て上書きしてよいですか？';
+        document.getElementById('dialog-overlay').classList.remove('hidden');
+      } else {
+        doImport(jsonArray);
+      }
+    }).withFailureHandler(showFatalError).checkImportDuplicates(jsonArray);
+  });
+
+  document.getElementById('dialog-cancel').addEventListener('click', function () {
+    document.getElementById('dialog-overlay').classList.add('hidden');
+    pendingImportData = null;
+  });
+  document.getElementById('dialog-confirm').addEventListener('click', function () {
+    document.getElementById('dialog-overlay').classList.add('hidden');
+    if (pendingImportData) doImport(pendingImportData);
+  });
+
+  function doImport(jsonArray) {
+    var resultEl = document.getElementById('import-result');
+    google.script.run.withSuccessHandler(function (res) {
+      resultEl.textContent = res.count + '件のデータを取り込みました。';
+      resultEl.className = 'result-msg success';
+      document.getElementById('json-input').value = '';
+      pendingImportData = null;
+      loadGraph();
+    }).withFailureHandler(showFatalError).confirmImportBatch(jsonArray);
+  }
+
+  // ============================================================
+  // データ入力タブ：手入力
+  // ============================================================
+  document.getElementById('save-weight-btn').addEventListener('click', function () {
+    var date = document.getElementById('weight-date').value;
+    var weight = parseFloat(document.getElementById('weight-value').value);
+    var resultEl = document.getElementById('weight-result');
+    if (!date || !weight) {
+      resultEl.textContent = '日付と体重を入力してください。';
+      resultEl.className = 'result-msg error';
+      return;
+    }
+    google.script.run.withSuccessHandler(function () {
+      resultEl.textContent = '保存しました。';
+      resultEl.className = 'result-msg success';
+      loadGraph();
+    }).withFailureHandler(showFatalError).saveWeightManual(date, weight);
+  });
+
+  document.getElementById('save-exercise-btn').addEventListener('click', function () {
+    var date = document.getElementById('exercise-date').value;
+    var val = parseFloat(document.getElementById('exercise-value').value);
+    var resultEl = document.getElementById('exercise-result');
+    if (!date || isNaN(val)) {
+      resultEl.textContent = '日付と消費カロリーを入力してください。';
+      resultEl.className = 'result-msg error';
+      return;
+    }
+    google.script.run.withSuccessHandler(function () {
+      resultEl.textContent = '保存しました。';
+      resultEl.className = 'result-msg success';
+      loadGraph();
+    }).withFailureHandler(showFatalError).saveExerciseManual(date, val);
+  });
+
+  // ============================================================
+  // 履歴編集タブ
+  // ============================================================
+  function loadHistory() {
+    var el = document.getElementById('history-list');
+    el.textContent = '読み込み中...';
+    google.script.run.withSuccessHandler(function (logs) {
+      if (logs.length === 0) {
+        el.innerHTML = '<p class="hint">まだデータがありません。</p>';
+        return;
+      }
+      el.innerHTML = '';
+      logs.forEach(function (log) {
+        var item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML =
+          '<div>' +
+          '<div class="h-date">' + log.date + '</div>' +
+          '<div class="h-detail">摂取 ' + log.intake_kcal + ' / 運動 ' + log.exercise_kcal +
+          ' / 体重 ' + (log.weight_kg || '-') + 'kg / 収支 ' + (log.balance_kcal != null ? log.balance_kcal : '-') + '</div>' +
+          '</div>' +
+          '<div class="h-actions">' +
+          '<button class="edit">編集</button>' +
+          '<button class="del">削除</button>' +
+          '</div>';
+        item.querySelector('.edit').addEventListener('click', function () { openEditDialog(log); });
+        item.querySelector('.del').addEventListener('click', function () { deleteHistoryItem(log.date); });
+        el.appendChild(item);
+      });
+    }).withFailureHandler(showFatalError).getAllDailyLogs();
+  }
+
+  function openEditDialog(log) {
+    document.getElementById('edit-date').value = log.date;
+    document.getElementById('edit-intake').value = log.intake_kcal;
+    document.getElementById('edit-exercise').value = log.exercise_kcal;
+    document.getElementById('edit-weight').value = log.weight_kg || '';
+    document.getElementById('edit-dialog-overlay').classList.remove('hidden');
+    document.getElementById('edit-save').onclick = function () {
+      var fields = {
+        intake_kcal: parseFloat(document.getElementById('edit-intake').value) || 0,
+        exercise_kcal: parseFloat(document.getElementById('edit-exercise').value) || 0,
+        weight_kg: parseFloat(document.getElementById('edit-weight').value) || null
+      };
+      google.script.run.withSuccessHandler(function () {
+        document.getElementById('edit-dialog-overlay').classList.add('hidden');
+        loadHistory();
+      }).withFailureHandler(showFatalError).updateDailyLog(log.date, fields);
+    };
+  }
+  document.getElementById('edit-cancel').addEventListener('click', function () {
+    document.getElementById('edit-dialog-overlay').classList.add('hidden');
+  });
+
+  function deleteHistoryItem(dateStr) {
+    if (!confirm(dateStr + ' のデータを削除しますか？')) return;
+    google.script.run.withSuccessHandler(function () {
+      loadHistory();
+    }).withFailureHandler(showFatalError).deleteDailyLog(dateStr);
+  }
+
+  // ============================================================
+  // 共通
+  // ============================================================
+  function showFatalError(err) {
+    alert('エラーが発生しました: ' + (err.message || err));
+  }
+
+  // ============================================================
+  // 初期化
+  // ============================================================
+  loadGraph();
+</script>
