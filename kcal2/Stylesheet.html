@@ -1,0 +1,139 @@
+<style>
+  :root {
+    --primary: #2f6f4f;
+    --primary-dark: #1f4f37;
+    --bg: #f5f6f4;
+    --card-bg: #ffffff;
+    --border: #dfe3df;
+    --text: #22291f;
+    --text-sub: #6b7268;
+    --danger: #b3452e;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  }
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+  header {
+    background: var(--primary-dark);
+    color: #fff;
+    padding: 14px 16px;
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+
+  main { flex: 1; padding: 12px 12px 80px; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  #tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex;
+    background: #fff;
+    border-top: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 1; padding: 12px 0; border: none; background: none;
+    font-size: 13px; color: var(--text-sub);
+  }
+  .tab-btn.active { color: var(--primary); font-weight: 600; }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .card h2 { font-size: 14px; margin: 0 0 8px; color: var(--primary-dark); }
+  .hint { font-size: 12px; color: var(--text-sub); margin: 0 0 8px; }
+
+  textarea, input[type="date"], input[type="number"] {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-family: inherit;
+  }
+
+  .form-row { display: flex; gap: 6px; align-items: center; }
+  .form-row input { margin-bottom: 0; }
+  .form-row-vertical label {
+    display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 8px;
+  }
+  .form-row-vertical input { margin-top: 4px; }
+
+  .btn-primary, .btn-secondary {
+    border: none; border-radius: 6px; padding: 9px 14px;
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-secondary { background: #eceee9; color: var(--text); }
+
+  .result-msg { font-size: 12px; margin-top: 6px; min-height: 16px; }
+  .result-msg.success { color: var(--primary-dark); }
+  .result-msg.error { color: var(--danger); }
+
+  .period-type-controls { display: flex; gap: 8px; margin-bottom: 10px; }
+  .period-type-btn {
+    flex: 1; padding: 8px 0; border-radius: 6px;
+    border: 1px solid var(--border); background: #fff; font-size: 13px;
+  }
+  .period-type-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  .period-nav {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    margin-bottom: 10px;
+  }
+  .period-nav button { border: none; background: none; font-size: 18px; color: var(--primary-dark); }
+  #period-label { font-size: 14px; font-weight: 600; min-width: 140px; text-align: center; }
+
+  .chart-wrap { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+
+  .target-summary {
+    margin-top: 10px; font-size: 13px; color: var(--text-sub); text-align: center;
+  }
+
+  .history-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px;
+  }
+  .history-item .h-date { font-weight: 600; }
+  .history-item .h-detail { color: var(--text-sub); font-size: 12px; margin-top: 2px; }
+  .history-item .h-actions button {
+    border: none; background: none; font-size: 12px; padding: 4px 8px;
+  }
+  .history-item .h-actions .del { color: var(--danger); }
+
+  #dialog-overlay, #edit-dialog-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  #dialog-overlay.hidden, #edit-dialog-overlay.hidden { display: none; }
+  #dialog-box {
+    background: #fff; border-radius: 10px; padding: 18px; width: 100%; max-width: 320px;
+  }
+  #dialog-box h3 { margin-top: 0; font-size: 15px; }
+  .dialog-buttons { display: flex; gap: 8px; margin-top: 14px; }
+  .dialog-buttons button { flex: 1; }
+
+  .meal-group { margin-bottom: 10px; }
+  .meal-group-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .meal-group-total { color: var(--text-sub); font-weight: 400; }
+  .meal-item-row {
+    display: flex; justify-content: space-between; font-size: 13px;
+    padding: 3px 0; border-bottom: 1px dashed var(--border);
+  }
+  .history-item .h-actions button.meals { color: var(--primary-dark); }
+</style>
