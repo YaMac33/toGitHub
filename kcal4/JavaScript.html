@@ -1,0 +1,637 @@
+<script>
+  // ============================================================
+  // 共通ユーティリティ
+  // ============================================================
+  function fmt(d) {
+    var y = d.getFullYear(), m = ('0' + (d.getMonth() + 1)).slice(-2), day = ('0' + d.getDate()).slice(-2);
+    return y + '-' + m + '-' + day;
+  }
+  var DOW = ['日', '月', '火', '水', '木', '金', '土'];
+  function dowOf(dateStr) {
+    var p = dateStr.split('-');
+    return DOW[new Date(p[0], p[1] - 1, p[2]).getDay()];
+  }
+  function nf(n) { return Math.round(n).toLocaleString('ja-JP'); }
+
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function () { t.classList.remove('show'); }, 2400);
+  }
+  function showFatalError(err) {
+    toast('エラー: ' + (err.message || err));
+  }
+
+  function openOverlay(id) { document.getElementById(id).classList.remove('hidden'); }
+  function closeOverlay(id) { document.getElementById(id).classList.add('hidden'); }
+
+  // オーバーレイの背景クリックで閉じる
+  document.querySelectorAll('.overlay').forEach(function (ov) {
+    ov.addEventListener('click', function (e) {
+      if (e.target === ov) ov.classList.add('hidden');
+    });
+  });
+
+  // ============================================================
+  // タブ切り替え
+  // ============================================================
+  document.querySelectorAll('.tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      switchTab(btn.dataset.tab);
+    });
+  });
+
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.tab === tabName);
+    });
+    document.querySelectorAll('.tab-content').forEach(function (s) { s.classList.remove('active'); });
+    document.getElementById('tab-' + tabName).classList.add('active');
+    if (tabName === 'history') loadHistory();
+    window.scrollTo(0, 0);
+  }
+
+  // ============================================================
+  // 今日の状態カード + 目標進捗バー
+  // ============================================================
+  var RING_R = 52;
+  var RING_C = 2 * Math.PI * RING_R;
+
+  function loadDashboard() {
+    google.script.run.withSuccessHandler(function (d) {
+      renderHeaderDate(d.today);
+      renderTodayCard(d);
+      renderGoalCard(d);
+    }).withFailureHandler(showFatalError).getDashboardData();
+  }
+
+  function renderHeaderDate(todayStr) {
+    var p = todayStr.split('-');
+    document.getElementById('header-date').textContent =
+      p[1] + '/' + p[2] + ' (' + dowOf(todayStr) + ')';
+  }
+
+  function ringSvg(pct) {
+    var offset = RING_C * (1 - Math.min(pct, 1));
+    return '<svg width="118" height="118" viewBox="0 0 118 118">' +
+      '<circle class="ring-bg" cx="59" cy="59" r="' + RING_R + '" fill="none" stroke-width="10"/>' +
+      '<circle class="ring-fg" cx="59" cy="59" r="' + RING_R + '" fill="none" stroke-width="10" ' +
+      'stroke-dasharray="' + RING_C + '" stroke-dashoffset="' + offset + '"/>' +
+      '</svg>';
+  }
+
+  function renderTodayCard(d) {
+    var card = document.getElementById('today-card');
+    var log = d.todayLog;
+
+    // 今日の記録がまだない場合
+    if (!log || (!log.intake_kcal && !log.exercise_kcal && !log.weight_kg)) {
+      card.classList.remove('over');
+      card.innerHTML =
+        '<div class="hero-empty">' +
+        '<span class="material-symbols-outlined">edit_calendar</span>' +
+        '<h3>今日の記録はまだありません</h3>' +
+        '<p>食事や運動を取り込むと、ここに今日あと何kcal食べられるかが出ます。</p>' +
+        '<button class="btn-ghost" id="goto-input">' +
+        '<span class="material-symbols-outlined">add</span>記録を追加する</button>' +
+        '</div>';
+      document.getElementById('goto-input').addEventListener('click', function () { switchTab('input'); });
+      return;
+    }
+
+    var bmr = d.bmr || 0;
+    var intake = log.intake_kcal || 0;
+    var exercise = log.exercise_kcal || 0;
+    var budget = bmr + exercise;          // 今日食べてよい総量
+    var remaining = budget - intake;      // 残り
+    var isOver = remaining < 0;
+    var pct = budget > 0 ? intake / budget : 0;
+
+    card.classList.toggle('over', isOver);
+    card.innerHTML =
+      '<div class="hero-label">' + (isOver ? '今日はオーバーしています' : '今日あと食べられる量') + '</div>' +
+      '<div class="hero-top">' +
+      '<div class="ring-wrap">' + ringSvg(pct) +
+      '<div class="ring-center">' +
+      '<div class="ring-value num">' + nf(Math.abs(remaining)) + '</div>' +
+      '<div class="ring-unit">' + (isOver ? 'KCAL OVER' : 'KCAL') + '</div>' +
+      '</div></div>' +
+      '<div class="hero-side"><div class="hero-breakdown">' +
+      '<div class="hero-row"><span>摂取</span><strong class="num">' + nf(intake) + '</strong></div>' +
+      '<div class="hero-row"><span>基礎代謝</span><strong class="num">' + nf(bmr) + '</strong></div>' +
+      '<div class="hero-row"><span>運動</span><strong class="num">' + nf(exercise) + '</strong></div>' +
+      '</div></div>' +
+      '</div>' +
+      (isOver
+        ? '<div class="hero-over-note">目安より ' + nf(Math.abs(remaining)) + ' kcal 多く摂っています</div>'
+        : '');
+  }
+
+  function renderGoalCard(d) {
+    var el = document.getElementById('goal-card');
+    var target = d.profile.target_weight_kg;
+    var start = d.startWeight;
+    var latest = d.latestWeight;
+
+    if (!start || !latest || !target) {
+      el.innerHTML = '<div class="goal-note">体重を記録すると、目標までの進み具合が出ます。</div>';
+      return;
+    }
+
+    var startW = start.weight_kg, nowW = latest.weight_kg;
+    var totalDiff = startW - target;   // 落とすべき総量
+    var doneDiff = startW - nowW;      // 実際に落ちた量
+    var remain = Math.round((nowW - target) * 10) / 10;
+
+    // 開始時より増えてしまった場合はバー0%
+    var pct = 0;
+    if (totalDiff > 0 && doneDiff > 0) {
+      pct = Math.min(doneDiff / totalDiff, 1) * 100;
+    }
+
+    var gained = nowW > startW;
+    var gainedAmt = Math.round((nowW - startW) * 10) / 10;
+
+    el.innerHTML =
+      '<div class="goal-head">' +
+      '<span>目標体重まで</span>' +
+      '<strong class="num">' + (remain > 0 ? 'あと ' + remain.toFixed(1) + ' kg' : '目標を達成') + '</strong>' +
+      '</div>' +
+      '<div class="goal-bar"><div class="goal-bar-fill" style="width:' + pct.toFixed(1) + '%"></div></div>' +
+      '<div class="goal-foot">' +
+      '<span class="num">開始 ' + startW.toFixed(1) + 'kg</span>' +
+      '<span class="num">現在 ' + nowW.toFixed(1) + 'kg</span>' +
+      '<span class="num">目標 ' + Number(target).toFixed(1) + 'kg</span>' +
+      '</div>' +
+      (gained
+        ? '<div class="goal-note warn" style="margin-top:8px">開始時より +' + gainedAmt.toFixed(1) + ' kg</div>'
+        : '');
+  }
+
+  // ============================================================
+  // 期間ユーティリティ
+  // ============================================================
+  function getWeekRange(offset) {
+    var now = new Date();
+    var dow = now.getDay();
+    var diffToMonday = dow === 0 ? -6 : 1 - dow;
+    var monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday + offset * 7);
+    var sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return { start: monday, end: sunday };
+  }
+
+  function getMonthRange(offset) {
+    var now = new Date();
+    var start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    var end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+    return { start: start, end: end };
+  }
+
+  // ============================================================
+  // グラフ
+  // ============================================================
+  var periodType = 'week';
+  var periodOffset = 0;
+  var chartInstance = null;
+
+  document.querySelectorAll('.period-type-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.period-type-btn').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      periodType = btn.dataset.type;
+      periodOffset = 0;
+      loadGraph();
+    });
+  });
+  document.getElementById('prev-period').addEventListener('click', function () { periodOffset--; loadGraph(); });
+  document.getElementById('next-period').addEventListener('click', function () { periodOffset++; loadGraph(); });
+
+  function currentRange() {
+    return periodType === 'week' ? getWeekRange(periodOffset) : getMonthRange(periodOffset);
+  }
+
+  function updatePeriodLabel(range) {
+    var label;
+    if (periodType === 'week') {
+      label = (range.start.getMonth() + 1) + '/' + range.start.getDate() + ' – ' +
+        (range.end.getMonth() + 1) + '/' + range.end.getDate();
+    } else {
+      label = range.start.getFullYear() + '. ' + (range.start.getMonth() + 1);
+    }
+    document.getElementById('period-label').textContent = label;
+  }
+
+  function loadGraph() {
+    var range = currentRange();
+    updatePeriodLabel(range);
+    google.script.run.withSuccessHandler(function (logs) {
+      renderChart(range, logs);
+      renderPeriodStats(logs);
+    }).withFailureHandler(showFatalError).getDailyLogs(fmt(range.start), fmt(range.end));
+  }
+
+  function buildDateList(range) {
+    var list = [];
+    var d = new Date(range.start);
+    while (d <= range.end) { list.push(fmt(d)); d.setDate(d.getDate() + 1); }
+    return list;
+  }
+
+  function calcAvg(logs, field) {
+    var vals = logs.filter(function (l) { return l[field] !== null && l[field] !== undefined; });
+    if (vals.length === 0) return null;
+    return Math.round(vals.reduce(function (s, l) { return s + l[field]; }, 0) / vals.length);
+  }
+
+  function renderChart(range, logs) {
+    var dateList = buildDateList(range);
+    var logMap = {};
+    logs.forEach(function (l) { logMap[l.date] = l; });
+
+    var labels = dateList.map(function (d) { return d.slice(5).replace('-', '/'); });
+    var balanceData = dateList.map(function (d) { return logMap[d] ? logMap[d].balance_kcal : null; });
+    var weightData = dateList.map(function (d) { return logMap[d] ? logMap[d].weight_kg : null; });
+    var avgBmr = calcAvg(logs, 'bmr_kcal');
+
+    var ctx = document.getElementById('balanceChart').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: '収支',
+            data: balanceData,
+            backgroundColor: balanceData.map(function (v) {
+              return (v || 0) <= 0 ? 'rgba(18,157,116,.85)' : 'rgba(224,69,58,.85)';
+            }),
+            borderRadius: 5,
+            borderSkipped: false,
+            yAxisID: 'y',
+            order: 2
+          },
+          {
+            type: 'line',
+            label: '体重',
+            data: weightData,
+            borderColor: '#4f46e5',
+            backgroundColor: '#4f46e5',
+            borderWidth: 2.5,
+            pointRadius: 3,
+            pointBackgroundColor: '#fff',
+            pointBorderWidth: 2,
+            tension: .35,
+            spanGaps: true,
+            yAxisID: 'y1',
+            order: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 1.5,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { usePointStyle: true, boxWidth: 7, font: { size: 11 }, padding: 14 }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(17,24,39,.92)',
+            padding: 10, cornerRadius: 8, displayColors: false,
+            callbacks: {
+              label: function (c) {
+                if (c.dataset.label === '体重') return '体重 ' + c.parsed.y + ' kg';
+                return '収支 ' + nf(c.parsed.y) + ' kcal';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0, autoSkipPadding: 8 } },
+          y: {
+            position: 'left',
+            grid: { color: 'rgba(17,24,39,.06)' },
+            ticks: { font: { size: 10 }, callback: function (v) { return nf(v); } },
+            title: { display: true, text: '収支 (kcal)', font: { size: 10 }, color: '#6b7280' }
+          },
+          y1: {
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: { font: { size: 10 } },
+            title: { display: true, text: '体重 (kg)', font: { size: 10 }, color: '#6b7280' }
+          }
+        }
+      }
+    });
+  }
+
+  function renderPeriodStats(logs) {
+    var el = document.getElementById('target-summary');
+    var avgBmr = calcAvg(logs, 'bmr_kcal');
+    if (!avgBmr) {
+      el.innerHTML = 'この期間の記録はまだありません。';
+      return;
+    }
+    var avgIntake = calcAvg(logs, 'intake_kcal') || 0;
+    var avgExercise = calcAvg(logs, 'exercise_kcal') || 0;
+    var avgBalance = calcAvg(logs, 'balance_kcal');
+
+    el.innerHTML =
+      '<span class="stat-label">この期間の1日あたり平均</span>' +
+      '摂取 <strong class="num">' + nf(avgIntake) + '</strong> ／ ' +
+      '基礎代謝 <strong class="num">' + nf(avgBmr) + '</strong> ／ ' +
+      '運動 <strong class="num">' + nf(avgExercise) + '</strong> kcal' +
+      (avgBalance !== null
+        ? '<br>収支 <strong class="num" style="color:' + (avgBalance <= 0 ? 'var(--success)' : 'var(--danger)') + '">' +
+          (avgBalance > 0 ? '+' : '') + nf(avgBalance) + ' kcal</strong>'
+        : '');
+  }
+
+  // ============================================================
+  // データ入力：JSON取込み
+  // ============================================================
+  var pendingImportData = null;
+
+  document.getElementById('import-json-btn').addEventListener('click', function () {
+    var raw = document.getElementById('json-input').value.trim();
+    var resultEl = document.getElementById('import-result');
+    resultEl.textContent = '';
+    resultEl.className = 'result-msg';
+
+    if (!raw) {
+      resultEl.textContent = 'JSONを貼り付けてください。';
+      resultEl.className = 'result-msg error';
+      return;
+    }
+
+    var parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      resultEl.textContent = 'JSONとして読み取れませんでした。括弧やカンマを確認してください。';
+      resultEl.className = 'result-msg error';
+      return;
+    }
+    var jsonArray = Array.isArray(parsed) ? parsed : [parsed];
+
+    var invalid = jsonArray.filter(function (it) { return !it || !it.date; });
+    if (invalid.length > 0) {
+      resultEl.textContent = 'date（日付）がないデータが含まれています。';
+      resultEl.className = 'result-msg error';
+      return;
+    }
+
+    google.script.run.withSuccessHandler(function (checkResult) {
+      pendingImportData = jsonArray;
+      if (checkResult.duplicates.length > 0) {
+        document.getElementById('dialog-message').textContent =
+          '記録済みの日付が ' + checkResult.duplicates.length + ' 件あります（' +
+          checkResult.duplicates.join('、') + '）。取り込むとこれらは新しい内容に置き換わります。';
+        openOverlay('dialog-overlay');
+      } else {
+        doImport(jsonArray);
+      }
+    }).withFailureHandler(showFatalError).checkImportDuplicates(jsonArray);
+  });
+
+  document.getElementById('dialog-cancel').addEventListener('click', function () {
+    closeOverlay('dialog-overlay');
+    pendingImportData = null;
+  });
+  document.getElementById('dialog-confirm').addEventListener('click', function () {
+    closeOverlay('dialog-overlay');
+    if (pendingImportData) doImport(pendingImportData);
+  });
+
+  function doImport(jsonArray) {
+    var btn = document.getElementById('import-json-btn');
+    btn.disabled = true;
+    var resultEl = document.getElementById('import-result');
+    google.script.run.withSuccessHandler(function (res) {
+      btn.disabled = false;
+      resultEl.textContent = res.count + '件を取り込みました。';
+      resultEl.className = 'result-msg success';
+      document.getElementById('json-input').value = '';
+      pendingImportData = null;
+      toast(res.count + '件を取り込みました');
+      loadDashboard();
+      loadGraph();
+    }).withFailureHandler(function (e) {
+      btn.disabled = false;
+      showFatalError(e);
+    }).confirmImportBatch(jsonArray);
+  }
+
+  // ============================================================
+  // データ入力：手入力
+  // ============================================================
+  document.getElementById('save-weight-btn').addEventListener('click', function () {
+    var date = document.getElementById('weight-date').value;
+    var weight = parseFloat(document.getElementById('weight-value').value);
+    var resultEl = document.getElementById('weight-result');
+    if (!date || !weight) {
+      resultEl.textContent = '日付と体重の両方を入れてください。';
+      resultEl.className = 'result-msg error';
+      return;
+    }
+    google.script.run.withSuccessHandler(function () {
+      resultEl.textContent = '保存しました。';
+      resultEl.className = 'result-msg success';
+      toast('体重を保存しました');
+      loadDashboard();
+      loadGraph();
+    }).withFailureHandler(showFatalError).saveWeightManual(date, weight);
+  });
+
+  document.getElementById('save-exercise-btn').addEventListener('click', function () {
+    var date = document.getElementById('exercise-date').value;
+    var val = parseFloat(document.getElementById('exercise-value').value);
+    var resultEl = document.getElementById('exercise-result');
+    if (!date || isNaN(val)) {
+      resultEl.textContent = '日付と消費カロリーの両方を入れてください。';
+      resultEl.className = 'result-msg error';
+      return;
+    }
+    google.script.run.withSuccessHandler(function () {
+      resultEl.textContent = '保存しました。';
+      resultEl.className = 'result-msg success';
+      toast('運動を保存しました');
+      loadDashboard();
+      loadGraph();
+    }).withFailureHandler(showFatalError).saveExerciseManual(date, val);
+  });
+
+  // 今日の日付を手入力フォームの初期値に
+  (function initInputDates() {
+    var today = fmt(new Date());
+    document.getElementById('weight-date').value = today;
+    document.getElementById('exercise-date').value = today;
+  })();
+
+  // ============================================================
+  // 履歴タブ（月ごと）
+  // ============================================================
+  var histOffset = 0;
+
+  document.getElementById('hist-prev').addEventListener('click', function () { histOffset--; loadHistory(); });
+  document.getElementById('hist-next').addEventListener('click', function () { histOffset++; loadHistory(); });
+
+  function loadHistory() {
+    var range = getMonthRange(histOffset);
+    document.getElementById('hist-label').textContent =
+      range.start.getFullYear() + '. ' + (range.start.getMonth() + 1);
+
+    var listEl = document.getElementById('history-list');
+    listEl.innerHTML = '<div class="loading-text">読み込み中...</div>';
+
+    google.script.run.withSuccessHandler(function (summary) {
+      renderMonthSummary(summary);
+      renderHistoryList(summary.logs || []);
+    }).withFailureHandler(showFatalError).getMonthSummary(fmt(range.start), fmt(range.end));
+  }
+
+  function renderMonthSummary(s) {
+    var el = document.getElementById('hist-summary');
+    if (!s.count) { el.innerHTML = ''; return; }
+    var wc = s.weightChange;
+    el.innerHTML =
+      '<div class="month-stat"><div class="ms-label">記録した日数</div>' +
+      '<div class="ms-value">' + s.count + '</div></div>' +
+      '<div class="month-stat"><div class="ms-label">平均収支</div>' +
+      '<div class="ms-value ' + (s.avgBalance <= 0 ? 'good' : 'bad') + '">' +
+      (s.avgBalance !== null ? (s.avgBalance > 0 ? '+' : '') + nf(s.avgBalance) : '—') + '</div></div>' +
+      '<div class="month-stat"><div class="ms-label">体重の増減</div>' +
+      '<div class="ms-value ' + (wc === null ? '' : (wc <= 0 ? 'good' : 'bad')) + '">' +
+      (wc !== null ? (wc > 0 ? '+' : '') + wc.toFixed(1) : '—') + '</div></div>';
+  }
+
+  function renderHistoryList(logs) {
+    var el = document.getElementById('history-list');
+    if (logs.length === 0) {
+      el.innerHTML = '<div class="loading-text">この月の記録はありません。<br>入力タブから追加できます。</div>';
+      return;
+    }
+    logs.sort(function (a, b) { return a.date > b.date ? -1 : 1; });
+    el.innerHTML = '';
+    logs.forEach(function (log) {
+      var item = document.createElement('div');
+      item.className = 'history-item';
+      var bal = log.balance_kcal;
+      item.innerHTML =
+        '<div class="h-header">' +
+        '<div><span class="h-date">' + log.date.slice(5).replace('-', '/') + '</span>' +
+        '<span class="h-dow">' + dowOf(log.date) + '</span></div>' +
+        '<div class="h-balance ' + (bal === null ? '' : (bal <= 0 ? 'good' : 'bad')) + '">' +
+        (bal !== null ? (bal > 0 ? '+' : '') + nf(bal) + ' kcal' : '—') + '</div>' +
+        '</div>' +
+        '<div class="h-detail">' +
+        '<div class="h-detail-item">摂取<strong>' + nf(log.intake_kcal) + '</strong></div>' +
+        '<div class="h-detail-item">運動<strong>' + nf(log.exercise_kcal) + '</strong></div>' +
+        '<div class="h-detail-item">体重<strong>' + (log.weight_kg ? log.weight_kg + ' kg' : '—') + '</strong></div>' +
+        '</div>' +
+        '<div class="h-actions">' +
+        '<button class="meals"><span class="material-symbols-outlined">restaurant</span>食事</button>' +
+        '<button class="edit"><span class="material-symbols-outlined">edit</span>編集</button>' +
+        '<button class="del" aria-label="削除"><span class="material-symbols-outlined">delete</span></button>' +
+        '</div>';
+      item.querySelector('.meals').addEventListener('click', function () { openMealDialog(log.date); });
+      item.querySelector('.edit').addEventListener('click', function () { openEditDialog(log); });
+      item.querySelector('.del').addEventListener('click', function () { openDeleteDialog(log.date); });
+      el.appendChild(item);
+    });
+  }
+
+  // ---------- 編集 ----------
+  function openEditDialog(log) {
+    document.getElementById('edit-dialog-title').textContent =
+      log.date.slice(5).replace('-', '/') + '（' + dowOf(log.date) + '）の記録を編集';
+    document.getElementById('edit-intake').value = log.intake_kcal;
+    document.getElementById('edit-exercise').value = log.exercise_kcal;
+    document.getElementById('edit-weight').value = log.weight_kg || '';
+    openOverlay('edit-dialog-overlay');
+    document.getElementById('edit-save').onclick = function () {
+      var fields = {
+        intake_kcal: parseFloat(document.getElementById('edit-intake').value) || 0,
+        exercise_kcal: parseFloat(document.getElementById('edit-exercise').value) || 0,
+        weight_kg: parseFloat(document.getElementById('edit-weight').value) || null
+      };
+      google.script.run.withSuccessHandler(function () {
+        closeOverlay('edit-dialog-overlay');
+        toast('保存しました');
+        loadHistory();
+        loadDashboard();
+      }).withFailureHandler(showFatalError).updateDailyLog(log.date, fields);
+    };
+  }
+  document.getElementById('edit-cancel').addEventListener('click', function () {
+    closeOverlay('edit-dialog-overlay');
+  });
+
+  // ---------- 食事詳細 ----------
+  function openMealDialog(dateStr) {
+    document.getElementById('meal-dialog-title').textContent =
+      dateStr.slice(5).replace('-', '/') + '（' + dowOf(dateStr) + '）の食事';
+    var content = document.getElementById('meal-dialog-content');
+    content.innerHTML = '<div class="loading-text">読み込み中...</div>';
+    openOverlay('meal-dialog-overlay');
+    google.script.run.withSuccessHandler(function (mealGroups) {
+      if (!mealGroups || mealGroups.length === 0) {
+        content.innerHTML = '<div class="loading-text">この日の食事メニューは登録されていません。<br>JSONに meals を含めると記録されます。</div>';
+        return;
+      }
+      var html = '', grandTotal = 0;
+      mealGroups.forEach(function (group) {
+        var subtotal = group.items.reduce(function (s, it) { return s + (it.kcal || 0); }, 0);
+        grandTotal += subtotal;
+        html += '<div class="meal-group"><div class="meal-group-title"><span>' + group.type +
+          '</span><span class="meal-group-total">' + nf(subtotal) + ' kcal</span></div>';
+        group.items.forEach(function (it) {
+          html += '<div class="meal-item-row"><span>' + it.name + '</span><span>' + nf(it.kcal) + ' kcal</span></div>';
+        });
+        html += '</div>';
+      });
+      html += '<div class="meal-total-row"><span>合計</span><span class="num">' + nf(grandTotal) + ' kcal</span></div>';
+      content.innerHTML = html;
+    }).withFailureHandler(showFatalError).getMealsForDate(dateStr);
+  }
+  document.getElementById('meal-dialog-close').addEventListener('click', function () {
+    closeOverlay('meal-dialog-overlay');
+  });
+
+  // ---------- 削除 ----------
+  var pendingDeleteDate = null;
+  function openDeleteDialog(dateStr) {
+    pendingDeleteDate = dateStr;
+    document.getElementById('del-dialog-message').textContent =
+      dateStr.slice(5).replace('-', '/') + '（' + dowOf(dateStr) + '）の記録と食事メニューを削除します。元に戻せません。';
+    openOverlay('del-dialog-overlay');
+  }
+  document.getElementById('del-cancel').addEventListener('click', function () {
+    closeOverlay('del-dialog-overlay');
+    pendingDeleteDate = null;
+  });
+  document.getElementById('del-confirm').addEventListener('click', function () {
+    if (!pendingDeleteDate) return;
+    google.script.run.withSuccessHandler(function () {
+      closeOverlay('del-dialog-overlay');
+      toast('削除しました');
+      pendingDeleteDate = null;
+      loadHistory();
+      loadDashboard();
+      loadGraph();
+    }).withFailureHandler(showFatalError).deleteDailyLog(pendingDeleteDate);
+  });
+
+  // ============================================================
+  // 初期化
+  // ============================================================
+  loadDashboard();
+  loadGraph();
+</script>
