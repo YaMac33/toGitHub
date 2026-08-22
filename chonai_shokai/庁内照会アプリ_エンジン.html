@@ -13,7 +13,7 @@
 <script type="application/json" id="inquiry-schema">
 {
   "formatVersion": 1,
-  "meta": { "inquiryId": "", "title": "", "fromDept": "", "dueDate": "", "note": "" },
+  "meta": { "inquiryId": "", "title": "", "fromDept": "", "dueDate": "", "note": "", "answerMode": "single" },
   "items": []
 }
 </script>
@@ -134,6 +134,7 @@ button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit
 .kaiho-grid dt,.kaiho-grid dd{margin:0;padding:7px 18px;border-bottom:1px solid var(--rule);font-size:13px;}
 .kaiho-grid dt{background:#f4f6f9;color:var(--ink-2);white-space:nowrap;letter-spacing:.08em;border-right:1px solid var(--rule);}
 .kaiho-grid dd:last-of-type,.kaiho-grid dt:nth-last-of-type(1){border-bottom:none;}
+.kaiho-grid dd input[type=text]{max-width:320px;}
 .due{color:var(--shu);font-weight:700;}
 
 /* ---------- フォーム ---------- */
@@ -209,6 +210,12 @@ textarea{resize:vertical;min-height:74px;line-height:1.7;}
 .errors:empty{display:none;}
 .errors li{margin:2px 0;}
 
+/* ---------- 警告（重複ファイルなど） ---------- */
+.warn{background:#fdf6e3;border-left:4px solid #a6740a;padding:12px 16px;margin:0 0 18px;font-size:13px;color:#6b4d05;}
+.warn ul{margin:0;padding-left:18px;}
+.warn li{margin:6px 0;}
+.warn .btn{margin-left:8px;}
+
 /* ---------- 空状態 ---------- */
 .empty{
   border:1px dashed var(--rule-strong);padding:34px 20px;text-align:center;
@@ -222,6 +229,25 @@ textarea{resize:vertical;min-height:74px;line-height:1.7;}
 .answer-q{background:#f4f6f9;border-right:1px solid var(--rule);padding:10px 14px;font-size:13px;font-weight:600;color:var(--ink-2);}
 .answer-a{padding:10px 14px;}
 @media(max-width:640px){.answer-row{grid-template-columns:1fr;}.answer-q{border-right:none;border-bottom:1px solid var(--rule);}}
+
+/* ---------- 明細行（回答：明細モード） ---------- */
+.rows-wrap{margin-bottom:14px;}
+.rowcard{border:1px solid var(--rule-strong);margin-top:12px;background:#fff;}
+.rowcard:first-child{margin-top:16px;}
+.rowcard-head{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--ai-soft);padding:8px 14px;border-bottom:1px solid var(--rule-strong);
+}
+.rowcard-head .no{font-family:var(--font-mono);font-size:12px;color:var(--ai-deep);font-weight:700;letter-spacing:.04em;}
+
+/* ---------- 取りまとめ：課ごとの一覧 ---------- */
+.deptlist{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;}
+.deptlist th,.deptlist td{border:1px solid var(--rule);padding:8px 12px;text-align:left;}
+.deptlist th{background:#f4f6f9;color:var(--ink-2);font-weight:600;white-space:nowrap;}
+.deptlist td.num{font-family:var(--font-mono);text-align:right;}
+.deptlist td.rm{white-space:nowrap;text-align:center;}
+
+/* ---------- ボタン ---------- */
 
 /* ---------- トースト ---------- */
 .toast{
@@ -243,6 +269,8 @@ textarea{resize:vertical;min-height:74px;line-height:1.7;}
   .kaiho,.answer-list{border-color:#000;}
   .answer-row{break-inside:avoid;}
   .answer-q{background:#f2f2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .rowcard{break-inside:avoid;border-color:#000;margin-top:14px;}
+  .rowcard-head{background:#f2f2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   @page{size:A4;margin:16mm 14mm;}
 }
 </style>
@@ -294,6 +322,17 @@ textarea{resize:vertical;min-height:74px;line-height:1.7;}
       <input type="date" id="m-due">
     </div>
   </div>
+
+  <div class="field">
+    <span class="flabel">回答形式 <span class="hint">1課あたりの回答の集め方</span></span>
+    <label class="chk" style="margin-right:22px;">
+      <input type="radio" name="m-answermode" id="m-answermode-single">単票（1課につき1件だけ回答）
+    </label>
+    <label class="chk">
+      <input type="radio" name="m-answermode" id="m-answermode-multi">明細（1課で複数件を行として回答）
+    </label>
+  </div>
+
   <div class="field">
     <label for="m-note">依頼事項・記入上の注意 <span class="hint">回答画面と印刷物の冒頭に表示されます</span></label>
     <textarea id="m-note" placeholder="例）該当がない場合も「該当なし」と記入のうえ提出してください。"></textarea>
@@ -316,24 +355,48 @@ textarea{resize:vertical;min-height:74px;line-height:1.7;}
 <!-- =========================== 回答モード =========================== -->
 <section class="panel hidden" id="view-answer" role="tabpanel" aria-labelledby="tab-answer">
   <p class="notice" data-noprint>
-    この段階では設問の表示と印刷／PDF化まで動きます。CSVの書き出し・読み込みは次の段階で組み込みます。
+    回答課名を入力し、各設問に回答してください。印刷／PDF化したものを決裁システムに添付し、
+    あわせて「回答をCSVで保存」で書き出したファイルを各部管理課へ提出してください。
   </p>
+  <ul class="errors" id="answer-errors" data-runtime data-noprint></ul>
   <div id="answer-area" data-runtime></div>
-  <p style="margin-top:24px;" data-noprint>
+  <p style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;" data-noprint>
     <button class="btn primary" id="btn-print">印刷／PDFで保存</button>
+    <button class="btn" id="btn-csv-export">回答をCSVで保存</button>
+    <button class="btn" id="btn-csv-import">回答を読み込む（下書きの再開）</button>
   </p>
 </section>
 
 <!-- ========================= 取りまとめモード ========================= -->
 <section class="panel hidden" id="view-collect" role="tabpanel" aria-labelledby="tab-collect">
   <div class="sec"><h2>回答を取りまとめ</h2><span class="line"></span></div>
-  <div class="empty">
-    各課から集まったCSVをまとめて読み込み、1本のCSVに束ねる画面です。<br>
-    設計モードとスキーマの受け渡しが固まってから作り込みます。
+  <p class="notice" data-noprint>
+    各課から提出された回答CSVをまとめて読み込み、1本のCSVに束ねて照会元課へ提出します。
+    照会番号や設問構成が一致しないファイルは自動的に除外されます。
+  </p>
+
+  <div class="field" data-noprint>
+    <label for="c-deptname">取りまとめを行う部の名称 <span class="hint">書き出すファイル名に使います</span></label>
+    <input type="text" id="c-deptname" placeholder="例）〇〇部">
+  </div>
+
+  <p data-noprint>
+    <button class="btn wide" id="btn-collect-add">＋ 回答CSVを読み込む（複数選択できます）</button>
+  </p>
+
+  <div id="collect-warnings" data-runtime></div>
+  <div id="collect-rejected" data-runtime></div>
+
+  <div class="sec"><h2>取り込み済みの回答</h2><span class="line"></span></div>
+  <div id="collect-summary" data-runtime></div>
+
+  <div class="actionbar" data-noprint>
+    <span class="status" id="collect-status">回答CSVを読み込むと、ここから取りまとめCSVを書き出せます。</span>
+    <button class="btn primary" id="btn-collect-export" disabled>取りまとめCSVを書き出す</button>
   </div>
 </section>
 
-<!-- ========================= 書き出しバー ========================= -->
+<!-- ========================= 書き出しバー（設計） ========================= -->
 <div class="actionbar" id="actionbar" data-noprint>
   <span class="status" id="export-status">照会件名・照会番号・設問を入力すると書き出せます。</span>
   <button class="btn" id="btn-save-json">設計データを保存</button>
@@ -345,6 +408,8 @@ textarea{resize:vertical;min-height:74px;line-height:1.7;}
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <input type="file" id="file-json" accept=".json,application/json" class="hidden">
+<input type="file" id="file-csv" accept=".csv,text/csv" class="hidden">
+<input type="file" id="file-collect" accept=".csv,text/csv" multiple class="hidden">
 
 <script>
 (function(){
@@ -361,12 +426,15 @@ var TYPES = [
   {v:"checkbox", n:"複数選択（チェック）"}
 ];
 var CHOICE_TYPES = ["select","radio","checkbox"];
+var CHECK_DELIM = "；"; /* checkbox の複数選択値をCSV1セルに詰めるときの区切り文字 */
+var BOM_RE = new RegExp("^﻿"); /* 読み込んだテキスト先頭のUTF-8 BOMを取り除く */
+var META_DEFAULT = {inquiryId:"",title:"",fromDept:"",dueDate:"",note:"",answerMode:"single"};
 
 var schema = readSchema();
 
 function readSchema(){
   var el = document.getElementById("inquiry-schema");
-  var base = {formatVersion:1, meta:{inquiryId:"",title:"",fromDept:"",dueDate:"",note:""}, items:[]};
+  var base = {formatVersion:1, meta:Object.assign({}, META_DEFAULT), items:[]};
   try{
     var s = JSON.parse(el.textContent);
     base.meta = Object.assign(base.meta, s.meta || {});
@@ -391,6 +459,17 @@ function nextKey(){
     if(m) max = Math.max(max, parseInt(m[1],10));
   });
   return "q" + (max + 1);
+}
+function keyNum(k){
+  var m = /^q(\d+)$/.exec(k || "");
+  return m ? parseInt(m[1],10) : 0;
+}
+function sortedItems(){
+  return schema.items.slice().sort(function(a,b){ return keyNum(a.key) - keyNum(b.key); });
+}
+function itemByKey(k){
+  for(var i=0;i<schema.items.length;i++){ if(schema.items[i].key === k) return schema.items[i]; }
+  return null;
 }
 
 /* ================= 小物 ================= */
@@ -418,6 +497,98 @@ function fmtDate(iso){
 function safeName(s){
   return String(s || "").replace(/[\\\/:*?"<>|\s]+/g, "_").slice(0, 60) || "照会";
 }
+function nowTimestamp(){
+  var d = new Date();
+  function p(n){ return (n < 10 ? "0" : "") + n; }
+  return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + " " +
+         p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+}
+
+/* ================= CSV 共通処理 ================= */
+function csvField(v){
+  var s = (v === null || v === undefined) ? "" : String(v);
+  if(/[",\r\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+function buildCsvText(header, rows){
+  var lines = [header.map(csvField).join(",")];
+  rows.forEach(function(r){ lines.push(r.map(csvField).join(",")); });
+  return lines.join("\r\n") + "\r\n";
+}
+function parseCsv(text){
+  var rows = [], row = [], field = "", inQuotes = false;
+  var i = 0, len = text.length;
+  while(i < len){
+    var c = text.charAt(i);
+    if(inQuotes){
+      if(c === '"'){
+        if(text.charAt(i+1) === '"'){ field += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      field += c; i++; continue;
+    }
+    if(c === '"'){ inQuotes = true; i++; continue; }
+    if(c === ','){ row.push(field); field = ""; i++; continue; }
+    if(c === '\r'){ i++; continue; }
+    if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+    field += c; i++;
+  }
+  if(field !== "" || row.length){ row.push(field); rows.push(row); }
+  rows = rows.filter(function(r){ return !(r.length === 1 && r[0] === ""); });
+  if(!rows.length) return {header:[], rows:[]};
+  return {header: rows[0], rows: rows.slice(1)};
+}
+function csvItemHeader(item){
+  return (item.label || "（無題）") + "（" + item.key + "）";
+}
+function parseItemHeaderKey(h){
+  var m = /（(q\d+)）\s*$/.exec(String(h || ""));
+  return m ? m[1] : null;
+}
+/* 回答CSV（自分の下書き／各課提出分）を読み解く共通処理。
+   照会番号・回答課名・提出日時 + 設問列（label（key）見出し）という
+   書き出し側と同じ並びを前提にする。 */
+function parseAnswerCsvText(text){
+  var clean = text.replace(BOM_RE, "");
+  var parsed = parseCsv(clean);
+  if(!parsed.header.length || !parsed.rows.length){
+    throw {message:"データが含まれていません。"};
+  }
+  var h = parsed.header;
+  if(h[0] !== "照会番号" || h[1] !== "回答課名" || h[2] !== "提出日時"){
+    throw {message:"見出し行の形式がこのアプリのCSVと一致しません。"};
+  }
+  var keyForCol = h.slice(3).map(parseItemHeaderKey);
+  var rows = parsed.rows.map(function(cols){
+    var rv = {};
+    keyForCol.forEach(function(key, i){
+      if(!key) return;
+      var raw = cols[3 + i];
+      var item = itemByKey(key);
+      rv[key] = (item && item.type === "checkbox") ? (raw ? raw.split(CHECK_DELIM) : []) : (raw || "");
+    });
+    return {values: rv, submittedAt: cols[2] || "", inquiryId: cols[0] || "", deptName: cols[1] || ""};
+  });
+  return {
+    inquiryId: rows[0].inquiryId,
+    deptName: rows[0].deptName,
+    keyForCol: keyForCol,
+    rows: rows
+  };
+}
+
+// bom=true はExcelでの文字化け防止用。CSV書き出しで使います。
+function download(filename, text, mime, bom){
+  var parts = bom ? [new Uint8Array([0xEF,0xBB,0xBF]), text] : [text];
+  var blob = new Blob(parts, {type: mime || "text/plain;charset=utf-8"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+}
 
 /* ================= タブ ================= */
 var VIEWS = [
@@ -434,6 +605,7 @@ function showView(viewId){
   $("actionbar").classList.toggle("hidden", viewId !== "view-design");
   if(viewId === "view-answer") renderAnswerForm();
   if(viewId === "view-design") renderPreview();
+  if(viewId === "view-collect") renderCollectView();
   window.scrollTo(0, 0);
 }
 VIEWS.forEach(function(v){
@@ -450,12 +622,20 @@ var META_FIELDS = [
 ];
 function loadMetaToInputs(){
   META_FIELDS.forEach(function(f){ $(f.id).value = schema.meta[f.key] || ""; });
+  $("m-answermode-single").checked = schema.meta.answerMode !== "multi";
+  $("m-answermode-multi").checked = schema.meta.answerMode === "multi";
 }
 META_FIELDS.forEach(function(f){
   $(f.id).addEventListener("input", function(){
     schema.meta[f.key] = $(f.id).value;
     renderPreview();
     validate();
+  });
+});
+["m-answermode-single","m-answermode-multi"].forEach(function(id){
+  $(id).addEventListener("change", function(){
+    schema.meta.answerMode = $("m-answermode-multi").checked ? "multi" : "single";
+    renderPreview();
   });
 });
 
@@ -603,7 +783,10 @@ $("btn-add").addEventListener("click", function(){
 });
 
 /* ================= 照会票ヘッダー ================= */
-function buildKaihoHeader(){
+/* 設計プレビュー・回答画面・印刷で共有する部品。
+   opts.deptEditable=true のときだけ「回答課」を入力欄にする（回答モード用）。 */
+function buildKaihoHeader(opts){
+  opts = opts || {};
   var m = schema.meta;
   var box = el("div", "kaiho");
 
@@ -616,22 +799,38 @@ function buildKaihoHeader(){
   box.appendChild(top);
 
   var dl = el("dl", "kaiho-grid");
-  function pair(label, value, cls){
+  function pair(label, valueOrNode, cls){
     dl.appendChild(el("dt", null, label));
-    var dd = el("dd", cls || null, value);
+    var dd = el("dd", cls || null);
+    if(typeof valueOrNode === "string") dd.textContent = valueOrNode;
+    else if(valueOrNode) dd.appendChild(valueOrNode);
     dl.appendChild(dd);
   }
   pair("照 会 元", m.fromDept || "―");
   pair("提出期限", m.dueDate ? fmtDate(m.dueDate) : "―", m.dueDate ? "due" : null);
-  pair("回 答 課", "");
+
+  if(opts.deptEditable){
+    var inDept = el("input");
+    inDept.type = "text";
+    inDept.id = "in-deptname";
+    inDept.placeholder = "例）〇〇課";
+    inDept.value = opts.deptValue || "";
+    inDept.addEventListener("input", function(){
+      if(opts.onDeptChange) opts.onDeptChange(inDept.value);
+    });
+    pair("回 答 課", inDept);
+  }else{
+    pair("回 答 課", opts.deptValue || "");
+  }
+
   if(m.note){
     dl.appendChild(el("dt", null, "依頼事項"));
-    var dd = el("dd");
+    var ddn = el("dd");
     m.note.split("\n").forEach(function(line, i){
-      if(i) dd.appendChild(document.createElement("br"));
-      dd.appendChild(document.createTextNode(line));
+      if(i) ddn.appendChild(document.createElement("br"));
+      ddn.appendChild(document.createTextNode(line));
     });
-    dl.appendChild(dd);
+    dl.appendChild(ddn);
   }
   box.appendChild(dl);
   return box;
@@ -642,6 +841,11 @@ function renderPreview(){
   var wrap = $("design-preview");
   wrap.innerHTML = "";
   wrap.appendChild(buildKaihoHeader());
+  if(schema.meta.answerMode === "multi"){
+    var note = el("p", "hint", "※ 明細形式：回答課はこの設問セットを1行として、行を追加しながら複数件を回答します。");
+    note.style.margin = "10px 0 0";
+    wrap.appendChild(note);
+  }
   if(!schema.items.length){
     var e = el("div", "empty", "設問を追加すると、ここに回答画面の見え方が出ます。");
     e.style.marginTop = "18px";
@@ -649,6 +853,7 @@ function renderPreview(){
     return;
   }
   var list = el("div", "answer-list");
+  list.style.marginTop = "14px";
   schema.items.forEach(function(item){
     var r = el("div", "answer-row");
     var q = el("div", "answer-q");
@@ -660,7 +865,7 @@ function renderPreview(){
       q.appendChild(hb);
     }
     var a = el("div", "answer-a");
-    a.appendChild(buildControl(item, true));
+    a.appendChild(buildControl(item, {disabled:true}));
     r.appendChild(q); r.appendChild(a);
     list.appendChild(r);
   });
@@ -668,11 +873,20 @@ function renderPreview(){
 }
 
 /* ================= 回答用コントロール ================= */
-function buildControl(item, disabled){
-  var name = "ans-" + item.key + (disabled ? "-pv" : "");
+/* opts.disabled: 設計プレビュー用（値なし・操作不可）
+   opts.value / opts.onChange: 回答モード用（実データに双方向で結びつける） */
+function buildControl(item, opts){
+  opts = opts || {};
+  var disabled = !!opts.disabled;
+  var name = opts.name || ("ans-" + item.key + (disabled ? "-pv" : ""));
+  var value = opts.value;
+  var onChange = opts.onChange || function(){};
   var c;
+
   if(item.type === "textarea"){
     c = el("textarea");
+    c.value = value || "";
+    if(!disabled) c.addEventListener("input", function(){ onChange(c.value); });
   }else if(item.type === "select"){
     c = el("select");
     c.appendChild(el("option", null, "選択してください"));
@@ -680,18 +894,36 @@ function buildControl(item, disabled){
       var op = el("option", null, o); op.value = o; c.appendChild(op);
     });
     if(!item.options.length) c.appendChild(el("option", null, "（選択肢が未設定）"));
+    c.value = value || "";
+    if(!disabled) c.addEventListener("change", function(){ onChange(c.value); });
   }else if(item.type === "radio" || item.type === "checkbox"){
     c = el("div");
     if(!item.options.length){
       c.appendChild(el("span", "hint", "（選択肢が未設定）"));
     }
-    item.options.forEach(function(o, i){
+    var arrVal = Array.isArray(value) ? value.slice() : [];
+    item.options.forEach(function(o){
       var lab = el("label", "chk");
       lab.style.marginRight = "16px";
       var inp = el("input");
       inp.type = (item.type === "radio") ? "radio" : "checkbox";
       inp.name = name; inp.value = o;
-      if(disabled) inp.disabled = true;
+      if(item.type === "radio") inp.checked = (value === o);
+      else inp.checked = arrVal.indexOf(o) !== -1;
+      if(disabled){
+        inp.disabled = true;
+      }else{
+        inp.addEventListener("change", function(){
+          if(item.type === "radio"){
+            onChange(o);
+          }else{
+            var idx = arrVal.indexOf(o);
+            if(inp.checked){ if(idx === -1) arrVal.push(o); }
+            else if(idx !== -1){ arrVal.splice(idx, 1); }
+            onChange(arrVal.slice());
+          }
+        });
+      }
       lab.appendChild(inp);
       lab.appendChild(document.createTextNode(o));
       c.appendChild(lab);
@@ -700,6 +932,8 @@ function buildControl(item, disabled){
   }else{
     c = el("input");
     c.type = (item.type === "number") ? "number" : (item.type === "date" ? "date" : "text");
+    c.value = value || "";
+    if(!disabled) c.addEventListener("input", function(){ onChange(c.value); });
   }
   c.name = name;
   if(disabled) c.disabled = true;
@@ -707,31 +941,367 @@ function buildControl(item, disabled){
 }
 
 /* ================= 回答モード ================= */
+var answerState = { deptName: "", rows: [] };
+
+function newRow(){
+  var r = {};
+  schema.items.forEach(function(it){ r[it.key] = (it.type === "checkbox") ? [] : ""; });
+  return r;
+}
+function ensureRowKeys(row){
+  row = row || {};
+  schema.items.forEach(function(it){
+    if(!(it.key in row)) row[it.key] = (it.type === "checkbox") ? [] : "";
+  });
+  return row;
+}
+function isMultiMode(){ return schema.meta.answerMode === "multi"; }
+
 function renderAnswerForm(){
   var area = $("answer-area");
   area.innerHTML = "";
+  showAnswerErrors([]);
+
   if(!schema.items.length){
     area.appendChild(el("div", "empty", "この照会にはまだ設問が設定されていません。「照会を設計」で設問を追加してください。"));
     return;
   }
-  area.appendChild(buildKaihoHeader());
+
+  area.appendChild(buildKaihoHeader({
+    deptEditable: true,
+    deptValue: answerState.deptName,
+    onDeptChange: function(v){ answerState.deptName = v; }
+  }));
+
+  if(!isMultiMode()){
+    if(!answerState.rows.length) answerState.rows.push(newRow());
+    var row = ensureRowKeys(answerState.rows[0]);
+    var list = el("div", "answer-list");
+    list.style.marginTop = "0";
+    schema.items.forEach(function(item){
+      list.appendChild(buildAnswerRow(item, row, item.key));
+    });
+    area.appendChild(list);
+  }else{
+    var wrap = el("div", "rows-wrap");
+    if(!answerState.rows.length){
+      wrap.appendChild(el("div", "empty", "該当する行がまだありません。「＋ 行を追加」から入力してください。該当がない場合は、行を追加しないままCSVを書き出せます。"));
+    }else{
+      answerState.rows.forEach(function(row, idx){
+        ensureRowKeys(row);
+        wrap.appendChild(buildRowCard(row, idx));
+      });
+    }
+    area.appendChild(wrap);
+
+    var addBtn = el("button", "btn wide", "＋ 行を追加");
+    addBtn.type = "button";
+    addBtn.setAttribute("data-noprint", "");
+    addBtn.addEventListener("click", function(){
+      answerState.rows.push(newRow());
+      renderAnswerForm();
+    });
+    area.appendChild(addBtn);
+  }
+}
+
+function buildAnswerRow(item, row, ctrlName){
+  var r = el("div", "answer-row");
+  var q = el("div", "answer-q");
+  q.appendChild(document.createTextNode(item.label || "（無題）"));
+  if(item.required) q.appendChild(el("span", "req", "必須"));
+  if(item.hint) q.appendChild(el("div", "hint", item.hint));
+  var a = el("div", "answer-a");
+  a.appendChild(buildControl(item, {
+    name: ctrlName,
+    value: row[item.key],
+    onChange: function(v){ row[item.key] = v; }
+  }));
+  r.appendChild(q); r.appendChild(a);
+  return r;
+}
+
+function buildRowCard(row, idx){
+  var card = el("div", "rowcard");
+  var head = el("div", "rowcard-head");
+  head.appendChild(el("span", "no", (idx + 1) + " 件目"));
+  var rm = el("button", "btn danger", "この行を削除");
+  rm.type = "button";
+  rm.setAttribute("data-noprint", "");
+  rm.addEventListener("click", function(){
+    answerState.rows.splice(idx, 1);
+    renderAnswerForm();
+  });
+  head.appendChild(rm);
+  card.appendChild(head);
+
   var list = el("div", "answer-list");
   schema.items.forEach(function(item){
-    var r = el("div", "answer-row");
-    var q = el("div", "answer-q");
-    q.appendChild(document.createTextNode(item.label || "（無題）"));
-    if(item.required) q.appendChild(el("span", "req", "必須"));
-    if(item.hint) q.appendChild(el("div", "hint", item.hint));
-    var a = el("div", "answer-a");
-    a.appendChild(buildControl(item, false));
-    r.appendChild(q); r.appendChild(a);
-    list.appendChild(r);
+    list.appendChild(buildAnswerRow(item, row, "ans-r" + idx + "-" + item.key));
   });
-  area.appendChild(list);
+  card.appendChild(list);
+  return card;
 }
+
+function isEmptyAnswerValue(item, v){
+  if(item.type === "checkbox") return !Array.isArray(v) || v.length === 0;
+  return v === undefined || v === null || !String(v).trim();
+}
+function validateAnswer(){
+  var errs = [];
+  if(!answerState.deptName || !answerState.deptName.trim()) errs.push("回答課名を入力してください。");
+  var multi = isMultiMode();
+  var rows = multi ? answerState.rows : [ensureRowKeys(answerState.rows[0])];
+  rows.forEach(function(row, idx){
+    schema.items.forEach(function(item){
+      if(item.required && isEmptyAnswerValue(item, row[item.key])){
+        var prefix = multi ? ((idx + 1) + "件目の「") : "「";
+        errs.push(prefix + (item.label || "無題") + "」は必須です。");
+      }
+    });
+  });
+  return errs;
+}
+function showAnswerErrors(errs){
+  var ul = $("answer-errors");
+  ul.innerHTML = "";
+  errs.forEach(function(msg){ ul.appendChild(el("li", null, msg)); });
+}
+
 $("btn-print").addEventListener("click", function(){ window.print(); });
 
-/* ================= 検証 ================= */
+/* ---- 回答のCSV書き出し ---- */
+$("btn-csv-export").addEventListener("click", function(){
+  var errs = validateAnswer();
+  showAnswerErrors(errs);
+  if(errs.length){
+    toast("入力に不足があります。赤字の項目を確認してください。");
+    return;
+  }
+  var header = ["照会番号","回答課名","提出日時"].concat(sortedItems().map(csvItemHeader));
+  var ts = nowTimestamp();
+  var multi = isMultiMode();
+  var rows = multi ? answerState.rows : [ensureRowKeys(answerState.rows[0])];
+  var csvRows = rows.map(function(row){
+    return [schema.meta.inquiryId, answerState.deptName, ts].concat(sortedItems().map(function(it){
+      var v = row[it.key];
+      return Array.isArray(v) ? v.join(CHECK_DELIM) : (v || "");
+    }));
+  });
+  var text = buildCsvText(header, csvRows);
+  var name = "回答_" + safeName(schema.meta.inquiryId) + "_" + safeName(answerState.deptName) + ".csv";
+  download(name, text, "text/csv;charset=utf-8", true);
+  toast("回答をCSVで書き出しました");
+});
+
+/* ---- 回答のCSV読み込み（下書きの再開） ---- */
+$("btn-csv-import").addEventListener("click", function(){ $("file-csv").click(); });
+$("file-csv").addEventListener("change", function(e){
+  var f = e.target.files && e.target.files[0];
+  if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try{
+      var data = parseAnswerCsvText(String(r.result));
+      if(data.inquiryId !== schema.meta.inquiryId){
+        alert(
+          "読み込めませんでした。\n\n" +
+          "このCSVの照会番号「" + (data.inquiryId || "（空欄）") + "」が、いま開いている照会の照会番号「" +
+          schema.meta.inquiryId + "」と一致しません。別の照会のファイルを選んでいないか確認してください。"
+        );
+        return;
+      }
+      answerState.deptName = data.deptName;
+      var multi = isMultiMode();
+      var plainRows = data.rows.map(function(r2){ return ensureRowKeys(r2.values); });
+      answerState.rows = multi ? plainRows : [plainRows[0] || newRow()];
+      renderAnswerForm();
+      toast("回答を読み込みました（" + data.rows.length + "件）");
+    }catch(err){
+      alert(
+        "この回答ファイルは読み込めませんでした。\n\n" +
+        "理由: " + (err && err.message ? err.message : "内容を解析できませんでした。") + "\n\n" +
+        "このアプリで書き出したCSVファイルを選んでください。"
+      );
+    }
+  };
+  r.readAsText(f, "UTF-8");
+  e.target.value = "";
+});
+
+/* ================= 取りまとめモード ================= */
+var collectState = { depts: {}, rejected: [], duplicates: [] };
+
+function processCollectFile(name, text){
+  try{
+    var data = parseAnswerCsvText(text);
+    if(data.inquiryId !== schema.meta.inquiryId){
+      return {ok:false, name:name, reason:"照会番号が一致しません（ファイル内：" + (data.inquiryId || "空欄") + " ／ この照会：" + schema.meta.inquiryId + "）"};
+    }
+    var schemaKeys = schema.items.map(function(it){ return it.key; }).slice().sort();
+    var fileKeys = data.keyForCol.filter(Boolean).slice().sort();
+    if(schemaKeys.join(",") !== fileKeys.join(",")){
+      return {ok:false, name:name, reason:"設問の構成がこの照会のスキーマと一致しません（設問が追加・削除された別バージョンの可能性があります）。"};
+    }
+    if(!data.deptName || !data.deptName.trim()){
+      return {ok:false, name:name, reason:"回答課名が空欄です。"};
+    }
+    return {ok:true, name:name, deptName:data.deptName, rows:data.rows};
+  }catch(err){
+    return {ok:false, name:name, reason:(err && err.message) ? err.message : "内容を解析できませんでした。"};
+  }
+}
+
+$("btn-collect-add").addEventListener("click", function(){ $("file-collect").click(); });
+$("file-collect").addEventListener("change", function(e){
+  var files = Array.prototype.slice.call(e.target.files || []);
+  if(!files.length) return;
+  var pending = files.length;
+  var outcomes = [];
+  files.forEach(function(f){
+    var r = new FileReader();
+    r.onload = function(){
+      outcomes.push(processCollectFile(f.name, String(r.result)));
+      if(--pending === 0) applyCollectOutcomes(outcomes);
+    };
+    r.onerror = function(){
+      outcomes.push({ok:false, name:f.name, reason:"ファイルを読み込めませんでした。"});
+      if(--pending === 0) applyCollectOutcomes(outcomes);
+    };
+    r.readAsText(f, "UTF-8");
+  });
+  e.target.value = "";
+});
+
+function applyCollectOutcomes(outcomes){
+  outcomes.forEach(function(o){
+    if(!o.ok){
+      collectState.rejected.push({name:o.name, reason:o.reason});
+      return;
+    }
+    if(collectState.depts[o.deptName]){
+      collectState.duplicates.push({name:o.name, deptName:o.deptName, rows:o.rows});
+    }else{
+      collectState.depts[o.deptName] = {fileName:o.name, rows:o.rows};
+    }
+  });
+  renderCollectView();
+  toast("読み込みました");
+}
+
+function renderCollectView(){
+  renderCollectWarnings();
+  renderCollectRejected();
+  renderCollectSummary();
+  var deptCount = Object.keys(collectState.depts).length;
+  $("btn-collect-export").disabled = deptCount === 0;
+  $("collect-status").textContent = deptCount
+    ? ("取り込み済み " + deptCount + " 課。取りまとめCSVを書き出せます。")
+    : "回答CSVを読み込むと、ここから取りまとめCSVを書き出せます。";
+}
+
+function renderCollectWarnings(){
+  var wrap = $("collect-warnings");
+  wrap.innerHTML = "";
+  if(!collectState.duplicates.length) return;
+  var box = el("div", "warn");
+  var title = el("div", null, "同じ回答課名のファイルが重複しています。上書きするかどうかを選んでください（誤って古いデータで上書きする事故を防ぐため、自動では反映していません）。");
+  box.appendChild(title);
+  var ul = el("ul");
+  collectState.duplicates.forEach(function(dup, idx){
+    var li = el("li");
+    li.appendChild(document.createTextNode(
+      dup.name + "（" + dup.deptName + "） — 既に「" + collectState.depts[dup.deptName].fileName + "」を取り込み済みです。"
+    ));
+    var use = el("button", "btn", "このファイルで上書きする");
+    use.type = "button";
+    use.addEventListener("click", function(){
+      collectState.depts[dup.deptName] = {fileName:dup.name, rows:dup.rows};
+      collectState.duplicates.splice(idx, 1);
+      renderCollectView();
+      toast(dup.deptName + " を上書きしました");
+    });
+    var drop = el("button", "btn", "無視する");
+    drop.type = "button";
+    drop.addEventListener("click", function(){
+      collectState.duplicates.splice(idx, 1);
+      renderCollectView();
+    });
+    li.appendChild(use); li.appendChild(drop);
+    ul.appendChild(li);
+  });
+  box.appendChild(ul);
+  wrap.appendChild(box);
+}
+
+function renderCollectRejected(){
+  var wrap = $("collect-rejected");
+  wrap.innerHTML = "";
+  if(!collectState.rejected.length) return;
+  var box = el("ul", "errors");
+  collectState.rejected.forEach(function(r){
+    box.appendChild(el("li", null, r.name + " — " + r.reason));
+  });
+  wrap.appendChild(box);
+}
+
+function renderCollectSummary(){
+  var wrap = $("collect-summary");
+  wrap.innerHTML = "";
+  var names = Object.keys(collectState.depts);
+  if(!names.length){
+    wrap.appendChild(el("div", "empty", "まだ取り込まれた回答がありません。"));
+    return;
+  }
+  var table = el("table", "deptlist");
+  var thead = el("thead");
+  var htr = el("tr");
+  ["回答課名","行数","ファイル名","操作"].forEach(function(t){ htr.appendChild(el("th", null, t)); });
+  thead.appendChild(htr);
+  table.appendChild(thead);
+  var tbody = el("tbody");
+  names.sort().forEach(function(dn){
+    var d = collectState.depts[dn];
+    var tr = el("tr");
+    tr.appendChild(el("td", null, dn));
+    tr.appendChild(el("td", "num", String(d.rows.length)));
+    tr.appendChild(el("td", null, d.fileName));
+    var tdRm = el("td", "rm");
+    var rm = el("button", "btn danger", "取り消す");
+    rm.type = "button";
+    rm.addEventListener("click", function(){
+      delete collectState.depts[dn];
+      renderCollectView();
+    });
+    tdRm.appendChild(rm);
+    tr.appendChild(tdRm);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+}
+
+$("btn-collect-export").addEventListener("click", function(){
+  var names = Object.keys(collectState.depts);
+  if(!names.length){ alert("取り込まれた回答がありません。"); return; }
+  var header = ["照会番号","回答課名","提出日時"].concat(sortedItems().map(csvItemHeader));
+  var lines = [];
+  names.sort().forEach(function(dn){
+    collectState.depts[dn].rows.forEach(function(row){
+      lines.push([schema.meta.inquiryId, dn, row.submittedAt].concat(sortedItems().map(function(it){
+        var v = row.values[it.key];
+        return Array.isArray(v) ? v.join(CHECK_DELIM) : (v || "");
+      })));
+    });
+  });
+  var text = buildCsvText(header, lines);
+  var deptLabel = $("c-deptname").value.trim() || "取りまとめ部";
+  var name = "取りまとめ_" + safeName(schema.meta.inquiryId) + "_" + safeName(deptLabel) + ".csv";
+  download(name, text, "text/csv;charset=utf-8", true);
+  toast("取りまとめCSVを書き出しました");
+});
+
+/* ================= 検証（設計：配布用ファイルの書き出し） ================= */
 function validate(){
   var errs = [];
   if(!schema.meta.title.trim())     errs.push("照会件名を入力してください。");
@@ -751,7 +1321,7 @@ function validate(){
 
   var st = $("export-status");
   if(errs.length){
-    st.textContent = errs[0] + (errs.length > 1 ? "（ほか " + (errs.length - 1) + " 件）" : "");
+    st.textContent = errs[0] + (errs.length > 1 ? "(ほか " + (errs.length - 1) + " 件)" : "");
     st.classList.add("error");
     $("btn-export").disabled = true;
   }else{
@@ -770,24 +1340,11 @@ function buildDistributableHtml(){
   var runtime = clone.querySelectorAll("[data-runtime]");
   for(var i = 0; i < runtime.length; i++) runtime[i].innerHTML = "";
 
-  // スキーマを埋め込む（</script> 混入を避けるため < をエスケープ）
+  // スキーマを埋め込む（終了タグの混入を避けるため < をエスケープ）
   var s = clone.querySelector("#inquiry-schema");
   s.textContent = "\n" + JSON.stringify(schema, null, 2).replace(/</g, "\\u003c") + "\n";
 
   return "<!DOCTYPE html>\n" + clone.outerHTML;
-}
-
-// bom=true はExcelでの文字化け防止用。CSV書き出しで使います。
-function download(filename, text, mime, bom){
-  var parts = bom ? [new Uint8Array([0xEF,0xBB,0xBF]), text] : [text];
-  var blob = new Blob(parts, {type: mime || "text/plain;charset=utf-8"});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement("a");
-  a.href = url; a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
 }
 
 $("btn-export").addEventListener("click", function(){
@@ -811,10 +1368,10 @@ $("file-json").addEventListener("change", function(e){
   var r = new FileReader();
   r.onload = function(){
     try{
-      var txt = String(r.result).replace(/^\uFEFF/, "");
+      var txt = String(r.result).replace(BOM_RE, "");
       var s = JSON.parse(txt);
       if(!s || typeof s !== "object") throw new Error();
-      schema.meta = Object.assign({inquiryId:"",title:"",fromDept:"",dueDate:"",note:""}, s.meta || {});
+      schema.meta = Object.assign(Object.assign({}, META_DEFAULT), s.meta || {});
       schema.items = Array.isArray(s.items) ? s.items.map(normalizeItem) : [];
       loadMetaToInputs(); renderItems(); renderPreview(); validate();
       toast("設計データを読み込みました");
@@ -830,6 +1387,8 @@ $("file-json").addEventListener("change", function(e){
 loadMetaToInputs();
 renderItems();
 validate();
+answerState = { deptName: "", rows: isMultiMode() ? [] : [newRow()] };
+renderCollectView();
 showView(schema.items.length ? "view-answer" : "view-design");
 
 })();
