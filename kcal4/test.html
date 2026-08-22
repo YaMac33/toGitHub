@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マイナンバー手続き 振り分けツール</title>
+<style>
+  body { font-family: "Segoe UI","Meiryo",sans-serif; background:#f4f6f9; margin:0; padding:0; color:#222; }
+  header { background:#0b5394; color:#fff; padding:16px 24px; }
+  header h1 { margin:0; font-size:20px; }
+  .tabs { display:flex; background:#dbe5f1; }
+  .tab { flex:1; text-align:center; padding:12px; cursor:pointer; font-weight:bold; color:#0b5394; }
+  .tab.active { background:#fff; border-bottom:3px solid #0b5394; }
+  .panel { display:none; padding:24px; }
+  .panel.active { display:block; }
+  .card { background:#fff; border-radius:8px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,.1); max-width:900px; margin:0 auto 20px; }
+  .q { font-size:16px; font-weight:bold; margin-bottom:12px; }
+  button { background:#0b5394; color:#fff; border:none; padding:10px 18px; border-radius:6px; font-size:14px; cursor:pointer; margin:4px; }
+  button:hover { background:#093f70; }
+  button.gray { background:#888; }
+  .result { font-size:18px; font-weight:bold; padding:16px; border-radius:8px; margin-top:16px; }
+  .r-pittari { background:#e8f0fe; border-left:6px solid #1a73e8; }
+  .r-smart { background:#e6f4ea; border-left:6px solid #1e8e3e; }
+  .r-logo { background:#fef7e0; border-left:6px solid #f9ab00; }
+  table { border-collapse:collapse; width:100%; margin-top:12px; }
+  th,td { border:1px solid #ccc; padding:8px; font-size:13px; text-align:center; }
+  th { background:#0b5394; color:#fff; }
+  select,input { padding:6px; font-size:13px; }
+  .tag { padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; color:#fff; }
+  .t-pittari{background:#1a73e8;} .t-smart{background:#1e8e3e;} .t-logo{background:#f9ab00;}
+  .note{font-size:12px;color:#666;margin-top:8px;}
+</style>
+</head>
+<body>
+<header><h1>マイナンバー認証手続き 振り分けツール</h1></header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab(0)">① 診断フロー（1件ずつ）</div>
+  <div class="tab" onclick="switchTab(1)">② リスト仕分け（一括）</div>
+</div>
+
+<!-- ===== 診断フロー ===== -->
+<div class="panel active" id="panel0">
+  <div class="card">
+    <div id="flow"></div>
+  </div>
+</div>
+
+<!-- ===== リスト仕分け ===== -->
+<div class="panel" id="panel1">
+  <div class="card">
+    <div class="q">手続きを入力して「追加」を押してください。各項目を選ぶと判定が自動表示されます。</div>
+    <input id="procName" type="text" placeholder="手続き名（例：児童手当の現況届）" size="30">
+    <button onclick="addRow()">＋ 追加</button>
+    <table id="listTable">
+      <thead>
+        <tr>
+          <th>手続き名</th>
+          <th>国の法律に基づく？</th>
+          <th>決済/基幹/LINE等の連携が必要？</th>
+          <th>判定</th>
+          <th>削除</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p class="note">※ 判定ロジックは診断フローと共通です。表はブラウザ内でのみ保持されます（保存機能なし）。</p>
+  </div>
+</div>
+
+<script>
+/* ---- 共通の判定ロジック ---- */
+function judge(isLaw, needsIntegration){
+  if(isLaw) return {name:"ぴったりサービス", cls:"pittari"};
+  if(needsIntegration) return {name:"スマート公共ラボ", cls:"smart"};
+  return {name:"LoGoフォーム", cls:"logo"};
+}
+
+/* ---- タブ切替 ---- */
+function switchTab(i){
+  document.querySelectorAll('.tab').forEach((t,idx)=>t.classList.toggle('active',idx===i));
+  document.querySelectorAll('.panel').forEach((p,idx)=>p.classList.toggle('active',idx===i));
+}
+
+/* ---- 診断フロー ---- */
+let state = 0;
+const flow = document.getElementById('flow');
+function renderFlow(){
+  if(state===0){
+    flow.innerHTML = `
+      <div class="q">Step1：この手続きは「国の法律」に基づく法定様式ですか？<br>
+      <span class="note">例：児童手当、介護保険、被災者支援など全国共通の手続き</span></div>
+      <button onclick="setLaw(true)">はい（国の法律）</button>
+      <button onclick="setLaw(false)">いいえ（自治体独自）</button>`;
+  } else if(state===2){
+    flow.innerHTML = `
+      <div class="q">Step2：オンライン決済・基幹システム連携・LINE連携など、高度な連携や複雑な処理が必要ですか？</div>
+      <button onclick="setInt(true)">はい（連携・複雑な処理あり）</button>
+      <button onclick="setInt(false)">いいえ（シンプルな申込/アンケート）</button>
+      <br><button class="gray" onclick="resetFlow()">↩ 最初に戻る</button>`;
+  }
+}
+function showResult(r){
+  flow.innerHTML = `<div class="result r-r.cls">▶判定結果：{r.name}</div>
+    <button class="gray" onclick="resetFlow()">↩ もう一度診断する</button>`;
+}
+function setLaw(v){ if(v){ showResult(judge(true,false)); } else { state=2; renderFlow(); } }
+function setInt(v){ showResult(judge(false,v)); }
+function resetFlow(){ state=0; renderFlow(); }
+renderFlow();
+
+/* ---- リスト仕分け ---- */
+function addRow(){
+  const name = document.getElementById('procName').value.trim();
+  if(!name){ alert('手続き名を入力してください'); return; }
+  const tbody = document.querySelector('#listTable tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${escapeHtml(name)}</td>
+    <td><select onchange="updateRow(this)">
+        <option value="">選択</option><option value="yes">はい</option><option value="no">いいえ</option></select></td>
+    <td><select onchange="updateRow(this)">
+        <option value="">選択</option><option value="yes">はい</option><option value="no">いいえ</option></select></td>
+    <td class="rescell">-</td>
+    <td><button class="gray" onclick="this.closest('tr').remove()">×</button></td>`;
+  tbody.appendChild(tr);
+  document.getElementById('procName').value='';
+}
+function updateRow(sel){
+  const tr = sel.closest('tr');
+  const selects = tr.querySelectorAll('select');
+  const law = selects[0].value, integ = selects[1].value;
+  const cell = tr.querySelector('.rescell');
+  if(law===''){ cell.innerHTML='-'; return; }
+  if(law==='yes'){ const r=judge(true,false); cell.innerHTML=`<span class="tag t-r.cls">{r.name}</span>`; return; }
+  if(integ===''){ cell.innerHTML='<span style="color:#888">Step2を選択</span>'; return; }
+  const r=judge(false,integ==='yes');
+  cell.innerHTML=`<span class="tag t-r.cls">{r.name}</span>`;
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+</script>
+</body>
+</html>
+
+
+
