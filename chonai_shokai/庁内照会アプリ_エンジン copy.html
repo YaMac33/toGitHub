@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>庁内照会 回答アプリ</title>
+
+<!-- ===================================================================
+     照会スキーマ格納領域
+     このファイルを「配布用ファイルとして書き出す」と、下の JSON が
+     その照会の定義で置き換わった新しい HTML が生成されます。
+     =================================================================== -->
+<script type="application/json" id="inquiry-schema">
+{
+  "formatVersion": 1,
+  "meta": { "inquiryId": "", "title": "", "fromDept": "", "dueDate": "", "note": "", "answerMode": "single" },
+  "items": []
+}
+</script>
+
+<style>
+/* ---------- トークン (モダン・クリーンなカラーパレット) ---------- */
+:root {
+  --primary: #0284c7;        /* モダンなブルー */
+  --primary-hover: #0369a1;
+  --primary-light: #e0f2fe;
+  --danger: #dc2626;         /* 洗練されたレッド */
+  --danger-hover: #b91c1c;
+  --danger-light: #fee2e2;
+  --text-main: #334155;      /* 濃いスレートグレー */
+  --text-muted: #64748b;     /* 中間のスレートグレー */
+  --text-light: #94a3b8;
+  --bg-body: #f1f5f9;        /* 画面全体の背景色 */
+  --bg-surface: #ffffff;     /* パネルの背景色 */
+  --border: #e2e8f0;         /* 基本のボーダー */
+  --border-strong: #cbd5e1;  /* 入力欄などのボーダー */
+  
+  --font-sans: "Helvetica Neue", Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+  --font-serif: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  --radius: 8px;
+  --radius-sm: 6px;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-sans);
+  color:var(--text-main);
+  background:var(--bg-body);
+  font-size:15px;
+  line-height:1.7;
+  -webkit-text-size-adjust:100%;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+
+/* ---------- アプリバー ---------- */
+.appbar{
+  background: #0f172a; /* ダークネイビー */
+  color: #fff;
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: var(--shadow-md);
+}
+.appbar-inner{
+  max-width: 1060px; margin: 0 auto; padding: 14px 24px;
+  display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+}
+.appbar h1{
+  font-family: var(--font-sans);
+  font-size: 18px; font-weight: 700; margin: 0; letter-spacing: 0.02em;
+}
+.appbar .sub{font-size: 13px; color: #94a3b8; font-weight: 500;}
+
+/* ---------- タブ ---------- */
+.tabs{
+  max-width: 1060px; margin: 24px auto 0; padding: 0 24px;
+  display: flex; gap: 4px;
+}
+.tab{
+  appearance: none; border: 1px solid transparent; border-bottom: none;
+  background: transparent; color: var(--text-muted);
+  padding: 12px 24px; cursor: pointer;
+  font-size: 14px; font-weight: 600; letter-spacing: 0.02em;
+  border-radius: var(--radius) var(--radius) 0 0; position: relative; top: 1px;
+  transition: all 0.2s;
+}
+.tab:hover{background: #e2e8f0; color: var(--text-main);}
+.tab[aria-selected="true"]{
+  background: var(--bg-surface); color: var(--primary);
+  border-color: var(--border);
+  border-bottom-color: var(--bg-surface);
+  box-shadow: inset 0 3px 0 var(--primary);
+}
+.tab .tabno{font-family: var(--font-mono); font-size: 12px; color: var(--text-light); margin-right: 8px;}
+.tab[aria-selected="true"] .tabno{color: var(--primary);}
+
+/* ---------- 版面 ---------- */
+.sheet{
+  max-width: 1060px; margin: 0 auto 80px; padding: 0 24px;
+}
+.panel{
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 0 var(--radius) var(--radius) var(--radius);
+  padding: 36px 48px;
+  box-shadow: var(--shadow-sm);
+}
+.notice{
+  background: var(--primary-light); border-left: 4px solid var(--primary);
+  padding: 14px 20px; margin: 0 0 28px; font-size: 14px; color: var(--primary-hover);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* ---------- 見出し ---------- */
+.sec{margin: 40px 0 20px; display: flex; align-items: baseline; gap: 16px;}
+.sec:first-of-type{margin-top: 0;}
+.sec h2{
+  font-family: var(--font-sans); font-size: 18px; font-weight: 700; margin: 0;
+  color: var(--text-main); white-space: nowrap;
+}
+.sec .line{flex: 1; height: 1px; background: var(--border);}
+.sec .count{font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); font-weight: 600;}
+
+/* ---------- 照会票ヘッダー（署名要素） ---------- */
+.kaiho{border: 1px solid var(--border-strong); background: #fff; border-radius: var(--radius-sm); overflow: hidden; box-shadow: var(--shadow-sm);}
+.kaiho-top{
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+  padding: 20px 24px; border-bottom: 1px solid var(--border-strong);
+  background: #f8fafc;
+}
+.kaiho-title{
+  font-family: var(--font-serif); font-size: 22px; font-weight: 700;
+  line-height: 1.4; margin: 0; color: #0f172a;
+}
+.kaiho-title .placeholder{color: var(--text-light); font-weight: 400;}
+.kaiho-id{
+  font-family: var(--font-mono); font-size: 13px; color: var(--text-muted);
+  white-space: nowrap; padding-top: 6px; background: #e2e8f0; padding: 4px 10px; border-radius: 20px;
+}
+.kaiho-grid{display: grid; grid-template-columns: auto 1fr;}
+.kaiho-grid dt, .kaiho-grid dd{margin: 0; padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 14px;}
+.kaiho-grid dt{background: #f1f5f9; color: var(--text-muted); font-weight: 600; white-space: nowrap; letter-spacing: 0.04em; border-right: 1px solid var(--border);}
+.kaiho-grid dd:last-of-type, .kaiho-grid dt:nth-last-of-type(1){border-bottom: none;}
+.kaiho-grid dd input[type=text]{max-width: 320px;}
+.due{color: var(--danger); font-weight: 700;}
+
+/* ---------- フォーム ---------- */
+.field{margin-bottom: 20px;}
+.field > label, .flabel{
+  display: block; font-size: 14px; font-weight: 600;
+  color: var(--text-main); margin-bottom: 8px;
+}
+.hint{font-size: 12px; color: var(--text-muted); font-weight: 400; margin-left: 8px;}
+input[type=text], input[type=date], input[type=number], select, textarea{
+  width: 100%; padding: 10px 14px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  background: #fff; transition: all 0.2s;
+}
+input:hover, select:hover, textarea:hover{border-color: var(--text-muted);}
+input:focus, select:focus, textarea:focus{
+  outline: none; border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+textarea{resize: vertical; min-height: 80px;}
+.row{display: grid; gap: 20px;}
+@media(min-width:720px){
+  .row.c2{grid-template-columns: 1fr 1fr;}
+  .row.c3{grid-template-columns: 1.2fr 1fr 1fr;}
+}
+.req{color: #fff; background: var(--danger); font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle;}
+
+/* ---------- 設問カード ---------- */
+.items{margin-top: 16px;}
+.item{
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: #fff; padding: 24px; margin-bottom: 16px;
+  display: grid; grid-template-columns: 40px 1fr; gap: 0 20px;
+  box-shadow: var(--shadow-sm); transition: box-shadow 0.2s;
+}
+.item:hover{box-shadow: var(--shadow-md);}
+.item.dragging{opacity: 0.4;}
+.item-no{
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: #fff; background: var(--text-muted);
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+}
+.item-key{font-family: var(--font-mono); font-size: 11px; color: var(--text-light); text-align: center; margin-top: 8px;}
+.item-body{min-width: 0;}
+.item-tools{display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);}
+.opts{margin-top: 16px;}
+.opts.hidden{display: none;}
+.chk{display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; user-select: none; padding: 8px 0;}
+.chk input{width: 18px; height: 18px; accent-color: var(--primary); margin: 0; cursor: pointer;}
+
+/* ---------- ボタン ---------- */
+.btn{
+  appearance: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-strong); background: #fff; color: var(--text-main);
+  padding: 8px 16px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+  transition: all 0.2s; box-shadow: var(--shadow-sm);
+}
+.btn:hover{background: #f8fafc; border-color: var(--text-muted);}
+.btn.primary{background: var(--primary); border-color: var(--primary); color: #fff; padding: 10px 24px;}
+.btn.primary:hover{background: var(--primary-hover); border-color: var(--primary-hover);}
+.btn.danger{color: var(--danger); border-color: var(--danger-light); background: var(--danger-light); box-shadow: none;}
+.btn.danger:hover{background: var(--danger); color: #fff; border-color: var(--danger);}
+.btn.wide{width: 100%; padding: 14px; font-size: 15px; border: 2px dashed var(--border-strong); color: var(--primary); background: #f8fafc; box-shadow: none;}
+.btn.wide:hover{background: var(--primary-light); border-color: var(--primary); border-style: solid;}
+.btn:disabled{opacity: 0.5; cursor: not-allowed; box-shadow: none;}
+
+/* ---------- 書き出しバー ---------- */
+.actionbar{
+  position: sticky; bottom: 0; z-index: 40;
+  background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+  padding: 16px 24px; margin-top: 0;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+}
+.actionbar .status{font-size: 13px; color: var(--text-muted); font-weight: 500; flex: 1; min-width: 200px;}
+.actionbar .status.error{color: var(--danger); font-weight: 700;}
+
+/* ---------- 検証結果・警告 ---------- */
+.errors{margin: 0 0 24px; padding: 16px 20px 16px 40px; background: var(--danger-light); border-left: 4px solid var(--danger); font-size: 14px; color: var(--danger-hover); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;}
+.errors:empty{display: none;}
+.errors li{margin: 4px 0;}
+.warn{background: #fef9c3; border-left: 4px solid #eab308; padding: 16px 20px; margin: 0 0 24px; font-size: 14px; color: #854d0e; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;}
+.warn ul{margin: 0; padding-left: 20px;}
+.warn li{margin: 8px 0;}
+.warn .btn{margin-left: 12px;}
+
+/* ---------- 空状態 ---------- */
+.empty{
+  border: 2px dashed var(--border); padding: 48px 24px; text-align: center;
+  color: var(--text-muted); font-size: 14px; background: #f8fafc; border-radius: var(--radius);
+}
+
+/* ---------- 回答表示 ---------- */
+.answer-list{border: 1px solid var(--border-strong); border-radius: var(--radius-sm); overflow: hidden;}
+.answer-row{display: grid; grid-template-columns: 260px 1fr; border-top: 1px solid var(--border);}
+.answer-row:first-child{border-top: none;}
+.answer-q{background: #f8fafc; border-right: 1px solid var(--border); padding: 16px 20px; font-size: 14px; font-weight: 600; color: var(--text-main);}
+.answer-a{padding: 16px 20px; background: #fff;}
+@media(max-width:640px){.answer-row{grid-template-columns: 1fr;} .answer-q{border-right: none; border-bottom: 1px solid var(--border);}}
+
+/* ---------- 明細行（回答：明細モード） ---------- */
+.rows-wrap{margin-bottom: 20px;}
+.rowcard{border: 1px solid var(--border-strong); border-radius: var(--radius); margin-top: 20px; background: #fff; box-shadow: var(--shadow-sm); overflow: hidden;}
+.rowcard:first-child{margin-top: 24px;}
+.rowcard-head{
+  display: flex; align-items: center; justify-content: space-between;
+  background: #f8fafc; padding: 12px 20px; border-bottom: 1px solid var(--border);
+}
+.rowcard-head .no{font-family: var(--font-mono); font-size: 14px; color: var(--primary); font-weight: 700;}
+.rowcard .answer-list{border: none; border-radius: 0;}
+
+/* ---------- 取りまとめ：課ごとの一覧 ---------- */
+.deptlist{width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 12px; box-shadow: var(--shadow-sm); border-radius: var(--radius-sm); overflow: hidden; border-style: hidden;}
+.deptlist th, .deptlist td{border: 1px solid var(--border); padding: 12px 16px; text-align: left;}
+.deptlist th{background: #f8fafc; color: var(--text-main); font-weight: 700; white-space: nowrap;}
+.deptlist td{background: #fff;}
+.deptlist td.num{font-family: var(--font-mono); text-align: right;}
+.deptlist td.rm{white-space: nowrap; text-align: center;}
+
+/* ---------- トースト ---------- */
+.toast{
+  position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%) translateY(20px);
+  background: #1e293b; color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500;
+  opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 99;
+  box-shadow: var(--shadow-lg); max-width: 90vw; text-align: center;
+}
+.toast.show{opacity: 1; transform: translateX(-50%) translateY(0);}
+
+.hidden{display: none!important;}
+
+/* ---------- 印刷 ---------- */
+@media print{
+  body{background: #fff; font-size: 10.5pt; color: #000;}
+  .appbar, .tabs, .actionbar, .toast, [data-noprint]{display: none!important;}
+  .sheet{max-width: none; margin: 0; padding: 0;}
+  .panel{border: none; padding: 0; box-shadow: none;}
+  .kaiho, .answer-list{border-color: #000;}
+  .answer-row{break-inside: avoid; border-color: #000;}
+  .answer-q{background: #f2f2f2!important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-color: #000;}
+  .rowcard{break-inside: avoid; border-color: #000; margin-top: 16px;}
+  .rowcard-head{background: #f2f2f2!important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-color: #000;}
+  .kaiho-top, .kaiho-grid dt{background: #f2f2f2!important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-color: #000;}
+  .kaiho-grid dt, .kaiho-grid dd{border-color: #000;}
+  input[type=text], input[type=date], input[type=number], select, textarea { border-color: #000; border-radius: 0; }
+  @page{size: A4; margin: 16mm 14mm;}
+}
+</style>
+</head>
+<body>
+
+<!-- 以下、HTML部分は変更なし -->
+<header class="appbar">
+  <div class="appbar-inner">
+    <h1>庁内照会 回答アプリ</h1>
+    <span class="sub">単一HTML／オフライン動作／外部通信なし</span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="モード切替" data-noprint>
+  <button class="tab" role="tab" id="tab-design"  aria-controls="view-design"  aria-selected="false"><span class="tabno">1</span>照会を設計</button>
+  <button class="tab" role="tab" id="tab-answer"  aria-controls="view-answer"  aria-selected="false"><span class="tabno">2</span>回答を作成</button>
+  <button class="tab" role="tab" id="tab-collect" aria-controls="view-collect" aria-selected="false"><span class="tabno">3</span>回答を取りまとめ</button>
+</nav>
+
+<main class="sheet">
+
+<!-- =========================== 設計モード =========================== -->
+<section class="panel" id="view-design" role="tabpanel" aria-labelledby="tab-design">
+
+  <p class="notice">
+    照会元課がこの画面で設問を組み立て、最後に <strong>配布用ファイルとして書き出す</strong> と、
+    その照会専用の HTML が1本できます。以降はそのファイルを各部管理課→各課へ配布してください。
+  </p>
+
+  <div class="sec"><h2>照会の基本情報</h2><span class="line"></span></div>
+
+  <div class="row c2">
+    <div class="field">
+      <label for="m-title">照会件名<span class="req">必須</span></label>
+      <input type="text" id="m-title" placeholder="例）〇〇に関する調査について">
+    </div>
+    <div class="field">
+      <label for="m-id">照会番号<span class="req">必須</span> <span class="hint">CSVの照合キーになります</span></label>
+      <input type="text" id="m-id" placeholder="例）R08-〇〇-001">
+    </div>
+  </div>
+  <div class="row c2">
+    <div class="field">
+      <label for="m-from">照会元課</label>
+      <input type="text" id="m-from" placeholder="例）〇〇部〇〇課">
+    </div>
+    <div class="field">
+      <label for="m-due">提出期限</label>
+      <input type="date" id="m-due">
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="flabel">回答形式 <span class="hint">1課あたりの回答の集め方</span></span>
+    <label class="chk" style="margin-right:22px;">
+      <input type="radio" name="m-answermode" id="m-answermode-single">単票（1課につき1件だけ回答）
+    </label>
+    <label class="chk">
+      <input type="radio" name="m-answermode" id="m-answermode-multi">明細（1課で複数件を行として回答）
+    </label>
+  </div>
+
+  <div class="field">
+    <label for="m-note">依頼事項・記入上の注意 <span class="hint">回答画面と印刷物の冒頭に表示されます</span></label>
+    <textarea id="m-note" placeholder="例）該当がない場合も「該当なし」と記入のうえ提出してください。"></textarea>
+  </div>
+
+  <div class="sec"><h2>設問</h2><span class="line"></span><span class="count" id="item-count">0 問</span></div>
+
+  <div class="items" id="item-list" data-runtime></div>
+  <div class="empty hidden" id="item-empty">設問がまだありません。下のボタンから追加してください。</div>
+
+  <p style="margin:24px 0 32px;">
+    <button class="btn wide" id="btn-add">＋ 設問を追加</button>
+  </p>
+
+  <div class="sec"><h2>できあがりの見え方</h2><span class="line"></span></div>
+  <div id="design-preview" data-runtime></div>
+
+</section>
+
+<!-- =========================== 回答モード =========================== -->
+<section class="panel hidden" id="view-answer" role="tabpanel" aria-labelledby="tab-answer">
+  <p class="notice" data-noprint>
+    回答課名を入力し、各設問に回答してください。印刷／PDF化したものを決裁システムに添付し、
+    あわせて「回答をCSVで保存」で書き出したファイルを各部管理課へ提出してください。
+  </p>
+  <ul class="errors" id="answer-errors" data-runtime data-noprint></ul>
+  <div id="answer-area" data-runtime></div>
+  <p style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;" data-noprint>
+    <button class="btn primary" id="btn-print">印刷／PDFで保存</button>
+    <button class="btn" id="btn-csv-export">回答をCSVで保存</button>
+    <button class="btn" id="btn-csv-import">回答を読み込む（下書きの再開）</button>
+  </p>
+</section>
+
+<!-- ========================= 取りまとめモード ========================= -->
+<section class="panel hidden" id="view-collect" role="tabpanel" aria-labelledby="tab-collect">
+  <div class="sec"><h2>回答を取りまとめ</h2><span class="line"></span></div>
+  <p class="notice" data-noprint>
+    各課から提出された回答CSVをまとめて読み込み、1本のCSVに束ねて照会元課へ提出します。
+    照会番号や設問構成が一致しないファイルは自動的に除外されます。
+  </p>
+
+  <div class="field" data-noprint>
+    <label for="c-deptname">取りまとめを行う部の名称 <span class="hint">書き出すファイル名に使います</span></label>
+    <input type="text" id="c-deptname" placeholder="例）〇〇部">
+  </div>
+
+  <p data-noprint>
+    <button class="btn wide" id="btn-collect-add">＋ 回答CSVを読み込む（複数選択できます）</button>
+  </p>
+
+  <div id="collect-warnings" data-runtime></div>
+  <div id="collect-rejected" data-runtime></div>
+
+  <div class="sec"><h2>取り込み済みの回答</h2><span class="line"></span></div>
+  <div id="collect-summary" data-runtime></div>
+
+  <div class="actionbar" data-noprint>
+    <span class="status" id="collect-status">回答CSVを読み込むと、ここから取りまとめCSVを書き出せます。</span>
+    <button class="btn primary" id="btn-collect-export" disabled>取りまとめCSVを書き出す</button>
+  </div>
+</section>
+
+<!-- ========================= 書き出しバー（設計） ========================= -->
+<div class="actionbar" id="actionbar" data-noprint>
+  <span class="status" id="export-status">照会件名・照会番号・設問を入力すると書き出せます。</span>
+  <button class="btn" id="btn-save-json">設計データを保存</button>
+  <button class="btn" id="btn-load-json">設計データを読み込む</button>
+  <button class="btn primary" id="btn-export">配布用ファイルとして書き出す</button>
+</div>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="file-json" accept=".json,application/json" class="hidden">
+<input type="file" id="file-csv" accept=".csv,text/csv" class="hidden">
+<input type="file" id="file-collect" accept=".csv,text/csv" multiple class="hidden">
+
+<!-- 以下、JavaScript部分も元のまま完全に保持されています -->
+<script>
+(function(){
+"use strict";
+
+/* ================= スキーマ ================= */
+var TYPES = [
+  {v:"text",     n:"1行テキスト"},
+  {v:"textarea", n:"複数行テキスト"},
+  {v:"number",   n:"数値"},
+  {v:"date",     n:"日付"},
+  {v:"select",   n:"プルダウン"},
+  {v:"radio",    n:"単一選択（ラジオ）"},
+  {v:"checkbox", n:"複数選択（チェック）"}
+];
+var CHOICE_TYPES = ["select","radio","checkbox"];
+var CHECK_DELIM = "；"; /* checkbox の複数選択値をCSV1セルに詰めるときの区切り文字 */
+var BOM_RE = new RegExp("^"); /* 読み込んだテキスト先頭のUTF-8 BOMを取り除く */
+var META_DEFAULT = {inquiryId:"",title:"",fromDept:"",dueDate:"",note:"",answerMode:"single"};
+
+var schema = readSchema();
+
+function readSchema(){
+  var el = document.getElementById("inquiry-schema");
+  var base = {formatVersion:1, meta:Object.assign({}, META_DEFAULT), items:[]};
+  try{
+    var s = JSON.parse(el.textContent);
+    base.meta = Object.assign(base.meta, s.meta || {});
+    base.items = Array.isArray(s.items) ? s.items.map(normalizeItem) : [];
+  }catch(e){ /* 空・不正なら初期値のまま */ }
+  return base;
+}
+function normalizeItem(it, i){
+  return {
+    key: it.key || ("q" + (i+1)),
+    label: it.label || "",
+    type: TYPES.some(function(t){return t.v===it.type;}) ? it.type : "text",
+    required: !!it.required,
+    hint: it.hint || "",
+    options: Array.isArray(it.options) ? it.options.slice() : []
+  };
+}
+function nextKey(){
+  var max = 0;
+  schema.items.forEach(function(it){
+    var m = /^q(\d+)$/.exec(it.key);
+    if(m) max = Math.max(max, parseInt(m[1],10));
+  });
+  return "q" + (max + 1);
+}
+function keyNum(k){
+  var m = /^q(\d+)$/.exec(k || "");
+  return m ? parseInt(m[1],10) : 0;
+}
+function sortedItems(){
+  return schema.items.slice().sort(function(a,b){ return keyNum(a.key) - keyNum(b.key); });
+}
+function itemByKey(k){
+  for(var i=0;i<schema.items.length;i++){ if(schema.items[i].key === k) return schema.items[i]; }
+  return null;
+}
+
+/* ================= 小物 ================= */
+function $(id){ return document.getElementById(id); }
+function el(tag, cls, text){
+  var e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(text !== undefined && text !== null) e.textContent = text;
+  return e;
+}
+var toastTimer;
+function toast(msg){
+  var t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2600);
+}
+function fmtDate(iso){
+  if(!iso) return "";
+  var p = iso.split("-");
+  if(p.length !== 3) return iso;
+  return p[0] + "年" + parseInt(p[1],10) + "月" + parseInt(p[2],10) + "日";
+}
+function safeName(s){
+  return String(s || "").replace(/[\\\/:*?"<>|\s]+/g, "_").slice(0, 60) || "照会";
+}
+function nowTimestamp(){
+  var d = new Date();
+  function p(n){ return (n < 10 ? "0" : "") + n; }
+  return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate()) + " " +
+         p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+}
+
+/* ================= CSV 共通処理 ================= */
+function csvField(v){
+  var s = (v === null || v === undefined) ? "" : String(v);
+  if(/[",\r\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+function buildCsvText(header, rows){
+  var lines = [header.map(csvField).join(",")];
+  rows.forEach(function(r){ lines.push(r.map(csvField).join(",")); });
+  return lines.join("\r\n") + "\r\n";
+}
+function parseCsv(text){
+  var rows = [], row = [], field = "", inQuotes = false;
+  var i = 0, len = text.length;
+  while(i < len){
+    var c = text.charAt(i);
+    if(inQuotes){
+      if(c === '"'){
+        if(text.charAt(i+1) === '"'){ field += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      field += c; i++; continue;
+    }
+    if(c === '"'){ inQuotes = true; i++; continue; }
+    if(c === ','){ row.push(field); field = ""; i++; continue; }
+    if(c === '\r'){ i++; continue; }
+    if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+    field += c; i++;
+  }
+  if(field !== "" || row.length){ row.push(field); rows.push(row); }
+  rows = rows.filter(function(r){ return !(r.length === 1 && r[0] === ""); });
+  if(!rows.length) return {header:[], rows:[]};
+  return {header: rows[0], rows: rows.slice(1)};
+}
+function csvItemHeader(item){
+  return (item.label || "（無題）") + "（" + item.key + "）";
+}
+function parseItemHeaderKey(h){
+  var m = /（(q\d+)）\s*$/.exec(String(h || ""));
+  return m ? m[1] : null;
+}
+function parseAnswerCsvText(text){
+  var clean = text.replace(BOM_RE, "");
+  var parsed = parseCsv(clean);
+  if(!parsed.header.length || !parsed.rows.length){
+    throw {message:"データが含まれていません。"};
+  }
+  var h = parsed.header;
+  if(h[0] !== "照会番号" || h[1] !== "回答課名" || h[2] !== "提出日時"){
+    throw {message:"見出し行の形式がこのアプリのCSVと一致しません。"};
+  }
+  var keyForCol = h.slice(3).map(parseItemHeaderKey);
+  var rows = parsed.rows.map(function(cols){
+    var rv = {};
+    keyForCol.forEach(function(key, i){
+      if(!key) return;
+      var raw = cols[3 + i];
+      var item = itemByKey(key);
+      rv[key] = (item && item.type === "checkbox") ? (raw ? raw.split(CHECK_DELIM) : []) : (raw || "");
+    });
+    return {values: rv, submittedAt: cols[2] || "", inquiryId: cols[0] || "", deptName: cols[1] || ""};
+  });
+  return {
+    inquiryId: rows[0].inquiryId,
+    deptName: rows[0].deptName,
+    keyForCol: keyForCol,
+    rows: rows
+  };
+}
+
+function download(filename, text, mime, bom){
+  var parts = bom ? [new Uint8Array([0xEF,0xBB,0xBF]), text] : [text];
+  var blob = new Blob(parts, {type: mime || "text/plain;charset=utf-8"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+}
+
+/* ================= タブ ================= */
+var VIEWS = [
+  {tab:"tab-design",  view:"view-design"},
+  {tab:"tab-answer",  view:"view-answer"},
+  {tab:"tab-collect", view:"view-collect"}
+];
+function showView(viewId){
+  VIEWS.forEach(function(v){
+    var on = (v.view === viewId);
+    $(v.tab).setAttribute("aria-selected", on ? "true" : "false");
+    $(v.view).classList.toggle("hidden", !on);
+  });
+  $("actionbar").classList.toggle("hidden", viewId !== "view-design");
+  if(viewId === "view-answer") renderAnswerForm();
+  if(viewId === "view-design") renderPreview();
+  if(viewId === "view-collect") renderCollectView();
+  window.scrollTo(0, 0);
+}
+VIEWS.forEach(function(v){
+  $(v.tab).addEventListener("click", function(){ showView(v.view); });
+});
+
+/* ================= 設計：メタ情報 ================= */
+var META_FIELDS = [
+  {id:"m-title", key:"title"},
+  {id:"m-id",    key:"inquiryId"},
+  {id:"m-from",  key:"fromDept"},
+  {id:"m-due",   key:"dueDate"},
+  {id:"m-note",  key:"note"}
+];
+function loadMetaToInputs(){
+  META_FIELDS.forEach(function(f){ $(f.id).value = schema.meta[f.key] || ""; });
+  $("m-answermode-single").checked = schema.meta.answerMode !== "multi";
+  $("m-answermode-multi").checked = schema.meta.answerMode === "multi";
+}
+META_FIELDS.forEach(function(f){
+  $(f.id).addEventListener("input", function(){
+    schema.meta[f.key] = $(f.id).value;
+    renderPreview();
+    validate();
+  });
+});
+["m-answermode-single","m-answermode-multi"].forEach(function(id){
+  $(id).addEventListener("change", function(){
+    schema.meta.answerMode = $("m-answermode-multi").checked ? "multi" : "single";
+    renderPreview();
+  });
+});
+
+/* ================= 設計：設問リスト ================= */
+function renderItems(){
+  var list = $("item-list");
+  list.innerHTML = "";
+  schema.items.forEach(function(item, idx){
+    list.appendChild(buildItemCard(item, idx));
+  });
+  $("item-count").textContent = schema.items.length + " 問";
+  $("item-empty").classList.toggle("hidden", schema.items.length > 0);
+}
+
+function buildItemCard(item, idx){
+  var card = el("div", "item");
+
+  var left = el("div");
+  left.appendChild(el("div", "item-no", String(idx + 1)));
+  left.appendChild(el("div", "item-key", item.key));
+  card.appendChild(left);
+
+  var body = el("div", "item-body");
+
+  /* 設問文＋種別 */
+  var row = el("div", "row c2");
+
+  var fLabel = el("div", "field");
+  var lb1 = el("label", null, "設問文");
+  lb1.setAttribute("for", "in-label-" + item.key);
+  var inLabel = el("input");
+  inLabel.type = "text"; inLabel.id = "in-label-" + item.key;
+  inLabel.placeholder = "例）〇〇の実施状況";
+  inLabel.value = item.label;
+  inLabel.addEventListener("input", function(){
+    item.label = inLabel.value; renderPreview(); validate();
+  });
+  fLabel.appendChild(lb1); fLabel.appendChild(inLabel);
+
+  var fType = el("div", "field");
+  var lb2 = el("label", null, "回答の形式");
+  lb2.setAttribute("for", "in-type-" + item.key);
+  var selType = el("select");
+  selType.id = "in-type-" + item.key;
+  TYPES.forEach(function(t){
+    var o = el("option", null, t.n); o.value = t.v;
+    if(t.v === item.type) o.selected = true;
+    selType.appendChild(o);
+  });
+  selType.addEventListener("change", function(){
+    item.type = selType.value;
+    toggleOpts();
+    renderPreview(); validate();
+  });
+  fType.appendChild(lb2); fType.appendChild(selType);
+
+  row.appendChild(fLabel); row.appendChild(fType);
+  body.appendChild(row);
+
+  /* 補足 */
+  var fHint = el("div", "field");
+  var lb3 = el("label", null, "補足説明（任意）");
+  lb3.setAttribute("for", "in-hint-" + item.key);
+  var inHint = el("input");
+  inHint.type = "text"; inHint.id = "in-hint-" + item.key;
+  inHint.placeholder = "記入上の注意など";
+  inHint.value = item.hint;
+  inHint.addEventListener("input", function(){ item.hint = inHint.value; renderPreview(); });
+  fHint.appendChild(lb3); fHint.appendChild(inHint);
+  body.appendChild(fHint);
+
+  /* 選択肢 */
+  var optWrap = el("div", "opts field");
+  var lb4 = el("label", null, "選択肢");
+  lb4.setAttribute("for", "in-opts-" + item.key);
+  var hintSpan = el("span", "hint", " 1行につき1つ");
+  lb4.appendChild(hintSpan);
+  var taOpts = el("textarea");
+  taOpts.id = "in-opts-" + item.key;
+  taOpts.placeholder = "実施済み\n実施予定\n未定";
+  taOpts.value = item.options.join("\n");
+  taOpts.addEventListener("input", function(){
+    item.options = taOpts.value.split("\n").map(function(s){ return s.trim(); }).filter(Boolean);
+    renderPreview(); validate();
+  });
+  optWrap.appendChild(lb4); optWrap.appendChild(taOpts);
+  body.appendChild(optWrap);
+
+  function toggleOpts(){
+    optWrap.classList.toggle("hidden", CHOICE_TYPES.indexOf(item.type) === -1);
+  }
+  toggleOpts();
+
+  /* 必須 */
+  var chk = el("label", "chk");
+  var cb = el("input"); cb.type = "checkbox"; cb.checked = item.required;
+  cb.addEventListener("change", function(){ item.required = cb.checked; renderPreview(); });
+  chk.appendChild(cb);
+  chk.appendChild(document.createTextNode("回答を必須にする"));
+  body.appendChild(chk);
+
+  /* 操作 */
+  var tools = el("div", "item-tools");
+  tools.appendChild(mkBtn("↑ 上へ", "btn", function(){ move(idx, -1); }, idx === 0));
+  tools.appendChild(mkBtn("↓ 下へ", "btn", function(){ move(idx, 1); }, idx === schema.items.length - 1));
+  tools.appendChild(mkBtn("複製", "btn", function(){
+    var copy = normalizeItem(JSON.parse(JSON.stringify(item)));
+    copy.key = nextKey();
+    schema.items.splice(idx + 1, 0, copy);
+    renderItems(); renderPreview(); validate();
+  }));
+  tools.appendChild(mkBtn("削除", "btn danger", function(){
+    if(!confirm("設問「" + (item.label || "（無題）") + "」を削除します。よろしいですか。")) return;
+    schema.items.splice(idx, 1);
+    renderItems(); renderPreview(); validate();
+    toast("設問を削除しました");
+  }));
+  body.appendChild(tools);
+
+  card.appendChild(body);
+  return card;
+}
+
+function mkBtn(text, cls, fn, disabled){
+  var b = el("button", cls, text);
+  b.type = "button";
+  if(disabled) b.disabled = true;
+  b.addEventListener("click", fn);
+  return b;
+}
+function move(idx, d){
+  var j = idx + d;
+  if(j < 0 || j >= schema.items.length) return;
+  var tmp = schema.items[idx];
+  schema.items[idx] = schema.items[j];
+  schema.items[j] = tmp;
+  renderItems(); renderPreview();
+}
+
+$("btn-add").addEventListener("click", function(){
+  schema.items.push({key:nextKey(), label:"", type:"text", required:false, hint:"", options:[]});
+  renderItems(); renderPreview(); validate();
+  var inputs = $("item-list").querySelectorAll('input[type=text][id^="in-label-"]');
+  if(inputs.length) inputs[inputs.length - 1].focus();
+});
+
+/* ================= 照会票ヘッダー ================= */
+function buildKaihoHeader(opts){
+  opts = opts || {};
+  var m = schema.meta;
+  var box = el("div", "kaiho");
+
+  var top = el("div", "kaiho-top");
+  var h = el("h3", "kaiho-title");
+  if(m.title) h.textContent = m.title;
+  else { var ph = el("span", "placeholder", "（照会件名が未入力です）"); h.appendChild(ph); }
+  top.appendChild(h);
+  if(m.inquiryId) top.appendChild(el("div", "kaiho-id", "照会番号 " + m.inquiryId));
+  box.appendChild(top);
+
+  var dl = el("dl", "kaiho-grid");
+  function pair(label, valueOrNode, cls){
+    dl.appendChild(el("dt", null, label));
+    var dd = el("dd", cls || null);
+    if(typeof valueOrNode === "string") dd.textContent = valueOrNode;
+    else if(valueOrNode) dd.appendChild(valueOrNode);
+    dl.appendChild(dd);
+  }
+  pair("照 会 元", m.fromDept || "―");
+  pair("提出期限", m.dueDate ? fmtDate(m.dueDate) : "―", m.dueDate ? "due" : null);
+
+  if(opts.deptEditable){
+    var inDept = el("input");
+    inDept.type = "text";
+    inDept.id = "in-deptname";
+    inDept.placeholder = "例）〇〇課";
+    inDept.value = opts.deptValue || "";
+    inDept.addEventListener("input", function(){
+      if(opts.onDeptChange) opts.onDeptChange(inDept.value);
+    });
+    pair("回 答 課", inDept);
+  }else{
+    pair("回 答 課", opts.deptValue || "");
+  }
+
+  if(m.note){
+    dl.appendChild(el("dt", null, "依頼事項"));
+    var ddn = el("dd");
+    m.note.split("\n").forEach(function(line, i){
+      if(i) ddn.appendChild(document.createElement("br"));
+      ddn.appendChild(document.createTextNode(line));
+    });
+    dl.appendChild(ddn);
+  }
+  box.appendChild(dl);
+  return box;
+}
+
+/* ================= 設計プレビュー ================= */
+function renderPreview(){
+  var wrap = $("design-preview");
+  wrap.innerHTML = "";
+  wrap.appendChild(buildKaihoHeader());
+  if(schema.meta.answerMode === "multi"){
+    var note = el("p", "hint", "※ 明細形式：回答課はこの設問セットを1行として、行を追加しながら複数件を回答します。");
+    note.style.margin = "10px 0 0";
+    wrap.appendChild(note);
+  }
+  if(!schema.items.length){
+    var e = el("div", "empty", "設問を追加すると、ここに回答画面の見え方が出ます。");
+    e.style.marginTop = "18px";
+    wrap.appendChild(e);
+    return;
+  }
+  var list = el("div", "answer-list");
+  list.style.marginTop = "20px";
+  schema.items.forEach(function(item){
+    var r = el("div", "answer-row");
+    var q = el("div", "answer-q");
+    q.appendChild(document.createTextNode(item.label || "（設問文が未入力）"));
+    if(item.required) q.appendChild(el("span", "req", "必須"));
+    if(item.hint){
+      var hb = el("div", "hint", item.hint);
+      hb.style.marginTop = "4px"; hb.style.marginLeft = "0";
+      q.appendChild(hb);
+    }
+    var a = el("div", "answer-a");
+    a.appendChild(buildControl(item, {disabled:true}));
+    r.appendChild(q); r.appendChild(a);
+    list.appendChild(r);
+  });
+  wrap.appendChild(list);
+}
+
+/* ================= 回答用コントロール ================= */
+function buildControl(item, opts){
+  opts = opts || {};
+  var disabled = !!opts.disabled;
+  var name = opts.name || ("ans-" + item.key + (disabled ? "-pv" : ""));
+  var value = opts.value;
+  var onChange = opts.onChange || function(){};
+  var c;
+
+  if(item.type === "textarea"){
+    c = el("textarea");
+    c.value = value || "";
+    if(!disabled) c.addEventListener("input", function(){ onChange(c.value); });
+  }else if(item.type === "select"){
+    c = el("select");
+    c.appendChild(el("option", null, "選択してください"));
+    item.options.forEach(function(o){
+      var op = el("option", null, o); op.value = o; c.appendChild(op);
+    });
+    if(!item.options.length) c.appendChild(el("option", null, "（選択肢が未設定）"));
+    c.value = value || "";
+    if(!disabled) c.addEventListener("change", function(){ onChange(c.value); });
+  }else if(item.type === "radio" || item.type === "checkbox"){
+    c = el("div");
+    if(!item.options.length){
+      c.appendChild(el("span", "hint", "（選択肢が未設定）"));
+    }
+    var arrVal = Array.isArray(value) ? value.slice() : [];
+    item.options.forEach(function(o){
+      var lab = el("label", "chk");
+      lab.style.marginRight = "20px";
+      var inp = el("input");
+      inp.type = (item.type === "radio") ? "radio" : "checkbox";
+      inp.name = name; inp.value = o;
+      if(item.type === "radio") inp.checked = (value === o);
+      else inp.checked = arrVal.indexOf(o) !== -1;
+      if(disabled){
+        inp.disabled = true;
+      }else{
+        inp.addEventListener("change", function(){
+          if(item.type === "radio"){
+            onChange(o);
+          }else{
+            var idx = arrVal.indexOf(o);
+            if(inp.checked){ if(idx === -1) arrVal.push(o); }
+            else if(idx !== -1){ arrVal.splice(idx, 1); }
+            onChange(arrVal.slice());
+          }
+        });
+      }
+      lab.appendChild(inp);
+      lab.appendChild(document.createTextNode(o));
+      c.appendChild(lab);
+    });
+    return c;
+  }else{
+    c = el("input");
+    c.type = (item.type === "number") ? "number" : (item.type === "date" ? "date" : "text");
+    c.value = value || "";
+    if(!disabled) c.addEventListener("input", function(){ onChange(c.value); });
+  }
+  c.name = name;
+  if(disabled) c.disabled = true;
+  return c;
+}
+
+/* ================= 回答モード ================= */
+var answerState = { deptName: "", rows: [] };
+
+function newRow(){
+  var r = {};
+  schema.items.forEach(function(it){ r[it.key] = (it.type === "checkbox") ? [] : ""; });
+  return r;
+}
+function ensureRowKeys(row){
+  row = row || {};
+  schema.items.forEach(function(it){
+    if(!(it.key in row)) row[it.key] = (it.type === "checkbox") ? [] : "";
+  });
+  return row;
+}
+function isMultiMode(){ return schema.meta.answerMode === "multi"; }
+
+function renderAnswerForm(){
+  var area = $("answer-area");
+  area.innerHTML = "";
+  showAnswerErrors([]);
+
+  if(!schema.items.length){
+    area.appendChild(el("div", "empty", "この照会にはまだ設問が設定されていません。「照会を設計」で設問を追加してください。"));
+    return;
+  }
+
+  area.appendChild(buildKaihoHeader({
+    deptEditable: true,
+    deptValue: answerState.deptName,
+    onDeptChange: function(v){ answerState.deptName = v; }
+  }));
+
+  if(!isMultiMode()){
+    if(!answerState.rows.length) answerState.rows.push(newRow());
+    var row = ensureRowKeys(answerState.rows[0]);
+    var list = el("div", "answer-list");
+    list.style.marginTop = "20px";
+    schema.items.forEach(function(item){
+      list.appendChild(buildAnswerRow(item, row, item.key));
+    });
+    area.appendChild(list);
+  }else{
+    var wrap = el("div", "rows-wrap");
+    if(!answerState.rows.length){
+      wrap.appendChild(el("div", "empty", "該当する行がまだありません。「＋ 行を追加」から入力してください。該当がない場合は、行を追加しないままCSVを書き出せます。"));
+      wrap.style.marginTop = "20px";
+    }else{
+      answerState.rows.forEach(function(row, idx){
+        ensureRowKeys(row);
+        wrap.appendChild(buildRowCard(row, idx));
+      });
+    }
+    area.appendChild(wrap);
+
+    var addBtn = el("button", "btn wide", "＋ 行を追加");
+    addBtn.type = "button";
+    addBtn.setAttribute("data-noprint", "");
+    addBtn.addEventListener("click", function(){
+      answerState.rows.push(newRow());
+      renderAnswerForm();
+    });
+    area.appendChild(addBtn);
+  }
+}
+
+function buildAnswerRow(item, row, ctrlName){
+  var r = el("div", "answer-row");
+  var q = el("div", "answer-q");
+  q.appendChild(document.createTextNode(item.label || "（無題）"));
+  if(item.required) q.appendChild(el("span", "req", "必須"));
+  if(item.hint) {
+    var hd = el("div", "hint", item.hint);
+    hd.style.marginTop = "4px"; hd.style.marginLeft = "0";
+    q.appendChild(hd);
+  }
+  var a = el("div", "answer-a");
+  a.appendChild(buildControl(item, {
+    name: ctrlName,
+    value: row[item.key],
+    onChange: function(v){ row[item.key] = v; }
+  }));
+  r.appendChild(q); r.appendChild(a);
+  return r;
+}
+
+function buildRowCard(row, idx){
+  var card = el("div", "rowcard");
+  var head = el("div", "rowcard-head");
+  head.appendChild(el("span", "no", (idx + 1) + " 件目"));
+  var rm = el("button", "btn danger", "この行を削除");
+  rm.type = "button";
+  rm.setAttribute("data-noprint", "");
+  rm.addEventListener("click", function(){
+    answerState.rows.splice(idx, 1);
+    renderAnswerForm();
+  });
+  head.appendChild(rm);
+  card.appendChild(head);
+
+  var list = el("div", "answer-list");
+  schema.items.forEach(function(item){
+    list.appendChild(buildAnswerRow(item, row, "ans-r" + idx + "-" + item.key));
+  });
+  card.appendChild(list);
+  return card;
+}
+
+function isEmptyAnswerValue(item, v){
+  if(item.type === "checkbox") return !Array.isArray(v) || v.length === 0;
+  return v === undefined || v === null || !String(v).trim();
+}
+function validateAnswer(){
+  var errs = [];
+  if(!answerState.deptName || !answerState.deptName.trim()) errs.push("回答課名を入力してください。");
+  var multi = isMultiMode();
+  var rows = multi ? answerState.rows : [ensureRowKeys(answerState.rows[0])];
+  rows.forEach(function(row, idx){
+    schema.items.forEach(function(item){
+      if(item.required && isEmptyAnswerValue(item, row[item.key])){
+        var prefix = multi ? ((idx + 1) + "件目の「") : "「";
+        errs.push(prefix + (item.label || "無題") + "」は必須です。");
+      }
+    });
+  });
+  return errs;
+}
+function showAnswerErrors(errs){
+  var ul = $("answer-errors");
+  ul.innerHTML = "";
+  errs.forEach(function(msg){ ul.appendChild(el("li", null, msg)); });
+}
+
+$("btn-print").addEventListener("click", function(){ window.print(); });
+
+$("btn-csv-export").addEventListener("click", function(){
+  var errs = validateAnswer();
+  showAnswerErrors(errs);
+  if(errs.length){
+    toast("入力に不足があります。赤字の項目を確認してください。");
+    return;
+  }
+  var header = ["照会番号","回答課名","提出日時"].concat(sortedItems().map(csvItemHeader));
+  var ts = nowTimestamp();
+  var multi = isMultiMode();
+  var rows = multi ? answerState.rows : [ensureRowKeys(answerState.rows[0])];
+  var csvRows = rows.map(function(row){
+    return [schema.meta.inquiryId, answerState.deptName, ts].concat(sortedItems().map(function(it){
+      var v = row[it.key];
+      return Array.isArray(v) ? v.join(CHECK_DELIM) : (v || "");
+    }));
+  });
+  var text = buildCsvText(header, csvRows);
+  var name = "回答_" + safeName(schema.meta.inquiryId) + "_" + safeName(answerState.deptName) + ".csv";
+  download(name, text, "text/csv;charset=utf-8", true);
+  toast("回答をCSVで書き出しました");
+});
+
+$("btn-csv-import").addEventListener("click", function(){ $("file-csv").click(); });
+$("file-csv").addEventListener("change", function(e){
+  var f = e.target.files && e.target.files[0];
+  if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try{
+      var data = parseAnswerCsvText(String(r.result));
+      if(data.inquiryId !== schema.meta.inquiryId){
+        alert(
+          "読み込めませんでした。\n\n" +
+          "このCSVの照会番号「" + (data.inquiryId || "（空欄）") + "」が、いま開いている照会の照会番号「" +
+          schema.meta.inquiryId + "」と一致しません。別の照会のファイルを選んでいないか確認してください。"
+        );
+        return;
+      }
+      answerState.deptName = data.deptName;
+      var multi = isMultiMode();
+      var plainRows = data.rows.map(function(r2){ return ensureRowKeys(r2.values); });
+      answerState.rows = multi ? plainRows : [plainRows[0] || newRow()];
+      renderAnswerForm();
+      toast("回答を読み込みました（" + data.rows.length + "件）");
+    }catch(err){
+      alert(
+        "この回答ファイルは読み込めませんでした。\n\n" +
+        "理由: " + (err && err.message ? err.message : "内容を解析できませんでした。") + "\n\n" +
+        "このアプリで書き出したCSVファイルを選んでください。"
+      );
+    }
+  };
+  r.readAsText(f, "UTF-8");
+  e.target.value = "";
+});
+
+/* ================= 取りまとめモード ================= */
+var collectState = { depts: {}, rejected: [], duplicates: [] };
+
+function processCollectFile(name, text){
+  try{
+    var data = parseAnswerCsvText(text);
+    if(data.inquiryId !== schema.meta.inquiryId){
+      return {ok:false, name:name, reason:"照会番号が一致しません（ファイル内：" + (data.inquiryId || "空欄") + " ／ この照会：" + schema.meta.inquiryId + "）"};
+    }
+    var schemaKeys = schema.items.map(function(it){ return it.key; }).slice().sort();
+    var fileKeys = data.keyForCol.filter(Boolean).slice().sort();
+    if(schemaKeys.join(",") !== fileKeys.join(",")){
+      return {ok:false, name:name, reason:"設問の構成がこの照会のスキーマと一致しません。"};
+    }
+    if(!data.deptName || !data.deptName.trim()){
+      return {ok:false, name:name, reason:"回答課名が空欄です。"};
+    }
+    return {ok:true, name:name, deptName:data.deptName, rows:data.rows};
+  }catch(err){
+    return {ok:false, name:name, reason:(err && err.message) ? err.message : "内容を解析できませんでした。"};
+  }
+}
+
+$("btn-collect-add").addEventListener("click", function(){ $("file-collect").click(); });
+$("file-collect").addEventListener("change", function(e){
+  var files = Array.prototype.slice.call(e.target.files || []);
+  if(!files.length) return;
+  var pending = files.length;
+  var outcomes = [];
+  files.forEach(function(f){
+    var r = new FileReader();
+    r.onload = function(){
+      outcomes.push(processCollectFile(f.name, String(r.result)));
+      if(--pending === 0) applyCollectOutcomes(outcomes);
+    };
+    r.onerror = function(){
+      outcomes.push({ok:false, name:f.name, reason:"ファイルを読み込めませんでした。"});
+      if(--pending === 0) applyCollectOutcomes(outcomes);
+    };
+    r.readAsText(f, "UTF-8");
+  });
+  e.target.value = "";
+});
+
+function applyCollectOutcomes(outcomes){
+  outcomes.forEach(function(o){
+    if(!o.ok){
+      collectState.rejected.push({name:o.name, reason:o.reason});
+      return;
+    }
+    if(collectState.depts[o.deptName]){
+      collectState.duplicates.push({name:o.name, deptName:o.deptName, rows:o.rows});
+    }else{
+      collectState.depts[o.deptName] = {fileName:o.name, rows:o.rows};
+    }
+  });
+  renderCollectView();
+  toast("読み込みました");
+}
+
+function renderCollectView(){
+  renderCollectWarnings();
+  renderCollectRejected();
+  renderCollectSummary();
+  var deptCount = Object.keys(collectState.depts).length;
+  $("btn-collect-export").disabled = deptCount === 0;
+  $("collect-status").textContent = deptCount
+    ? ("取り込み済み " + deptCount + " 課。取りまとめCSVを書き出せます。")
+    : "回答CSVを読み込むと、ここから取りまとめCSVを書き出せます。";
+}
+
+function renderCollectWarnings(){
+  var wrap = $("collect-warnings");
+  wrap.innerHTML = "";
+  if(!collectState.duplicates.length) return;
+  var box = el("div", "warn");
+  var title = el("div", null, "同じ回答課名のファイルが重複しています。上書きするかどうかを選んでください。");
+  box.appendChild(title);
+  var ul = el("ul");
+  collectState.duplicates.forEach(function(dup, idx){
+    var li = el("li");
+    li.appendChild(document.createTextNode(
+      dup.name + "（" + dup.deptName + "） — 既に「" + collectState.depts[dup.deptName].fileName + "」を取り込み済みです。"
+    ));
+    var use = el("button", "btn", "このファイルで上書きする");
+    use.type = "button";
+    use.addEventListener("click", function(){
+      collectState.depts[dup.deptName] = {fileName:dup.name, rows:dup.rows};
+      collectState.duplicates.splice(idx, 1);
+      renderCollectView();
+      toast(dup.deptName + " を上書きしました");
+    });
+    var drop = el("button", "btn", "無視する");
+    drop.type = "button";
+    drop.addEventListener("click", function(){
+      collectState.duplicates.splice(idx, 1);
+      renderCollectView();
+    });
+    li.appendChild(use); li.appendChild(drop);
+    ul.appendChild(li);
+  });
+  box.appendChild(ul);
+  wrap.appendChild(box);
+}
+
+function renderCollectRejected(){
+  var wrap = $("collect-rejected");
+  wrap.innerHTML = "";
+  if(!collectState.rejected.length) return;
+  var box = el("ul", "errors");
+  collectState.rejected.forEach(function(r){
+    box.appendChild(el("li", null, r.name + " — " + r.reason));
+  });
+  wrap.appendChild(box);
+}
+
+function renderCollectSummary(){
+  var wrap = $("collect-summary");
+  wrap.innerHTML = "";
+  var names = Object.keys(collectState.depts);
+  if(!names.length){
+    wrap.appendChild(el("div", "empty", "まだ取り込まれた回答がありません。"));
+    return;
+  }
+  var table = el("table", "deptlist");
+  var thead = el("thead");
+  var htr = el("tr");
+  ["回答課名","行数","ファイル名","操作"].forEach(function(t){ htr.appendChild(el("th", null, t)); });
+  thead.appendChild(htr);
+  table.appendChild(thead);
+  var tbody = el("tbody");
+  names.sort().forEach(function(dn){
+    var d = collectState.depts[dn];
+    var tr = el("tr");
+    tr.appendChild(el("td", null, dn));
+    tr.appendChild(el("td", "num", String(d.rows.length)));
+    tr.appendChild(el("td", null, d.fileName));
+    var tdRm = el("td", "rm");
+    var rm = el("button", "btn danger", "取り消す");
+    rm.type = "button";
+    rm.addEventListener("click", function(){
+      delete collectState.depts[dn];
+      renderCollectView();
+    });
+    tdRm.appendChild(rm);
+    tr.appendChild(tdRm);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+}
+
+$("btn-collect-export").addEventListener("click", function(){
+  var names = Object.keys(collectState.depts);
+  if(!names.length){ alert("取り込まれた回答がありません。"); return; }
+  var header = ["照会番号","回答課名","提出日時"].concat(sortedItems().map(csvItemHeader));
+  var lines = [];
+  names.sort().forEach(function(dn){
+    collectState.depts[dn].rows.forEach(function(row){
+      lines.push([schema.meta.inquiryId, dn, row.submittedAt].concat(sortedItems().map(function(it){
+        var v = row.values[it.key];
+        return Array.isArray(v) ? v.join(CHECK_DELIM) : (v || "");
+      })));
+    });
+  });
+  var text = buildCsvText(header, lines);
+  var deptLabel = $("c-deptname").value.trim() || "取りまとめ部";
+  var name = "取りまとめ_" + safeName(schema.meta.inquiryId) + "_" + safeName(deptLabel) + ".csv";
+  download(name, text, "text/csv;charset=utf-8", true);
+  toast("取りまとめCSVを書き出しました");
+});
+
+/* ================= 検証（設計：配布用ファイルの書き出し） ================= */
+function validate(){
+  var errs = [];
+  if(!schema.meta.title.trim())     errs.push("照会件名を入力してください。");
+  if(!schema.meta.inquiryId.trim()) errs.push("照会番号を入力してください。");
+  if(!schema.items.length)          errs.push("設問を1問以上追加してください。");
+
+  var seen = {};
+  schema.items.forEach(function(it, i){
+    var no = "設問" + (i + 1);
+    if(!it.label.trim()) errs.push(no + "の設問文が空です。");
+    else if(seen[it.label.trim()]) errs.push("設問文「" + it.label.trim() + "」が重複しています。CSVの見出しが重なります。");
+    else seen[it.label.trim()] = true;
+    if(CHOICE_TYPES.indexOf(it.type) !== -1 && it.options.length < 1){
+      errs.push(no + "に選択肢がありません。");
+    }
+  });
+
+  var st = $("export-status");
+  if(errs.length){
+    st.textContent = errs[0] + (errs.length > 1 ? "(ほか " + (errs.length - 1) + " 件)" : "");
+    st.classList.add("error");
+    $("btn-export").disabled = true;
+  }else{
+    st.textContent = "設問 " + schema.items.length + " 問。配布用ファイルを書き出せます。";
+    st.classList.remove("error");
+    $("btn-export").disabled = false;
+  }
+  return errs;
+}
+
+/* ================= 配布用ファイルの書き出し ================= */
+function buildDistributableHtml(){
+  var clone = document.documentElement.cloneNode(true);
+
+  var runtime = clone.querySelectorAll("[data-runtime]");
+  for(var i = 0; i < runtime.length; i++) runtime[i].innerHTML = "";
+
+  var s = clone.querySelector("#inquiry-schema");
+  s.textContent = "\n" + JSON.stringify(schema, null, 2).replace(/</g, "\\u003c") + "\n";
+
+  return "<!DOCTYPE html>\n" + clone.outerHTML;
+}
+
+$("btn-export").addEventListener("click", function(){
+  var errs = validate();
+  if(errs.length){ alert("次の点を直してください。\n\n・" + errs.join("\n・")); return; }
+  var name = "照会_" + safeName(schema.meta.inquiryId) + "_" + safeName(schema.meta.title) + ".html";
+  download(name, buildDistributableHtml(), "text/html;charset=utf-8");
+  toast("配布用ファイルを書き出しました");
+});
+
+/* ================= 設計データの保存・読込 ================= */
+$("btn-save-json").addEventListener("click", function(){
+  var name = "照会定義_" + safeName(schema.meta.inquiryId || schema.meta.title) + ".json";
+  download(name, JSON.stringify(schema, null, 2), "application/json;charset=utf-8");
+  toast("設計データを保存しました");
+});
+$("btn-load-json").addEventListener("click", function(){ $("file-json").click(); });
+$("file-json").addEventListener("change", function(e){
+  var f = e.target.files && e.target.files[0];
+  if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try{
+      var txt = String(r.result).replace(BOM_RE, "");
+      var s = JSON.parse(txt);
+      if(!s || typeof s !== "object") throw new Error();
+      schema.meta = Object.assign(Object.assign({}, META_DEFAULT), s.meta || {});
+      schema.items = Array.isArray(s.items) ? s.items.map(normalizeItem) : [];
+      loadMetaToInputs(); renderItems(); renderPreview(); validate();
+      toast("設計データを読み込みました");
+    }catch(err){
+      alert("この設計データは読み込めませんでした。このアプリで保存したJSONファイルを選んでください。");
+    }
+  };
+  r.readAsText(f, "UTF-8");
+  e.target.value = "";
+});
+
+/* ================= 起動 ================= */
+loadMetaToInputs();
+renderItems();
+validate();
+answerState = { deptName: "", rows: isMultiMode() ? [] : [newRow()] };
+renderCollectView();
+showView(schema.items.length ? "view-answer" : "view-design");
+
+})();
+</script>
+</body>
+</html>
