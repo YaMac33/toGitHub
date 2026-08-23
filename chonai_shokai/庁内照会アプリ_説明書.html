@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>庁内照会 回答アプリ 説明書</title>
+<style>
+:root{
+  --primary:#0284c7;
+  --primary-hover:#0369a1;
+  --primary-light:#e0f2fe;
+  --r1:#0284c7;  --r1-bg:#e0f2fe;   /* ① 照会作成者 */
+  --r2:#0d9488;  --r2-bg:#ccfbf1;   /* ② 回答作成者 */
+  --r3:#7c3aed;  --r3-bg:#ede9fe;   /* ③ 取りまとめ者 */
+  --danger:#dc2626;
+  --danger-light:#fee2e2;
+  --warn:#eab308;
+  --warn-bg:#fef9c3;
+  --warn-ink:#854d0e;
+  --text-main:#334155;
+  --text-muted:#64748b;
+  --text-light:#94a3b8;
+  --bg-body:#f1f5f9;
+  --bg-surface:#ffffff;
+  --border:#e2e8f0;
+  --border-strong:#cbd5e1;
+  --font-sans:"Helvetica Neue",Arial,"Hiragino Sans","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+  --font-serif:"Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
+  --font-mono:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+  --shadow-sm:0 1px 2px 0 rgb(0 0 0/.05);
+  --shadow-md:0 4px 6px -1px rgb(0 0 0/.1),0 2px 4px -2px rgb(0 0 0/.1);
+  --radius:8px;
+  --radius-sm:6px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-sans);color:var(--text-main);background:var(--bg-body);
+  font-size:15px;line-height:1.8;-webkit-text-size-adjust:100%;
+}
+button,select{font-family:inherit;font-size:inherit;color:inherit;}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+
+/* ---------- ヘッダー ---------- */
+.appbar{background:#0f172a;color:#fff;position:sticky;top:0;z-index:50;box-shadow:var(--shadow-md);}
+.appbar-inner{
+  max-width:980px;margin:0 auto;padding:14px 24px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.appbar h1{font-size:18px;font-weight:700;margin:0;letter-spacing:.02em;}
+.appbar .sub{font-size:13px;color:#94a3b8;font-weight:500;flex:1;min-width:160px;}
+.appbar .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.appbar select{
+  background:#1e293b;color:#fff;border:1px solid #334155;
+  border-radius:var(--radius-sm);padding:7px 10px;font-size:13px;
+}
+.btn{
+  appearance:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--border-strong);background:#fff;color:var(--text-main);
+  padding:8px 16px;border-radius:var(--radius-sm);font-size:14px;font-weight:600;
+  transition:all .2s;box-shadow:var(--shadow-sm);
+}
+.btn:hover{background:#f8fafc;border-color:var(--text-muted);}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+.btn.primary:hover{background:var(--primary-hover);border-color:var(--primary-hover);}
+
+/* ---------- 版面 ---------- */
+.sheet{max-width:980px;margin:0 auto 80px;padding:24px;}
+.doc{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:44px 56px 56px;box-shadow:var(--shadow-sm);}
+
+/* ---------- 表紙・共通ブロック ---------- */
+.cover{border-bottom:3px solid #0f172a;padding-bottom:24px;margin-bottom:32px;}
+.cover .eyebrow{font-size:13px;color:var(--text-muted);font-weight:600;letter-spacing:.1em;}
+.cover h2{font-family:var(--font-serif);font-size:30px;font-weight:700;margin:6px 0 10px;color:#0f172a;line-height:1.35;}
+.cover p{margin:0;color:var(--text-muted);font-size:14px;}
+
+h3.sec{
+  font-size:20px;font-weight:700;margin:0 0 18px;color:#0f172a;
+  padding-bottom:10px;border-bottom:2px solid var(--border);
+}
+h4{font-size:16px;font-weight:700;margin:28px 0 10px;color:#0f172a;}
+h5{font-size:14px;font-weight:700;margin:18px 0 6px;color:var(--text-main);}
+p{margin:0 0 14px;}
+ul,ol{margin:0 0 14px;padding-left:24px;}
+li{margin:5px 0;}
+
+/* ---------- 役割セクション ---------- */
+.role{margin-top:44px;}
+.role-head{display:flex;align-items:flex-start;gap:16px;padding:18px 22px;border-radius:var(--radius);margin-bottom:26px;}
+.role-no{
+  width:44px;height:44px;flex:none;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:700;color:#fff;
+}
+.role-head h3{margin:0;font-size:21px;font-weight:700;color:#0f172a;line-height:1.4;}
+.role-head .who{font-size:13px;color:var(--text-muted);font-weight:600;margin-top:2px;}
+#role1 .role-head{background:var(--r1-bg);border-left:5px solid var(--r1);}
+#role1 .role-no{background:var(--r1);}
+#role2 .role-head{background:var(--r2-bg);border-left:5px solid var(--r2);}
+#role2 .role-no{background:var(--r2);}
+#role3 .role-head{background:var(--r3-bg);border-left:5px solid var(--r3);}
+#role3 .role-no{background:var(--r3);}
+
+/* ---------- 手順ステップ ---------- */
+.steps{counter-reset:step;list-style:none;padding:0;margin:0 0 20px;}
+.steps > li{
+  counter-increment:step;position:relative;
+  padding:0 0 20px 46px;margin:0;border-left:2px solid var(--border);
+}
+.steps > li:last-child{border-left-color:transparent;padding-bottom:4px;}
+.steps > li::before{
+  content:counter(step);position:absolute;left:-15px;top:0;
+  width:28px;height:28px;border-radius:50%;background:#fff;
+  border:2px solid var(--border-strong);color:var(--text-muted);
+  font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;
+}
+#role1 .steps > li::before{border-color:var(--r1);color:var(--r1);}
+#role2 .steps > li::before{border-color:var(--r2);color:var(--r2);}
+#role3 .steps > li::before{border-color:var(--r3);color:var(--r3);}
+.steps .st{font-weight:700;color:#0f172a;display:block;margin-bottom:4px;}
+
+/* ---------- 表 ---------- */
+table{width:100%;border-collapse:collapse;font-size:14px;margin:0 0 18px;}
+th,td{border:1px solid var(--border-strong);padding:9px 13px;text-align:left;vertical-align:top;}
+th{background:#f8fafc;font-weight:700;color:#0f172a;white-space:nowrap;}
+td.nw{white-space:nowrap;}
+
+/* ---------- 注記 ---------- */
+.note,.warn,.tip{padding:14px 20px;margin:0 0 20px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:14px;}
+.note{background:var(--primary-light);border-left:4px solid var(--primary);color:var(--primary-hover);}
+.warn{background:var(--warn-bg);border-left:4px solid var(--warn);color:var(--warn-ink);}
+.tip{background:#f1f5f9;border-left:4px solid var(--border-strong);color:var(--text-muted);}
+.note p:last-child,.warn p:last-child,.tip p:last-child,.note ul:last-child,.warn ul:last-child,.tip ul:last-child{margin-bottom:0;}
+.warn strong,.note strong{font-weight:700;}
+
+/* ---------- インライン装飾 ---------- */
+.ui{
+  display:inline-block;background:#f1f5f9;border:1px solid var(--border-strong);
+  border-radius:4px;padding:1px 7px;font-size:13px;font-weight:600;color:#0f172a;
+  white-space:nowrap;
+}
+.fn{font-family:var(--font-mono);font-size:13px;background:#f8fafc;border:1px solid var(--border);
+  border-radius:4px;padding:1px 6px;white-space:nowrap;}
+.req{color:#fff;background:var(--danger);font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;vertical-align:middle;}
+
+/* ---------- フロー図 ---------- */
+.flow{border:1px solid var(--border-strong);border-radius:var(--radius);overflow:hidden;margin:0 0 24px;}
+.flow-row{display:grid;grid-template-columns:118px 1fr;border-top:1px solid var(--border);}
+.flow-row:first-child{border-top:none;}
+.flow-who{padding:13px 16px;font-size:13px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:8px;}
+.flow-what{padding:13px 18px;background:#fff;font-size:14px;}
+.flow-row.f1 .flow-who{background:var(--r1-bg);}
+.flow-row.f2 .flow-who{background:var(--r2-bg);}
+.flow-row.f3 .flow-who{background:var(--r3-bg);}
+.flow-badge{width:20px;height:20px;border-radius:50%;color:#fff;font-size:11px;
+  display:inline-flex;align-items:center;justify-content:center;flex:none;}
+.f1 .flow-badge{background:var(--r1);} .f2 .flow-badge{background:var(--r2);} .f3 .flow-badge{background:var(--r3);}
+
+/* ---------- 目次 ---------- */
+.toc{background:#f8fafc;border:1px solid var(--border);border-radius:var(--radius);padding:20px 26px;margin:0 0 8px;}
+.toc h4{margin:0 0 10px;font-size:15px;}
+.toc ol{margin:0;padding-left:20px;font-size:14px;}
+.toc a{color:var(--primary-hover);text-decoration:none;font-weight:600;}
+.toc a:hover{text-decoration:underline;}
+
+/* ---------- 印刷 ---------- */
+@page{size:A4 portrait;margin:18mm 16mm;}
+@media print{
+  body{background:#fff;font-size:10pt;line-height:1.65;color:#000;}
+  .appbar,[data-noprint]{display:none!important;}
+  .sheet{max-width:none;margin:0;padding:0;}
+  .doc{border:none;border-radius:0;padding:0;box-shadow:none;}
+  a{color:#000;text-decoration:none;}
+
+  .cover h2{font-size:22pt;}
+  h3.sec{font-size:14pt;}
+  .role-head h3{font-size:13pt;}
+  h4{font-size:11.5pt;}
+
+  /* 役割ごとにページを改める */
+  .role{break-before:page;margin-top:0;}
+  .role-head,.flow,.steps > li,table,tr,.note,.warn,.tip,.toc{break-inside:avoid;}
+  h3.sec,h4,h5{break-after:avoid;}
+
+  /* 背景色を印刷に反映 */
+  .role-head,.role-no,.flow-who,.flow-badge,th,.note,.warn,.tip,.toc,.ui,.fn,.req{
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
+  .note,.warn,.tip{border-left-width:3px;}
+  table,th,td,.flow,.flow-row{border-color:#000!important;}
+
+  /* 印刷対象の絞り込み */
+  body.only-r1 .role:not(#role1),
+  body.only-r2 .role:not(#role2),
+  body.only-r3 .role:not(#role3){display:none!important;}
+  body.only-r1 #common,body.only-r2 #common,body.only-r3 #common{display:none!important;}
+  body.only-r1 .toc,body.only-r2 .toc,body.only-r3 .toc{display:none!important;}
+  body.only-r1 .role,body.only-r2 .role,body.only-r3 .role{break-before:auto;}
+}
+</style>
+</head>
+<body>
+
+<header class="appbar" data-noprint>
+  <div class="appbar-inner">
+    <h1>庁内照会 回答アプリ 説明書</h1>
+    <span class="sub">A4縦で印刷・PDF保存できます</span>
+    <div class="tools">
+      <label for="print-scope" style="font-size:13px;color:#94a3b8;font-weight:600;">印刷範囲</label>
+      <select id="print-scope">
+        <option value="all">全体（①②③）</option>
+        <option value="r1">①照会作成者向けのみ</option>
+        <option value="r2">②回答作成者向けのみ</option>
+        <option value="r3">③取りまとめ者向けのみ</option>
+      </select>
+      <button class="btn primary" id="btn-print">印刷／PDFで保存</button>
+    </div>
+  </div>
+</header>
+
+<main class="sheet">
+<article class="doc">
+
+<!-- ===================== 表紙・共通 ===================== -->
+<div class="cover">
+  <div class="eyebrow">庁内照会・回答業務</div>
+  <h2>庁内照会 回答アプリ 説明書</h2>
+  <p>照会の作成から、各課の回答、部での取りまとめまでを1本のHTMLファイルで行うためのご案内です。</p>
+</div>
+
+<section id="common">
+
+  <div class="toc" data-noprint>
+    <h4>目次</h4>
+    <ol>
+      <li><a href="#common">はじめに（全員お読みください）</a></li>
+      <li><a href="#role1">照会作成者向け ― 照会を作って配る</a></li>
+      <li><a href="#role2">回答作成者向け ― 回答を作って提出する</a></li>
+      <li><a href="#role3">取りまとめ者向け ― 各課の回答を束ねる</a></li>
+    </ol>
+  </div>
+
+  <h3 class="sec">はじめに（全員お読みください）</h3>
+
+  <h4>このアプリでできること</h4>
+  <p>
+    庁内照会の「設問づくり」「各課の回答」「部での取りまとめ」を、HTMLファイル1本で行います。
+    インストールは不要で、ファイルをダブルクリックしてブラウザで開くだけで使えます。
+    インターネットには一切つながりません。入力した内容が外部に送られることもありません。
+  </p>
+
+  <h4>全体の流れ</h4>
+  <div class="flow">
+    <div class="flow-row f1">
+      <div class="flow-who"><span class="flow-badge">1</span>照会元課</div>
+      <div class="flow-what">設問を組み立て、その照会専用のHTMLファイルを書き出して各部管理課へ配る</div>
+    </div>
+    <div class="flow-row f3">
+      <div class="flow-who"><span class="flow-badge">3</span>各部管理課</div>
+      <div class="flow-what">受け取ったHTMLファイルを、そのまま部内の各課へ配る</div>
+    </div>
+    <div class="flow-row f2">
+      <div class="flow-who"><span class="flow-badge">2</span>各課</div>
+      <div class="flow-what">そのファイルで回答を作り、印刷／PDFで決裁を受ける。あわせてCSVを書き出して部管理課へ提出する</div>
+    </div>
+    <div class="flow-row f3">
+      <div class="flow-who"><span class="flow-badge">3</span>各部管理課</div>
+      <div class="flow-what">各課のCSVをまとめて読み込んで内容を確認し、1本のCSVに束ねて照会元課へ提出する</div>
+    </div>
+  </div>
+
+  <h4>3つのタブについて</h4>
+  <p>配られるHTMLファイルは全員が同じものです。画面上部のタブで、自分の役割の画面に切り替えて使います。</p>
+  <table>
+    <tr><th class="nw">タブ</th><th class="nw">使う人</th><th>すること</th></tr>
+    <tr><td class="nw"><span class="ui">照会を設計</span></td><td class="nw">照会元課</td><td>設問を組み立て、配布用ファイルを書き出す</td></tr>
+    <tr><td class="nw"><span class="ui">回答を作成</span></td><td class="nw">各課</td><td>回答を入力し、印刷／PDF化とCSVの書き出しを行う</td></tr>
+    <tr><td class="nw"><span class="ui">回答を取りまとめ</span></td><td class="nw">各部管理課</td><td>各課のCSVを読み込んで束ねる</td></tr>
+  </table>
+  <div class="tip">
+    <p>自分の担当以外のタブも開けますが、触っても他の人のファイルには影響しません。手元のファイルの中だけで完結します。</p>
+  </div>
+
+  <h4>ファイルの開き方</h4>
+  <ul>
+    <li>ファイルをダブルクリックするとブラウザ（Microsoft Edge など）で開きます。</li>
+    <li>開かない場合は、ファイルを右クリックして <span class="ui">プログラムから開く</span> から Edge を選んでください。</li>
+    <li>共有フォルダにあるファイルを直接開かず、<strong>いったん自分のパソコンに保存してから開いてください。</strong>他の人と同時に開くと保存の行き違いが起きます。</li>
+  </ul>
+
+  <div class="warn">
+    <p><strong>入力内容は自動では保存されません。</strong>ブラウザを閉じたり再読み込みしたりすると、入力中の内容は消えます。</p>
+    <p>途中で作業を中断するときは、必ず <span class="ui">回答をCSVで保存</span>（回答作成者）または <span class="ui">設計データを保存</span>（照会作成者）でファイルに書き出してください。</p>
+  </div>
+
+  <h4>CSVファイルを開くときの注意</h4>
+  <p>
+    <strong>CSVの中身を確認したいときは、Excelではなくこのアプリに読み込んで確認してください。</strong>
+    回答作成者は <span class="ui">回答を読み込む（下書きの再開）</span>、取りまとめ者は <span class="ui">＋ 回答CSVを読み込む</span> から読み込めば、
+    書き出したときと同じ画面で内容を見られます。
+  </p>
+  <p>
+    ExcelでCSVを開くと、「001」が「1」になる、番号や数字が日付として表示されるなど、<strong>中身の見え方が変わることがあります。</strong>
+    さらに<strong>そのまま上書き保存すると形式が変わり、アプリに読み込めなくなります。</strong>
+    やむを得ずExcelで開く場合は、閲覧だけにとどめ、保存はしないでください。
+  </p>
+
+  <h4>困ったときは</h4>
+  <table>
+    <tr><th class="nw">症状</th><th>確認すること</th></tr>
+    <tr><td class="nw">ボタンを押しても何も起きない</td><td>画面上部か下部に赤字のメッセージが出ていないか確認してください。入力の不足があると書き出せません。</td></tr>
+    <tr><td class="nw">保存したファイルが見つからない</td><td>ブラウザの既定の保存先（多くの場合「ダウンロード」フォルダ）を確認してください。</td></tr>
+    <tr><td class="nw">画面が真っ白になる</td><td>ファイルが壊れている可能性があります。配布元からもう一度受け取ってください。</td></tr>
+    <tr><td class="nw">入力した内容が消えた</td><td>復元はできません。こまめにCSVで書き出す運用にしてください。</td></tr>
+  </table>
+
+</section>
+
+<!-- ===================== ① 照会作成者向け ===================== -->
+<section class="role" id="role1">
+  <div class="role-head">
+    <div class="role-no">1</div>
+    <div>
+      <h3>照会作成者向け ― 照会を作って配る</h3>
+      <div class="who">照会元課の担当者</div>
+    </div>
+  </div>
+
+  <p>
+    <span class="ui">照会を設計</span> タブで設問を組み立て、最後に配布用のHTMLファイルを書き出します。
+    書き出したファイルが、その照会専用のアプリになります。
+  </p>
+
+  <h4>手順</h4>
+  <ol class="steps">
+    <li>
+      <span class="st">照会の基本情報を入力する</span>
+      <span class="ui">照会件名</span> と <span class="ui">照会番号</span> は必須です。
+      照会番号は、各課から集まったCSVがこの照会のものかどうかを機械的に照合するために使います。
+      他の照会と重複しない番号を付けてください（例：<span class="fn">R080823-001</span>）。
+      <strong>ハイフンは1つまでにしてください。</strong>「R08-〇〇-001」のようにハイフンが2つ以上あると、CSVをExcelで開いたときに日付に変換されてしまいます。
+    </li>
+    <li>
+      <span class="st">回答形式を選ぶ</span>
+      <ul>
+        <li><span class="ui">単票</span> … 1つの課につき回答が1件だけの照会。「〇〇の実施状況を答えてください」など。</li>
+        <li><span class="ui">明細</span> … 1つの課が複数件を挙げる照会。「該当する〇〇をすべて挙げてください」など。回答画面で行を追加しながら入力してもらう形になります。</li>
+      </ul>
+      <strong>配布後に変更すると、先に提出された回答と形式が合わなくなります。</strong>配る前に決めてください。
+    </li>
+    <li>
+      <span class="st">依頼事項・記入上の注意を書く</span>
+      ここに書いた文章は、各課の回答画面と印刷物の冒頭に表示されます。
+      「該当がない場合も『該当なし』と記入のうえ提出してください」といった、問い合わせが来そうな点を先回りして書いておくと照会業務が楽になります。
+    </li>
+    <li>
+      <span class="st">設問を追加する</span>
+      <span class="ui">＋ 設問を追加</span> を押し、設問文と回答の形式を決めます。
+      並べ替えは <span class="ui">↑ 上へ</span> <span class="ui">↓ 下へ</span>、似た設問は <span class="ui">複製</span> で増やせます。
+    </li>
+    <li>
+      <span class="st">できあがりの見え方を確認する</span>
+      画面下部に、各課が見る回答画面がそのまま表示されます。設問の並びや選択肢に不足がないか確認してください。
+    </li>
+    <li>
+      <span class="st">配布用ファイルとして書き出す</span>
+      画面下部の <span class="ui">配布用ファイルとして書き出す</span> を押すと、
+      <span class="fn">照会_（照会番号）_（照会件名）.html</span> という名前でファイルが保存されます。これを配布します。
+    </li>
+  </ol>
+
+  <h4>回答の形式（7種類）</h4>
+  <table>
+    <tr><th class="nw">形式</th><th>使いどころ</th></tr>
+    <tr><td class="nw">1行テキスト</td><td>短い語句。担当者名、施設名など</td></tr>
+    <tr><td class="nw">複数行テキスト</td><td>理由や状況の記述。改行できます</td></tr>
+    <tr><td class="nw">数値</td><td>件数、金額など。集計する項目に向きます</td></tr>
+    <tr><td class="nw">日付</td><td>実施日、予定日など</td></tr>
+    <tr><td class="nw">プルダウン</td><td>選択肢が多いとき（5つ以上が目安）</td></tr>
+    <tr><td class="nw">単一選択（ラジオ）</td><td>選択肢が少なく、1つだけ選ぶとき</td></tr>
+    <tr><td class="nw">複数選択（チェック）</td><td>当てはまるものをすべて選ぶとき</td></tr>
+  </table>
+  <p>
+    プルダウン・単一選択・複数選択を選ぶと <span class="ui">選択肢</span> 欄が現れます。
+    <strong>1行につき1つ</strong>入力してください。
+  </p>
+  <div class="tip">
+    <p>あとで集計することを考えると、自由記述よりも選択肢型のほうが扱いやすくなります。
+    「その他」を選択肢に入れる場合は、内容を書いてもらう1行テキストの設問を別に添えておくと確認の手間が減ります。</p>
+  </div>
+
+  <h4>書き出せないときは</h4>
+  <p>次のいずれかに当てはまると、画面下部に赤字で理由が出て <span class="ui">配布用ファイルとして書き出す</span> が押せません。</p>
+  <ul>
+    <li>照会件名または照会番号が未入力</li>
+    <li>設問が1問もない</li>
+    <li>設問文が空欄の設問がある</li>
+    <li>同じ設問文の設問が複数ある（CSVの見出しが重なるため）</li>
+    <li>プルダウン・単一選択・複数選択なのに選択肢が1つもない</li>
+  </ul>
+
+  <h4>設計データの保存と読み込み</h4>
+  <p>
+    <span class="ui">設計データを保存</span> で、設問の定義だけをJSONファイルとして保存できます。
+    翌年度に同じ照会を出すときや、途中で作業を中断するときは、こちらを保存しておき
+    <span class="ui">設計データを読み込む</span> で呼び戻してください。
+  </p>
+  <div class="note">
+    <p>各課に配るのは <strong>HTMLファイル</strong>です。設計データのJSONファイルは照会元課の手元で保管するもので、配布する必要はありません。</p>
+  </div>
+
+  <h4>配る前の確認</h4>
+  <p>書き出したHTMLファイルを開いて、次の点を確認してから配布してください。</p>
+  <ul>
+    <li><span class="ui">回答を作成</span> タブが最初に開くこと</li>
+    <li>照会件名・提出期限・設問・選択肢が意図どおりであること</li>
+    <li><span class="ui">印刷／PDFで保存</span> を押して、決裁に回せる体裁になっていること</li>
+    <li>試しに回答してCSVを書き出し、<span class="ui">回答を取りまとめ</span> タブで読み込めること</li>
+  </ul>
+
+  <div class="warn">
+    <p><strong>配布したあとに設問を直すと、先に提出された回答が使えなくなります。</strong>
+    やむを得ず修正する場合は、照会番号を変えたうえで、各課に差し替えである旨をはっきり伝えてください。</p>
+  </div>
+</section>
+
+<!-- ===================== ② 回答作成者向け ===================== -->
+<section class="role" id="role2">
+  <div class="role-head">
+    <div class="role-no">2</div>
+    <div>
+      <h3>回答作成者向け ― 回答を作って提出する</h3>
+      <div class="who">各課の担当者</div>
+    </div>
+  </div>
+
+  <p>
+    部管理課から配られたHTMLファイルを開くと、<span class="ui">回答を作成</span> タブが表示されます。
+    ここに回答を入力し、<strong>①決裁用の印刷／PDF</strong> と <strong>②提出用のCSV</strong> の2つを作ります。
+  </p>
+
+  <h4>手順</h4>
+  <ol class="steps">
+    <li>
+      <span class="st">ファイルを自分のパソコンに保存してから開く</span>
+      共有フォルダのファイルを直接開かないでください。
+    </li>
+    <li>
+      <span class="st">回答課名を入力する</span>
+      画面上部の照会票の <span class="ui">回 答 課</span> 欄に、自分の課名を入力します。
+      <strong>ここが取りまとめのときの識別キーになります。</strong>部内で表記が揺れないよう、部管理課の指示に従ってください。
+    </li>
+    <li>
+      <span class="st">各設問に回答する</span>
+      <span class="req">必須</span> が付いた設問は、空欄のままだとCSVを書き出せません。
+      明細形式の照会では <span class="ui">＋ 行を追加</span> で行を増やしながら入力します。
+      該当がない場合は、行を追加しないままでも書き出せます（依頼事項の指示を確認してください）。
+    </li>
+    <li>
+      <span class="st">印刷／PDFで決裁を受ける</span>
+      <span class="ui">印刷／PDFで保存</span> を押すと、操作用のボタン類が消えた状態で印刷プレビューが開きます。
+      プリンターの一覧から <span class="ui">PDFとして保存</span>（Microsoft Print to PDF）を選べばPDFになります。
+      これを決裁システムに添付してください。
+    </li>
+    <li>
+      <span class="st">回答をCSVで書き出す</span>
+      <span class="ui">回答をCSVで保存</span> を押すと
+      <span class="fn">回答_（照会番号）_（回答課名）.csv</span> という名前で保存されます。
+    </li>
+    <li>
+      <span class="st">CSVを部管理課へ提出する</span>
+      ファイル名は変えないでください。取りまとめの際の目印になります。
+    </li>
+  </ol>
+
+  <div class="note">
+    <p><strong>印刷とCSVは、必ず同じ内容のものを作ってください。</strong>
+    決裁を受けたあとに入力を直した場合は、印刷／PDFとCSVの両方を作り直す必要があります。</p>
+  </div>
+
+  <h4>途中で中断するとき</h4>
+  <p>
+    入力内容は自動保存されません。中断するときは、必須項目を仮に埋めてでも
+    <span class="ui">回答をCSVで保存</span> でいったん書き出してください。
+    再開するときは <span class="ui">回答を読み込む（下書きの再開）</span> から、そのCSVを選べば続きから入力できます。
+  </p>
+  <div class="tip">
+    <p>読み込めるのは、<strong>同じ照会番号のCSV</strong>だけです。別の照会のファイルを選ぶと、照会番号が違う旨のメッセージが出て読み込みは中止されます。</p>
+  </div>
+
+  <h4>CSVが書き出せないときは</h4>
+  <p>画面上部に赤字で不足している項目が出ます。多くは次のどちらかです。</p>
+  <ul>
+    <li>回答課名が未入力</li>
+    <li>必須の設問が空欄（明細形式では「〇件目の『〇〇』は必須です」のように行番号付きで表示されます）</li>
+  </ul>
+
+  <h4>印刷の体裁について</h4>
+  <ul>
+    <li>用紙はA4縦を想定しています。</li>
+    <li>タブや操作ボタンは印刷されません。照会票と回答内容だけが出ます。</li>
+    <li>背景の色が出ない場合は、印刷設定の <span class="ui">背景のグラフィック</span> を有効にしてください。</li>
+    <li>複数行テキストに長文を入れると、その分ページ数が増えます。決裁の枚数が気になる場合は、事前に印刷プレビューで確認してください。</li>
+  </ul>
+</section>
+
+<!-- ===================== ③ 取りまとめ者向け ===================== -->
+<section class="role" id="role3">
+  <div class="role-head">
+    <div class="role-no">3</div>
+    <div>
+      <h3>取りまとめ者向け ― 各課の回答を束ねる</h3>
+      <div class="who">各部管理課の担当者</div>
+    </div>
+  </div>
+
+  <p>
+    各部管理課には2つの役目があります。
+    <strong>照会元課から届いたHTMLファイルを部内の各課へ配ること</strong>と、
+    <strong>各課から集まったCSVを1本に束ねて照会元課へ返すこと</strong>です。
+  </p>
+
+  <h4>配布のとき</h4>
+  <ul>
+    <li>届いたHTMLファイルは<strong>そのまま</strong>各課へ配ってください。開いて設問を編集する必要はありません。</li>
+    <li>あわせて、回答課名の書き方（<span class="fn">〇〇課</span> か <span class="fn">〇〇部〇〇課</span> か）を部内で統一して伝えてください。表記が揺れると、同じ課が別々の課として集計されます。</li>
+    <li>提出期限は照会票に表示されますが、部内の締切を別に設ける場合はあわせて伝えてください。</li>
+  </ul>
+
+  <h4>取りまとめの手順</h4>
+  <ol class="steps">
+    <li>
+      <span class="st">配布したものと同じHTMLファイルを開く</span>
+      <span class="ui">回答を取りまとめ</span> タブに切り替えます。
+    </li>
+    <li>
+      <span class="st">部の名称を入力する</span>
+      書き出すファイル名に使われます（例：<span class="fn">〇〇部</span>）。
+    </li>
+    <li>
+      <span class="st">各課の回答CSVを読み込む</span>
+      <span class="ui">＋ 回答CSVを読み込む</span> を押し、集まったCSVを<strong>まとめて選択</strong>します（何回かに分けて読み込んでも構いません）。
+    </li>
+    <li>
+      <span class="st">除外されたファイルと重複を確認する</span>
+      条件に合わないファイルは、ファイル名と理由が一覧で表示されます。該当課へ再提出を依頼してください。
+    </li>
+    <li>
+      <span class="st">取り込み済みの一覧を確認する</span>
+      課名・行数・ファイル名の表が出ます。行数が明らかにおかしい課がないか、想定した課がそろっているかをここで確認します。
+      誤って取り込んだものは <span class="ui">取り消す</span> で外せます。
+    </li>
+    <li>
+      <span class="st">取りまとめCSVを書き出す</span>
+      <span class="ui">取りまとめCSVを書き出す</span> を押すと
+      <span class="fn">取りまとめ_（照会番号）_（部名）.csv</span> という名前で保存されます。これを照会元課へ提出します。
+    </li>
+  </ol>
+
+  <h4>読み込めないファイルの理由</h4>
+  <table>
+    <tr><th class="nw">表示される理由</th><th>対処</th></tr>
+    <tr><td class="nw">照会番号が一致しません</td><td>別の照会のCSVです。該当課に、正しい照会のファイルで作り直してもらってください。</td></tr>
+    <tr><td class="nw">設問の構成が一致しません</td><td>古い版のHTMLファイルで回答された可能性があります。最新のファイルを渡して作り直してもらってください。</td></tr>
+    <tr><td class="nw">回答課名が空欄です</td><td>課名を入れずに書き出されています。該当課に入力のうえ再提出を依頼してください。</td></tr>
+    <tr><td class="nw">見出し行の形式が一致しません</td><td>Excelで開いて上書き保存された可能性が高いです。該当課に、アプリから書き出したままのCSVを提出し直してもらってください。</td></tr>
+    <tr><td class="nw">データが含まれていません</td><td>中身が空のファイルです。該当課に確認してください。</td></tr>
+  </table>
+
+  <h4>同じ課のファイルが重複したとき</h4>
+  <p>
+    すでに取り込んだ課と同じ回答課名のファイルを読み込むと、黄色の欄で確認を求められます。
+    <span class="ui">このファイルで上書きする</span> か <span class="ui">無視する</span> を選んでください。
+  </p>
+  <div class="warn">
+    <p>差し替え版が届いたときは<strong>上書き</strong>、同じものを二重に受け取っただけなら<strong>無視</strong>です。
+    ファイル名と受領日を確かめてから選んでください。黙って両方を取り込むことはありません。</p>
+  </div>
+
+  <h4>作業中の注意</h4>
+  <ul>
+    <li>取り込んだ内容は保存されません。<strong>ブラウザを閉じるとやり直しになります。</strong>読み込みから書き出しまでは一度の作業で終えてください。</li>
+    <li>各課から届いたCSVは、取りまとめが完了するまで手元に残しておいてください。</li>
+    <li>未提出の課を自動で洗い出す機能はありません。取り込み済み一覧と配布先の名簿を突き合わせて確認してください。</li>
+  </ul>
+
+  <h4>書き出される取りまとめCSVについて</h4>
+  <p>
+    照会番号・回答課名・提出日時に続いて、設問ごとの列が並びます。課名の五十音順に並び、明細形式の場合は1課につき複数行が入ります。
+    複数選択の回答は、1つのセルの中で <span class="fn">；</span> 区切りで並びます。
+  </p>
+  <div class="tip">
+    <p>照会元課へ提出する前に中身を確認したい場合は、書き出した取りまとめCSVをこの画面に読み込み直せば、一覧表で確認できます。Excelで開くと数値や番号の見え方が変わり、上書き保存すると読み込めなくなるため、確認はアプリ上で行ってください。</p>
+  </div>
+</section>
+
+</article>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var sel = document.getElementById("print-scope");
+  var body = document.body;
+  function apply(){
+    body.classList.remove("only-r1","only-r2","only-r3");
+    var v = sel.value;
+    if(v !== "all") body.classList.add("only-" + v);
+  }
+  document.getElementById("btn-print").addEventListener("click", function(){
+    apply();
+    window.print();
+  });
+  window.addEventListener("afterprint", function(){
+    body.classList.remove("only-r1","only-r2","only-r3");
+  });
+})();
+</script>
+</body>
+</html>
