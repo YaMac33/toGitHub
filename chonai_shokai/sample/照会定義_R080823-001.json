@@ -1,0 +1,70 @@
+{
+  "formatVersion": 1,
+  "meta": {
+    "inquiryId": "R080823-001",
+    "title": "〇〇の実施状況に関する調査について",
+    "fromDept": "〇〇部〇〇課",
+    "dueDate": "2026-09-30",
+    "note": "該当がない場合も「該当なし」と記入のうえ提出してください。\n実施予定日が未定の場合は空欄で構いません。",
+    "answerMode": "single"
+  },
+  "items": [
+    {
+      "key": "q1",
+      "label": "担当係名",
+      "type": "text",
+      "required": true,
+      "hint": "",
+      "options": []
+    },
+    {
+      "key": "q2",
+      "label": "〇〇の実施状況",
+      "type": "radio",
+      "required": true,
+      "hint": "",
+      "options": [
+        "実施済み",
+        "実施予定",
+        "未実施"
+      ]
+    },
+    {
+      "key": "q3",
+      "label": "実施日（予定を含む）",
+      "type": "date",
+      "required": false,
+      "hint": "未実施の場合は空欄",
+      "options": []
+    },
+    {
+      "key": "q4",
+      "label": "対象件数",
+      "type": "number",
+      "required": false,
+      "hint": "",
+      "options": []
+    },
+    {
+      "key": "q5",
+      "label": "利用している受付方法",
+      "type": "checkbox",
+      "required": false,
+      "hint": "当てはまるものすべて",
+      "options": [
+        "窓口",
+        "電話",
+        "郵送",
+        "電子申請"
+      ]
+    },
+    {
+      "key": "q6",
+      "label": "課題・特記事項",
+      "type": "textarea",
+      "required": false,
+      "hint": "",
+      "options": []
+    }
+  ]
+}

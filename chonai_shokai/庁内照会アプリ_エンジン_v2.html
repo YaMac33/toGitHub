@@ -1153,7 +1153,7 @@ $("file-csv").addEventListener("change", function(e){
 });
 
 /* ================= 取りまとめモード ================= */
-var collectState = { depts: {}, rejected: [], duplicates: [] };
+var collectState = { depts: {}, rejected: [], duplicates: [], expanded: {} };
 
 function processCollectFile(name, text){
   try{
@@ -1268,6 +1268,37 @@ function renderCollectRejected(){
   wrap.appendChild(box);
 }
 
+function buildCollectPreviewRow(item, value){
+  var r = el("div", "answer-row");
+  r.appendChild(el("div", "answer-q", item.label || "（無題）"));
+  var text = Array.isArray(value) ? value.join("、") : value;
+  r.appendChild(el("div", "answer-a", (text === undefined || text === null || text === "") ? "―" : text));
+  return r;
+}
+function buildCollectRowsPreview(rows){
+  var wrap = el("div");
+  wrap.style.padding = "16px 4px";
+  if(rows.length > 1){
+    rows.forEach(function(row, idx){
+      var card = el("div", "rowcard");
+      if(idx === 0) card.style.marginTop = "0";
+      var head = el("div", "rowcard-head");
+      head.appendChild(el("span", "no", (idx + 1) + " 件目"));
+      if(row.submittedAt) head.appendChild(el("span", "hint", "提出日時 " + row.submittedAt));
+      card.appendChild(head);
+      var list = el("div", "answer-list");
+      sortedItems().forEach(function(it){ list.appendChild(buildCollectPreviewRow(it, row.values[it.key])); });
+      card.appendChild(list);
+      wrap.appendChild(card);
+    });
+  }else if(rows.length === 1){
+    var list = el("div", "answer-list");
+    sortedItems().forEach(function(it){ list.appendChild(buildCollectPreviewRow(it, rows[0].values[it.key])); });
+    wrap.appendChild(list);
+  }
+  return wrap;
+}
+
 function renderCollectSummary(){
   var wrap = $("collect-summary");
   wrap.innerHTML = "";
@@ -1279,26 +1310,50 @@ function renderCollectSummary(){
   var table = el("table", "deptlist");
   var thead = el("thead");
   var htr = el("tr");
-  ["回答課名","行数","ファイル名","操作"].forEach(function(t){ htr.appendChild(el("th", null, t)); });
+  ["回答課名","行数","ファイル名","内容","操作"].forEach(function(t){ htr.appendChild(el("th", null, t)); });
   thead.appendChild(htr);
   table.appendChild(thead);
   var tbody = el("tbody");
   names.sort().forEach(function(dn){
     var d = collectState.depts[dn];
+    var open = !!collectState.expanded[dn];
+
     var tr = el("tr");
     tr.appendChild(el("td", null, dn));
     tr.appendChild(el("td", "num", String(d.rows.length)));
     tr.appendChild(el("td", null, d.fileName));
+
+    var tdView = el("td", "rm");
+    var view = el("button", "btn", open ? "内容を隠す" : "内容を確認");
+    view.type = "button";
+    view.addEventListener("click", function(){
+      collectState.expanded[dn] = !open;
+      renderCollectView();
+    });
+    tdView.appendChild(view);
+    tr.appendChild(tdView);
+
     var tdRm = el("td", "rm");
     var rm = el("button", "btn danger", "取り消す");
     rm.type = "button";
     rm.addEventListener("click", function(){
       delete collectState.depts[dn];
+      delete collectState.expanded[dn];
       renderCollectView();
     });
     tdRm.appendChild(rm);
     tr.appendChild(tdRm);
     tbody.appendChild(tr);
+
+    if(open){
+      var trDetail = el("tr");
+      var tdDetail = el("td");
+      tdDetail.colSpan = 5;
+      tdDetail.style.background = "#f8fafc";
+      tdDetail.appendChild(buildCollectRowsPreview(d.rows));
+      trDetail.appendChild(tdDetail);
+      tbody.appendChild(trDetail);
+    }
   });
   table.appendChild(tbody);
   wrap.appendChild(table);
@@ -1395,7 +1450,7 @@ $("file-json").addEventListener("change", function(e){
       schema.meta = Object.assign(Object.assign({}, META_DEFAULT), s.meta || {});
       schema.items = Array.isArray(s.items) ? s.items.map(normalizeItem) : [];
       answerState = { deptName: "", rows: isMultiMode() ? [] : [newRow()] };
-      collectState = { depts: {}, rejected: [], duplicates: [] };
+      collectState = { depts: {}, rejected: [], duplicates: [], expanded: {} };
       loadMetaToInputs(); renderItems(); renderPreview(); validate();
       toast("設計データを読み込みました");
     }catch(err){
