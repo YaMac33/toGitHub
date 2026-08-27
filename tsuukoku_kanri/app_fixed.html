@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>議会 一般質問通告書 管理アプリ</title>
+<style>
+/* ============================================================
+   基本スタイル（画面表示用）
+   ============================================================ */
+:root{
+  --main:#1a5276; --accent:#2874a6; --bg:#f4f6f7; --border:#ccc;
+}
+*{box-sizing:border-box;}
+body{
+  font-family:"Yu Gothic","Meiryo",sans-serif;
+  margin:0; background:var(--bg); color:#222; font-size:14px; line-height:1.6;
+}
+header{ background:var(--main); color:#fff; padding:10px 16px; }
+header h1{font-size:18px; margin:0;}
+.container{max-width:1200px; margin:0 auto; padding:12px;}
+.card{
+  background:#fff; border:1px solid var(--border); border-radius:6px;
+  padding:12px; margin-bottom:14px;
+}
+.card h2{
+  font-size:15px; margin:0 0 8px; padding-bottom:4px;
+  border-bottom:2px solid var(--accent); color:var(--main);
+}
+/* ★ 折りたたみカード */
+.foldcard{
+  background:#fff; border:1px solid var(--border); border-radius:6px; margin-bottom:14px;
+}
+.foldcard > summary{
+  font-size:15px; font-weight:bold; color:var(--main);
+  padding:10px 12px; cursor:pointer; list-style:none;
+  border-bottom:2px solid var(--accent);
+}
+.foldcard > summary::before{ content:"▶ "; font-size:12px; }
+.foldcard[open] > summary::before{ content:"▼ "; }
+.foldcard .fold-body{ padding:12px; }
+
+label{font-size:13px; display:inline-block;}
+input[type=text], input[type=date], input[type=number], select, textarea{
+  padding:4px 6px; border:1px solid var(--border); border-radius:4px;
+  font-family:inherit; font-size:13px;
+}
+textarea{width:100%; resize:vertical; overflow:hidden;} /* ★ 自動拡張のためoverflow隠す */
+button{
+  background:var(--accent); color:#fff; border:none; border-radius:4px;
+  padding:6px 12px; cursor:pointer; font-size:13px; margin:2px;
+}
+button:hover{background:var(--main);}
+button:disabled{background:#ccc; cursor:not-allowed;}
+button.sub{background:#7f8c8d;}
+button.sub:hover{background:#616a6b;}
+button.del{background:#c0392b;}
+button.del:hover{background:#922b21;}
+button.small{padding:2px 6px; font-size:12px;}
+table.grid{border-collapse:collapse; width:100%; font-size:12px;}
+table.grid th, table.grid td{border:1px solid #ddd; padding:3px 5px; text-align:left;}
+table.grid th{background:#eaf2f8;}
+.row{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+.row > div{margin-bottom:4px;}
+details.inner{margin-top:8px; border:1px dashed #aaa; padding:6px; border-radius:4px;}
+details.inner > summary{cursor:pointer; color:#555; font-size:13px;}
+.tab-btns{margin-bottom:8px;}
+.tab-btns button{background:#bdc3c7; color:#333;}
+.tab-btns button.active{background:var(--accent); color:#fff;}
+.hint{color:#888; font-size:12px;}
+.node-row{display:flex; gap:6px; align-items:flex-start; padding:4px; border-bottom:1px solid #eee;}
+.node-row.dragover{background:#d6eaf8;}
+.node-row.lv-big{background:#f0f6fb;}
+.node-row.lv-small{margin-left:20px; background:#f7fafd;}
+.node-row.lv-content{margin-left:40px;}
+.node-type{width:80px; font-weight:bold; color:var(--main);}
+.node-main{flex:1;}
+.node-main textarea{min-height:32px; line-height:1.5;}
+.node-actions{display:flex; flex-direction:column; gap:2px;}
+.badge{display:inline-block; background:#eaf2f8; border:1px solid #aed6f1;
+  border-radius:3px; padding:1px 5px; font-size:11px; margin-right:3px;}
+.badge.end{background:#fdebd0; border-color:#f5cba7; color:#a04000;}
+.subclaim-box{display:flex; flex-wrap:wrap; gap:4px; margin-top:3px;}
+.subclaim-box input{width:130px;}
+#previewArea{background:#fff; padding:0; border:1px solid var(--border);}
+
+.print-select{
+  background:#eaf2f8; border:1px solid #aed6f1; border-radius:6px;
+  padding:10px 12px; margin-bottom:8px;
+}
+.print-select .ps-head{font-weight:bold; color:var(--main); margin-bottom:6px;}
+.print-select .ps-list{display:flex; flex-wrap:wrap; gap:6px 16px;}
+.print-select label{
+  display:inline-flex; align-items:center; gap:4px;
+  background:#fff; border:1px solid #cfe0ee; border-radius:4px; padding:3px 8px; cursor:pointer;
+}
+.print-select label.off{opacity:.5;}
+
+/* ============================================================
+   様式1：議事課「一般質問通告表」
+   ★ 1ページ34行。1人目=1行目〜 / 2人目=18行目〜 を厳密化
+   ============================================================ */
+.gikai-page{
+  width:210mm; height:297mm; margin:6mm auto; padding:15mm 15mm;
+  background:#fff; box-shadow:0 0 4px rgba(0,0,0,.2);
+  font-family:"MS Mincho","Yu Mincho",serif;
+  page-break-after:always; overflow:visible; position:relative;
+}
+/* 表紙：外周から約2cm内側に□枠 */
+.gikai-cover{ text-align:center; position:relative; }
+.gikai-cover .cover-frame{
+  position:absolute; top:5mm; left:5mm; right:5mm; bottom:5mm; border:2px solid #333;
+}
+.gikai-cover .cover-inner{ position:relative; z-index:1; padding-top:25mm; }
+.gikai-cover .c-title{ margin-top:20mm; font-size:16pt;}
+.gikai-cover .c-sub{ font-size:11pt; margin-top:4mm;}
+.gikai-cover .c-big{ font-size:24pt; margin-top:40mm; letter-spacing:8px;}
+.gikai-cover .c-foot{ font-size:14pt; margin-top:45mm;}
+
+.gikai-toc h3{text-align:center; font-size:14pt;}
+.toc-table{border-collapse:collapse; width:100%; font-size:11pt; font-family:"MS Mincho","Yu Mincho",serif;}
+.toc-table th, .toc-table td{border:1px solid #333; padding:4px 6px; text-align:center;}
+.toc-table th.col-order{ width:9%; }
+.toc-table th.col-day{ width:14%; }
+.toc-table th.col-name{ width:auto; }
+.toc-table th.col-time{ width:10%; }
+.toc-table th.col-page{ width:7%; }
+.toc-table td.col-name{ text-align:left; white-space:nowrap; }
+
+/* 本体：折り返し可＋ぶら下げ。1行の高さを line-height:1.9 で統一 */
+.gikai-body{ font-family:"MS Mincho","Yu Mincho",serif; font-size:10.5pt; line-height:1.9; }
+.gikai-member{ margin:0; }
+.gikai-member-head{ font-weight:bold; margin:0; white-space:nowrap; }
+.gikai-member-head .name-expand{ display:inline-block; transform:scaleX(1.5); transform-origin:left; }
+.gikai-line{ text-indent:-1em; margin:0; }
+.gikai-line.lv-big{ padding-left:2em; }
+.gikai-line.lv-small{ padding-left:3em; }
+.gikai-line.lv-content{ padding-left:4em; }
+/* 下段（2人目）を18行目に正確に落とすためのスペーサー */
+.gikai-gap{ margin:0; }
+/* ★ 計測用コンテナはCSSで常設せず、JS側で計測のたびに使い捨て生成する
+   （createMeasureBox()参照）。常設のdisplay:none等で隠す方式にすると、
+   印刷直前(beforeprint)の再計測時に印刷用CSSが適用されて計測不能になる
+   ため採用していない。 */
+
+/* ============================================================
+   様式2：総務課「一般質問内容表」
+   ============================================================ */
+.soumu-page{
+  width:210mm; height:297mm; margin:6mm auto; padding:15mm 15mm;
+  background:#fff; box-shadow:0 0 4px rgba(0,0,0,.2);
+  font-family:"Yu Mincho","MS Mincho",serif; page-break-after:always;
+  position:relative;
+}
+.soumu-top{display:flex; justify-content:space-between; font-size:10pt;}
+.soumu-title{text-align:center; font-size:14pt; margin:6mm 0;}
+.soumu-meta{display:flex; justify-content:space-between; font-size:11pt; margin-bottom:1mm;}
+.soumu-jikan{text-align:right; font-size:11pt; margin-bottom:2mm;}
+.soumu-sub{display:flex; justify-content:space-between; font-size:10.5pt; margin-bottom:2mm; border-bottom:1px solid #333;}
+
+/* 本体テーブル：外枠と縦罫線のみ（横罫線なし） */
+.soumu-table{border-collapse:collapse; width:100%; font-size:10.5pt; border:1px solid #333; }
+.soumu-table td{
+  padding:2px 6px; vertical-align:top; border:none; border-left:1px solid #333;
+}
+.soumu-table td:first-child{ border-left:none; }
+.soumu-table .col-content{width:82%;}
+.soumu-table .col-shokan{width:18%; text-align:center;}
+.lv-big{font-weight:bold;}
+.lv-small{padding-left:1.5em;}
+.lv-content{padding-left:3em;}
+.lv-claim{padding-left:1em; color:#333; font-size:10pt;}
+.lv-claim.from-big{padding-left:1.5em;}
+.lv-claim.from-small{padding-left:3em;}
+.lv-claim.from-content{padding-left:4.5em;}
+
+/* ============================================================
+   印刷用CSS
+   ============================================================ */
+@page{ size:A4 portrait; margin:0; }
+@media print{
+  body{background:#fff;}
+  header, .no-print{ display:none !important; }
+  #previewArea{border:none;}
+  /* ★ 画面プレビューと印刷実寸を同一（210mm×297mm・padding15mm）にしているため、
+     印刷時は影を消して余白を詰めるだけでよい（幅高さpaddingの再指定は不要） */
+  .gikai-page, .soumu-page{
+    box-shadow:none; margin:0 auto;
+  }
+
+  /* ★ ページまたぎ時の“上が空きすぎる”対策：
+     テーブルの行がページ途中で分割されないようにしつつ、
+     続きページ先頭で不要な上余白が出ないように詰める */
+  .soumu-table tr{ page-break-inside:avoid; }
+  .soumu-table td{ padding-top:2px; padding-bottom:2px; }
+  /* 議事課本体は1ページ完結（page-break-after:always）なので
+     内部での分割は発生しない設計。念のため中身の分割を防止 */
+  .gikai-member{ page-break-inside:avoid; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>議会 一般質問通告書 管理アプリ <span style="font-size:12px;font-weight:normal;">（オフライン・単一HTML）</span></h1>
+</header>
+
+<div class="container">
+
+  <!-- ========== 上部：定例会情報・CSV ========== -->
+  <div class="card no-print">
+    <h2>定例会情報 / データ入出力</h2>
+    <div class="row">
+      <div><label>自治体名：<input type="text" id="mtCity" value="〇〇市" style="width:110px"></label></div>
+      <div><label>令和年：<input type="number" id="mtGengo" value="7" style="width:60px"> 年</label></div>
+      <div><label>第 <input type="number" id="mtKai" value="2" style="width:50px"> 回定例会</label></div>
+      <div><label>会期開始：<input type="date" id="mtStart"></label></div>
+      <div><label>会期終了：<input type="date" id="mtEnd"></label></div>
+    </div>
+    <p class="hint">※ 自治体名は通告表の表紙・内容表の見出しに反映されます（例：〇〇市 → 「〇〇市議会」）。</p>
+    <div class="row" style="margin-top:8px">
+      <button onclick="exportCSV()">CSV出力（ダウンロード）</button>
+      <label class="sub" style="background:#7f8c8d;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;">
+        CSV読込 <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="importCSV(this)">
+      </label>
+      <button class="sub" onclick="saveLocal()">作業中データ手動保存</button>
+      <button class="del" onclick="clearAll()">全データ削除</button>
+      <span class="hint">※ 作業中データはブラウザに自動退避されます</span>
+    </div>
+  </div>
+
+  <!-- ========== 議員名マスタ（折りたたみ・初期は閉） ========== -->
+  <details class="foldcard no-print">
+    <summary>議員名マスタ（発言順位・質問予定時間・聞取り担当者）</summary>
+    <div class="fold-body">
+      <table class="grid" id="memberTable">
+        <thead>
+          <tr><th style="width:40px">順位</th><th>氏名</th><th style="width:160px">会派</th>
+          <th style="width:80px">予定時間(分)</th><th style="width:140px">聞取り担当者</th>
+          <th style="width:130px">質問日(自動)</th><th style="width:80px">操作</th></tr>
+        </thead>
+        <tbody id="memberBody"></tbody>
+      </table>
+      <button onclick="addMember()">＋ 議員を追加</button>
+      <button class="sub" onclick="sortMembersByOrder()">発言順位で並べ替え</button>
+    </div>
+  </details>
+
+  <!-- ========== 質問日マスタ（折りたたみ・初期は閉） ========== -->
+  <details class="foldcard no-print">
+    <summary>質問日マスタ（初日基準＋平日自動算出／手動設定可）</summary>
+    <div class="fold-body">
+      <div class="row">
+        <div><label>初日（1日目）：<input type="date" id="dayBase" onchange="renderMembers()"></label></div>
+        <div><label>1日あたり基本人数：<input type="number" id="perDay" value="4" style="width:50px" onchange="renderMembers()"> 人</label></div>
+        <div><label><input type="checkbox" id="skipWeekend" checked onchange="renderMembers()"> 土日を除いて連続する平日で自動算出</label></div>
+      </div>
+      <p class="hint">※ 祝日は自動判定できません。祝日をまたぐ場合は、下の詳細設定で各日の日付を手動で上書きしてください（手動設定が優先されます）。</p>
+      <details class="inner" open>
+        <summary>詳細設定：各日の人数・日付を手動設定（祝日・例外対応）</summary>
+        <p class="hint">「質問日（手動上書き）」に日付を入れると、その日はその日付で固定されます。人数を変えると以降の割り当てが自動でずれます。</p>
+        <table class="grid" id="dayTable">
+          <thead><tr><th>日次</th><th>人数</th><th>質問日（手動上書き）</th></tr></thead>
+          <tbody id="dayBody"></tbody>
+        </table>
+        <button class="small" onclick="addDayException()">＋ 日を追加</button>
+        <button class="small sub" onclick="resetDayExceptions()">手動設定をリセット</button>
+      </details>
+    </div>
+  </details>
+
+  <!-- ========== 通告内容入力（折りたたみ・初期は閉） ========== -->
+  <details class="foldcard no-print">
+    <summary>通告内容の入力</summary>
+    <div class="fold-body">
+      <div class="row">
+        <label>対象議員：
+          <select id="selMember" onchange="renderNodes()"></select>
+        </label>
+        <span class="hint">左側で議員を選び、ガイドに沿って項目を追加してください。</span>
+      </div>
+      <div class="box" style="background:#fef9e7;border-left:4px solid #b9770e;padding:8px 12px;border-radius:5px;margin:8px 0;font-size:12px;">
+        <b>階層ルール：</b>
+        まず<b>大項目</b>から始めます。<b>小項目</b>は大項目・小項目・内容のどの後でも追加でき、直前の大項目にぶら下がります
+        （例：大1→小1→内容1→<b>小2</b>）。<b>内容</b>は小項目・内容の後にのみ追加できます（大項目の直後は不可）。
+        主訴（最大5個）は<b>末端の行</b>に付きます。
+      </div>
+      <div style="margin:8px 0">
+        <button id="btnAddBig" onclick="addNode('big')">＋ 大きな項目</button>
+        <button id="btnAddSmall" onclick="addNode('small')">＋ 小さな項目</button>
+        <button id="btnAddContent" onclick="addNode('content')">＋ 内容</button>
+        <span class="hint" id="addHint"></span>
+      </div>
+      <div id="nodeList"></div>
+    </div>
+  </details>
+
+  <!-- ========== プレビュー ========== -->
+  <div class="card no-print">
+    <h2>プレビュー / 印刷</h2>
+    <div class="tab-btns">
+      <button id="tabGikai" class="active" onclick="switchTab('gikai')">議事課様式（通告表・冊子）</button>
+      <button id="tabSoumu" onclick="switchTab('soumu')">総務課様式（内容表・議員ごと）</button>
+      <button onclick="renderPreview()">プレビュー更新</button>
+      <button onclick="window.print()">印刷（PDF保存）</button>
+    </div>
+    <div class="print-select" id="printSelectPanel" style="display:none">
+      <div class="ps-head">🖨 印刷対象の議員を選択（チェックした議員だけを出力します）</div>
+      <div style="margin-bottom:6px">
+        <button class="small" onclick="selectAllPrint(true)">全選択</button>
+        <button class="small sub" onclick="selectAllPrint(false)">全解除</button>
+      </div>
+      <div class="ps-list" id="printSelectList"></div>
+    </div>
+    <span class="hint" id="tabHint"></span>
+  </div>
+
+  <div id="previewArea"></div>
+
+</div>
+
+<script>
+/* ============================================================
+   データ構造
+   ============================================================ */
+let state = {
+  meta:{gengo:7,kai:2,start:'',end:'',cityName:'〇〇市'},
+  members:[], nodes:[], dayExceptions:{}, dayDates:{}, printSelection:{}, rowSeq:0
+};
+let currentTab = 'gikai';
+
+function nextRowId(){
+  state.rowSeq++;
+  const g = state.meta.gengo || 7;
+  return 'R'+g+'-'+String(state.rowSeq).padStart(4,'0');
+}
+
+/* ============================================================
+   議員名マスタ
+   ============================================================ */
+function addMember(m){
+  const mem = m || {id:'M'+Date.now()+Math.floor(Math.random()*1000),
+    order: state.members.length+1, name:'', kaiha:'', minutes:60, hearer:''};
+  state.members.push(mem);
+  state.printSelection[mem.id]=true;
+  renderMembers(); refreshMemberSelect(); saveLocal();
+}
+function delMember(id){
+  if(!confirm('この議員と関連する通告内容を削除しますか？')) return;
+  state.members = state.members.filter(m=>m.id!==id);
+  state.nodes   = state.nodes.filter(n=>n.memberId!==id);
+  delete state.printSelection[id];
+  renderMembers(); refreshMemberSelect(); renderNodes(); saveLocal();
+}
+function sortMembersByOrder(){
+  state.members.sort((a,b)=>(a.order||999)-(b.order||999));
+  renderMembers(); refreshMemberSelect(); saveLocal();
+}
+
+function calcDayForOrder(order){
+  const per = parseInt(document.getElementById('perDay').value)||4;
+  const base = document.getElementById('dayBase').value;
+  if(!order) return {dayIndex:null, date:''};
+  let dayIndex=0, remaining=order;
+  while(remaining>0){
+    dayIndex++;
+    const capacity = state.dayExceptions[dayIndex] || per;
+    if(remaining<=capacity){ break; }
+    remaining -= capacity;
+  }
+  let dateStr='';
+  if(state.dayDates[dayIndex]){ dateStr = state.dayDates[dayIndex]; }
+  else if(base){ dateStr = addBusinessDays(base, dayIndex-1); }
+  return {dayIndex, date:dateStr};
+}
+function addBusinessDays(baseIso, addDays){
+  const skip = document.getElementById('skipWeekend') ?
+    document.getElementById('skipWeekend').checked : true;
+  let d = new Date(baseIso);
+  if(skip){ while(d.getDay()===0 || d.getDay()===6){ d.setDate(d.getDate()+1); } }
+  let added=0;
+  while(added<addDays){
+    d.setDate(d.getDate()+1);
+    if(skip){ while(d.getDay()===0 || d.getDay()===6){ d.setDate(d.getDate()+1); } }
+    added++;
+  }
+  return d.toISOString().slice(0,10);
+}
+function fmtDateJP(iso){
+  if(!iso) return '';
+  const d=new Date(iso);
+  const wd=['日','月','火','水','木','金','土'][d.getDay()];
+  return (d.getMonth()+1)+'月'+d.getDate()+'日('+wd+')';
+}
+
+function renderMembers(){
+  const tb=document.getElementById('memberBody');
+  tb.innerHTML='';
+  state.members.forEach(m=>{
+    const info=calcDayForOrder(m.order);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><input type="number" value="${m.order||''}" style="width:45px"
+          onchange="updMember('${m.id}','order',this.value)"></td>
+      <td><input type="text" value="${esc(m.name)}" style="width:95%"
+          onchange="updMember('${m.id}','name',this.value)"></td>
+      <td><input type="text" value="${esc(m.kaiha)}" style="width:95%"
+          onchange="updMember('${m.id}','kaiha',this.value)"></td>
+      <td><input type="number" value="${m.minutes||''}" style="width:60px"
+          onchange="updMember('${m.id}','minutes',this.value)"></td>
+      <td><input type="text" value="${esc(m.hearer||'')}" style="width:95%" placeholder="例：〇〇課 〇〇"
+          onchange="updMember('${m.id}','hearer',this.value)"></td>
+      <td>${info.dayIndex? info.dayIndex+'日目 '+fmtDateJP(info.date):''}</td>
+      <td><button class="del small" onclick="delMember('${m.id}')">削除</button></td>`;
+    tb.appendChild(tr);
+  });
+  renderDayTable();
+}
+function updMember(id,key,val){
+  const m=state.members.find(x=>x.id===id);
+  if(!m) return;
+  if(key==='order'||key==='minutes') m[key]=parseInt(val)||0;
+  else m[key]=val;
+  renderMembers(); refreshMemberSelect(); saveLocal();
+}
+
+function renderDayTable(){
+  const tb=document.getElementById('dayBody');
+  if(!tb) return;
+  tb.innerHTML='';
+  const keys = Object.keys(state.dayExceptions);
+  const maxDay = Math.max(1, ...keys.map(Number),
+    ...Object.keys(state.dayDates).map(Number),
+    Math.ceil((state.members.length||1)/(parseInt(document.getElementById('perDay').value)||4)));
+  for(let d=1; d<=maxDay; d++){
+    const base=document.getElementById('dayBase').value;
+    const autoDate = base ? addBusinessDays(base, d-1) : '';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${d}日目<br><span class="hint" style="font-size:10px">${autoDate?fmtDateJP(autoDate)+'（自動）':''}</span></td>
+      <td><input type="number" value="${state.dayExceptions[d]||''}" placeholder="基本値"
+          style="width:60px" onchange="setDayException(${d},this.value)"></td>
+      <td><input type="date" value="${state.dayDates[d]||''}"
+          onchange="setDayDate(${d},this.value)"></td>`;
+    tb.appendChild(tr);
+  }
+}
+function setDayException(d,v){
+  if(v) state.dayExceptions[d]=parseInt(v); else delete state.dayExceptions[d];
+  renderMembers(); saveLocal();
+}
+function setDayDate(d,v){
+  if(v) state.dayDates[d]=v; else delete state.dayDates[d];
+  renderMembers(); saveLocal();
+}
+function addDayException(){
+  const keys=Object.keys(state.dayExceptions).map(Number);
+  const nd=(Math.max(0,...keys, ...Object.keys(state.dayDates).map(Number))||0)+1;
+  state.dayExceptions[nd]=''; renderDayTable();
+}
+function resetDayExceptions(){
+  state.dayExceptions={}; state.dayDates={};
+  renderDayTable(); renderMembers(); saveLocal();
+}
+
+/* ============================================================
+   通告内容ノード
+   ============================================================ */
+function refreshMemberSelect(){
+  const sel=document.getElementById('selMember');
+  const cur=sel.value;
+  sel.innerHTML='';
+  state.members.forEach(m=>{
+    const o=document.createElement('option');
+    o.value=m.id;
+    o.textContent=(m.order?m.order+'. ':'')+ (m.name||'(氏名未入力)') + (m.kaiha?' / '+m.kaiha:'');
+    sel.appendChild(o);
+  });
+  if(cur && state.members.some(m=>m.id===cur)) sel.value=cur;
+}
+
+function lastNodeType(mid){
+  const list=nodesOfMember(mid);
+  return list.length? list[list.length-1].type : null;
+}
+function canAdd(type, mid){
+  const list=nodesOfMember(mid);
+  const last = list.length? list[list.length-1].type : null;
+  const hasBig = list.some(n=>n.type==='big');
+  if(type==='big') return {ok:true};
+  if(type==='small'){
+    if(!hasBig) return {ok:false, msg:'小項目の前に大項目が必要です。まず「大きな項目」を追加してください。'};
+    return {ok:true};
+  }
+  if(type==='content'){
+    if(last===null) return {ok:false, msg:'内容の前に大項目・小項目が必要です。'};
+    if(last==='big') return {ok:false, msg:'大項目の直後に内容は追加できません。先に「小さな項目」を追加してください。'};
+    return {ok:true};
+  }
+  return {ok:false, msg:'不明な種類です。'};
+}
+function updateAddButtons(){
+  const mid=document.getElementById('selMember').value;
+  const hint=document.getElementById('addHint');
+  if(!mid){
+    ['btnAddBig','btnAddSmall','btnAddContent'].forEach(id=>document.getElementById(id).disabled=true);
+    hint.textContent='議員を選択してください。';
+    return;
+  }
+  const cSmall=canAdd('small',mid), cContent=canAdd('content',mid);
+  document.getElementById('btnAddBig').disabled=false;
+  document.getElementById('btnAddSmall').disabled=!cSmall.ok;
+  document.getElementById('btnAddContent').disabled=!cContent.ok;
+  const last=lastNodeType(mid);
+  const lastLabel={big:'大項目',small:'小項目',content:'内容'}[last]||'（未入力）';
+  hint.textContent='現在の末尾：'+lastLabel+'　次に追加できるもの → '+
+    ['大項目', cSmall.ok?'小項目':null, cContent.ok?'内容':null].filter(x=>x).join('・');
+}
+
+function addNode(type){
+  const mid=document.getElementById('selMember').value;
+  if(!mid){ alert('先に議員を追加・選択してください'); return; }
+  const chk=canAdd(type,mid);
+  if(!chk.ok){ alert(chk.msg); return; }
+  const maxSort=Math.max(0,...state.nodes.filter(n=>n.memberId===mid).map(n=>n.sort||0));
+  state.nodes.push({
+    rowId: nextRowId(), memberId:mid, type:type, text:'',
+    claims:['','','','',''], shokan:'', sort:maxSort+1
+  });
+  renderNodes(); saveLocal();
+}
+function delNode(rowId){
+  state.nodes=state.nodes.filter(n=>n.rowId!==rowId);
+  renderNodes(); saveLocal();
+}
+function moveNode(rowId,dir){
+  const mid=document.getElementById('selMember').value;
+  const list=state.nodes.filter(n=>n.memberId===mid).sort((a,b)=>a.sort-b.sort);
+  const i=list.findIndex(n=>n.rowId===rowId);
+  const j=i+dir;
+  if(j<0||j>=list.length) return;
+  const s=list[i].sort; list[i].sort=list[j].sort; list[j].sort=s;
+  renderNodes(); saveLocal();
+}
+function updNode(rowId,key,val){
+  const n=state.nodes.find(x=>x.rowId===rowId);
+  if(!n) return;
+  n[key]=val; saveLocal();
+}
+function updClaim(rowId,idx,val){
+  const n=state.nodes.find(x=>x.rowId===rowId);
+  if(!n) return;
+  n.claims[idx]=val; saveLocal();
+}
+
+const typeLabel={big:'大項目',small:'小項目',content:'内容'};
+let dragRowId=null;
+const depthOf={big:1, small:2, content:3};
+function isLeaf(list, idx){
+  const cur=list[idx];
+  const next=list[idx+1];
+  if(!next) return true;
+  return depthOf[next.type] <= depthOf[cur.type];
+}
+
+/* ★ テキストエリアを内容に応じて自動拡張 */
+function autoGrow(el){
+  el.style.height='auto';
+  el.style.height=(el.scrollHeight)+'px';
+}
+
+function renderNodes(){
+  const mid=document.getElementById('selMember').value;
+  const box=document.getElementById('nodeList');
+  box.innerHTML='';
+  updateAddButtons();
+  if(!mid){ box.innerHTML='<p class="hint">議員を選択してください。</p>'; return; }
+  const list=state.nodes.filter(n=>n.memberId===mid).sort((a,b)=>a.sort-b.sort);
+  if(list.length===0){ box.innerHTML='<p class="hint">まだ項目がありません。「＋大きな項目」から追加してください。</p>'; }
+  list.forEach((n,idx)=>{
+    const leaf=isLeaf(list, idx);
+    const row=document.createElement('div');
+    row.className='node-row lv-'+n.type; row.draggable=true;
+    row.dataset.rowId=n.rowId;
+    let claimsHtml='';
+    if(leaf){
+      claimsHtml='<div class="subclaim-box">'+
+        '<span class="hint" style="width:100%">主訴（末端に付きます・最大5個）：</span>'+
+        n.claims.map((c,i)=>`<input type="text" placeholder="主訴${i+1}" value="${esc(c)}"
+           onchange="updClaim('${n.rowId}',${i},this.value)">`).join('')+'</div>';
+    }
+    const badgeEnd = leaf ? '<span class="badge end">末端</span>' : '';
+    row.innerHTML=`
+      <div class="node-type">
+        <span class="badge">${typeLabel[n.type]}</span>${badgeEnd}<br>
+        <span class="hint" style="font-size:10px">${n.rowId}</span>
+      </div>
+      <div class="node-main">
+        <textarea rows="1" placeholder="${typeLabel[n.type]}の本文"
+          oninput="autoGrow(this)"
+          onchange="updNode('${n.rowId}','text',this.value)">${esc(n.text)}</textarea>
+        ${claimsHtml}
+        <div class="row" style="margin-top:3px">
+          <label>所管：<input type="text" value="${esc(n.shokan)}" style="width:200px"
+            onchange="updNode('${n.rowId}','shokan',this.value)"></label>
+        </div>
+      </div>
+      <div class="node-actions">
+        <button class="small" onclick="moveNode('${n.rowId}',-1)">▲</button>
+        <button class="small" onclick="moveNode('${n.rowId}',1)">▼</button>
+        <button class="small del" onclick="delNode('${n.rowId}')">×</button>
+      </div>`;
+    row.addEventListener('dragstart',()=>{dragRowId=n.rowId;});
+    row.addEventListener('dragover',e=>{e.preventDefault(); row.classList.add('dragover');});
+    row.addEventListener('dragleave',()=>row.classList.remove('dragover'));
+    row.addEventListener('drop',e=>{
+      e.preventDefault(); row.classList.remove('dragover');
+      if(dragRowId && dragRowId!==n.rowId) reorderByDrag(dragRowId,n.rowId);
+    });
+    box.appendChild(row);
+  });
+  // ★ 既存テキストの高さを初期反映
+  box.querySelectorAll('textarea').forEach(t=>autoGrow(t));
+}
+function reorderByDrag(fromId,toId){
+  const mid=document.getElementById('selMember').value;
+  const list=state.nodes.filter(n=>n.memberId===mid).sort((a,b)=>a.sort-b.sort);
+  const fi=list.findIndex(n=>n.rowId===fromId);
+  const ti=list.findIndex(n=>n.rowId===toId);
+  const [moved]=list.splice(fi,1);
+  list.splice(ti,0,moved);
+  list.forEach((n,i)=>n.sort=i+1);
+  renderNodes(); saveLocal();
+}
+
+function orderedMembers(){
+  return state.members.slice().sort((a,b)=>(a.order||999)-(b.order||999));
+}
+function nodesOfMember(mid){
+  return state.nodes.filter(n=>n.memberId===mid).sort((a,b)=>a.sort-b.sort);
+}
+
+/* ============================================================
+   印刷対象選択（総務課様式用）
+   ============================================================ */
+function ensurePrintSelection(){
+  const ids=new Set(state.members.map(m=>m.id));
+  state.members.forEach(m=>{
+    if(typeof state.printSelection[m.id]==='undefined') state.printSelection[m.id]=true;
+  });
+  Object.keys(state.printSelection).forEach(id=>{ if(!ids.has(id)) delete state.printSelection[id]; });
+}
+function renderPrintSelect(){
+  ensurePrintSelection();
+  const box=document.getElementById('printSelectList');
+  box.innerHTML='';
+  orderedMembers().forEach(m=>{
+    const on = state.printSelection[m.id]!==false;
+    const lbl=document.createElement('label');
+    lbl.className = on?'':'off';
+    lbl.innerHTML=`<input type="checkbox" ${on?'checked':''}
+      onchange="togglePrint('${m.id}',this.checked)">
+      ${m.order?m.order+'. ':''}${esc(m.name||'(氏名未入力)')}${m.kaiha?'（'+esc(m.kaiha)+'）':''}`;
+    box.appendChild(lbl);
+  });
+}
+function togglePrint(id,checked){
+  state.printSelection[id]=checked;
+  saveLocal(); renderPrintSelect(); renderPreview();
+}
+function selectAllPrint(val){
+  orderedMembers().forEach(m=>{ state.printSelection[m.id]=val; });
+  saveLocal(); renderPrintSelect(); renderPreview();
+}
+function printableMembers(){
+  ensurePrintSelection();
+  return orderedMembers().filter(m=>state.printSelection[m.id]!==false);
+}
+/* ★ CSV読込時は議員IDを再採番するため、内部ID直参照ではCSV往復でprintSelが
+   復元できない。「発言順位｜氏名｜会派」の合成キーで持ち出し、読込時に同じ
+   キーで突き合わせて復元する（旧形式CSVは合成キーが無いため従来どおり全員ON）。 */
+function printSelKey(order,name,kaiha){
+  return (order||'')+'|'+(name||'')+'|'+(kaiha||'');
+}
+function buildPrintSelExportMap(){
+  ensurePrintSelection();
+  const map={};
+  state.members.forEach(m=>{
+    map[printSelKey(m.order,m.name,m.kaiha)] = state.printSelection[m.id]!==false;
+  });
+  return map;
+}
+
+/* ============================================================
+   CSV
+   ============================================================ */
+const CSV_HEADER=['行ID','発言順位','議員名','会派','質問日','質問予定時間',
+  '大きな項目','小さな項目','内容','主訴1','主訴2','主訴3','主訴4','主訴5',
+  '所管','聞取り担当者','並び順','出力時刻'];
+
+function csvCell(v){ return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'; }
+function nowStamp(){
+  const d=new Date();
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+
+    String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function exportCSV(){
+  readMetaFromUI();
+  const stamp=nowStamp();
+  const rows=[];
+  rows.push([csvCell('#META'),csvCell(state.meta.gengo),csvCell(state.meta.kai),
+    csvCell(state.meta.start),csvCell(state.meta.end),
+    csvCell('perDay'),csvCell(document.getElementById('perDay').value),
+    csvCell('dayBase'),csvCell(document.getElementById('dayBase').value),
+    csvCell('skipWeekend'),csvCell(document.getElementById('skipWeekend').checked?1:0),
+    csvCell('dayEx'),csvCell(JSON.stringify(state.dayExceptions)),
+    csvCell('dayDates'),csvCell(JSON.stringify(state.dayDates)),
+    csvCell('printSel'),csvCell(JSON.stringify(buildPrintSelExportMap())),
+    csvCell('city'),csvCell(state.meta.cityName||'〇〇市')
+  ].join(','));
+  rows.push(CSV_HEADER.map(csvCell).join(','));
+  orderedMembers().forEach(m=>{
+    const list=nodesOfMember(m.id);
+    const info=calcDayForOrder(m.order);
+    list.forEach(n=>{
+      const rec=[n.rowId, m.order, m.name, m.kaiha,
+        info.date? fmtDateJP(info.date):'', m.minutes,
+        n.type==='big'?n.text:'', n.type==='small'?n.text:'', n.type==='content'?n.text:'',
+        n.claims[0],n.claims[1],n.claims[2],n.claims[3],n.claims[4],
+        n.shokan, m.hearer||'', n.sort, stamp];
+      rows.push(rec.map(csvCell).join(','));
+    });
+  });
+  const csv=rows.join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='一般質問通告_R'+state.meta.gengo+'_第'+state.meta.kai+'回.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  const rows=[]; let field=''; let row=[]; let i=0; let inQ=false;
+  while(i<text.length){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){
+        if(text[i+1]==='"'){field+='"'; i+=2; continue;}
+        inQ=false; i++; continue;
+      }
+      field+=c; i++;
+    }else{
+      if(c==='"'){inQ=true; i++;}
+      else if(c===','){row.push(field); field=''; i++;}
+      else if(c==='\r'){ i++; }
+      else if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=''; i++; }
+      else {field+=c; i++;}
+    }
+  }
+  if(field!==''||row.length>0){ row.push(field); rows.push(row); }
+  return rows;
+}
+function importCSV(input){
+  const file=input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{ loadFromCSVText(e.target.result); }
+    catch(err){ alert('CSV読込エラー: '+err.message); }
+  };
+  reader.readAsText(file,'UTF-8');
+  input.value='';
+}
+function loadFromCSVText(text){
+  const rows=parseCSV(text);
+  if(rows.length===0){ alert('空のファイルです'); return; }
+  state.members=[]; state.nodes=[]; state.dayExceptions={}; state.dayDates={};
+  state.printSelection={}; state.rowSeq=0;
+  let dataStart=0; let importedPrintSel=null;
+  if(rows[0][0]==='#META'){
+    state.meta.gengo=rows[0][1]; state.meta.kai=rows[0][2];
+    state.meta.start=rows[0][3]; state.meta.end=rows[0][4];
+    state.meta.cityName='〇〇市';
+    for(let k=5;k<rows[0].length;k++){
+      if(rows[0][k]==='perDay') document.getElementById('perDay').value=rows[0][k+1];
+      if(rows[0][k]==='dayBase') document.getElementById('dayBase').value=rows[0][k+1];
+      if(rows[0][k]==='skipWeekend') document.getElementById('skipWeekend').checked=(rows[0][k+1]==='1');
+      if(rows[0][k]==='dayEx'){ try{state.dayExceptions=JSON.parse(rows[0][k+1]||'{}');}catch(_){}}
+      if(rows[0][k]==='dayDates'){ try{state.dayDates=JSON.parse(rows[0][k+1]||'{}');}catch(_){}}
+      if(rows[0][k]==='printSel'){ try{importedPrintSel=JSON.parse(rows[0][k+1]||'{}');}catch(_){}}
+      if(rows[0][k]==='city' && rows[0][k+1]) state.meta.cityName=rows[0][k+1];
+    }
+    dataStart=1;
+  }
+  const bodyStart=dataStart+1;
+  const memMap={};
+  for(let r=bodyStart; r<rows.length; r++){
+    const c=rows[r];
+    if(!c || c.length<3 || (!c[0] && !c[2])) continue;
+    const [rowId,order,name,kaiha,qday,minutes,big,small,content,
+      c1,c2,c3,c4,c5,shokan,hearer,sort]=c;
+    const key=(order||'')+'|'+(name||'')+'|'+(kaiha||'');
+    if(!memMap[key]){
+      const mid='M'+r+'_'+Date.now();
+      memMap[key]={id:mid,order:parseInt(order)||0,name:name||'',
+        kaiha:kaiha||'',minutes:parseInt(minutes)||0, hearer:hearer||''};
+      state.members.push(memMap[key]);
+      state.printSelection[mid]=true;
+    }else{
+      if(!memMap[key].hearer && hearer) memMap[key].hearer=hearer;
+    }
+    const mid=memMap[key].id;
+    let type='content';
+    if(big && !small && !content) type='big';
+    else if(small && !content) type='small';
+    else type='content';
+    const textVal = type==='big'?big : type==='small'?small : content;
+    const mm=(rowId||'').match(/-(\d+)$/);
+    if(mm){ const nn=parseInt(mm[1]); if(nn>state.rowSeq) state.rowSeq=nn; }
+    state.nodes.push({
+      rowId: rowId||nextRowId(), memberId:mid, type,
+      text:textVal||'', claims:[c1||'',c2||'',c3||'',c4||'',c5||''],
+      shokan:shokan||'', sort:parseInt(sort)||(state.nodes.length+1)
+    });
+  }
+  if(importedPrintSel){
+    /* 合成キー（順位｜氏名｜会派）で突き合わせて復元。旧形式CSV（内部IDキー）は
+       キーが一致しないため従来どおり全員ONのまま（安全側の動作、説明書のとおり） */
+    Object.keys(memMap).forEach(key=>{
+      if(typeof importedPrintSel[key]!=='undefined'){
+        state.printSelection[memMap[key].id]=importedPrintSel[key];
+      }
+    });
+  }
+  writeMetaToUI();
+  renderAll();
+  alert('CSVを読み込みました（議員 '+state.members.length+' 名 / 行 '+state.nodes.length+' 件）');
+}
+
+/* ============================================================
+   様式1：議事課「一般質問通告表」
+   ★ 1ページ34行。1人目=1行目〜、2人目=18行目〜。
+     ルール：
+       - 1人目が17行超（=18行以上）なら2人目は同ページに載せず次ページへ。
+       - 2人目は18行目から開始。ただし18行目開始で末尾がページ内(34行)に
+         収まらない場合は、18行目起点をやめ次ページ1行目から開始。
+       - 1人分の行数がページに収まらない場合は続きページへ繰り越す
+         （続きページは1行目から開始し、先頭に「（続き）」見出しを置く。
+         この見出しも行数計算に含める）。複数ページにまたがった議員の次の
+         議員は、必ず次ページの1行目から開始する（下段18行目配置はしない）。
+   ============================================================ */
+function zenkakuNum(n){ const z='０１２３４５６７８９'; return String(n).split('').map(d=>z[d]).join(''); }
+function maruNum(n){ const m=['','①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮']; return m[n]||('('+n+')'); }
+
+const LINES_PER_PAGE = 34;   // 1ページ総行数
+const SECOND_START   = 18;   // 2人目の基本開始行
+const BOTTOM_MAX = LINES_PER_PAGE - (SECOND_START - 1); // = 17
+
+/* 先頭に何個でも積んでいける汎用の「容量に収まるだけ詰める」ヘルパー。
+   sizes[0..]を先頭から足していき、budgetを超えない範囲で取れる個数を返す。
+   1個目からbudgetを超える場合でも、データを失わないため最低1個は強制的に採用する
+   （呼び出し側でコンソール警告を出す想定）。 */
+function packGreedy(sizes, budget){
+  let acc=0, take=0;
+  while(take<sizes.length && acc+sizes[take]<=budget){ acc+=sizes[take]; take++; }
+  if(take===0 && sizes.length>0) take=1;
+  return take;
+}
+
+/* 議員1人分の行アイテム配列を作る（見出し＋各行）。行単位でしか分割しない
+   （1項目のテキスト途中で改ページ分割はしない＝内容が欠けないことを優先） */
+function buildMemberLineItems(m){
+  const items=[];
+  const nameLen=(m.name||'').length;
+  const nameGap=(nameLen*0.5).toFixed(1);
+  const kenGap=(2*0.5).toFixed(1);
+  items.push(`<div class="gikai-member-head">○　<span class="name-expand" style="margin-right:${nameGap}em">${esc(m.name)}</span>　<span class="name-expand" style="margin-right:${kenGap}em">議員</span></div>`);
+  let bigNo=0, smallNo=0, contNo=0;
+  nodesOfMember(m.id).forEach(n=>{
+    if(n.type==='big'){ bigNo++; smallNo=0; contNo=0;
+      items.push(`<div class="gikai-line lv-big">${zenkakuNum(bigNo)}　${esc(n.text)}</div>`); }
+    else if(n.type==='small'){ smallNo++; contNo=0;
+      items.push(`<div class="gikai-line lv-small">(${smallNo}) ${esc(n.text)}</div>`); }
+    else{ contNo++;
+      items.push(`<div class="gikai-line lv-content">${maruNum(contNo)}　${esc(n.text)}</div>`); }
+  });
+  return items;
+}
+function continuationHeadHtml(m){
+  const nameLen=(m.name||'').length;
+  const nameGap=(nameLen*0.5).toFixed(1);
+  const kenGap=(3*0.5).toFixed(1);
+  return `<div class="gikai-member-head">○　<span class="name-expand" style="margin-right:${nameGap}em">${esc(m.name)}</span>　<span class="name-expand" style="margin-right:${kenGap}em">議員（続き）</span></div>`;
+}
+
+/* ★ 計測用の使い捨てコンテナを生成する。常設要素をCSSで隠す方式にすると
+   印刷用CSS（display:noneなど）が適用された瞬間に計測不能になるため、
+   計測のたびに生成し、使い終わったら即座に取り除く（印刷結果に影響しない）。
+   幅は印刷実寸＝210mm-左右15mm*2=180mmで固定。mmはCSS上メディア非依存の
+   絶対単位なので、画面表示中・印刷直前どちらで呼んでも同じ結果になる。 */
+function createMeasureBox(){
+  const box=document.createElement('div');
+  box.style.cssText='position:absolute;visibility:hidden;left:-99999px;top:0;width:180mm;';
+  document.body.appendChild(box);
+  return box;
+}
+
+/* 1行分の高さ（px）を実測して基準化。.gikai-body でラップし、実際の
+   本文（フォント・行間・幅）と同じCSSルールをそのまま流用する */
+function getLineUnitPx(){
+  const box=createMeasureBox();
+  const wrap=document.createElement('div');
+  wrap.className='gikai-body';
+  const probe=document.createElement('div');
+  probe.className='gikai-line lv-big';
+  probe.textContent='あ';
+  wrap.appendChild(probe);
+  box.appendChild(wrap);
+  const unit=probe.getBoundingClientRect().height || 1;
+  box.remove();
+  return unit;
+}
+
+/* HTMLアイテム配列を1個ずつ計測し、それぞれの「折り返しを含む行数」を配列で返す */
+function measureItemUnits(itemsHtml){
+  const unit=getLineUnitPx();
+  const box=createMeasureBox();
+  const wrap=document.createElement('div');
+  wrap.className='gikai-body';
+  wrap.innerHTML=itemsHtml.join('');
+  box.appendChild(wrap);
+  const counts=[];
+  wrap.childNodes.forEach(el=>{
+    if(el.getBoundingClientRect){
+      counts.push(Math.max(1, Math.round(el.getBoundingClientRect().height/unit)));
+    }else counts.push(1);
+  });
+  box.remove();
+  return counts;
+}
+
+/* 出力後に「全ノード数と出力行数」を突合し、欠落があればコンソール警告する */
+function verifyGikaiIntegrity(memData, finalHtml){
+  memData.forEach(md=>{
+    if(md.consumed < md.units.length){
+      console.warn('[通告表] 行の欠落の可能性: 議員「'+(md.member.name||'(氏名未入力)')+'」で '+
+        (md.units.length-md.consumed)+' 行が未出力です。');
+    }
+  });
+  const box=document.createElement('div');
+  box.innerHTML=finalHtml;
+  const renderedLineCount=box.querySelectorAll('.gikai-line').length;
+  const expectedLineCount=memData.reduce((a,md)=>a+(md.items.length-1),0); // -1は見出し分
+  if(renderedLineCount!==expectedLineCount){
+    console.warn('[通告表] 出力行数の不一致を検出しました。期待='+expectedLineCount+' 実際='+renderedLineCount+
+      '。データ欠落の可能性があります。');
+  }
+}
+
+function renderGikai(){
+  const m=state.meta;
+  const city=esc(m.cityName||'〇〇市');
+  const kaiki=`（会期：令和${m.gengo}年${monthDay(m.start)}〜${monthDay(m.end)}）`;
+  let html='';
+  // 表紙
+  html+=`<div class="gikai-page gikai-cover">
+    <div class="cover-frame"></div>
+    <div class="cover-inner">
+      <div class="c-title">令和${m.gengo}年${city}議会第${m.kai}回定例会</div>
+      <div class="c-sub">${kaiki}</div>
+      <div class="c-big">一般質問通告表</div>
+      <div class="c-foot">${city}議会</div>
+    </div>
+  </div>`;
+
+  const oms=orderedMembers();
+  // 各議員の行アイテムと行数（単位）を用意。consumedは既に出力済みの件数ポインタ
+  const memData=oms.map(mm=>{
+    const items=buildMemberLineItems(mm);
+    const units=measureItemUnits(items);
+    return {member:mm, items, units, total:units.reduce((a,b)=>a+b,0), consumed:0};
+  });
+  const contHeadCache={};
+  function contHeadUnit(mm){
+    if(contHeadCache[mm.id]!=null) return contHeadCache[mm.id];
+    const u=measureItemUnits([continuationHeadHtml(mm)])[0];
+    contHeadCache[mm.id]=u;
+    return u;
+  }
+
+  /* ---- ページ割り ----
+     ・page = { top:{member,html,count,isContinuation}, bottom:{...}|null }
+     ・cur（現在処理中の議員）の未出力分をできるだけ1ページに詰める。
+       1ページに収まらなければ、収まる分だけ出力して次ページへ繰り越す
+       （＝同じ議員がtopとして次のページにも登場＝続きページ）。
+     ・下段（2人目）を同ページに置けるのは、topが「継続なしの単独ページ完結」
+       かつ 16行以内、かつ次の議員が18行目起点(最大17行)で丸ごと収まるときのみ。
+       複数ページにまたがった議員の次は、常に次ページ1行目から開始する。
+  */
+  const pages=[];
+  let i=0;
+  while(i<memData.length){
+    const cur=memData[i];
+    const isContinuation=cur.consumed>0;
+    let prefixHtml=[], prefixUnits=[];
+    if(isContinuation){
+      prefixHtml=[continuationHeadHtml(cur.member)];
+      prefixUnits=[contHeadUnit(cur.member)];
+    }
+    const remainingUnits=cur.units.slice(cur.consumed);
+    const budget=LINES_PER_PAGE - prefixUnits.reduce((a,b)=>a+b,0);
+    const take=packGreedy(remainingUnits, budget);
+    if(take===0 && remainingUnits.length>0){
+      console.warn('[通告表] 1項目の行数がページ高を超過しています（議員：'+(cur.member.name||'')+'）。ページからはみ出す可能性があります。');
+    }
+    const segHtml=prefixHtml.concat(cur.items.slice(cur.consumed, cur.consumed+take)).join('');
+    const segUnits=prefixUnits.concat(remainingUnits.slice(0,take));
+    const segCount=segUnits.reduce((a,b)=>a+b,0);
+    cur.consumed += take;
+    const fullyDone = cur.consumed>=cur.units.length;
+    const topSeg={member:cur.member, html:segHtml, count:segCount, isContinuation};
+    const page={top:topSeg, bottom:null};
+
+    if(fullyDone){
+      const isSinglePageMember=!isContinuation; // 継続なしで1ページ内に収まりきった議員
+      if(isSinglePageMember && topSeg.count<=16 && (i+1)<memData.length){
+        const nxt=memData[i+1];
+        if(nxt.consumed===0 && nxt.total<=BOTTOM_MAX){
+          page.bottom={member:nxt.member, html:nxt.items.join(''), count:nxt.total, isContinuation:false};
+          nxt.consumed=nxt.units.length;
+          i+=2;
+        }else{
+          i+=1;
+        }
+      }else{
+        i+=1;
+      }
+    }
+    pages.push(page);
+  }
+
+  // 頁番号（表紙+目次=2、その後1ページずつ）：各議員の「開始ページ」を記録
+  const pageOffset=2;
+  const pageOfMember={};
+  pages.forEach((p,idx)=>{
+    const pageNum=pageOffset+idx+1;
+    if(pageOfMember[p.top.member.id]===undefined) pageOfMember[p.top.member.id]=pageNum;
+    if(p.bottom && pageOfMember[p.bottom.member.id]===undefined) pageOfMember[p.bottom.member.id]=pageNum;
+  });
+
+  // 目次
+  let toc=`<div class="gikai-page gikai-toc"><h3>目次</h3>
+    <table class="toc-table">
+      <tr>
+        <th class="col-order">発言<br>順位</th>
+        <th class="col-day">質問日</th>
+        <th class="col-name">質問者（所属会派）</th>
+        <th class="col-time">質問<br>予定時間</th>
+        <th class="col-page">頁</th>
+      </tr>`;
+  const dayGroups={};
+  oms.forEach(mm=>{
+    const info=calcDayForOrder(mm.order);
+    const key=info.dayIndex||0;
+    (dayGroups[key]=dayGroups[key]||[]).push({m:mm,info});
+  });
+  Object.keys(dayGroups).sort((a,b)=>a-b).forEach(k=>{
+    const grp=dayGroups[k];
+    grp.forEach((g,idx)=>{
+      toc+='<tr>';
+      toc+=`<td>${g.m.order||''}</td>`;
+      if(idx===0){ toc+=`<td rowspan="${grp.length}">${g.info.dayIndex}日目<br>${fmtDateJP(g.info.date)}</td>`; }
+      toc+=`<td class="col-name">${esc(g.m.name)}（${esc(g.m.kaiha)}）</td>`;
+      toc+=`<td>${g.m.minutes||''}分</td>`;
+      toc+=`<td>${pageOfMember[g.m.id]||''}</td>`;
+      toc+='</tr>';
+    });
+  });
+  toc+='</table></div>';
+  html+=toc;
+
+  // 本体ページ描画
+  pages.forEach(p=>{
+    let body=`<div class="gikai-page"><div class="gikai-body">`;
+    // 上段（1人目、または継続分）：1行目から
+    body+=`<div class="gikai-member">${p.top.html}</div>`;
+    if(p.bottom){
+      // 下段（2人目）：18行目に正確に落とすため、上段実占有分を引いた空きを作る
+      const topUsed = p.top.count;               // 上段が使った行数
+      const need    = (SECOND_START - 1) - topUsed; // 18行目直前までに必要な空き行数
+      const gap     = Math.max(0, need) * 1.9;   // em
+      body+=`<div class="gikai-gap" style="height:${gap.toFixed(2)}em"></div>`;
+      body+=`<div class="gikai-member">${p.bottom.html}</div>`;
+    }
+    body+=`</div></div>`;
+    html+=body;
+  });
+
+  verifyGikaiIntegrity(memData, html);
+  return html;
+}
+function monthDay(iso){
+  if(!iso) return '●月●日';
+  const d=new Date(iso);
+  return (d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+
+/* ============================================================
+   様式2：総務課「一般質問内容表」
+   ★ 議事課様式と同様、JS側で明示的に固定高ページへ分割する
+     （ブラウザ自動改ページに頼らないため、2ページ目以降の余白も
+     ページごとの padding でそのまま担保できる）。
+     行数計測ロジック（packGreedy／絶対mm→px換算）は議事課様式と共用。
+   ============================================================ */
+const SOUMU_PAGE_MM = 297 - 15 - 15; // 印刷実寸の1ページぶんの本文高さ(mm)。画面/印刷で同じ値を使うことで割付を一致させる
+
+/* 絶対値(mm)を実測px値に変換する。CSSのmmはメディア非依存の絶対単位なので、
+   画面表示・印刷どちらで呼んでも同じ結果になる */
+function mmToPx(mm){
+  const d=document.createElement('div');
+  d.style.cssText='position:absolute;visibility:hidden;left:-99999px;top:0;width:0;height:'+mm+'mm;';
+  document.body.appendChild(d);
+  const px=d.getBoundingClientRect().height;
+  document.body.removeChild(d);
+  return px||1;
+}
+
+function buildSoumuHeaderHtml(mm, meta, stamp, pageLabel){
+  const hearer=mm.hearer||'';
+  const city=esc(meta.cityName||'〇〇市');
+  return `<div class="soumu-top">
+        <div>${stamp}</div>
+        <div>通告順位　${mm.order||''}</div>
+      </div>
+      <div class="soumu-title">令和${meta.gengo}年${city}議会第${meta.kai}回定例会一般質問内容表</div>
+      <div class="soumu-meta">
+        <div>会派：${esc(mm.kaiha)}</div>
+        <div>議員名：${esc(mm.name)}議員</div>
+        <div>${pageLabel}</div>
+      </div>
+      <div class="soumu-jikan">【質問時間${mm.minutes||''}分】</div>
+      <div class="soumu-sub">
+        <div>◎【質問事項及び要旨】（聞取り担当者：　${esc(hearer)}　）</div>
+        <div>所管</div>
+      </div>`;
+}
+function measureHtmlBlockHeightPx(html){
+  const box=createMeasureBox();
+  const wrap=document.createElement('div');
+  wrap.innerHTML=html;
+  box.appendChild(wrap);
+  const h=wrap.getBoundingClientRect().height;
+  box.remove();
+  return h;
+}
+
+function buildSoumuRowsHtml(mm){
+  const list=nodesOfMember(mm.id);
+  let bigNo=0, smallNo=0, contNo=0;
+  const rows=list.map((n,idx)=>{
+    const leaf=isLeaf(list, idx);
+    let contentHtml='', shokan=n.shokan||'';
+    if(n.type==='big'){
+      bigNo++; smallNo=0; contNo=0;
+      contentHtml=`<div class="lv-big">${zenkakuNum(bigNo)}　${esc(n.text)}</div>`;
+    }else if(n.type==='small'){
+      smallNo++; contNo=0;
+      contentHtml=`<div class="lv-small">(${smallNo}) ${esc(n.text)}</div>`;
+    }else{
+      contNo++;
+      contentHtml=`<div class="lv-content">${maruNum(contNo)}　${esc(n.text)}</div>`;
+    }
+    if(leaf){
+      const cl=n.claims.filter(c=>c && c.trim());
+      const cls='from-'+n.type;
+      cl.forEach(c=>{ contentHtml+=`<div class="lv-claim ${cls}">・${esc(c)}</div>`; });
+    }
+    return `<tr><td class="col-content">${contentHtml}</td><td class="col-shokan">${esc(shokan)}</td></tr>`;
+  });
+  return rows.length? rows : ['<tr><td class="col-content">（未入力）</td><td class="col-shokan"></td></tr>'];
+}
+function measureSoumuRowHeights(rowsHtml){
+  const box=createMeasureBox();
+  const table=document.createElement('table');
+  table.className='soumu-table';
+  table.style.width='100%';
+  const tbody=document.createElement('tbody');
+  tbody.innerHTML=rowsHtml.join('');
+  table.appendChild(tbody);
+  box.appendChild(table);
+  const heights=[];
+  tbody.querySelectorAll('tr').forEach(tr=>{ heights.push(tr.getBoundingClientRect().height); });
+  box.remove();
+  return heights;
+}
+
+/* 1議員分をページ配列（各ページ＝行HTML配列）に分割する */
+function paginateSoumuMember(mm, meta, stamp){
+  const rowsHtml=buildSoumuRowsHtml(mm);
+  const rowHeightsPx=measureSoumuRowHeights(rowsHtml);
+  const pageHeightPx=mmToPx(SOUMU_PAGE_MM);
+  // ヘッダーは全ページで同一内容を繰り返すため、高さは1回測れば全ページ共通
+  const headerHeightPx=measureHtmlBlockHeightPx(buildSoumuHeaderHtml(mm, meta, stamp, '頁 1/1'));
+  const budget=Math.max(1, pageHeightPx - headerHeightPx);
+  const pagesRows=[];
+  let idx=0;
+  while(idx<rowHeightsPx.length){
+    const remaining=rowHeightsPx.slice(idx);
+    const take=packGreedy(remaining, budget);
+    if(take===1 && remaining[0]>budget){
+      console.warn('[内容表] 1行の高さがページを超過しています（議員：'+(mm.name||'')+'）。印刷時に欠けて見える場合は内容を分割してください。');
+    }
+    pagesRows.push(rowsHtml.slice(idx, idx+take));
+    idx+=take;
+  }
+  if(pagesRows.length===0) pagesRows.push(rowsHtml);
+  return pagesRows;
+}
+
+function renderSoumu(){
+  const meta=state.meta;
+  const stamp=nowStamp();
+  const targets=printableMembers();
+  if(targets.length===0){
+    return '<div style="padding:40px;text-align:center;color:#999;">印刷対象の議員が選択されていません。<br>上の「印刷対象の議員を選択」でチェックを入れてください。</div>';
+  }
+  let html='';
+  let expectedRowTotal=0, renderedRowTotal=0;
+  targets.forEach(mm=>{
+    const pagesRows=paginateSoumuMember(mm, meta, stamp);
+    const total=pagesRows.length;
+    expectedRowTotal += Math.max(nodesOfMember(mm.id).length, 1);
+    pagesRows.forEach((rows,pi)=>{
+      renderedRowTotal += rows.length;
+      const pageLabel=`頁 ${pi+1}/${total}`;
+      const header=buildSoumuHeaderHtml(mm, meta, stamp, pageLabel);
+      html+=`<div class="soumu-page">${header}
+      <table class="soumu-table">${rows.join('')}</table>
+    </div>`;
+    });
+  });
+  if(renderedRowTotal!==expectedRowTotal){
+    console.warn('[内容表] 出力行数の不一致を検出しました。期待='+expectedRowTotal+' 実際='+renderedRowTotal+'。データ欠落の可能性があります。');
+  }
+  return html;
+}
+
+/* ============================================================
+   プレビュー / タブ切替
+   ============================================================ */
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('tabGikai').classList.toggle('active',tab==='gikai');
+  document.getElementById('tabSoumu').classList.toggle('active',tab==='soumu');
+  document.getElementById('printSelectPanel').style.display = (tab==='soumu')?'block':'none';
+  if(tab==='soumu') renderPrintSelect();
+  renderPreview();
+}
+function renderPreview(){
+  readMetaFromUI();
+  const area=document.getElementById('previewArea');
+  const hint=document.getElementById('tabHint');
+  if(currentTab==='gikai'){
+    area.innerHTML=renderGikai();
+    hint.textContent='議事課様式：表紙→目次→本体（1頁34行／1人目=1行目〜・2人目=18行目〜、長文は折り返し。1人分が1頁に収まらない場合は続きページへ自動で繰り越します）。全議員を出力します。';
+  }else{
+    area.innerHTML=renderSoumu();
+    const n=printableMembers().length;
+    hint.textContent='総務課様式：選択中の '+n+' 名を出力します（議員ごと1枚。1枚に収まらない場合は自動で複数頁に分割し、頁番号とヘッダーを各頁に付けます）。';
+  }
+}
+
+/* ============================================================
+   メタ情報 UI 連携
+   ============================================================ */
+function readMetaFromUI(){
+  state.meta.cityName=document.getElementById('mtCity').value||'〇〇市';
+  state.meta.gengo=document.getElementById('mtGengo').value;
+  state.meta.kai=document.getElementById('mtKai').value;
+  state.meta.start=document.getElementById('mtStart').value;
+  state.meta.end=document.getElementById('mtEnd').value;
+}
+function writeMetaToUI(){
+  document.getElementById('mtCity').value=state.meta.cityName||'〇〇市';
+  document.getElementById('mtGengo').value=state.meta.gengo;
+  document.getElementById('mtKai').value=state.meta.kai;
+  document.getElementById('mtStart').value=state.meta.start;
+  document.getElementById('mtEnd').value=state.meta.end;
+}
+
+/* ============================================================
+   localStorage
+   ============================================================ */
+const LS_KEY='gikai_tsuukoku_app_v10';
+const LS_KEY_OLD='gikai_tsuukoku_app_v9'; /* ★ 旧バージョンからの移行元キー */
+function saveLocal(){
+  readMetaFromUI();
+  state.meta.perDay=document.getElementById('perDay').value;
+  state.meta.dayBase=document.getElementById('dayBase').value;
+  state.meta.skipWeekend=document.getElementById('skipWeekend').checked;
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+}
+function loadLocal(){
+  try{
+    let s=localStorage.getItem(LS_KEY);
+    let migrated=false;
+    if(!s){
+      s=localStorage.getItem(LS_KEY_OLD);
+      if(s) migrated=true;
+    }
+    if(s){
+      state=JSON.parse(s);
+      if(!state.printSelection) state.printSelection={};
+      if(!state.meta) state.meta={};
+      if(!state.meta.cityName) state.meta.cityName='〇〇市';
+      if(migrated){
+        /* 新キーへ書き戻す。旧キーはバックアップとして残す（削除しない） */
+        try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+      }
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function clearAll(){
+  if(!confirm('すべてのデータを削除して初期化します。よろしいですか？')) return;
+  localStorage.removeItem(LS_KEY);
+  localStorage.removeItem(LS_KEY_OLD);
+  location.reload();
+}
+
+/* ============================================================
+   全体再描画
+   ============================================================ */
+function renderAll(){
+  if(state.meta.perDay) document.getElementById('perDay').value=state.meta.perDay;
+  if(state.meta.dayBase) document.getElementById('dayBase').value=state.meta.dayBase;
+  if(typeof state.meta.skipWeekend!=='undefined') document.getElementById('skipWeekend').checked=state.meta.skipWeekend;
+  ensurePrintSelection();
+  renderMembers(); renderDayTable(); refreshMemberSelect(); renderNodes();
+  if(currentTab==='soumu') renderPrintSelect();
+}
+function esc(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+/* ============================================================
+   初期サンプルデータ
+   ============================================================ */
+function loadSample(){
+  state.meta={gengo:7,kai:2,start:'2025-06-10',end:'2025-06-13',cityName:'〇〇市'};
+  writeMetaToUI();
+  document.getElementById('dayBase').value='2025-06-10';
+  document.getElementById('skipWeekend').checked=true;
+  const m1={id:'M1',order:1,name:'〇〇 一郎',kaiha:'〇〇会',minutes:60,hearer:'〇〇課 〇〇'};
+  const m2={id:'M2',order:2,name:'〇〇 二郎',kaiha:'〇〇党',minutes:45,hearer:'〇〇課 〇〇'};
+  const m3={id:'M3',order:3,name:'〇〇 三郎',kaiha:'〇〇の会',minutes:50,hearer:'〇〇課 〇〇'};
+  state.members=[m1,m2,m3];
+  state.printSelection={M1:true,M2:true,M3:true};
+  const s=[]; let seq=0;
+  function add(mid,type,text,claims,shokan){
+    seq++;
+    s.push({rowId:'R7-'+String(seq).padStart(4,'0'),memberId:mid,type,text,
+      claims:claims||['','','','',''],shokan:shokan||'',sort:seq});
+  }
+  add('M1','big','災害に強いまちづくりと避難所運営の抜本的な見直しを含む防災対策の総合的推進について',null,'');
+  add('M1','small','指定避難所の運営体制と要配慮者への支援のあり方について',null,'');
+  add('M1','content','ペット同行避難の受入体制の整備と、飼育スペースの確保及び受入基準の明確化に向けた市の取組について問う',['受入基準の明確化','飼育スペース確保'],'〇〇課');
+  add('M1','small','備蓄物資の見直し',['女性用品の拡充'],'〇〇課');
+  add('M2','big','子育て支援について',null,'');
+  add('M2','small','保育所の待機児童解消',['年度途中入所の弾力運用'],'〇〇課');
+  add('M3','big','高齢者福祉の充実について',['認知症サポーター養成の拡充'],'〇〇課');
+  state.nodes=s; state.rowSeq=seq;
+}
+
+/* ============================================================
+   起動処理
+   ============================================================ */
+window.addEventListener('DOMContentLoaded',()=>{
+  if(!loadLocal()){ loadSample(); }
+  else{ writeMetaToUI(); }
+  renderAll();
+  renderPreview();
+});
+/* ★ フォント確定前に計測すると折り返し行数がずれるため、フォント確定後に
+   再計測・再描画する（Webフォント等は使用していないが念のため対応） */
+if(document.fonts && document.fonts.ready){
+  document.fonts.ready.then(()=>{ renderPreview(); }).catch(()=>{});
+}
+/* ★ 印刷直前に再計測・再描画し、画面プレビューと印刷結果のページ割りを一致させる */
+window.addEventListener('beforeprint', ()=>{ renderPreview(); });
+</script>
+</body>
+</html>
+
+

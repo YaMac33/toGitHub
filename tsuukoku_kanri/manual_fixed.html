@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一般質問通告書 管理アプリ 説明書</title>
+<style>
+/* ============================================================
+   基本スタイル
+   ============================================================ */
+:root{
+  --main:#1a5276; --accent:#2874a6; --light:#eaf2f8;
+  --warn:#c0392b; --ok:#1e8449; --note:#b9770e; --border:#ccc;
+}
+*{box-sizing:border-box;}
+body{
+  font-family:"Yu Gothic","Meiryo",sans-serif;
+  margin:0; background:#e9edf0; color:#222; line-height:1.8;
+}
+.sheet{
+  width:210mm; min-height:297mm; margin:8mm auto; padding:16mm 18mm;
+  background:#fff; box-shadow:0 0 8px rgba(0,0,0,.15);
+}
+h1{
+  font-size:26px; color:var(--main); text-align:center;
+  border-bottom:4px double var(--main); padding-bottom:12px; margin:0 0 6px;
+}
+.subtitle{text-align:center; color:#666; font-size:14px; margin-bottom:24px;}
+h2{
+  font-size:20px; color:#fff; background:var(--main);
+  padding:8px 14px; border-radius:6px 6px 0 0; margin:32px 0 0;
+  display:flex; align-items:center; gap:10px;
+}
+h2 .icon{font-size:22px;}
+.section-body{
+  border:2px solid var(--main); border-top:none;
+  border-radius:0 0 6px 6px; padding:16px 18px; margin-bottom:8px;
+}
+h3{
+  font-size:16px; color:var(--accent); margin:18px 0 8px;
+  border-left:6px solid var(--accent); padding-left:10px;
+}
+p{margin:8px 0;}
+ul,ol{margin:8px 0 8px 4px; padding-left:22px;}
+li{margin:4px 0;}
+code{
+  background:#f4f4f4; border:1px solid #ddd; border-radius:3px;
+  padding:1px 5px; font-family:"Consolas",monospace; font-size:13px; color:#c0392b;
+}
+
+/* 注記ボックス */
+.box{border-radius:8px; padding:12px 16px; margin:14px 0; border-left:6px solid;}
+.box .box-title{font-weight:bold; margin-bottom:4px; display:flex; align-items:center; gap:6px;}
+.box.tip{background:#eafaf1; border-color:var(--ok);}
+.box.tip .box-title{color:var(--ok);}
+.box.warn{background:#fdedec; border-color:var(--warn);}
+.box.warn .box-title{color:var(--warn);}
+.box.note{background:#fef9e7; border-color:var(--note);}
+.box.note .box-title{color:var(--note);}
+
+/* 手順ステップ */
+.step{ display:flex; gap:14px; margin:12px 0; align-items:flex-start; }
+.step .num{
+  flex-shrink:0; width:38px; height:38px; border-radius:50%;
+  background:var(--accent); color:#fff; font-size:18px; font-weight:bold;
+  display:flex; align-items:center; justify-content:center;
+}
+.step .txt{flex:1; padding-top:4px;}
+.step .txt b{color:var(--main);}
+
+/* フロー図 */
+.flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:18px 0; justify-content:center;}
+.flow .node{
+  background:var(--light); border:2px solid var(--accent); border-radius:8px;
+  padding:10px 16px; text-align:center; font-size:13px; min-width:110px;
+}
+.flow .node .big{font-size:20px; display:block;}
+.flow .arrow{font-size:24px; color:var(--accent);}
+
+/* 画面イメージ（擬似UI） */
+.mock{
+  border:2px solid #999; border-radius:8px; overflow:hidden; margin:14px 0;
+  box-shadow:0 2px 6px rgba(0,0,0,.1); font-size:12px;
+}
+.mock .mock-bar{background:var(--main); color:#fff; padding:6px 10px; font-weight:bold;}
+.mock .mock-body{padding:10px; background:#fafafa;}
+.mock .mb-card{background:#fff; border:1px solid #ccc; border-radius:5px; padding:8px; margin:6px 0;}
+.mock .mb-title{color:var(--main); font-weight:bold; border-bottom:2px solid var(--accent); padding-bottom:2px; margin-bottom:6px;}
+.mock .mb-btn{display:inline-block; background:var(--accent); color:#fff; border-radius:4px; padding:3px 10px; margin:2px; font-size:11px;}
+.mock .mb-btn.gray{background:#7f8c8d;}
+.mock .mb-btn.red{background:var(--warn);}
+.mock .mb-btn.off{background:#ccc; color:#666;}
+.mock .mb-input{display:inline-block; background:#fff; border:1px solid #bbb; border-radius:3px; padding:2px 8px; margin:2px; min-width:60px;}
+.mock table{border-collapse:collapse; width:100%; font-size:11px;}
+.mock th,.mock td{border:1px solid #ccc; padding:3px 5px;}
+.mock th{background:var(--light);}
+
+/* 表 */
+table.tbl{border-collapse:collapse; width:100%; margin:12px 0; font-size:13px;}
+table.tbl th, table.tbl td{border:1px solid #bbb; padding:6px 8px; text-align:left; vertical-align:top;}
+table.tbl th{background:var(--main); color:#fff;}
+table.tbl tr:nth-child(even){background:#f6f9fb;}
+
+/* 階層イメージ */
+.tree{background:#f8f9fa; border:1px solid #ddd; border-radius:6px; padding:14px 18px; margin:12px 0; font-family:"MS Mincho",serif;}
+.tree .lv1{font-weight:bold; color:var(--main);}
+.tree .lv2{margin-left:1.5em; color:#333;}
+.tree .lv3{margin-left:3em; color:#555;}
+.tree .lv4{margin-left:4.5em; color:#888; font-size:13px;}
+
+/* OK/NGバッジ */
+.ok-badge{display:inline-block;background:#eafaf1;border:1px solid #1e8449;color:#1e8449;border-radius:4px;padding:1px 8px;font-size:12px;font-weight:bold;}
+.ng-badge{display:inline-block;background:#fdedec;border:1px solid #c0392b;color:#c0392b;border-radius:4px;padding:1px 8px;font-size:12px;font-weight:bold;}
+
+/* 目次 */
+.toc{background:var(--light); border:2px solid var(--accent); border-radius:8px; padding:16px 24px; margin:20px 0;}
+.toc h3{border:none; margin:0 0 10px; padding:0; color:var(--main);}
+.toc ol{columns:2; column-gap:30px;}
+.toc a{color:var(--accent); text-decoration:none;}
+.toc a:hover{text-decoration:underline;}
+
+/* 印刷ボタン */
+.print-bar{position:fixed; top:10px; right:16px; z-index:100;}
+.print-bar button{
+  background:var(--main); color:#fff; border:none; border-radius:6px;
+  padding:10px 18px; font-size:14px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.print-bar button:hover{background:var(--accent);}
+
+.footer{text-align:center; color:#999; font-size:12px; margin-top:40px; border-top:1px solid #ddd; padding-top:10px;}
+
+/* ============================================================
+   印刷用
+   ============================================================ */
+@page{ size:A4 portrait; margin:14mm; }
+@media print{
+  body{background:#fff;}
+  .print-bar{display:none;}
+  .sheet{box-shadow:none; margin:0 auto; width:auto; min-height:auto; padding:0;}
+  h2{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .box,.mock,.flow .node,table.tbl th{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  h2,h3{ page-break-after:avoid; }
+  .box,.mock,.step,.flow,.tree{ page-break-inside:avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="print-bar">
+  <button onclick="window.print()">🖨 印刷 / PDF保存</button>
+</div>
+
+<div class="sheet">
+
+  <h1>一般質問通告書 管理アプリ 説明書</h1>
+  <div class="subtitle">オフライン動作・単一HTMLファイル版　／　議事課・総務課 共用</div>
+
+  <!-- ========== 目次 ========== -->
+  <div class="toc">
+    <h3>📖 目次</h3>
+    <ol>
+      <li><a href="#s1">このアプリでできること</a></li>
+      <li><a href="#s2">起動と画面全体</a></li>
+      <li><a href="#s3">かんたん作業の流れ</a></li>
+      <li><a href="#s4">STEP1 定例会情報の入力</a></li>
+      <li><a href="#s5">STEP2 議員名マスタの登録</a></li>
+      <li><a href="#s6">STEP3 質問日の設定（平日・祝日）</a></li>
+      <li><a href="#s7">STEP4 通告内容の入力（階層ルール）</a></li>
+      <li><a href="#s8">STEP5 議事課様式の印刷</a></li>
+      <li><a href="#s9">STEP6 総務課様式の印刷（議員選択）</a></li>
+      <li><a href="#s10">CSVの読込・書き出し</a></li>
+      <li><a href="#s11">よくある質問（FAQ）</a></li>
+    </ol>
+  </div>
+
+  <!-- ========== 1. できること ========== -->
+  <h2 id="s1"><span class="icon">💡</span>1. このアプリでできること</h2>
+  <div class="section-body">
+    <p>議会の一般質問の通告内容を入力し、<b>議事課の「通告表（冊子）」</b>と<b>総務課の「内容表（議員ごと）」</b>の2つの様式を、そのまま印刷・PDF化できるアプリです。</p>
+    <div class="flow">
+      <div class="node"><span class="big">⌨️</span>入力する</div>
+      <div class="arrow">→</div>
+      <div class="node"><span class="big">💾</span>CSVで保存<br>受け渡し</div>
+      <div class="arrow">→</div>
+      <div class="node"><span class="big">👁</span>プレビュー</div>
+      <div class="arrow">→</div>
+      <div class="node"><span class="big">🖨</span>印刷・PDF</div>
+    </div>
+    <div class="box tip">
+      <div class="box-title">✅ 特長</div>
+      <ul>
+        <li><b>インターネット不要</b>（LGWAN内・オフラインで完全動作）</li>
+        <li>ファイルを<b>ダブルクリックで開くだけ</b>。インストール不要</li>
+        <li>データは<b>CSVファイル</b>でやり取り（議事課↔総務課で往復可能）</li>
+        <li>PDFは<b>ブラウザの「印刷→PDFとして保存」</b>を利用</li>
+        <li>総務課様式は<b>議員を選んで個別に印刷</b>できる</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ========== 2. 画面全体 ========== -->
+  <h2 id="s2"><span class="icon">🖥</span>2. 起動と画面全体</h2>
+  <div class="section-body">
+    <p>アプリのHTMLファイルを <b>Microsoft Edge</b> または <b>Google Chrome</b> でダブルクリックして開きます。画面は上から次の順に並んでいます。</p>
+    <div class="mock">
+      <div class="mock-bar">議会 一般質問通告書 管理アプリ</div>
+      <div class="mock-body">
+        <div class="mb-card"><div class="mb-title">① 定例会情報 / データ入出力</div>
+          自治体名<span class="mb-input">〇〇市</span>
+          令和<span class="mb-input">7</span>年 第<span class="mb-input">2</span>回定例会
+          <span class="mb-btn">CSV出力</span><span class="mb-btn gray">CSV読込</span><span class="mb-btn red">全データ削除</span>
+        </div>
+        <div class="mb-card"><div class="mb-title">② 議員名マスタ</div>
+          <table><tr><th>順位</th><th>氏名</th><th>会派</th><th>時間</th><th>聞取り担当者</th></tr>
+          <tr><td>1</td><td>〇〇 一郎</td><td>〇〇会</td><td>60</td><td>〇〇課 〇〇</td></tr></table>
+        </div>
+        <div class="mb-card"><div class="mb-title">③ 質問日マスタ（詳細設定は折りたたみ）</div>
+          初日<span class="mb-input">6/10</span>　1日<span class="mb-input">4</span>人　☑土日を除く
+        </div>
+        <div class="mb-card"><div class="mb-title">④ 通告内容の入力</div>
+          対象議員<span class="mb-input">1. 〇〇 一郎</span>
+          <span class="mb-btn">＋大きな項目</span><span class="mb-btn off">＋小さな項目</span><span class="mb-btn off">＋内容</span>
+        </div>
+        <div class="mb-card"><div class="mb-title">⑤ プレビュー / 印刷</div>
+          <span class="mb-btn">議事課様式</span><span class="mb-btn gray">総務課様式</span><span class="mb-btn">🖨印刷</span>
+        </div>
+      </div>
+    </div>
+    <p>上から順に入力していけば、自然と完成する構成になっています。追加ボタンは、その時点で<b>追加できないものは自動的にグレー</b>になります。</p>
+  </div>
+
+  <!-- ========== 3. 作業の流れ ========== -->
+  <h2 id="s3"><span class="icon">🔰</span>3. かんたん作業の流れ</h2>
+  <div class="section-body">
+    <div class="step"><div class="num">1</div><div class="txt"><b>定例会情報</b>を入力（令和何年・第何回・会期）</div></div>
+    <div class="step"><div class="num">2</div><div class="txt"><b>議員名マスタ</b>に議員を登録（順位・氏名・会派・時間・聞取り担当者）</div></div>
+    <div class="step"><div class="num">3</div><div class="txt"><b>質問日</b>を設定（初日を入れると平日で自動計算。祝日は手動で調整）</div></div>
+    <div class="step"><div class="num">4</div><div class="txt"><b>通告内容</b>を議員ごとに階層入力（大項目→小項目→内容→主訴）</div></div>
+    <div class="step"><div class="num">5</div><div class="txt"><b>プレビュー</b>で確認し、<b>印刷（PDF保存）</b></div></div>
+    <div class="box note">
+      <div class="box-title">📌 データ保存について</div>
+      入力内容は<b>ブラウザに自動退避</b>されるため、閉じても次回開けば残っています。ただし別のPCへ渡すときや正式な保管には、必ず<b>CSV出力</b>してください。
+    </div>
+  </div>
+
+  <!-- ========== 4. STEP1 ========== -->
+  <h2 id="s4"><span class="icon">📅</span>4. STEP1　定例会情報の入力</h2>
+  <div class="section-body">
+    <p>画面いちばん上のエリアで、定例会の基本情報を入力します。</p>
+    <table class="tbl">
+      <tr><th>項目</th><th>入力内容</th><th>例</th></tr>
+      <tr><td>自治体名</td><td>市区町村名（「議会」の前に付く部分）</td><td>〇〇市</td></tr>
+      <tr><td>令和●年</td><td>元号の年数</td><td>7</td></tr>
+      <tr><td>第●回定例会</td><td>定例会の回</td><td>2</td></tr>
+      <tr><td>会期開始 / 終了</td><td>カレンダーから選択</td><td>6/10 〜 6/13</td></tr>
+    </table>
+    <div class="box tip">
+      <div class="box-title">✅ ワンポイント</div>
+      ここで入れた「自治体名」「令和●年」「第●回」は、通告表の表紙（例：「〇〇市議会」）や内容表の見出しに<b>自動で反映</b>されます。
+    </div>
+  </div>
+
+  <!-- ========== 5. STEP2 ========== -->
+  <h2 id="s5"><span class="icon">👥</span>5. STEP2　議員名マスタの登録</h2>
+  <div class="section-body">
+    <p><b>「＋議員を追加」</b>ボタンで行を増やし、各議員の情報を入力します。</p>
+    <table class="tbl">
+      <tr><th>列</th><th>説明</th></tr>
+      <tr><td>順位</td><td>発言順位（1〜）。これをもとに質問日が決まります</td></tr>
+      <tr><td>氏名 / 会派</td><td>議員名と所属会派</td></tr>
+      <tr><td>予定時間(分)</td><td>質問予定時間。目次に「●分」と表示されます</td></tr>
+      <tr><td>聞取り担当者</td><td><b>議員ごとに1人</b>。総務課様式に表示されます</td></tr>
+      <tr><td>質問日(自動)</td><td>順位から自動計算された日付が表示（入力不要）</td></tr>
+    </table>
+    <div class="box tip">
+      <div class="box-title">✅ 便利機能</div>
+      入力後に<b>「発言順位で並べ替え」</b>を押すと、順位どおりに並び替わります。
+    </div>
+    <div class="box warn">
+      <div class="box-title">⚠ 注意</div>
+      「削除」を押すと、その議員に紐づく<b>通告内容もすべて削除</b>されます。確認メッセージが出ますので慎重に。
+    </div>
+  </div>
+
+  <!-- ========== 6. STEP3 ========== -->
+  <h2 id="s6"><span class="icon">🗓</span>6. STEP3　質問日の設定（平日・祝日）</h2>
+  <div class="section-body">
+    <p>質問日は<b>「初日」を入れるだけ</b>で、あとは自動計算されます。基本ルールは次のとおりです。</p>
+    <div class="flow">
+      <div class="node">順位 1〜4<br><span class="big">📅</span>初日</div>
+      <div class="arrow">→</div>
+      <div class="node">順位 5〜8<br><span class="big">📅</span>2日目</div>
+      <div class="arrow">→</div>
+      <div class="node">順位 9〜12<br><span class="big">📅</span>3日目</div>
+    </div>
+    <h3>① 土日は自動でスキップ</h3>
+    <p>「☑ 土日を除いて連続する平日で自動算出」にチェックが入っていると、土曜・日曜を飛ばして<b>平日だけ</b>で日付を数えます。</p>
+
+    <h3>② 祝日は手動で調整</h3>
+    <div class="box warn">
+      <div class="box-title">⚠ 重要：祝日は自動判定できません</div>
+      祝日をまたぐ場合は、<b>「詳細設定」</b>を開き、その日の<b>「質問日（手動上書き）」</b>に正しい日付を入れてください。<b>手動設定が最優先</b>され、それ以降の日付も自動でずれて計算されます。
+    </div>
+
+    <h3>③ 1日の人数が変わるとき（例外）</h3>
+    <p>「1日目だけ5人」のような例外は、詳細設定の<b>「人数」</b>欄で上書きします。人数を変えると、以降の割り当てが自動でずれます。</p>
+    <div class="mock">
+      <div class="mock-bar">▼ 詳細設定（折りたたみ）</div>
+      <div class="mock-body">
+        <table>
+          <tr><th>日次</th><th>人数</th><th>質問日（手動上書き）</th></tr>
+          <tr><td>1日目<br><small>6月10日(火)自動</small></td><td><span class="mb-input">5</span></td><td><span class="mb-input">　　　</span></td></tr>
+          <tr><td>2日目<br><small>6月11日(水)自動</small></td><td><span class="mb-input">　</span></td><td><span class="mb-input">6/13</span>←祝日回避</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 7. STEP4 階層 ========== -->
+  <h2 id="s7"><span class="icon">📝</span>7. STEP4　通告内容の入力（階層ルール）</h2>
+  <div class="section-body">
+    <p>通告内容は<b>3段の階層</b>で入力します。まず「対象議員」を選び、ボタンで項目を追加していきます。</p>
+    <div class="tree">
+      <div class="lv1">１　防災対策について　… ← 大項目</div>
+      <div class="lv2">(1) 避難所運営の課題　… ← 小項目</div>
+      <div class="lv3">① ペット同行避難の受入体制　… ← 内容</div>
+      <div class="lv4">・受入基準の明確化　・飼育スペース確保　… ← 主訴（最大5個）</div>
+      <div class="lv2">(2) 備蓄物資の見直し　… ← 内容の後に、同じ大項目の小項目を続けられる</div>
+    </div>
+
+    <h3>追加できる組み合わせのルール</h3>
+    <table class="tbl">
+      <tr><th>追加するもの</th><th>ルール</th></tr>
+      <tr><td>大きな項目</td><td>いつでも追加できます（新しい大テーマの開始）</td></tr>
+      <tr><td>小さな項目</td><td>大項目が1つでもあれば、<b>大項目・小項目・内容のどの後でも</b>追加できます。直前の大項目にぶら下がります</td></tr>
+      <tr><td>内容</td><td><b>小項目・内容の後</b>にのみ追加できます（大項目の直後には置けません）</td></tr>
+    </table>
+
+    <div class="box tip">
+      <div class="box-title">✅ 「内容の後に小項目」もOK</div>
+      例：<code>大1 → 小1 → 内容1 → 小2</code> のように、内容の後に同じ大項目の小項目を続けられます。小2は自動的に大1の (2) として採番されます。
+    </div>
+
+    <h3>終わり方は3パターン（主訴は「末端」に付く）</h3>
+    <p>質問は、大項目だけ・小項目まで・内容まで、どこで終わってもかまいません。<b>主訴（最大5個）は、その質問の一番末端の行にぶら下がります。</b></p>
+    <table class="tbl">
+      <tr><th>終わり方</th><th>主訴が付く場所</th></tr>
+      <tr><td>大項目だけで終わる</td><td>大項目に主訴が付く</td></tr>
+      <tr><td>大項目 → 小項目で終わる</td><td>小項目に主訴が付く</td></tr>
+      <tr><td>大項目 → 小項目 → 内容で終わる</td><td>内容に主訴が付く</td></tr>
+    </table>
+    <div class="box note">
+      <div class="box-title">📌 「末端」バッジと主訴欄</div>
+      末端になっている行には <span class="ok-badge">末端</span> の表示が付き、その行にだけ<b>主訴の入力欄</b>が現れます。あとに続く行を追加すると、末端が移動して主訴欄も移ります。
+    </div>
+
+    <h3>所管の入力</h3>
+    <p><b>所管</b>（担当部署名）は各行に入力できます。1つの大項目の中で所管が複数に分かれる場合も、行ごとに設定できます。総務課様式の右側に表示されます。</p>
+
+    <h3>並べ替え・修正・削除</h3>
+    <div class="flow">
+      <div class="node"><span class="big">▲▼</span>上下ボタン<br>で移動</div>
+      <div class="arrow">／</div>
+      <div class="node"><span class="big">🖱</span>ドラッグ<br>で並べ替え</div>
+      <div class="arrow">／</div>
+      <div class="node"><span class="big">✏️</span>直接クリック<br>で修正</div>
+      <div class="arrow">／</div>
+      <div class="node"><span class="big">×</span>削除</div>
+    </div>
+    <div class="box note">
+      <div class="box-title">📌 追加ボタンがグレーのとき</div>
+      その時点で追加できない種類のボタンは<b>グレーアウト</b>します。ボタン横に「次に追加できるもの → …」とガイドが出るので参考にしてください。
+    </div>
+  </div>
+
+  <!-- ========== 8. STEP5 議事課 ========== -->
+  <h2 id="s8"><span class="icon">📚</span>8. STEP5　議事課様式の印刷（通告表・冊子）</h2>
+  <div class="section-body">
+    <p>プレビューで<b>「議事課様式」</b>タブを選ぶと、全議員をまとめた冊子形式で表示されます。</p>
+    <table class="tbl">
+      <tr><th>構成</th><th>内容</th></tr>
+      <tr><td>表紙</td><td>「令和●年〇〇市議会第●回定例会」「一般質問通告表」「〇〇市議会」（自治体名はSTEP1で入力したものが反映）</td></tr>
+      <tr><td>目次</td><td>発言順位／質問日／質問者（所属会派）／質問予定時間／頁。質問日は人数分だけ縦結合</td></tr>
+      <tr><td>本体</td><td>議員ごとの見出し「○ 氏名 議員」＋階層。1ページ34行で最大2人ずつ配置</td></tr>
+    </table>
+    <div class="box tip">
+      <div class="box-title">✅ 表示のポイント</div>
+      <ul>
+        <li>本体では主訴・所管・聞取り担当者は<b>表示されません</b>（冊子は階層のみ）。</li>
+        <li>見出しの「氏名」と「議員」は横に広げて（150%）強調表示されます。</li>
+        <li>目次の「質問者（所属会派）」列は幅を広くとり、改行しにくくしています。</li>
+      </ul>
+    </div>
+    <div class="box note">
+      <div class="box-title">📌 改ページの仕組み（仕様）</div>
+      <ul>
+        <li>1ページ34行のうち、1人目が16行以内なら17行目を空けて2人目を下段に配置します。1人目が17行を超える場合、2人目は次ページ先頭から始まります。</li>
+        <li><b>1人分の行数が1ページ（34行）に収まらない場合は、収まる分だけ出力したうえで、残りを続きページの1行目から自動的に繰り越します。</b>続きページの先頭には「○ 氏名 議員（続き）」という見出しが付き、内容が印刷から欠落することはありません。</li>
+        <li>複数ページにまたがった議員の次の議員は、必ず次ページの1行目から開始します（下段18行目からの配置は行われません）。</li>
+        <li>目次の「頁」列には、各議員の<b>最初のページ番号</b>（続きページではなく本文が始まるページ）が表示されます。</li>
+      </ul>
+    </div>
+    <div class="box warn">
+      <div class="box-title">⚠ 極端に長い1項目について</div>
+      1つの項目（大項目・小項目・内容のいずれか）の文章だけで1ページ分（34行相当）を超えるような非常に長いテキストは、ページの途中で自動的に区切ることができません。ブラウザのコンソールに警告が出ますので、その場合は項目を分割して入力してください（通常の運用でここまで長い項目になることはほとんどありません）。
+    </div>
+    <p><b>「印刷（PDF保存）」</b>または <code>Ctrl</code>＋<code>P</code> で出力します。議事課様式は<b>全議員が対象</b>です。</p>
+  </div>
+
+  <!-- ========== 9. STEP6 総務課 ========== -->
+  <h2 id="s9"><span class="icon">🖨</span>9. STEP6　総務課様式の印刷（内容表・議員選択）</h2>
+  <div class="section-body">
+    <p>プレビューで<b>「総務課様式」</b>タブを選ぶと、<b>議員ごとに1枚（内容が多い場合は複数枚）</b>の内容表が表示されます。主訴・所管・聞取り担当者も表示されます。</p>
+
+    <h3>印刷したい議員だけを選べます</h3>
+    <p>総務課様式を選ぶと、その下に<b>「印刷対象の議員を選択」</b>パネルが現れます。チェックした議員だけがプレビュー・印刷の対象になります（初期は全員ON）。</p>
+    <div class="mock">
+      <div class="mock-bar">🖨 印刷対象の議員を選択</div>
+      <div class="mock-body">
+        <span class="mb-btn">全選択</span><span class="mb-btn gray">全解除</span><br><br>
+        <span class="mb-input">☑ 1. 〇〇 一郎（〇〇会）</span>
+        <span class="mb-input">☑ 2. 〇〇 二郎（〇〇党）</span>
+        <span class="mb-input" style="opacity:.5">☐ 5. 〇〇 五郎（〇〇の会）</span>
+      </div>
+    </div>
+    <h3>1枚に収まらない場合（複数ページ）</h3>
+    <p>1人分の質問事項・要旨が1ページに収まりきらない場合は、自動的に2ページ目以降に分割されます。</p>
+    <table class="tbl">
+      <tr><th>項目</th><th>2ページ目以降の見え方</th></tr>
+      <tr><td>頁の表記</td><td>右上の「頁」欄に、実際のページ数に応じて「1/2」「2/2」のように表示されます（固定表記ではありません）</td></tr>
+      <tr><td>ヘッダー</td><td>定例会名（自治体名・令和●年・第●回）、会派、議員名、質問時間、「質問事項及び要旨／所管」の見出しは<b>各ページの先頭に繰り返し</b>表示されます</td></tr>
+      <tr><td>余白</td><td>2ページ目以降も1ページ目と同じ上下左右の余白で出力されます</td></tr>
+    </table>
+    <div class="box tip">
+      <div class="box-title">✅ ポイント</div>
+      1つの項目・主訴の途中でページが切れることはなく、行の区切りのよい位置で自動的に改ページされます。
+    </div>
+    <div class="step"><div class="num">1</div><div class="txt"><b>「総務課様式」</b>タブを選ぶ</div></div>
+    <div class="step"><div class="num">2</div><div class="txt">印刷したい議員に<b>チェック</b>（<b>全選択・全解除</b>ボタンで一括操作も可）</div></div>
+    <div class="step"><div class="num">3</div><div class="txt">チェックに応じてプレビューが即更新される</div></div>
+    <div class="step"><div class="num">4</div><div class="txt"><b>「印刷（PDF保存）」</b>で、選択した議員分だけを出力</div></div>
+    <div class="box tip">
+      <div class="box-title">✅ 使いどころ</div>
+      特定議員の内容表だけを差し替え・再配布したいときに便利です。1人だけ選べば、その議員の1枚だけがPDFになります。
+    </div>
+
+    <h3>印刷時の推奨設定（議事課様式・総務課様式 共通）</h3>
+    <p><b>「印刷（PDF保存）」</b>ボタン、または <code>Ctrl</code>＋<code>P</code> を押すと、Edge / Chrome 標準の印刷ダイアログが開きます。レイアウト崩れを防ぐため、次の設定を確認してください。</p>
+    <table class="tbl">
+      <tr><th>設定項目</th><th>推奨値</th><th>崩れる場合の対処</th></tr>
+      <tr><td>プリンター（送信先）</td><td>紙に印刷する場合はプリンター名／PDF化する場合は<b>「PDFに保存」</b></td><td>—</td></tr>
+      <tr><td>用紙サイズ</td><td><b>A4</b></td><td>A4以外を選ぶと余白・改ページ位置がずれます</td></tr>
+      <tr><td>印刷の向き</td><td><b>縦</b></td><td>横向きにすると1ページに収まらなくなります</td></tr>
+      <tr><td>余白</td><td><b>既定</b>（または「なし」）</td><td>アプリ側で余白（上下左右15mm程度）を作り込んでいるため、ブラウザ側の余白は既定のままでOKです。「なし」にしても表示上の余白はアプリ側の設定が優先されます</td></tr>
+      <tr><td>拡大/縮小（倍率）</td><td><b>100%</b>（既定）</td><td>「用紙に合わせる」等の自動縮小がONだと行の折返し位置がプレビューとずれることがあります。必ず100%を指定してください</td></tr>
+      <tr><td>背景のグラフィック</td><td><b>ON（有効）</b></td><td>OFFのままだと表の罫線の色や網掛けなど一部の装飾が印刷されません。詳細設定を開いてチェックを入れてください</td></tr>
+    </table>
+    <div class="box warn">
+      <div class="box-title">⚠ それでも崩れる場合</div>
+      <ul>
+        <li>一度プレビューを閉じ、<b>「プレビュー更新」</b>ボタンを押してから再度印刷してください（内容を編集した直後は特に）。</li>
+        <li>ブラウザの表示倍率（ズーム）を100%に戻してから印刷してください。</li>
+        <li>それでも改ページ位置がおかしい場合は、印刷ダイアログを閉じて画面を再読み込みしてから、もう一度お試しください。</li>
+      </ul>
+    </div>
+    <h3>PDFとして保存する手順</h3>
+    <div class="step"><div class="num">1</div><div class="txt"><b>「印刷（PDF保存）」</b>または <code>Ctrl</code>＋<code>P</code> で印刷ダイアログを開く</div></div>
+    <div class="step"><div class="num">2</div><div class="txt">「送信先」（プリンター選択）を<b>「PDFに保存」</b>に切り替える</div></div>
+    <div class="step"><div class="num">3</div><div class="txt">上記の推奨設定（A4・縦・倍率100%・背景のグラフィックON）を確認し、<b>「保存」</b>を押してファイル名・保存先を指定する</div></div>
+  </div>
+
+  <!-- ========== 10. CSV ========== -->
+  <h2 id="s10"><span class="icon">💾</span>10. CSVの読込・書き出し</h2>
+  <div class="section-body">
+    <p>データの保存・受け渡しは<b>CSVファイル</b>で行います。議事課と総務課の間で往復しても、どちらの入力項目も欠落しません。</p>
+    <div class="flow">
+      <div class="node"><span class="big">🏛</span>議事課<br>入力</div>
+      <div class="arrow">⇄</div>
+      <div class="node"><span class="big">📄</span>CSV<br>ファイル</div>
+      <div class="arrow">⇄</div>
+      <div class="node"><span class="big">🏢</span>総務課<br>所管・主訴</div>
+    </div>
+    <table class="tbl">
+      <tr><th>操作</th><th>説明</th></tr>
+      <tr><td>CSV出力</td><td>現在のデータをダウンロード。ファイル名は自動生成。出力時刻が各行に記録されます</td></tr>
+      <tr><td>CSV読込</td><td>ファイルを選ぶと画面状態を完全復元します</td></tr>
+    </table>
+    <div class="box note">
+      <div class="box-title">📌 Excelで開くときの安心設計</div>
+      <ul>
+        <li>行IDは <code>R7-0001</code> のような形式で、Excelが日付や数値に誤変換しません。</li>
+        <li>文字コードは<b>UTF-8（BOM付き）</b>で出力するため、Excelでも文字化けしません。</li>
+      </ul>
+    </div>
+    <div class="box warn">
+      <div class="box-title">⚠ 注意</div>
+      <ul>
+        <li>「全データ削除」を押すと、ブラウザ内の作業データも消えます。必要なデータは事前にCSV出力しておきましょう。</li>
+        <li>総務課様式の印刷対象チェックは、「発言順位・氏名・会派」の組み合わせでCSVに記録され、読み込み時に同じ組み合わせの議員へ<b>自動的に復元</b>されます。ただし、氏名や会派を書き換えた場合や、旧いバージョンで出力したCSVを読み込む場合は組み合わせが一致しないため、<b>印刷対象チェックは全員ONに戻ります</b>（安全側の動作）。その場合は受け取り側で選び直してください。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ========== 11. FAQ ========== -->
+  <h2 id="s11"><span class="icon">❓</span>11. よくある質問（FAQ）</h2>
+  <div class="section-body">
+    <h3>Q. 開いても真っ白／動かない</h3>
+    <p>A. Edge か Chrome で開いてください。古いブラウザ（Internet Explorer 等）では動作しません。</p>
+
+    <h3>Q. 「小さな項目」ボタンがグレーで押せない</h3>
+    <p>A. まだ大項目が1つもない状態です。先に「大きな項目」を追加してください。大項目が1つでもあれば、以降は内容の後でも小項目を追加できます。</p>
+
+    <h3>Q. 「内容」ボタンがグレーで押せない</h3>
+    <p>A. 直前が大項目の状態です。内容は小項目の後にしか置けません。先に「小さな項目」を追加してください。</p>
+
+    <h3>Q. 主訴の入力欄が出てこない</h3>
+    <p>A. 主訴は<b>末端の行</b>にだけ表示されます（<span class="ok-badge">末端</span> バッジの付いた行）。あとに続く行があると、その行は末端ではなくなり主訴欄が消えます。</p>
+
+    <h3>Q. 質問日がずれている</h3>
+    <p>A. 祝日は自動判定されません。「詳細設定」で該当日の日付を手動で上書きしてください。土日は「土日を除く」のチェックで飛ばせます。</p>
+
+    <h3>Q. 通告表で2人目が変な位置から始まる</h3>
+    <p>A. これは仕様です。1ページ34行のうち、1人目が16行以内なら17行目を空けて2人目を下段に、17行を超えると2人目は次ページ先頭から始まります。</p>
+
+    <h3>Q. 通告表で1人分の内容が1ページに収まらないとどうなる？</h3>
+    <p>A. 収まる分だけそのページに出力したうえで、残りは自動的に続きページの1行目から出力されます（内容が消えることはありません）。続きページの先頭には「○ 氏名 議員（続き）」という見出しが付きます。その議員の次の議員は、必ず新しいページの1行目から始まります（下段18行目への配置はされません）。目次の「頁」欄には、その議員の内容が<b>最初に始まるページ番号</b>が表示されます。</p>
+
+    <h3>Q. 内容表（総務課様式）が2ページ以上になった</h3>
+    <p>A. 1人分の質問事項・要旨が1ページに収まらない量になると自動的に分割されます。右上の「頁」表記は実際のページ数に応じて「1/2」「2/2」のように変わり、定例会名・会派・議員名・質問時間・見出し行などのヘッダーは各ページに繰り返し表示されます。1つの項目や主訴の途中でページが切れることはありません。</p>
+
+    <h3>Q. 特定の議員の内容表だけを印刷したい</h3>
+    <p>A. 「総務課様式」タブを選び、印刷対象パネルでその議員だけにチェックを入れて印刷してください。</p>
+
+    <h3>Q. 聞取り担当者を項目ごとに変えたい</h3>
+    <p>A. 聞取り担当者は<b>議員ごとに1人</b>の仕様です。議員名マスタの「聞取り担当者」欄に入力してください（所管は行ごとに設定できます）。</p>
+
+    <h3>Q. 印刷すると2ページ目以降の上の余白が極端に狭い／広い</h3>
+    <p>A. 印刷ダイアログの「余白」設定が「既定」以外（特に「なし」以外を選んで縮小がかかっている等）になっていないか確認してください。用紙はA4・倍率100%を指定し、既定の余白のまま印刷すれば、1ページ目以降どのページも同じ余白で出力されます（8章末尾「印刷時の推奨設定」参照）。</p>
+
+    <h3>Q. 入力したデータが消えた</h3>
+    <p>A. ブラウザの履歴・キャッシュを消去すると自動退避データも消えます。こまめにCSV出力してバックアップしてください。</p>
+
+    <div class="box tip">
+      <div class="box-title">✅ 困ったときは</div>
+      まずは<b>CSV出力でバックアップ</b>→アプリを開き直す、が基本の対処です。それでも解決しない場合は、CSVファイルを添えて担当へご相談ください。
+    </div>
+  </div>
+
+  <div class="footer">
+    一般質問通告書 管理アプリ 説明書　／　この説明書は右上のボタンから印刷・PDF保存できます
+  </div>
+
+</div>
+
+</body>
+</html>
+
+
