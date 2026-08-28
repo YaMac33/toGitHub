@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>再質問一覧表 プレビュー</title>
+<style>
+  :root{
+    --bg:#eef1f6; --panel:#fff; --ink:#1f2937; --sub:#6b7280;
+    --accent:#3b6ea5; --accent-d:#2c5580; --accent-l:#e8f0f8;
+    --line:#d0d7e2; --sheet-line:#333; --ok:#2f9e6f; --shadow:0 4px 16px rgba(30,50,80,.12);
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:"Segoe UI","Meiryo","Yu Gothic",sans-serif; background:var(--bg);
+    color:var(--ink); font-size:14px; }
+
+  /* ===== 画面上のツールバー（印刷時は非表示） ===== */
+  #toolbar{ background:linear-gradient(135deg,var(--accent),var(--accent-d)); color:#fff;
+    padding:12px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  #toolbar h1{ font-size:15px; margin:0; font-weight:700; }
+  #toolbar .note{ font-size:12px; opacity:.88; }
+  #toolbar .spacer{ flex:1; }
+  #toolbar button{ background:#fff; color:var(--accent-d); border:none; border-radius:8px;
+    padding:8px 16px; font-weight:700; cursor:pointer; font-size:13px; }
+  #toolbar button:hover{ background:var(--accent-l); }
+
+  /* ===== 選択パネル（印刷時は非表示） ===== */
+  #ctrl{ background:var(--panel); border-bottom:1px solid var(--line); box-shadow:var(--shadow);
+    padding:14px 20px; }
+  #ctrl .ctrl-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #ctrl .ctrl-head b{ font-size:13px; }
+  #ctrl .ctrl-head .cnt{ font-size:12px; color:var(--accent-d); font-weight:700; }
+  #ctrl .ctrl-head .spacer{ flex:1; }
+  .mini-btn{ font-family:inherit; font-size:12px; padding:5px 11px; border:1px solid var(--accent);
+    background:#fff; color:var(--accent); border-radius:7px; cursor:pointer; font-weight:600; }
+  .mini-btn:hover{ background:var(--accent-l); }
+  #memberList{ max-height:34vh; overflow:auto; border:1px solid var(--line); border-radius:8px; background:#fbfdff; }
+  .m-group{ border-bottom:1px solid var(--line); }
+  .m-group:last-child{ border-bottom:none; }
+  .m-head{ background:var(--accent-l); padding:7px 12px; font-weight:700; font-size:13px;
+    display:flex; align-items:center; gap:9px; color:var(--accent-d); }
+  .m-item{ display:flex; align-items:center; gap:9px; padding:6px 12px 6px 32px;
+    border-top:1px dashed #e3e8ef; font-size:12.5px; }
+  .m-item:hover{ background:#f5f9fc; }
+  .m-item .txt{ flex:1; color:#333; }
+  .m-item .rqn{ font-size:11px; padding:1px 8px; border-radius:10px; background:var(--accent); color:#fff; font-weight:700; }
+  .m-item .rqn.zero{ background:#c9c9c9; }
+
+  #stage{ padding:28px; display:flex; justify-content:center; }
+
+  /* ===== 用紙 ===== */
+  .sheet{ background:#fff; width:210mm; min-height:297mm; padding:16mm 14mm;
+    box-shadow:var(--shadow); line-height:1.6; color:#111; }
+  .empty-msg{ text-align:center; color:#aaa; padding:80px 20px; }
+
+  .rq-title{ text-align:center; font-size:19px; font-weight:700; letter-spacing:.1em; margin:0 0 4px; }
+  .rq-meta{ display:flex; justify-content:space-between; align-items:flex-end; font-size:12px;
+    color:var(--sub); margin-bottom:14px; border-bottom:2px solid var(--sheet-line); padding-bottom:8px; }
+  .rq-meta .right{ text-align:right; }
+
+  .col-head{ display:flex; gap:8px; font-size:11px; color:var(--sub); font-weight:700;
+    margin:0 0 8px; padding:0 2px; letter-spacing:.04em; }
+  .col-head .l{ flex:5; }
+  .col-head .r{ flex:1; text-align:center; }
+
+  /* ===== 議員グループ＝改ページ単位 =====
+     :not(:first-of-type) はタグ種別（div）で判定されるため、直前に
+     .rq-title/.rq-meta という別のdivがあるとそちらが「最初のdiv」扱いになり、
+     最初の.member-groupにも改ページが誤って効いてしまう。
+     隣接セレクタ（直前が同じ.member-groupの場合のみ）で判定する。 */
+  .member-group{ }
+  .member-group + .member-group{ break-before:page; page-break-before:always; }
+  .member-head{ margin:0 0 8px; padding:5px 10px; background:var(--accent-l);
+    border-left:4px solid var(--accent); font-weight:700; font-size:13px; color:var(--accent-d);
+    break-after:avoid; page-break-after:avoid; }
+
+  /* ===== 項目ブロック（大→小→内容 + 再質問群） ===== */
+  .item-block{ margin:0 0 14px; break-inside:avoid; page-break-inside:avoid; }
+  .item-path{ margin-bottom:5px; }
+  .item-path .lv1{ font-weight:700; font-size:14.5px; }
+  .item-path .lv2{ margin-left:1.6em; font-size:13.5px; }
+  .item-path .lv3{ margin-left:3.2em; font-size:13.5px; }
+  .item-path .num{ color:var(--accent-d); font-weight:700; margin-right:.35em; }
+
+  .rq-row{ display:flex; gap:0; margin:5px 0 5px 3.2em; border:1px solid var(--line);
+    border-radius:6px; overflow:hidden; }
+  .rq-left{ flex:5; padding:7px 11px; border-right:1px solid var(--line); }
+  .rq-right{ flex:1; padding:7px 8px; display:flex; align-items:center; justify-content:center;
+    text-align:center; font-size:12.5px; background:#f7fafd; color:var(--ink); }
+  .rq-label{ font-weight:700; color:var(--accent-d); font-size:12px; margin-bottom:3px; }
+  .rq-text{ font-size:13px; white-space:pre-wrap; }
+  .no-rq{ margin:4px 0 0 3.2em; font-size:12px; color:#aaa; }
+
+  @media print{
+    body{ background:#fff; }
+    #toolbar,#ctrl{ display:none !important; }
+    #stage{ padding:0 !important; display:block !important; }
+    /* ページ余白は.sheetのpaddingではなく@pageのmarginで持たせる。
+       ブロック要素が改ページで分割されると上下方向のpadding/borderは
+       最初と最後の断片にしか適用されないため、.sheet側のpaddingのままだと
+       議員が切り替わった2ページ目以降で上端余白が失われてしまう。 */
+    .sheet{ box-shadow:none !important; width:auto !important; min-height:0 !important;
+      margin:0 !important; padding:0 !important; }
+  }
+  @page{ size:A4 portrait; margin:16mm 14mm; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <h1>📋 再質問一覧表 － 印刷レイアウト確認用モックアップ</h1>
+  <span class="note">※本実装前のプレビュー専用ページです（ダミーデータ）。議員が切り替わると改ページされます。</span>
+  <span class="spacer"></span>
+  <button onclick="window.print()">🖨 印刷/PDFプレビュー</button>
+</div>
+
+<div id="ctrl">
+  <div class="ctrl-head">
+    <b>印刷する項目を選択</b>
+    <span class="cnt" id="selCnt"></span>
+    <span class="spacer"></span>
+    <button class="mini-btn" onclick="selAll(true)">☑ 全選択</button>
+    <button class="mini-btn" onclick="selAll(false)">☐ 全解除</button>
+  </div>
+  <div id="memberList"></div>
+</div>
+
+<div id="stage"><div class="sheet" id="sheet"></div></div>
+
+<script>
+const CIRC=['','①','②','③','④','⑤','⑥'];
+
+/* ダミーデータ：議員 → 項目（大/小/内容の各パターンを含む）→ 再質問(0〜n件) */
+const MEMBERS=[
+  { id:'m0', name:'1　佐藤 太郎（市民フォーラム）', items:[
+    { id:'m0-i0', n1:1, lv1:'防災・減災対策について', n2:1, lv2:'指定避難所及び福祉避難所における運営体制の見直しについて',
+      n3:1, lv3:'ペット同行避難の受入体制の整備状況について', dept:'防災危機管理部',
+      rqs:[
+        'ただいまの答弁について、飼育スペースの具体的な確保方法を再度伺う。避難所ごとに面積や動線が異なる中で、統一的な基準を設ける考えはあるか。',
+        '近隣自治体における先進事例を踏まえた本市の導入スケジュールを、より具体的に示されたい。',
+      ]},
+    { id:'m0-i1', n1:1, lv1:'防災・減災対策について', n2:2, lv2:'備蓄物資の品目及び数量の見直しについて',
+      n3:1, lv3:'乳児用液体ミルクの備蓄状況及び活用方針について', dept:'防災危機管理部',
+      rqs:[
+        '賞味期限管理の具体的な運用方法と、更新時の廃棄・活用の考え方について再度伺う。',
+      ]},
+    { id:'m0-i2', n1:2, lv1:'DX(デジタル・トランスフォーメーション)の推進について', n2:1, lv2:'行政手続のオンライン化の進捗状況について',
+      dept:'企画政策部',
+      rqs:[
+        '対象手続きの拡大にあたり、優先順位はどのような基準で決定しているか再度伺う。',
+        '高齢者等デジタル機器に不慣れな市民への支援策について、具体策を伺う。',
+      ]},
+  ]},
+  { id:'m1', name:'2　鈴木 花子（公明党市議団）', items:[
+    { id:'m1-i0', n1:1, lv1:'高齢者福祉施策について', dept:'福祉部',
+      rqs:[
+        '本市独自の上乗せ施策を検討する考えはあるか、財源の見通しとあわせて再度伺う。',
+      ]},
+    { id:'m1-i1', n1:2, lv1:'介護人材の確保策について', n2:1, lv2:'処遇改善加算の活用状況について',
+      n3:1, lv3:'事業所への周知及び申請支援の取組について', dept:'福祉部',
+      rqs:[
+        '未申請の事業所に対する個別のフォロー体制について、具体的な人員体制を伺う。',
+        '申請手続きの簡素化について、国・県への要望状況を再度伺う。',
+        '加算取得後の効果検証（離職率等）をどのように把握しているか伺う。',
+      ]},
+    { id:'m1-i2', n1:2, lv1:'介護人材の確保策について', n2:2, lv2:'認知症高齢者及びその家族への支援体制について',
+      n3:1, lv3:'認知症カフェの設置状況と今後の展開について', dept:'福祉部',
+      rqs:[
+        '未設置地域における今後の設置計画を、具体的な地区名とあわせて伺う。',
+        '運営を担う人材の確保・育成について、市の支援策を再度伺う。',
+      ]},
+  ]},
+  { id:'m2', name:'3　高橋 一郎（自由民主党市議団）', items:[
+    { id:'m2-i0', n1:1, lv1:'教育環境の整備について', n2:1, lv2:'学校施設の老朽化対策について',
+      n3:1, lv3:'大規模改修計画の前倒しについて', dept:'教育委員会事務局',
+      rqs:[
+        '優先順位の高い施設について、改修時期を前倒しする考えはあるか再度伺う。',
+        '改修中における児童生徒の安全確保及び教育活動への影響について伺う。',
+      ]},
+    { id:'m2-i1', n1:1, lv1:'教育環境の整備について', n2:2, lv2:'35人学級編制への対応状況について',
+      dept:'教育委員会事務局',
+      rqs:[
+        '教室不足が見込まれる学校への対応方針を、具体的なスケジュールとあわせて伺う。',
+      ]},
+    { id:'m2-i2', n1:2, lv1:'公共交通の維持について', n2:1, lv2:'地域公共交通計画の見直しについて',
+      dept:'都市整備部',
+      rqs:[
+        '路線の再編にあたり、利用者及び沿線住民への説明はどのように行うか伺う。',
+        'デマンド交通の導入対象地域の選定基準について、再度具体的に示されたい。',
+      ]},
+    { id:'m2-i3', n1:3, lv1:'観光振興について', n2:1, lv2:'インバウンド誘客の推進策について',
+      n3:1, lv3:'多言語対応及び受入環境の整備状況について', dept:'産業観光部',
+      rqs:[
+        '主要観光施設における多言語表示の整備状況と、今後の拡充計画を再度伺う。',
+        '宿泊事業者・飲食事業者への支援策について、具体的な内容を伺う。',
+        '効果測定の指標（外国人延べ宿泊者数等）の目標値について再度伺う。',
+      ]},
+  ]},
+];
+
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function itemPathHtml(it){
+  let h='';
+  if(it.lv1) h+=`<div class="lv1"><span class="num">${it.n1}</span>${esc(it.lv1)}</div>`;
+  if(it.lv2) h+=`<div class="lv2"><span class="num">(${it.n2})</span>${esc(it.lv2)}</div>`;
+  if(it.lv3) h+=`<div class="lv3"><span class="num">${CIRC[it.n3]||''}</span>${esc(it.lv3)}</div>`;
+  return h;
+}
+function itemPathShort(it){
+  const parts=[];
+  if(it.lv1) parts.push(it.n1+' '+it.lv1);
+  if(it.lv2) parts.push('('+it.n2+') '+it.lv2);
+  if(it.lv3) parts.push((CIRC[it.n3]||'')+' '+it.lv3);
+  return parts.join(' ▸ ');
+}
+
+/* ===== 選択パネルの構築 ===== */
+function buildCtrl(){
+  const wrap=document.getElementById('memberList'); wrap.innerHTML='';
+  MEMBERS.forEach(M=>{
+    const g=document.createElement('div'); g.className='m-group';
+    g.innerHTML = `<div class="m-head"><input type="checkbox" class="memChk" data-mid="${M.id}" checked onchange="toggleMember(this)"> ${esc(M.name)}</div>`;
+    M.items.forEach(it=>{
+      const row=document.createElement('div'); row.className='m-item';
+      const n=it.rqs?it.rqs.length:0;
+      row.innerHTML = `<input type="checkbox" class="itemChk" data-mid="${M.id}" data-iid="${it.id}" checked onchange="render()">`
+        + `<span class="txt">${esc(itemPathShort(it))}</span>`
+        + `<span class="rqn ${n===0?'zero':''}">再質問${n}件</span>`;
+      g.appendChild(row);
+    });
+    wrap.appendChild(g);
+  });
+}
+function toggleMember(cb){
+  document.querySelectorAll('.itemChk[data-mid="'+cb.dataset.mid+'"]').forEach(c=>c.checked=cb.checked);
+  render();
+}
+function selAll(v){
+  document.querySelectorAll('.memChk,.itemChk').forEach(c=>c.checked=v);
+  render();
+}
+
+/* ===== プレビュー描画：議員が切り替わるたびに改ページ ===== */
+function render(){
+  const checkedIds = new Set([...document.querySelectorAll('.itemChk:checked')].map(c=>c.dataset.iid));
+  let html = '';
+  let groupCount = 0, itemCount = 0, rqCount = 0;
+
+  MEMBERS.forEach(M=>{
+    const items = M.items.filter(it=>checkedIds.has(it.id));
+    if(!items.length) return; // このメンバーの選択項目が0件ならページ自体を作らない
+    groupCount++;
+    let body = `<div class="member-head">${esc(M.name)}</div>
+      <div class="col-head"><div class="l">再質問の内容</div><div class="r">担当部署</div></div>`;
+    items.forEach(it=>{
+      itemCount++;
+      body += `<div class="item-block"><div class="item-path">${itemPathHtml(it)}</div>`;
+      if(it.rqs && it.rqs.length){
+        it.rqs.forEach((q,i)=>{
+          rqCount++;
+          body += `
+            <div class="rq-row">
+              <div class="rq-left"><div class="rq-label">再質問${i+1}</div><div class="rq-text">${esc(q)}</div></div>
+              <div class="rq-right">${esc(it.dept||'')}</div>
+            </div>`;
+        });
+      } else {
+        body += `<div class="no-rq">（再質問なし）</div>`;
+      }
+      body += `</div>`;
+    });
+    html += `<div class="member-group">${body}</div>`;
+  });
+
+  const sheet = document.getElementById('sheet');
+  if(!groupCount){
+    sheet.innerHTML = '<div class="empty-msg">印刷する議員・項目が選択されていません。<br>上のパネルでチェックを入れてください。</div>';
+  } else {
+    sheet.innerHTML =
+      `<div class="rq-title">再質問一覧表</div>
+       <div class="rq-meta"><div>令和7年 第3回定例会</div><div class="right">9月18日作成　Ver2</div></div>`
+      + html;
+  }
+  document.getElementById('selCnt').textContent =
+    groupCount ? `選択中：議員${groupCount}名／項目${itemCount}件／再質問${rqCount}件` : '未選択';
+}
+
+buildCtrl();
+render();
+</script>
+</body>
+</html>

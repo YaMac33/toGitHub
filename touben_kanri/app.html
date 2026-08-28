@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一般質問 答弁書作成支援</title>
+<style>
+  :root{
+    --bg:#eef1f6; --panel:#ffffff; --ink:#1f2937; --sub:#6b7280;
+    --accent:#3b6ea5; --accent-d:#2c5580; --accent-l:#e8f0f8;
+    --line:#d0d7e2; --sheet-line:#333; --ok:#2f9e6f; --danger:#c0504d;
+    --radius:10px; --shadow:0 4px 16px rgba(30,50,80,.10);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{ margin:0; font-family:"Segoe UI","Meiryo","Yu Gothic",sans-serif; background:var(--bg);
+    color:var(--ink); font-size:14px; display:flex; flex-direction:column; }
+
+  #topbar{ background:linear-gradient(135deg,var(--accent),var(--accent-d)); color:#fff;
+    padding:10px 20px; box-shadow:0 2px 10px rgba(0,0,0,.15); z-index:50; }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand h1{ font-size:17px; margin:0; font-weight:600; letter-spacing:.02em; }
+  .brand .badge{ font-size:11px; background:rgba(255,255,255,.2); padding:2px 10px; border-radius:20px; }
+  .brand .spacer{ flex:1; }
+  .collapseBtn{ background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.4); color:#fff;
+    border-radius:8px; padding:5px 12px; cursor:pointer; font-size:13px; }
+  .collapseBtn:hover{ background:rgba(255,255,255,.28); }
+
+  #ctrlWrap{ background:var(--panel); border-bottom:1px solid var(--line); box-shadow:var(--shadow);
+    overflow:hidden; transition:max-height .28s ease, padding .28s ease; z-index:40; }
+  body.collapsed #ctrlWrap{ max-height:0 !important; padding-top:0; padding-bottom:0; border-bottom:none; }
+  #ctrlInner{ padding:12px 20px; }
+
+  .grp{ margin-bottom:10px; }
+  .grp-title{ font-size:11px; color:var(--sub); font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; margin:0 0 6px; }
+  .row{ display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; }
+  .row label{ font-size:13px; white-space:nowrap; color:var(--ink); }
+  input[type=text],input[type=number],select,textarea{ font-family:inherit; font-size:13px;
+    padding:6px 9px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink);
+    transition:border .15s, box-shadow .15s; }
+  input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(59,110,165,.15); }
+  input[type=number]{ width:64px; }
+
+  .btn{ font-family:inherit; font-size:13px; padding:7px 14px; border:none; border-radius:8px;
+    background:var(--accent); color:#fff; cursor:pointer; font-weight:600; transition:.15s;
+    display:inline-flex; align-items:center; gap:6px; }
+  .btn:hover{ background:var(--accent-d); transform:translateY(-1px); }
+  .btn.ghost{ background:#fff; color:var(--accent); border:1px solid var(--accent); }
+  .btn.ghost:hover{ background:var(--accent-l); }
+  .btn.small{ padding:5px 10px; font-size:12px; }
+  .btn.danger{ background:#fff; color:var(--danger); border:1px solid var(--danger); }
+  .btn.danger:hover{ background:#fbeeee; }
+
+  .seg{ display:inline-flex; border:1px solid var(--accent); border-radius:8px; overflow:hidden; }
+  .seg button{ border:none; background:#fff; color:var(--accent); padding:7px 16px; cursor:pointer;
+    font-size:13px; font-weight:600; transition:.15s; }
+  .seg button.on{ background:var(--accent); color:#fff; }
+
+  #picker .prow{ display:flex; flex-wrap:wrap; gap:10px 16px; align-items:flex-end; }
+  .pcell{ display:flex; flex-direction:column; }
+  .pcell > span{ font-size:11px; color:var(--sub); margin-bottom:3px; font-weight:600; }
+  #picker select{ min-width:150px; max-width:400px; }
+  #selInfo{ font-size:12px; color:var(--accent-d); margin-top:8px; font-weight:600; }
+
+  #tabbar{ display:flex; gap:4px; padding:0 20px; background:var(--panel);
+    border-bottom:1px solid var(--line); z-index:30; }
+  #tabbar button{ border:none; background:transparent; color:var(--sub); padding:11px 20px;
+    cursor:pointer; font-size:14px; font-weight:600; border-bottom:3px solid transparent; transition:.15s; }
+  #tabbar button:hover{ color:var(--accent); }
+  #tabbar button.on{ color:var(--accent); border-bottom-color:var(--accent); }
+
+  #main{ flex:1; overflow:hidden; min-height:0; display:flex; }
+  #inputPane,#previewPane,#batchPane,#ichiranPane{ overflow:auto; height:100%; width:100%; }
+  #inputPane{ background:var(--panel); padding:18px 24px; }
+  #previewPane{ padding:24px; display:flex; justify-content:center; align-items:flex-start; }
+  #batchPane{ padding:20px 24px; }
+  #ichiranPane{ padding:20px 24px; }
+  #ichiranBody{ display:flex; justify-content:center; }
+  body.view-input #previewPane, body.view-input #batchPane, body.view-input #ichiranPane{ display:none; }
+  body.view-preview #inputPane, body.view-preview #batchPane, body.view-preview #ichiranPane{ display:none; }
+  body.view-batch #inputPane, body.view-batch #previewPane, body.view-batch #ichiranPane{ display:none; }
+  body.view-ichiran #inputPane, body.view-ichiran #previewPane, body.view-ichiran #batchPane{ display:none; }
+
+  fieldset{ border:1px solid var(--line); border-radius:var(--radius); padding:12px 16px; margin:0 0 14px;
+    background:#fcfdff; }
+  legend{ font-size:12px; color:var(--accent-d); padding:0 8px; font-weight:700; }
+  .fld{ display:flex; flex-direction:column; margin-bottom:10px; }
+  .fld > span{ font-size:12px; color:var(--sub); margin-bottom:3px; font-weight:600; }
+  .fld textarea,.fld input{ width:100%; }
+  .fld textarea{ resize:vertical; line-height:1.6; }
+
+  /* 再質問カード（1項目に0〜n件） */
+  .re-card{ border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:12px; background:#fff; }
+  .re-card-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .re-card-head b{ font-size:13px; color:var(--accent-d); }
+  .re-empty{ font-size:12px; color:var(--sub); margin:4px 0 12px; }
+
+  /* 用紙プレビュー（previewPane / ichiranPane 共通） */
+  .sheet{ background:#fff; width:210mm; min-height:297mm; padding:18mm 16mm;
+    box-shadow:var(--shadow); line-height:1.75; color:#111; border-radius:4px; margin-bottom:20px; }
+  .sheet .topnum{ text-align:right; font-weight:bold; font-size:15px; }
+  .sheet .verline{ text-align:right; }
+  table.info{ border-collapse:collapse; width:100%; margin:10px 0; }
+  table.info td{ border:1px solid var(--sheet-line); padding:6px 9px; }
+  table.info td.lbl{ background:#f0f4f8; width:14%; white-space:nowrap; font-weight:bold; }
+  .sec-label{ font-weight:bold; margin-top:16px; border-left:4px solid var(--accent); padding-left:8px; }
+  .yoshi{ margin:6px 0 6px .5em; }
+  .yoshi .lv1{ font-weight:600; }
+  .yoshi .lv2{ margin-left:1.6em; }
+  .yoshi .lv3{ margin-left:3.2em; }
+  .num{ color:#333; font-weight:700; margin-right:.3em; }
+  .ans-body{ white-space:pre-wrap; margin-top:6px; padding:8px; border:1px dashed #bbb; min-height:6em; border-radius:4px; }
+  .re-head{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .re-title{ border:2px solid var(--sheet-line); padding:5px 12px; font-weight:bold; }
+  .re-center{ font-weight:bold; align-self:center; }
+  .re-right{ text-align:right; }
+  .re-box{ border:2px solid var(--sheet-line); padding:12px 14px; margin-top:10px; border-radius:4px; }
+  .re-num-label{ font-weight:bold; margin-top:12px; }
+  .re-text{ white-space:pre-wrap; margin-top:4px; }
+  .noprint-msg{ text-align:center; color:#aaa; padding:60px 20px; }
+
+  /* 再質問一覧表 */
+  .ichiran-title{ text-align:center; font-size:19px; font-weight:700; letter-spacing:.1em; margin:0 0 4px; }
+  .ichiran-meta{ display:flex; justify-content:space-between; font-size:12px; color:var(--sub);
+    margin-bottom:14px; border-bottom:2px solid var(--sheet-line); padding-bottom:8px; }
+  .ichiran-member-group{ margin-bottom:6px; }
+  .ichiran-col-head{ display:flex; gap:8px; font-size:11px; color:var(--sub); font-weight:700; margin:8px 0 8px; padding:0 2px; }
+  .ichiran-col-head .l{ flex:5; }
+  .ichiran-col-head .r{ flex:1; text-align:center; }
+  .ichiran-item{ margin:0 0 14px; }
+  .ichiran-rq-row{ display:flex; margin:5px 0 5px 3.2em; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .ichiran-rq-left{ flex:5; padding:7px 11px; border-right:1px solid var(--line); }
+  .ichiran-rq-right{ flex:1; padding:7px 8px; display:flex; align-items:center; justify-content:center;
+    text-align:center; font-size:12.5px; background:#f7fafd; }
+  .ichiran-rq-label{ font-weight:700; color:var(--accent-d); font-size:12px; margin-bottom:3px; }
+  .ichiran-rq-text{ font-size:13px; white-space:pre-wrap; }
+
+  .batch-head{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .batch-list{ background:#fff; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .batch-mem{ border-bottom:1px solid var(--line); }
+  .batch-mem:last-child{ border-bottom:none; }
+  .batch-mem-h{ background:var(--accent-l); padding:8px 14px; font-weight:700; display:flex; align-items:center; gap:10px; }
+  .batch-row{ display:flex; align-items:center; gap:10px; padding:7px 14px 7px 34px; border-top:1px dashed #e3e8ef; font-size:13px; }
+  .batch-row:hover{ background:#f7fafd; }
+  .batch-row .lv-tag{ font-size:11px; padding:1px 8px; border-radius:10px; color:#fff; font-weight:700; }
+  .lv-tag.l1{ background:#3b6ea5; } .lv-tag.l2{ background:#5c8ac0; } .lv-tag.l3{ background:#8bb0d6; }
+  .batch-row .filled{ color:var(--ok); font-size:11px; font-weight:700; }
+  .batch-row .empty{ color:#bbb; font-size:11px; }
+  .rq-badge{ font-size:11px; padding:1px 8px; border-radius:10px; background:var(--accent); color:#fff; font-weight:700; }
+
+  /* ========= 印刷 ========= */
+  /* 画面レイアウト（flex / overflow:hidden / height:100%）の内側で印刷すると、
+     Edge等のChromium系ブラウザで画面表示時のクリップ領域を引きずり、
+     1ページしか出力されない不具合が起きるため、印刷時は #printRoot という
+     専用DOMをbody直下（flex/overflow拘束の外）に構築し、それ以外を全部隠す。
+     ページ余白は.sheetのpaddingではなく@pageのmarginで持たせる。ブロック要素が
+     改ページで分割されると上下方向のpadding/borderは最初と最後の断片にしか
+     適用されないため、.sheet側のpaddingのままだと2ページ目以降で上端余白が
+     失われてしまう（再質問一覧表で複数ページにまたぐ場合に特に顕著）。 */
+  #printRoot{ display:none; }
+  @media print{
+    html,body{ height:auto !important; overflow:visible !important; background:#fff !important; }
+    body.printing{ display:block !important; }
+    body.printing > *{ display:none !important; }
+    body.printing > #printRoot{ display:block !important; }
+
+    /* 1項目（または1再質問）＝1シート。項目が切り替わったら必ず改ページ。長文はまたぎ可 */
+    #printRoot .sheet{
+      background:#fff !important; box-shadow:none !important; width:auto !important; min-height:0 !important;
+      margin:0 !important; padding:0 !important; border-radius:0 !important;
+      line-height:1.75; color:#111;
+      break-after:page; page-break-after:always;
+      break-inside:auto; page-break-inside:auto;
+    }
+    #printRoot .ans-body{ border:1px solid #999 !important; }
+
+    /* 再質問一覧表：議員が切り替わったら改ページ。
+       :not(:first-of-type) はタグ種別で判定されるため使わず、隣接セレクタ
+       （直前が同じ.ichiran-member-groupの場合のみ）で先頭グループを除外する。 */
+    #printRoot .ichiran-member-group + .ichiran-member-group{ break-before:page; page-break-before:always; }
+    #printRoot .batch-mem-h{ break-after:avoid; page-break-after:avoid; }
+    #printRoot .ichiran-item{ break-inside:avoid; page-break-inside:avoid; }
+  }
+  @page{ size:A4 portrait; margin:14mm 12mm; }
+</style>
+</head>
+<body class="view-input">
+
+<div id="topbar">
+  <div class="brand">
+    <h1>📄 一般質問 答弁書作成支援</h1>
+    <span class="badge">LGWAN / オフライン対応</span>
+    <span class="spacer"></span>
+    <button class="collapseBtn" id="collapseBtn" onclick="toggleCollapse()">▲ 操作パネルを隠す</button>
+  </div>
+</div>
+
+<div id="ctrlWrap">
+  <div id="ctrlInner">
+    <div class="grp">
+      <div class="row">
+        <label class="btn ghost" style="cursor:pointer">📁 CSV読込<input type="file" id="csvFile" accept=".csv" style="display:none"></label>
+        <span id="metaInfo" style="font-size:12px;color:var(--sub)">未読込</span>
+        <span class="seg" style="margin-left:auto">
+          <button id="modeHon" class="on" onclick="setMode('hon')">本答弁</button>
+          <button id="modeRe" onclick="setMode('re')">再質問答弁</button>
+        </span>
+      </div>
+    </div>
+
+    <div class="grp" id="picker">
+      <div class="grp-title">質問を選択</div>
+      <div class="prow">
+        <div class="pcell"><span>① 議員（発言順位）</span><select id="selMember"></select></div>
+        <div class="pcell"><span>② 大項目</span><select id="selLv1"></select></div>
+        <div class="pcell"><span>③ 小項目</span><select id="selLv2"></select></div>
+        <div class="pcell"><span>④ 内容</span><select id="selLv3"></select></div>
+      </div>
+      <div id="selInfo">CSVを読み込むと選択できます。</div>
+    </div>
+
+    <div class="grp">
+      <div class="grp-title">共通・可変項目</div>
+      <div class="row">
+        <label>作成日 <input type="text" id="fMonth" style="width:46px" placeholder="月">月
+          <input type="text" id="fDay" style="width:46px" placeholder="日">日</label>
+        <label>Ver <input type="text" id="fVer" style="width:46px" value="1"></label>
+        <label>令和 <input type="text" id="fEra" style="width:46px" value="7">年 第
+          <input type="text" id="fKai" style="width:46px" value="2">回定例会</label>
+      </div>
+    </div>
+
+    <div class="grp">
+      <div class="row">
+        <button class="btn" onclick="printCurrent()">🖨 この1枚を印刷/PDF</button>
+        <button class="btn ghost small" onclick="saveJson()">💾 JSON書出</button>
+        <label class="btn ghost small" style="cursor:pointer">📂 JSON読込<input type="file" id="jsonFile" accept=".json" style="display:none"></label>
+        <button class="btn ghost small" onclick="exportCsv()">📤 CSV出力</button>
+        <button class="btn ghost small" onclick="exportReCsv()">📤 再質問一覧CSV</button>
+        <button class="btn danger small" onclick="clearStorage()">🗑 保存クリア</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tabbar">
+  <button id="tabInput" class="on" onclick="setView('input')">✏️ 入力</button>
+  <button id="tabPreview" onclick="setView('preview')">👁 プレビュー</button>
+  <button id="tabBatch" onclick="setView('batch')">🖨 一括印刷</button>
+  <button id="tabIchiran" onclick="setView('ichiran')">📋 再質問一覧</button>
+</div>
+
+<div id="main">
+  <div id="inputPane">
+    <fieldset id="honFields">
+      <legend>本答弁（市長・教育長答弁等）</legend>
+      <div class="row" style="gap:12px">
+        <div class="fld" style="flex:1;min-width:180px"><span>会派</span><input type="text" id="hParty"></div>
+        <div class="fld" style="flex:1;min-width:180px"><span>議員名</span><input type="text" id="hName"></div>
+      </div>
+      <div class="row" style="gap:12px">
+        <div class="fld" style="flex:1;min-width:180px"><span>回答部(担当所属名)</span><input type="text" id="hDept"></div>
+        <div class="fld" style="flex:1;min-width:180px"><span>担当者名</span><input type="text" id="hStaff"></div>
+      </div>
+      <div class="fld"><span>本答弁 原稿</span><textarea id="hAnswer" rows="12" placeholder="本答弁の原稿を入力"></textarea></div>
+    </fieldset>
+
+    <fieldset id="reFields" style="display:none">
+      <legend>再質問答弁（各部部長等）</legend>
+      <div id="reCardsWrap"></div>
+      <button type="button" class="btn ghost small" onclick="addReQuestion()">＋ 再質問を追加</button>
+    </fieldset>
+    <p style="font-size:12px;color:var(--sub)">※入力は自動でブラウザ保存されます（同一PC・同一ブラウザで復元）。</p>
+  </div>
+
+  <div id="previewPane">
+    <div class="sheet">
+      <div class="noprint-msg">議員・大項目・小項目・内容を選択してください。</div>
+    </div>
+  </div>
+
+  <div id="batchPane">
+    <div class="batch-head">
+      <button class="btn small ghost" onclick="batchAll(true)">☑ 全選択</button>
+      <button class="btn small ghost" onclick="batchAll(false)">☐ 全解除</button>
+      <button class="btn small ghost" onclick="batchFilled()">✅ 入力済のみ選択</button>
+      <span style="flex:1"></span>
+      <span style="font-size:12px;color:var(--sub)">出力様式：</span>
+      <span class="seg">
+        <button id="bModeHon" class="on" onclick="setBatchMode('hon')">本答弁</button>
+        <button id="bModeRe" onclick="setBatchMode('re')">再質問答弁</button>
+      </span>
+      <button class="btn" onclick="printBatch()">🖨 選択分を一括印刷/PDF</button>
+    </div>
+    <div class="batch-list" id="batchList"></div>
+  </div>
+
+  <div id="ichiranPane">
+    <div class="batch-head">
+      <span style="font-size:12px;color:var(--sub)">「🖨 一括印刷」タブでチェックした議員・項目のうち、再質問が1件以上登録されている項目だけを一覧表にします。議員が切り替わると改ページされます。</span>
+      <span style="flex:1"></span>
+      <button class="btn" onclick="printIchiran()">🖨 一覧表を印刷/PDF</button>
+    </div>
+    <div id="ichiranBody">
+      <div class="sheet"><div class="noprint-msg">「🖨 一括印刷」タブで議員・項目を選択してください。</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="printRoot"></div>
+
+<script>
+let rows=[], meta={}, mode='hon', batchMode='hon';
+const store={}; let common={};
+let currentId=null;
+let TREE={};
+const numById={};
+const HEAD=["行ID","発言順位","議員名","会派","質問日","質問予定時間","大きな項目","小さな項目","内容","主訴1","主訴2","主訴3","主訴4","主訴5","所管","聞取り担当者","並び順","出力時刻"];
+const CIRC=['','①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
+
+function parseCSV(text){
+  const out=[]; let field='',row=[],inQ=false;
+  for(let i=0;i<text.length;i++){ const c=text[i];
+    if(inQ){ if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else inQ=false; } else field+=c; }
+    else{ if(c==='"')inQ=true; else if(c===','){row.push(field);field='';}
+      else if(c==='\r'){} else if(c==='\n'){row.push(field);out.push(row);row=[];field='';}
+      else field+=c; } }
+  if(field.length>0||row.length>0){row.push(field);out.push(row);}
+  return out.filter(r=>r.length>1||(r.length===1&&r[0]!==''));
+}
+
+document.getElementById('csvFile').addEventListener('change',function(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=()=>loadCsvText(r.result); r.readAsText(f,'UTF-8');
+});
+function loadCsvText(text){
+  const arr=parseCSV(text); rows=[]; meta={}; let hi=-1;
+  for(let i=0;i<arr.length;i++){
+    if(arr[i][0]==='#META'){ parseMeta(arr[i]); continue; }
+    if(arr[i][0]==='行ID'){ hi=i; continue; }
+    if(hi>=0&&i>hi){ const o={}; HEAD.forEach((h,idx)=>o[h]=arr[i][idx]!==undefined?arr[i][idx]:''); if(o['行ID'])rows.push(o); }
+  }
+  if(meta.kai) document.getElementById('fKai').value=meta.kai;
+  document.getElementById('metaInfo').textContent='読込完了：'+rows.length+'行'+(meta.city?'／'+meta.city:'')+(meta.kai?'／第'+meta.kai+'回':'');
+  buildTree(); assignNumbers(); populateMembers(); buildBatchList();
+}
+function parseMeta(cells){ meta.raw=cells; meta.kai=cells[2]||'';
+  for(let i=1;i<cells.length-1;i++){ if(cells[i]==='city')meta.city=cells[i+1];
+    if(cells[i]==='printSel'){ try{meta.printSel=JSON.parse(cells[i+1]);}catch(e){} } } }
+
+function buildTree(){
+  const members={}; let curL1=null,curL2=null;
+  rows.forEach(o=>{
+    const mk=o['発言順位'];
+    if(!members[mk]) members[mk]={order:mk,name:o['議員名'],party:o['会派'],l1s:[],l1map:{}};
+    const M=members[mk];
+    if(o['大きな項目']){ curL1={id:o['行ID'],text:o['大きな項目'],l2s:[],l2map:{},selfRow:o}; M.l1s.push(curL1); M.l1map[curL1.id]=curL1; curL2=null; }
+    else if(o['小さな項目']){ if(!curL1){curL1={id:'_d'+o['行ID'],text:'(大項目なし)',l2s:[],l2map:{}};M.l1s.push(curL1);M.l1map[curL1.id]=curL1;}
+      curL2={id:o['行ID'],text:o['小さな項目'],l3s:[],selfRow:o}; curL1.l2s.push(curL2); curL1.l2map[curL2.id]=curL2; }
+    else if(o['内容']){ if(!curL1){curL1={id:'_d'+o['行ID'],text:'(大項目なし)',l2s:[],l2map:{}};M.l1s.push(curL1);M.l1map[curL1.id]=curL1;}
+      if(!curL2){curL2={id:'_dL2'+o['行ID'],text:'(小項目なし)',l3s:[]};curL1.l2s.push(curL2);curL1.l2map[curL2.id]=curL2;}
+      curL2.l3s.push({id:o['行ID'],text:o['内容'],selfRow:o}); }
+  });
+  TREE=members;
+}
+function assignNumbers(){
+  for(const k in numById) delete numById[k];
+  Object.keys(TREE).forEach(mk=>{
+    const M=TREE[mk]; let i1=0;
+    M.l1s.forEach(L1=>{ i1++; L1.num=i1;
+      if(L1.selfRow) numById[L1.selfRow['行ID']]={n1:i1,n2:0,n3:0};
+      let i2=0;
+      L1.l2s.forEach(L2=>{ i2++; L2.num=i2;
+        if(L2.selfRow) numById[L2.selfRow['行ID']]={n1:i1,n2:i2,n3:0};
+        let i3=0;
+        L2.l3s.forEach(L3=>{ i3++; L3.num=i3;
+          numById[L3.selfRow['行ID']]={n1:i1,n2:i2,n3:i3}; });
+      });
+    });
+  });
+}
+function n1Label(n){ return n+'　'; }
+function n2Label(n){ return '('+n+')　'; }
+function n3Label(n){ return (CIRC[n]||('('+n+')'))+'　'; }
+
+function populateMembers(){
+  const sel=document.getElementById('selMember'); sel.innerHTML='';
+  const keys=Object.keys(TREE).sort((a,b)=>Number(a)-Number(b));
+  keys.forEach(k=>{ const M=TREE[k]; const op=document.createElement('option'); op.value=k;
+    op.textContent=M.order+'　'+M.name+'（'+M.party+'）'; sel.appendChild(op); });
+  sel.onchange=onMemberChange;
+  if(keys.length){ sel.value=keys[0]; onMemberChange(); }
+}
+function fillSelect(sel,items,ph,numFn){
+  sel.innerHTML=''; const p=document.createElement('option'); p.value=''; p.textContent=ph; sel.appendChild(p);
+  items.forEach(it=>{ const op=document.createElement('option'); op.value=it.id;
+    op.textContent=numFn(it.num)+cut(it.text,44); sel.appendChild(op); });
+}
+function cut(s,n){ s=s||''; return s.length>n?s.slice(0,n)+'…':s; }
+function clearSelect(id,ph){ const sel=document.getElementById(id); sel.innerHTML=''; const p=document.createElement('option'); p.value=''; p.textContent=ph; sel.appendChild(p); }
+
+function onMemberChange(){
+  const M=TREE[document.getElementById('selMember').value];
+  fillSelect(document.getElementById('selLv1'),M.l1s,'― 大項目を選択 ―',n=>n1Label(n));
+  clearSelect('selLv2','― 小項目 ―'); clearSelect('selLv3','― 内容 ―');
+  document.getElementById('selLv1').onchange=onLv1Change;
+  if(M.l1s.length){ document.getElementById('selLv1').value=M.l1s[0].id; onLv1Change(); }
+}
+function onLv1Change(){
+  const M=TREE[document.getElementById('selMember').value];
+  const L1=M.l1map[document.getElementById('selLv1').value];
+  if(!L1){ selectRow(null); return; }
+  fillSelect(document.getElementById('selLv2'),L1.l2s,'― 小項目を選択 ―',n=>n2Label(n));
+  clearSelect('selLv3','― 内容 ―'); document.getElementById('selLv2').onchange=onLv2Change;
+  selectRow(L1.selfRow?L1.selfRow['行ID']:null);
+}
+function onLv2Change(){
+  const M=TREE[document.getElementById('selMember').value];
+  const L1=M.l1map[document.getElementById('selLv1').value];
+  const l2id=document.getElementById('selLv2').value;
+  if(!l2id){ selectRow(L1.selfRow?L1.selfRow['行ID']:null); clearSelect('selLv3','― 内容 ―'); return; }
+  const L2=L1.l2map[l2id];
+  fillSelect(document.getElementById('selLv3'),L2.l3s,'― 内容を選択 ―',n=>n3Label(n));
+  document.getElementById('selLv3').onchange=onLv3Change;
+  selectRow(L2.selfRow?L2.selfRow['行ID']:null);
+}
+function onLv3Change(){
+  const l3id=document.getElementById('selLv3').value;
+  if(!l3id){ onLv2Change(); return; }
+  selectRow(l3id);
+}
+function selectRow(id){
+  if(currentId) collectRow(currentId);
+  currentId=id;
+  if(!id){ document.getElementById('selInfo').textContent='該当行なし'; render(); return; }
+  loadRowInputs(); updateSelInfo(); render(); autosave();
+}
+function updateSelInfo(){
+  const o=rows.find(r=>r['行ID']===currentId); if(!o){document.getElementById('selInfo').textContent='';return;}
+  const h=resolveHierarchy(o); const N=numById[currentId]||{};
+  let lvl=h.s1?'大項目':(h.s2?'小項目':(h.s3?'内容':'―'));
+  let numStr=[N.n1?N.n1:'',N.n2?'('+N.n2+')':'',N.n3?CIRC[N.n3]:''].filter(Boolean).join(' ');
+  document.getElementById('selInfo').textContent='選択中：'+numStr+'　['+o['行ID']+'] '+o['議員名']+'（'+lvl+'）';
+}
+
+function resolveHierarchy(target){
+  const idx=rows.indexOf(target); let lv1='',lv2='',lv3='';
+  for(let i=idx;i>=0;i--){ if(rows[i]['大きな項目']){lv1=rows[i]['大きな項目'];break;} }
+  const s1=!!target['大きな項目'], s2=!!target['小さな項目'], s3=!!target['内容'];
+  if(!s1){ for(let i=idx;i>=0;i--){ if(rows[i]['大きな項目'])break; if(rows[i]['小さな項目']){lv2=rows[i]['小さな項目'];break;} } }
+  if(s3) lv3=target['内容'];
+  if(s1){lv2='';lv3='';} else if(s2){lv3='';}
+  return {lv1,lv2,lv3,s1,s2,s3};
+}
+function yoshiHtml(o){
+  const h=resolveHierarchy(o); const N=numById[o['行ID']]||{}; const esc=escapeHtml;
+  let html='';
+  if(h.lv1) html+='<div class="lv1"><span class="num">'+(N.n1?N.n1:'')+'</span>'+esc(h.lv1)+'</div>';
+  if(h.lv2) html+='<div class="lv2"><span class="num">('+(N.n2||'')+')</span>'+esc(h.lv2)+'</div>';
+  if(h.lv3) html+='<div class="lv3"><span class="num">'+(CIRC[N.n3]||'')+'</span>'+esc(h.lv3)+'</div>';
+  return html||'<span style="color:#999">(項目なし)</span>';
+}
+
+function collectCommon(){ common={fMonth:val('fMonth'),fDay:val('fDay'),fVer:val('fVer'),fEra:val('fEra'),fKai:val('fKai')}; }
+function collectReQuestionsFromDom(){
+  return [...document.querySelectorAll('#reCardsWrap .re-card')].map(card=>({
+    answerer: card.querySelector('.rq-answerer').value,
+    question: card.querySelector('.rq-question').value,
+    answer: card.querySelector('.rq-answer').value,
+  }));
+}
+function collectRow(id){ id=id||currentId; if(!id)return;
+  store[id]=Object.assign(store[id]||{},{hParty:val('hParty'),hName:val('hName'),hDept:val('hDept'),hStaff:val('hStaff'),hAnswer:val('hAnswer'),
+    reQuestions: collectReQuestionsFromDom()}); }
+function loadRowInputs(){ const o=rows.find(r=>r['行ID']===currentId); if(!o)return; const s=store[currentId]||{};
+  set('hParty',s.hParty!==undefined?s.hParty:o['会派']||'');
+  set('hName',s.hName!==undefined?s.hName:o['議員名']||'');
+  set('hDept',s.hDept||''); set('hStaff',s.hStaff||''); set('hAnswer',s.hAnswer||'');
+  renderReCards(); }
+function val(id){ return document.getElementById(id).value; }
+function set(id,v){ const el=document.getElementById(id); if(el)el.value=v; }
+
+/* ===== 再質問カード（0〜n件、番号は表示順に自動採番） ===== */
+function renderReCards(){
+  const wrap=document.getElementById('reCardsWrap'); if(!wrap) return;
+  const list=(currentId&&store[currentId]&&store[currentId].reQuestions)||[];
+  if(!list.length){ wrap.innerHTML='<p class="re-empty">再質問はまだありません。「＋ 再質問を追加」で入力を始めてください。</p>'; return; }
+  wrap.innerHTML=list.map((rq,i)=>`
+    <div class="re-card">
+      <div class="re-card-head"><b>再質問${i+1}</b><button type="button" class="btn danger small" onclick="removeReQuestion(${i})">🗑 削除</button></div>
+      <div class="fld"><span>答弁者</span><input type="text" class="rq-answerer" value="${escAttr(rq.answerer||'')}" placeholder="○○部長　伊藤　四郎"></div>
+      <div class="fld"><span>再質問の文言</span><textarea class="rq-question" rows="4" placeholder="再質問の文言を入力">${escapeHtml(rq.question||'')}</textarea></div>
+      <div class="fld"><span>再質問答弁 原稿</span><textarea class="rq-answer" rows="8" placeholder="再質問答弁の原稿を入力">${escapeHtml(rq.answer||'')}</textarea></div>
+    </div>`).join('');
+}
+function addReQuestion(){
+  if(!currentId){ alert('質問を選択してください。'); return; }
+  collectRow(currentId);
+  const s=store[currentId]=store[currentId]||{};
+  if(!Array.isArray(s.reQuestions)) s.reQuestions=[];
+  s.reQuestions.push({answerer:'',question:'',answer:''});
+  renderReCards(); render(); autosave(); refreshBatchFilledMarks();
+}
+function removeReQuestion(idx){
+  if(!currentId) return;
+  if(!confirm('この再質問を削除します。よろしいですか？')) return;
+  collectRow(currentId);
+  const s=store[currentId]; if(!s||!s.reQuestions) return;
+  s.reQuestions.splice(idx,1);
+  renderReCards(); render(); autosave(); refreshBatchFilledMarks();
+}
+
+function setMode(m){ mode=m;
+  document.getElementById('modeHon').classList.toggle('on',m==='hon');
+  document.getElementById('modeRe').classList.toggle('on',m==='re');
+  document.getElementById('honFields').style.display=m==='hon'?'':'none';
+  document.getElementById('reFields').style.display=m==='re'?'':'none';
+  render(); }
+
+function setView(v){ document.body.className=document.body.className.replace(/view-\w+/g,''); document.body.classList.add('view-'+v);
+  document.getElementById('tabInput').classList.toggle('on',v==='input');
+  document.getElementById('tabPreview').classList.toggle('on',v==='preview');
+  document.getElementById('tabBatch').classList.toggle('on',v==='batch');
+  document.getElementById('tabIchiran').classList.toggle('on',v==='ichiran');
+  if(v==='ichiran') renderIchiran(); }
+
+function toggleCollapse(){
+  document.body.classList.toggle('collapsed');
+  document.getElementById('collapseBtn').textContent =
+    document.body.classList.contains('collapsed')?'▼ 操作パネルを表示':'▲ 操作パネルを隠す';
+}
+
+/* 本答弁シート（1件＝1シート） */
+function sheetHtmlFor(id){
+  const o=rows.find(r=>r['行ID']===id); if(!o) return '';
+  const s=store[id]||{}; const c=common; const esc=escapeHtml;
+  const yoshi=yoshiHtml(o);
+  const party=s.hParty!==undefined?s.hParty:o['会派']||'';
+  const name=s.hName!==undefined?s.hName:o['議員名']||'';
+  return `
+    <div class="topnum">通告順位　${esc(o['発言順位'])}</div>
+    <div class="verline">${esc(c.fMonth)}月${esc(c.fDay)}日作成　Ver${esc(c.fVer)}</div>
+    <table class="info">
+      <tr><td class="lbl">会派</td><td>${esc(party)}</td><td class="lbl">回答部(担当所属名)</td><td>${esc(s.hDept||'')}</td></tr>
+      <tr><td class="lbl">議員名</td><td>${esc(name)}</td><td class="lbl">担当者名</td><td>${esc(s.hStaff||'')}</td></tr>
+    </table>
+    <div class="sec-label">質問要旨</div>
+    <div class="yoshi">${yoshi}</div>
+    <div class="sec-label">回答</div>
+    <div class="ans-body">${esc(s.hAnswer||'')}</div>`;
+}
+/* 再質問答弁シート（1再質問＝1シート） */
+function reSheetHtml(id,rq,idx,total){
+  const o=rows.find(r=>r['行ID']===id); if(!o) return '';
+  const c=common; const esc=escapeHtml;
+  const yoshi=yoshiHtml(o);
+  return `
+    <div class="re-head">
+      <div class="re-title">再質問部長答弁書</div>
+      <div class="re-center">No.　${esc(o['発言順位'])}　　${esc(o['議員名'])}</div>
+      <div class="re-right">令和${esc(c.fEra)}年第${esc(c.fKai)}回定例会</div>
+    </div>
+    <div class="re-right" style="margin-top:4px">${esc(c.fMonth)}月${esc(c.fDay)}日作成　Ver${esc(c.fVer)}</div>
+    <div class="re-right">答弁者　${esc(rq.answerer||'')}</div>
+    <div class="re-box">
+      <div class="yoshi">${yoshi}</div>
+      <div class="re-num-label">再質問${idx+1}${total>1?'（全'+total+'件中）':''}</div>
+      <div class="re-text">${esc(rq.question||'')}</div>
+    </div>
+    <div class="sec-label">回答</div>
+    <div class="ans-body">${esc(rq.answer||'')}</div>`;
+}
+/* id1件分のシートHTML配列を返す（本答弁は常に1件、再質問は0〜n件） */
+function sheetsHtmlFor(id,useMode){
+  if(useMode==='hon') return [sheetHtmlFor(id)];
+  const list=(store[id]&&store[id].reQuestions)||[];
+  return list.map((rq,i)=>reSheetHtml(id,rq,i,list.length));
+}
+function render(){
+  const pane=document.getElementById('previewPane');
+  if(!currentId){ pane.innerHTML='<div class="sheet"><div class="noprint-msg">議員・大項目・小項目・内容を選択してください。</div></div>'; return; }
+  collectRow(currentId);
+  const sheets=sheetsHtmlFor(currentId,mode);
+  if(!sheets.length){
+    pane.innerHTML='<div class="sheet"><div class="noprint-msg">再質問がまだ登録されていません。「入力」タブで「＋ 再質問を追加」してください。</div></div>';
+    return;
+  }
+  pane.innerHTML=sheets.map(h=>'<div class="sheet">'+h+'</div>').join('');
+}
+function escapeHtml(s){ if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+
+document.getElementById('inputPane').addEventListener('input',(e)=>{
+  const id=e.target.id;
+  if(['fMonth','fDay','fVer','fEra','fKai'].includes(id)) collectCommon();
+  collectRow(); render(); autosave(); refreshBatchFilledMarks();
+});
+document.getElementById('ctrlInner').addEventListener('input',(e)=>{
+  if(['fMonth','fDay','fVer','fEra','fKai'].includes(e.target.id)){ collectCommon(); render(); autosave(); }
+});
+
+/* 印刷共通：画面レイアウト(flex/overflow拘束)の外にある#printRootへシートを
+   構築し、印刷CSSでそれ以外を全部隠して印刷する（Edge等での複数ページ不具合対策）。 */
+function doPrint(ids,useMode){
+  const root=document.getElementById('printRoot');
+  const parts=[];
+  ids.forEach(id=>{ sheetsHtmlFor(id,useMode).forEach(h=>parts.push('<div class="sheet">'+h+'</div>')); });
+  if(!parts.length){
+    alert(useMode==='re' ? '選択した項目に再質問が登録されていません。' : '出力する内容がありません。');
+    return;
+  }
+  root.innerHTML=parts.join('');
+  document.body.classList.add('printing');
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
+}
+function cleanupPrint(){
+  document.body.classList.remove('printing');
+  const root=document.getElementById('printRoot'); if(root) root.innerHTML='';
+}
+window.addEventListener('afterprint',cleanupPrint);
+if(window.matchMedia){
+  const mql=window.matchMedia('print');
+  const onPrintChange=(e)=>{ if(!e.matches) cleanupPrint(); };
+  if(mql.addEventListener) mql.addEventListener('change',onPrintChange);
+  else if(mql.addListener) mql.addListener(onPrintChange);
+}
+
+/* 単票印刷：現在選択中の1件を#printRootへ描画して印刷 */
+function printCurrent(){
+  if(!currentId){ alert('印刷する質問を選択してください。'); return; }
+  collectRow(currentId);
+  doPrint([currentId],mode);
+}
+
+function setBatchMode(m){ batchMode=m;
+  document.getElementById('bModeHon').classList.toggle('on',m==='hon');
+  document.getElementById('bModeRe').classList.toggle('on',m==='re'); }
+
+function buildBatchList(){
+  const wrap=document.getElementById('batchList'); wrap.innerHTML='';
+  Object.keys(TREE).sort((a,b)=>Number(a)-Number(b)).forEach(mk=>{
+    const M=TREE[mk];
+    const mem=document.createElement('div'); mem.className='batch-mem';
+    mem.innerHTML='<div class="batch-mem-h"><input type="checkbox" class="memChk" data-mk="'+mk+'" onchange="toggleMember(this)"> '
+      +M.order+'　'+esc0(M.name)+'（'+esc0(M.party)+'）</div>';
+    getMemberRows(mk).forEach(item=>{
+      const N=numById[item.id]||{};
+      const numStr=[N.n1?N.n1:'',N.n2?'('+N.n2+')':'',N.n3?CIRC[N.n3]:''].filter(Boolean).join(' ');
+      const lvClass=item.lvl===1?'l1':item.lvl===2?'l2':'l3';
+      const lvName=item.lvl===1?'大':item.lvl===2?'小':'内容';
+      const div=document.createElement('div'); div.className='batch-row';
+      div.innerHTML='<input type="checkbox" class="rowChk" data-id="'+item.id+'" data-mk="'+mk+'">'
+        +'<span class="lv-tag '+lvClass+'">'+lvName+'</span>'
+        +'<span style="min-width:70px;color:#555">'+numStr+'</span>'
+        +'<span style="flex:1">'+cut(item.text,60)+'</span>'
+        +'<span class="rqmark" data-id="'+item.id+'"></span>'
+        +'<span class="fmark" data-id="'+item.id+'"></span>';
+      mem.appendChild(div);
+    });
+    wrap.appendChild(mem);
+  });
+  refreshBatchFilledMarks();
+}
+function getMemberRows(mk){
+  const M=TREE[mk]; const list=[];
+  M.l1s.forEach(L1=>{ if(L1.selfRow) list.push({id:L1.selfRow['行ID'],text:L1.text,lvl:1});
+    L1.l2s.forEach(L2=>{ if(L2.selfRow) list.push({id:L2.selfRow['行ID'],text:L2.text,lvl:2});
+      L2.l3s.forEach(L3=>{ list.push({id:L3.selfRow['行ID'],text:L3.text,lvl:3}); }); }); });
+  return list;
+}
+function esc0(s){ return escapeHtml(s); }
+function toggleMember(cb){
+  document.querySelectorAll('.rowChk[data-mk="'+cb.dataset.mk+'"]').forEach(c=>c.checked=cb.checked);
+}
+function batchAll(v){ document.querySelectorAll('.rowChk,.memChk').forEach(c=>c.checked=v); }
+function batchFilled(){
+  document.querySelectorAll('.rowChk').forEach(c=>{
+    const s=store[c.dataset.id]||{};
+    const has = batchMode==='hon' ? !!(s.hAnswer&&s.hAnswer.trim()) : !!(s.reQuestions&&s.reQuestions.some(rq=>rq.answer&&rq.answer.trim()));
+    c.checked=has;
+  });
+  document.querySelectorAll('.memChk').forEach(c=>c.checked=false);
+}
+function refreshBatchFilledMarks(){
+  document.querySelectorAll('.fmark').forEach(el=>{
+    const s=store[el.dataset.id]||{};
+    const hasH=!!(s.hAnswer&&s.hAnswer.trim());
+    const hasR=!!(s.reQuestions&&s.reQuestions.some(rq=>rq.answer&&rq.answer.trim()));
+    let t='';
+    if(hasH) t+='<span class="filled">本答弁✓</span> ';
+    if(hasR) t+='<span class="filled">再質問✓</span>';
+    el.innerHTML=t|| '<span class="empty">未入力</span>';
+  });
+  document.querySelectorAll('.rqmark').forEach(el=>{
+    const s=store[el.dataset.id]||{};
+    const n=(s.reQuestions||[]).length;
+    el.innerHTML = n>0 ? '<span class="rq-badge">再質問'+n+'件</span>' : '';
+  });
+}
+/* 一括印刷：選択分を#printRootへ連結して印刷（本答弁=1項目1シート／再質問=1再質問1シート、切り替わり毎に改ページ） */
+function printBatch(){
+  const ids=[...document.querySelectorAll('.rowChk:checked')].map(c=>c.dataset.id);
+  if(!ids.length){ alert('印刷する質問を1件以上選択してください。'); return; }
+  doPrint(ids,batchMode);
+}
+
+/* ===== 再質問一覧表：一括印刷タブのチェック状態を共用 ===== */
+function buildIchiranData(){
+  const checkedIds=new Set([...document.querySelectorAll('.rowChk:checked')].map(c=>c.dataset.id));
+  const groups=[];
+  Object.keys(TREE).sort((a,b)=>Number(a)-Number(b)).forEach(mk=>{
+    const M=TREE[mk];
+    const items=getMemberRows(mk).filter(it=>checkedIds.has(it.id) && store[it.id] && store[it.id].reQuestions && store[it.id].reQuestions.length);
+    if(items.length) groups.push({mk,M,items});
+  });
+  return groups;
+}
+function ichiranBodyHtml(groups){
+  const esc=escapeHtml;
+  let html=`<div class="ichiran-title">再質問一覧表</div>
+    <div class="ichiran-meta"><div>令和${esc(common.fEra)}年 第${esc(common.fKai)}回定例会</div><div>${esc(common.fMonth)}月${esc(common.fDay)}日作成　Ver${esc(common.fVer)}</div></div>`;
+  groups.forEach(g=>{
+    html+=`<div class="ichiran-member-group">
+      <div class="batch-mem-h">${esc(g.M.order+'　'+g.M.name+'（'+g.M.party+'）')}</div>
+      <div class="ichiran-col-head"><div class="l">再質問の内容</div><div class="r">担当部署</div></div>`;
+    g.items.forEach(item=>{
+      const o=rows.find(r=>r['行ID']===item.id); if(!o) return;
+      const dept=o['所管']||'';
+      const s=store[item.id]||{};
+      html+=`<div class="ichiran-item"><div class="yoshi">${yoshiHtml(o)}</div>`;
+      (s.reQuestions||[]).forEach((rq,i)=>{
+        html+=`<div class="ichiran-rq-row">
+          <div class="ichiran-rq-left"><div class="ichiran-rq-label">再質問${i+1}</div><div class="ichiran-rq-text">${esc(rq.question||'')}</div></div>
+          <div class="ichiran-rq-right">${esc(dept)}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+  });
+  return html;
+}
+function renderIchiran(){
+  collectRow(currentId);
+  const body=document.getElementById('ichiranBody');
+  const groups=buildIchiranData();
+  if(!groups.length){
+    body.innerHTML='<div class="sheet"><div class="noprint-msg">「🖨 一括印刷」タブで、一覧表に出力したい議員・項目にチェックを入れてください。<br>（再質問が1件も登録されていない項目は表示されません）</div></div>';
+    return;
+  }
+  body.innerHTML='<div class="sheet">'+ichiranBodyHtml(groups)+'</div>';
+}
+function printIchiran(){
+  collectRow(currentId);
+  const groups=buildIchiranData();
+  if(!groups.length){ alert('印刷する議員・項目が選択されていません。「🖨 一括印刷」タブでチェックしてください。'); return; }
+  const root=document.getElementById('printRoot');
+  root.innerHTML='<div class="sheet">'+ichiranBodyHtml(groups)+'</div>';
+  document.body.classList.add('printing');
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
+}
+
+const LS_KEY='gikai_toben_app_v2';
+function migrateStore(){
+  Object.keys(store).forEach(id=>{
+    const s=store[id]; if(!s) return;
+    if(!Array.isArray(s.reQuestions)){
+      const hasLegacy = s.rAnswerer||s.rQuestion||s.rAnswer;
+      s.reQuestions = hasLegacy ? [{answerer:s.rAnswerer||'',question:s.rQuestion||'',answer:s.rAnswer||''}] : [];
+    }
+    delete s.rAnswerer; delete s.rReNum; delete s.rQuestion; delete s.rAnswer;
+  });
+}
+function autosave(){ try{ localStorage.setItem(LS_KEY,JSON.stringify({common,store})); }catch(e){} }
+function restore(){ try{ const d=JSON.parse(localStorage.getItem(LS_KEY)||'null');
+  if(d){ Object.assign(common,d.common||{}); Object.assign(store,d.store||{}); migrateStore();
+    set('fMonth',common.fMonth||''); set('fDay',common.fDay||''); set('fVer',common.fVer||'1');
+    set('fEra',common.fEra||'7'); set('fKai',common.fKai||'2'); } }catch(e){} }
+function clearStorage(){ if(confirm('自動保存された入力データを削除します。よろしいですか？')){ localStorage.removeItem(LS_KEY); location.reload(); } }
+
+function saveJson(){ collectCommon(); collectRow();
+  downloadFile(JSON.stringify({version:3,savedAt:new Date().toISOString(),common,store},null,2),'toben_input_'+ts()+'.json','application/json'); }
+document.getElementById('jsonFile').addEventListener('change',function(e){
+  const f=e.target.files[0]; if(!f)return; const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result);
+    Object.keys(common).forEach(k=>delete common[k]); Object.keys(store).forEach(k=>delete store[k]);
+    Object.assign(common,d.common||{}); Object.assign(store,d.store||{}); migrateStore();
+    set('fMonth',common.fMonth||''); set('fDay',common.fDay||''); set('fVer',common.fVer||'1');
+    set('fEra',common.fEra||'7'); set('fKai',common.fKai||'2');
+    loadRowInputs(); render(); autosave(); refreshBatchFilledMarks(); alert('JSONを読み込みました。');
+  }catch(err){ alert('JSON読込失敗：'+err.message); } };
+  r.readAsText(f,'UTF-8'); });
+
+function exportCsv(){ collectCommon(); collectRow();
+  const extra=["回答部","担当者名","本答弁原稿"];
+  const header=HEAD.concat(extra); let lines=[header.map(csvCell).join(',')];
+  rows.forEach(o=>{ const s=store[o['行ID']]||{}; const base=HEAD.map(h=>o[h]!==undefined?o[h]:'');
+    const ext=[s.hDept||'',s.hStaff||'',s.hAnswer||''];
+    lines.push(base.concat(ext).map(csvCell).join(',')); });
+  downloadFile('﻿'+lines.join('\r\n'),'toben_export_'+ts()+'.csv','text/csv'); }
+function exportReCsv(){ collectCommon(); collectRow();
+  const header=["行ID","発言順位","議員名","会派","大きな項目","小さな項目","内容","再質問番号","答弁者","再質問の文言","再質問答弁"];
+  let lines=[header.map(csvCell).join(',')];
+  rows.forEach(o=>{ const s=store[o['行ID']]||{};
+    (s.reQuestions||[]).forEach((rq,i)=>{
+      lines.push([o['行ID'],o['発言順位'],o['議員名'],o['会派'],o['大きな項目']||'',o['小さな項目']||'',o['内容']||'',
+        String(i+1),rq.answerer||'',rq.question||'',rq.answer||''].map(csvCell).join(','));
+    });
+  });
+  downloadFile('﻿'+lines.join('\r\n'),'toben_saishitsumon_'+ts()+'.csv','text/csv'); }
+function csvCell(v){ v=(v==null)?'':String(v); return '"'+v.replace(/"/g,'""')+'"'; }
+
+function downloadFile(content,filename,type){ const blob=new Blob([content],{type:type+';charset=utf-8'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),1000); }
+function ts(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes()); }
+
+document.body.className='view-input';
+collectCommon(); restore(); setMode('hon');
+</script>
+</body>
+</html>

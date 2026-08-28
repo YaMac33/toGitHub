@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一般質問 答弁書作成支援アプリ｜操作説明書</title>
+<style>
+  :root{
+    --bg:#eef1f6; --panel:#fff; --ink:#1f2937; --sub:#6b7280;
+    --accent:#3b6ea5; --accent-d:#2c5580; --accent-l:#e8f0f8;
+    --line:#d0d7e2; --ok:#2f9e6f; --warn:#c58b1b; --danger:#c0504d;
+    --radius:12px; --shadow:0 4px 16px rgba(30,50,80,.10);
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:"Segoe UI","Meiryo","Yu Gothic",sans-serif; background:var(--bg);
+    color:var(--ink); font-size:15px; line-height:1.85; }
+
+  /* ヘッダー */
+  header{ background:linear-gradient(135deg,var(--accent),var(--accent-d)); color:#fff;
+    padding:32px 24px; box-shadow:0 2px 12px rgba(0,0,0,.15); }
+  header .inner{ max-width:900px; margin:0 auto; }
+  header h1{ margin:0 0 6px; font-size:26px; font-weight:700; }
+  header p{ margin:0; opacity:.9; font-size:14px; }
+  header .badge{ display:inline-block; font-size:12px; background:rgba(255,255,255,.2);
+    padding:3px 12px; border-radius:20px; margin-top:10px; }
+
+  /* レイアウト */
+  .wrap{ max-width:900px; margin:24px auto 60px; padding:0 20px; }
+
+  /* 目次 */
+  nav.toc{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 22px; box-shadow:var(--shadow); margin-bottom:28px; }
+  nav.toc h2{ margin:0 0 10px; font-size:15px; color:var(--accent-d); }
+  nav.toc ol{ margin:0; padding-left:22px; columns:2; column-gap:30px; }
+  nav.toc li{ margin-bottom:5px; }
+  nav.toc a{ color:var(--accent); text-decoration:none; }
+  nav.toc a:hover{ text-decoration:underline; }
+
+  section{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px 26px; box-shadow:var(--shadow); margin-bottom:24px; }
+  section h2{ font-size:20px; color:var(--accent-d); margin:0 0 16px; padding-bottom:10px;
+    border-bottom:2px solid var(--accent-l); display:flex; align-items:center; gap:10px; }
+  section h2 .no{ background:var(--accent); color:#fff; width:30px; height:30px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; font-size:15px; flex:0 0 auto; }
+  section h3{ font-size:16px; color:var(--accent); margin:22px 0 8px; }
+
+  p{ margin:8px 0; }
+  ul,ol{ margin:8px 0; padding-left:24px; }
+  li{ margin-bottom:6px; }
+
+  .step{ counter-reset:none; }
+  .step > li{ margin-bottom:14px; }
+
+  code,.kbd{ background:#eef2f7; border:1px solid #d5deea; border-radius:5px; padding:1px 7px;
+    font-family:"Consolas","Courier New",monospace; font-size:13px; color:var(--accent-d); }
+
+  .note{ border-left:4px solid var(--accent); background:var(--accent-l); padding:12px 16px;
+    border-radius:0 8px 8px 0; margin:14px 0; }
+  .tip{ border-left:4px solid var(--ok); background:#eaf7f1; padding:12px 16px; border-radius:0 8px 8px 0; margin:14px 0; }
+  .warn{ border-left:4px solid var(--warn); background:#fdf6e7; padding:12px 16px; border-radius:0 8px 8px 0; margin:14px 0; }
+  .danger{ border-left:4px solid var(--danger); background:#fbeeee; padding:12px 16px; border-radius:0 8px 8px 0; margin:14px 0; }
+  .note strong,.tip strong,.warn strong,.danger strong{ display:block; margin-bottom:3px; }
+
+  table{ border-collapse:collapse; width:100%; margin:14px 0; font-size:14px; }
+  th,td{ border:1px solid var(--line); padding:8px 12px; text-align:left; vertical-align:top; }
+  th{ background:var(--accent-l); color:var(--accent-d); font-weight:700; }
+  tr:nth-child(even) td{ background:#fafcfe; }
+
+  .tag{ display:inline-block; font-size:12px; padding:2px 10px; border-radius:12px; color:#fff; font-weight:700; }
+  .tag.l1{ background:#3b6ea5; } .tag.l2{ background:#5c8ac0; } .tag.l3{ background:#8bb0d6; }
+  .tag.hon{ background:#2f9e6f; } .tag.re{ background:#c58b1b; }
+
+  .flow{ background:#f7fafd; border:1px dashed #c3d3e5; border-radius:10px; padding:16px 20px; margin:14px 0;
+    font-size:15px; font-weight:600; color:var(--accent-d); }
+  .flow .arrow{ color:var(--accent); margin:0 6px; }
+
+  .example{ background:#fbfdff; border:1px solid var(--line); border-radius:8px; padding:14px 18px; margin:12px 0;
+    font-family:"Meiryo",monospace; font-size:13px; line-height:1.9; white-space:pre-wrap; color:#333; }
+
+  .btnimg{ display:inline-block; background:var(--accent); color:#fff; border-radius:8px; padding:3px 12px;
+    font-size:13px; font-weight:600; }
+  .btnimg.ghost{ background:#fff; color:var(--accent); border:1px solid var(--accent); }
+
+  footer{ text-align:center; color:var(--sub); font-size:13px; padding:20px; }
+  .top-link{ text-align:right; margin-top:8px; }
+  .top-link a{ font-size:13px; color:var(--accent); text-decoration:none; }
+  @media print{
+    body{ background:#fff; }
+    section,nav.toc{ box-shadow:none; page-break-inside:avoid; }
+    header{ box-shadow:none; }
+  }
+</style>
+</head>
+<body id="top">
+
+<header>
+  <div class="inner">
+    <h1>📄 一般質問 答弁書作成支援アプリ</h1>
+    <p>操作説明書 ── 本答弁・再質問答弁書の作成から印刷・保存まで</p>
+    <span class="badge">LGWAN／オフライン利用対応｜Ver 対応</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 目次 -->
+  <nav class="toc">
+    <h2>📑 目次</h2>
+    <ol>
+      <li><a href="#s1">このアプリでできること</a></li>
+      <li><a href="#s2">起動と準備</a></li>
+      <li><a href="#s3">画面の構成</a></li>
+      <li><a href="#s4">CSVの読み込み</a></li>
+      <li><a href="#s5">質問の選び方（4段階選択）</a></li>
+      <li><a href="#s6">項目番号のルール</a></li>
+      <li><a href="#s7">本答弁書の作成</a></li>
+      <li><a href="#s8">再質問答弁書の作成（複数件対応）</a></li>
+      <li><a href="#s9">再質問一覧表の作成・印刷・CSV出力</a></li>
+      <li><a href="#s10">印刷・PDF化（1枚／一括）</a></li>
+      <li><a href="#s11">保存・受け渡し（自動保存／JSON／CSV）</a></li>
+      <li><a href="#s12">よくある質問・トラブル対応</a></li>
+      <li><a href="#s13">運用上の注意</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <section id="s1">
+    <h2><span class="no">1</span>このアプリでできること</h2>
+    <p>本アプリは、議会の一般質問通告データ（CSV）を読み込み、<strong>本答弁書</strong>（市長・教育長答弁等）と<strong>再質問答弁書</strong>（各部部長等）を画面上で作成・印刷するためのツールです。通告CSVを読み込んで答弁内容を入力し、CSVとして書き出すことで、<strong>通告内容と答弁内容を1つのデータとして紐づける</strong>こともできます。</p>
+    <ul>
+      <li>通告CSVから議員・質問項目を自動で読み込み</li>
+      <li>質問要旨（大項目・小項目・内容）を番号付きで自動レイアウト</li>
+      <li>答弁原稿や担当所属などを入力し、その場でプレビュー</li>
+      <li>1つの項目に<strong>再質問を0〜複数件</strong>登録し、項目ごと・議員ごとに整理</li>
+      <li>1枚ずつ／複数まとめて印刷・PDF化、再質問だけをまとめた<strong>一覧表</strong>の印刷にも対応</li>
+      <li>入力内容の自動保存・ファイル書き出し・CSV出力（本答弁用・再質問一覧用の2種類）</li>
+    </ul>
+    <div class="note">
+      <strong>💡 動作環境</strong>
+      1つのHTMLファイルをブラウザで開くだけで動作します。インターネット接続は不要で、LGWAN環境内・オフラインでご利用いただけます。データが外部に送信されることはありません。
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="s2">
+    <h2><span class="no">2</span>起動と準備</h2>
+    <ol class="step">
+      <li>配布された <code>答弁書作成支援.html</code> をダブルクリックして、ブラウザ（Microsoft Edge 等）で開きます。</li>
+      <li>手元に、通告内容の入った <strong>CSVファイル</strong> を用意します。</li>
+      <li>推奨ブラウザは <strong>Microsoft Edge</strong> です。文字コードは <strong>UTF-8</strong> のCSVに対応しています。</li>
+    </ol>
+    <div class="tip">
+      <strong>✅ ヒント</strong>
+      よく使う場合は、HTMLファイルをデスクトップやよく使うフォルダに置いておくと便利です。ブラウザのお気に入り（ブックマーク）に登録することもできます。
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="s3">
+    <h2><span class="no">3</span>画面の構成</h2>
+    <p>画面は上から順に、次の要素で構成されています。</p>
+    <table>
+      <tr><th>領域</th><th>内容</th></tr>
+      <tr><td><strong>ヘッダー</strong>（青帯）</td><td>アプリ名と、右端の <span class="btnimg ghost">▲ 操作パネルを隠す</span> ボタン。</td></tr>
+      <tr><td><strong>操作パネル</strong></td><td>CSV読込、答弁様式の切替、質問の4段階選択、作成日・Ver等の入力、各種ボタン。</td></tr>
+      <tr><td><strong>タブ</strong></td><td><span class="btnimg">✏️ 入力</span> <span class="btnimg ghost">👁 プレビュー</span> <span class="btnimg ghost">🖨 一括印刷</span> <span class="btnimg ghost">📋 再質問一覧</span> の4つ。</td></tr>
+      <tr><td><strong>本体</strong></td><td>選んだタブに応じて、入力欄・答弁書プレビュー・一括印刷リスト・再質問一覧表を表示。</td></tr>
+    </table>
+    <div class="tip">
+      <strong>✅ 操作パネルは開閉できます</strong>
+      画面が狭いと感じたら、ヘッダー右の <span class="btnimg ghost">▲ 操作パネルを隠す</span> を押すと操作パネルが折りたたまれ、入力・プレビュー領域を広く使えます。もう一度押すと戻ります。
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="s4">
+    <h2><span class="no">4</span>CSVの読み込み</h2>
+    <ol class="step">
+      <li>操作パネルの <span class="btnimg ghost">📁 CSV読込</span> ボタンを押します。</li>
+      <li>ファイル選択画面で、対象の通告CSVを選びます。</li>
+      <li>読み込みに成功すると、ボタン横に <code>読込完了：○行／市名／第○回</code> と表示されます。</li>
+    </ol>
+    <p>読み込み後、質問選択欄（議員・大項目・小項目・内容）が自動的に選べるようになります。</p>
+    <div class="warn">
+      <strong>⚠️ 注意</strong>
+      CSVは所定のフォーマット（先頭に <code>#META</code> 行、続いて <code>行ID,発言順位,議員名,…</code> のヘッダー行がある形式）を前提としています。列の並びが異なると正しく読み込めない場合があります。
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="s5">
+    <h2><span class="no">5</span>質問の選び方（4段階選択）</h2>
+    <p>作成したい質問は、次の順番でしぼり込んで選びます。</p>
+    <div class="flow">
+      ① 議員（発言順位）<span class="arrow">→</span> ② 大項目<span class="arrow">→</span> ③ 小項目<span class="arrow">→</span> ④ 内容
+    </div>
+    <ul>
+      <li>まず <strong>①議員</strong> を選ぶと、その議員の <strong>②大項目</strong> だけが選べるようになります。</li>
+      <li><strong>②大項目</strong> を選ぶと、その下の <strong>③小項目</strong> が絞り込まれます。以下同様です。</li>
+    </ul>
+    <h3>質問には3つのパターンがあります</h3>
+    <table>
+      <tr><th>パターン</th><th>選び方</th><th>答弁書に載る質問要旨</th></tr>
+      <tr><td>大項目まで</td><td>②で止める（③④は空欄）</td><td>大項目のみ</td></tr>
+      <tr><td>小項目まで</td><td>③まで選ぶ（④は空欄）</td><td>大項目＋小項目</td></tr>
+      <tr><td>内容まで</td><td>④まで選ぶ</td><td>大項目＋小項目＋内容</td></tr>
+    </table>
+    <div class="note">
+      <strong>💡 「選択中」の表示で確認</strong>
+      選択欄の下に <code>選択中：1 (2) ①　[行ID] 議員名（内容）</code> のように、いま選んでいる質問が表示されます。どの項目を作成中か迷ったらここを確認してください。
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="s6">
+    <h2><span class="no">6</span>項目番号のルール</h2>
+    <p>質問要旨には、議員ごとに次のルールで自動的に番号が振られます。上位の項目が変わるたびに、下位の番号は 1 からふり直されます。</p>
+    <table>
+      <tr><th>階層</th><th>番号の形式</th><th>例</th></tr>
+      <tr><td><span class="tag l1">大項目</span></td><td>半角数字</td><td>1、2、3 …</td></tr>
+      <tr><td><span class="tag l2">小項目</span></td><td>括弧付き数字</td><td>(1)、(2)、(3) …</td></tr>
+      <tr><td><span class="tag l3">内容</span></td><td>丸数字</td><td>①、②、③ …</td></tr>
+    </table>
+    <div class="example">1 災害に強いまちづくり…
+  (1) 指定避難所及び福祉避難所…
+    ① ペット同行避難の受入体制…
+    ② 福祉避難所の指定状況…
+  (2) 備蓄物資の品目及び数量…
+    ① 乳児用液体ミルク…
+2 DX推進計画の進捗状況…
+  (1) 行政手続のオンライン化…
+    ① マイナンバーカードを活用した…</div>
+  </section>
+
+  <!-- 7 -->
+  <section id="s7">
+    <h2><span class="no">7</span>本答弁書の作成</h2>
+    <ol class="step">
+      <li>操作パネル右側の様式切替で <span class="btnimg">本答弁</span> を選びます。</li>
+      <li>質問を4段階で選択します（第5章参照）。</li>
+      <li><span class="btnimg">✏️ 入力</span> タブで、次の項目を入力します。
+        <table>
+          <tr><th>入力項目</th><th>内容</th></tr>
+          <tr><td>会派</td><td>初期値としてCSVの会派が入ります。修正可。</td></tr>
+          <tr><td>議員名</td><td>初期値としてCSVの議員名が入ります。修正可。</td></tr>
+          <tr><td>回答部(担当所属名)</td><td>手入力（例：総務部）</td></tr>
+          <tr><td>担当者名</td><td>手入力（例：佐藤 花子）</td></tr>
+          <tr><td>本答弁 原稿</td><td>市長答弁等の本文を入力。改行はそのまま反映されます。</td></tr>
+        </table>
+      </li>
+      <li>操作パネルの <strong>作成日</strong>・<strong>Ver</strong> を入力します（答弁書の右上に表示されます）。</li>
+      <li><span class="btnimg ghost">👁 プレビュー</span> タブで仕上がりを確認します。</li>
+    </ol>
+    <div class="tip">
+      <strong>✅ 入力は即座に反映</strong>
+      入力した内容はリアルタイムでプレビューに反映され、自動保存されます。「保存」ボタンを押す必要はありません。
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section id="s8">
+    <h2><span class="no">8</span>再質問答弁書の作成（複数件対応）</h2>
+    <p>1つの質問項目（大項目・小項目・内容のいずれか）には、再質問を<strong>0件〜好きなだけ</strong>登録できます。再質問が全く出なかった項目は0件のままで構いません。</p>
+    <ol class="step">
+      <li>様式切替で <span class="btnimg" style="background:#c58b1b">再質問答弁</span> を選びます。</li>
+      <li>質問を4段階で選択します。</li>
+      <li><span class="btnimg">✏️ 入力</span> タブで、<span class="btnimg ghost">＋ 再質問を追加</span> を押すと「再質問1」のカードが1枚追加されます。カードには次の項目を入力します。
+        <table>
+          <tr><th>入力項目</th><th>内容</th></tr>
+          <tr><td>答弁者</td><td>例：〇〇部長　伊藤 四郎</td></tr>
+          <tr><td>再質問の文言</td><td>議員からの再質問の内容。</td></tr>
+          <tr><td>再質問答弁 原稿</td><td>部長答弁等の本文。</td></tr>
+        </table>
+      </li>
+      <li>さらに再質問が続く場合は、もう一度 <span class="btnimg ghost">＋ 再質問を追加</span> を押します。「再質問2」「再質問3」…とカードが増え、番号は<strong>自動でふられます</strong>（手入力は不要です）。</li>
+      <li>不要になったカードは、カード右上の <span class="btnimg danger" style="background:#fff;color:#c0504d;border:1px solid #c0504d">🗑 削除</span> で削除できます。削除すると後続のカードの番号は自動的に詰まります。</li>
+      <li>操作パネルの <strong>令和○年 第○回定例会</strong>・<strong>作成日</strong>・<strong>Ver</strong> を入力します（答弁書の右上・右端に表示）。</li>
+    </ol>
+    <div class="note">
+      <strong>💡 本答弁と再質問答弁は別々に保存されます</strong>
+      同じ質問について、本答弁の原稿と再質問答弁の原稿（複数件）は個別に保持されます。様式を切り替えても、それぞれの入力内容は消えません。
+    </div>
+    <div class="tip">
+      <strong>✅ 再質問カードの並び順について</strong>
+      再質問カードは追加した順番がそのまま番号（再質問1、再質問2…）になります。並べ替え機能はありませんので、順番を変えたい場合は該当のカードを削除してから追加し直してください。
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section id="s9">
+    <h2><span class="no">9</span>再質問一覧表の作成・印刷・CSV出力</h2>
+    <p>登録した再質問だけを、議員・項目ごとに一覧化した帳票（進行管理表）を印刷・CSV出力できます。答弁部局への割振りや、答弁準備の進捗管理にお使いください。</p>
+    <h3>■ 一覧表に出す項目を選ぶ</h3>
+    <ol class="step">
+      <li><span class="btnimg ghost">🖨 一括印刷</span> タブを開き、一覧表に載せたい議員・項目に<strong>チェック</strong>を入れます（一覧表の対象は、一括印刷タブのチェック状態がそのまま使われます）。</li>
+      <li><span class="btnimg ghost">📋 再質問一覧</span> タブに切り替えると、チェックした項目のうち<strong>再質問が1件以上登録されているものだけ</strong>が一覧表としてプレビューされます。再質問が0件の項目はチェックしていても一覧表には出ません。</li>
+    </ol>
+    <h3>■ 一覧表の見方</h3>
+    <p>各項目について「大項目→小項目→内容」の要旨が表示され、その下に再質問が1件ずつ、<strong>左側に再質問の文言・右側に担当部署</strong>（通告CSVの「所管」列の値）が並びます。項目が変わっても続けて表示されますが、<strong>議員が切り替わると必ず新しいページから出力されます。</strong></p>
+    <div class="note">
+      <strong>💡 一覧表には答弁の本文は載りません</strong>
+      一覧表はあくまで「誰が・何を再質問されたか」を把握するための進行管理表です。再質問答弁の本文そのものを確認・印刷したい場合は、<span class="btnimg ghost">🖨 一括印刷</span> タブで出力様式を <span class="tag re">再質問答弁</span> にして出力してください（第10章参照）。
+    </div>
+    <h3>■ 印刷・PDF化する</h3>
+    <p><span class="btnimg ghost">📋 再質問一覧</span> タブの <span class="btnimg">🖨 一覧表を印刷/PDF</span> を押すと、印刷画面が開きます。用紙はA4縦です。</p>
+    <h3>■ CSVで出力する</h3>
+    <p>操作パネルの <span class="btnimg ghost">📤 再質問一覧CSV</span> を押すと、登録されている<strong>すべての</strong>再質問（一括印刷タブのチェック状態に関わらず全件）を1行＝1再質問としてCSV出力します。列は「行ID・発言順位・議員名・会派・大きな項目・小さな項目・内容・再質問番号・答弁者・再質問の文言・再質問答弁」です。行IDで通告CSVの元データと突き合わせられます。</p>
+  </section>
+
+  <!-- 10 -->
+  <section id="s10">
+    <h2><span class="no">10</span>印刷・PDF化（1枚／一括）</h2>
+
+    <h3>■ 1枚だけ印刷する</h3>
+    <ol class="step">
+      <li>作成中の質問を表示した状態で、操作パネルの <span class="btnimg">🖨 この1枚を印刷/PDF</span> を押します。</li>
+      <li>ブラウザの印刷画面が開きます。プリンターを選べば紙に印刷、「PDFとして保存」を選べばPDFファイルになります。</li>
+      <li>再質問答弁モードで、その項目に複数の再質問が登録されている場合は、<strong>再質問1件につき1ページ</strong>が連続して出力されます。</li>
+    </ol>
+
+    <h3>■ 複数まとめて印刷する（一括印刷）</h3>
+    <ol class="step">
+      <li><span class="btnimg ghost">🖨 一括印刷</span> タブを開きます。議員ごとに質問の一覧が表示されます。各行には再質問の登録件数（<span style="font-size:11px;padding:1px 8px;border-radius:10px;background:#3b6ea5;color:#fff;font-weight:700">再質問n件</span>）も表示されます。</li>
+      <li>印刷したい質問の <strong>チェックボックス</strong> にチェックを入れます。
+        <ul>
+          <li>議員名の横のチェックで、その議員の全項目を一括選択できます。</li>
+          <li>上部の <span class="btnimg ghost">☑ 全選択</span> <span class="btnimg ghost">☐ 全解除</span> <span class="btnimg ghost">✅ 入力済のみ選択</span> も利用できます。</li>
+        </ul>
+      </li>
+      <li>出力様式（<span class="tag hon">本答弁</span> または <span class="tag re">再質問答弁</span>）を選びます。</li>
+      <li><span class="btnimg">🖨 選択分を一括印刷/PDF</span> を押します。<span class="tag hon">本答弁</span> は選んだ質問1件＝1ページ、<span class="tag re">再質問答弁</span> は選んだ質問に登録されている<strong>再質問1件＝1ページ</strong>で連続出力されます（再質問が0件の項目は再質問答弁モードでは出力されません）。</li>
+    </ol>
+    <p>このチェック状態は <span class="btnimg ghost">📋 再質問一覧</span> タブ（第9章）とも共通です。</p>
+    <div class="tip">
+      <strong>✅ 入力状況が一目でわかります</strong>
+      一括印刷リストの各行には <span style="color:#2f9e6f;font-weight:700">本答弁✓</span> / <span style="color:#2f9e6f;font-weight:700">再質問✓</span> / <span style="color:#bbb">未入力</span> のマークが表示されます。原稿の入力漏れチェックにお使いください。
+    </div>
+    <div class="warn">
+      <strong>⚠️ PDFで保存するには</strong>
+      印刷画面の「プリンター」欄で <strong>「Microsoft Print to PDF」</strong> や <strong>「PDFとして保存」</strong> を選択してください。用紙はA4縦を推奨します。
+    </div>
+    <div class="note">
+      <strong>💡 改ページについて</strong>
+      一括印刷では、出力の1件（本答弁なら質問1件、再質問答弁なら再質問1件）ごとに必ず新しいページから出力されます。原稿が長い場合はその1件が複数ページにまたがって出力されますが、次の1件は必ず新しいページから始まります。最後の後に白紙のページが1枚出力されることがありますが、正常な動作です。
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section id="s11">
+    <h2><span class="no">11</span>保存・受け渡し（自動保存／JSON／CSV）</h2>
+    <table>
+      <tr><th>機能</th><th>用途・特徴</th></tr>
+      <tr><td><strong>自動保存</strong></td><td>入力するたびに、そのPC・そのブラウザに自動保存されます。次に同じPCで開くと内容が復元されます。特別な操作は不要です。</td></tr>
+      <tr><td><span class="btnimg ghost">💾 JSON書出</span></td><td>入力内容をファイル（.json）として書き出します。<strong>別のPCへ受け渡す</strong>ときや、バックアップに使います。</td></tr>
+      <tr><td><span class="btnimg ghost">📂 JSON読込</span></td><td>書き出したJSONファイルを読み込み、入力内容を復元します。以前の版で書き出した古いJSONファイル（再質問が1件までしか無い形式）も自動的に新しい形式に変換されて読み込まれます。</td></tr>
+      <tr><td><span class="btnimg ghost">📤 CSV出力</span></td><td>元の通告データに、入力した回答部・担当者名・本答弁原稿の列を加えてCSVで書き出します（Excelで開けます）。再質問の内容はこのCSVには含まれません。</td></tr>
+      <tr><td><span class="btnimg ghost">📤 再質問一覧CSV</span></td><td>登録されている再質問を1行＝1再質問としてCSVで書き出します（第9章参照）。行IDで通告CSVと突き合わせられます。</td></tr>
+      <tr><td><span class="btnimg ghost" style="color:#c0504d;border-color:#c0504d">🗑 保存クリア</span></td><td>そのPC・ブラウザに自動保存された入力内容を削除します。</td></tr>
+    </table>
+    <div class="note">
+      <strong>💡 PC間で作業を引き継ぐには</strong>
+      作業を別のPCへ移す場合は、<span class="btnimg ghost">💾 JSON書出</span> でファイルを保存し、移行先PCでアプリを開いて <span class="btnimg ghost">📂 JSON読込</span> で取り込んでください。CSVも同じものを読み込む必要があります。
+    </div>
+    <div class="danger">
+      <strong>⛔ 注意（自動保存の範囲）</strong>
+      自動保存は「同じPCの同じブラウザ」でのみ有効です。<strong>別のPCやブラウザには引き継がれません。</strong>また、ブラウザの閲覧履歴・データ削除を行うと自動保存も消えます。重要なデータは必ず <span class="btnimg ghost">💾 JSON書出</span> で保管してください。
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section id="s12">
+    <h2><span class="no">12</span>よくある質問・トラブル対応</h2>
+
+    <h3>Q. CSVを読み込んでも項目が選べない</h3>
+    <p>CSVの形式が想定と異なる可能性があります。先頭に <code>#META</code> 行、次に <code>行ID,発言順位,…</code> のヘッダー行がある形式か確認してください。文字コードは <strong>UTF-8</strong> である必要があります。</p>
+
+    <h3>Q. 文字化けする</h3>
+    <p>CSVがUTF-8以外（Shift-JIS等）で保存されている可能性があります。Excel等で「CSV UTF-8」形式で保存し直してから読み込んでください。</p>
+
+    <h3>Q. 入力した内容が消えてしまった</h3>
+    <p>ブラウザのデータ削除や、別PC・別ブラウザで開いた場合、自動保存は反映されません。日頃から <span class="btnimg ghost">💾 JSON書出</span> でバックアップを取ることをおすすめします。</p>
+
+    <h3>Q. 印刷すると操作パネルまで印刷される</h3>
+    <p>操作パネルやタブは印刷対象外に設定されています。印刷プレビューに答弁書だけが表示されていれば正常です。表示されない場合は、印刷設定で「背景のグラフィック」等を確認してください。</p>
+
+    <h3>Q. 丸数字が①②③以外の表示になる</h3>
+    <p>内容の項目が多い場合、丸数字の範囲を超えると括弧付き数字で表示されることがあります。運用上問題があればご相談ください。</p>
+
+    <h3>Q. 一括印刷で選んだのに一部しか出ない</h3>
+    <p>チェックが入っているか、出力様式（本答弁／再質問答弁）が意図どおりか確認してください。チェックした行が0件だと印刷できません。再質問答弁モードの場合は、その項目に再質問が1件も登録されていないと出力対象から外れます。</p>
+
+    <h3>Q. 「再質問一覧」タブに何も表示されない</h3>
+    <p><span class="btnimg ghost">🖨 一括印刷</span> タブでのチェックが0件か、チェックした項目に再質問が1件も登録されていない可能性があります。再質問を登録した項目にチェックを入れてから、もう一度 <span class="btnimg ghost">📋 再質問一覧</span> タブを開いてください。</p>
+  </section>
+
+  <!-- 13 -->
+  <section id="s13">
+    <h2><span class="no">13</span>運用上の注意</h2>
+    <ul>
+      <li>本アプリはオフラインで完結し、入力データが外部に送信されることはありません。</li>
+      <li>共有PCで使う場合、自動保存された内容が他の職員に見えることがあります。作業後は必要に応じて <span class="btnimg ghost" style="color:#c0504d;border-color:#c0504d">🗑 保存クリア</span> を実施してください。</li>
+      <li>答弁書の最終的な内容・体裁は、必ず紙面プレビューで確認のうえ確定してください。</li>
+      <li>大切なデータは、作業の区切りごとに <span class="btnimg ghost">💾 JSON書出</span> で保管することを推奨します。</li>
+    </ul>
+    <div class="tip">
+      <strong>✅ おすすめの作業手順</strong>
+      ① CSV読込 → ② 質問を選択 → ③ 原稿を入力（自動保存） → ④ プレビュー確認 → ⑤ 一括印刷でまとめて出力 → ⑥ JSON書出でバックアップ
+    </div>
+  </section>
+
+  <div class="top-link"><a href="#top">▲ ページ先頭へ戻る</a></div>
+
+</div>
+
+<footer>
+  一般質問 答弁書作成支援アプリ 操作説明書 ／ オフライン・LGWAN環境対応
+</footer>
+
+</body>
+</html>
+
+
