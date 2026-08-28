@@ -142,6 +142,9 @@
   .batch-mem{ border-bottom:1px solid var(--line); }
   .batch-mem:last-child{ border-bottom:none; }
   .batch-mem-h{ background:var(--accent-l); padding:8px 14px; font-weight:700; display:flex; align-items:center; gap:10px; }
+  #batchList .batch-mem-h{ cursor:pointer; user-select:none; }
+  #batchList .batch-mem-h .mem-caret{ font-size:11px; color:var(--accent-d); width:14px; display:inline-block; text-align:center; }
+  .batch-mem.collapsed .batch-row{ display:none; }
   .batch-row{ display:flex; align-items:center; gap:10px; padding:7px 14px 7px 34px; border-top:1px dashed #e3e8ef; font-size:13px; }
   .batch-row:hover{ background:#f7fafd; }
   .batch-row .lv-tag{ font-size:11px; padding:1px 8px; border-radius:10px; color:#fff; font-weight:700; }
@@ -643,7 +646,8 @@ function buildBatchList(){
   Object.keys(TREE).sort((a,b)=>Number(a)-Number(b)).forEach(mk=>{
     const M=TREE[mk];
     const mem=document.createElement('div'); mem.className='batch-mem';
-    mem.innerHTML='<div class="batch-mem-h"><input type="checkbox" class="memChk" data-mk="'+mk+'" onchange="toggleMember(this)"> '
+    mem.innerHTML='<div class="batch-mem-h" onclick="onMemHeaderClick(event)"><span class="mem-caret">▼</span>'
+      +'<input type="checkbox" class="memChk" data-mk="'+mk+'" onchange="toggleMember(this)" onclick="event.stopPropagation()"> '
       +M.order+'　'+esc0(M.name)+'（'+esc0(M.party)+'）</div>';
     getMemberRows(mk).forEach(item=>{
       const N=numById[item.id]||{};
@@ -673,6 +677,15 @@ function getMemberRows(mk){
 function esc0(s){ return escapeHtml(s); }
 function toggleMember(cb){
   document.querySelectorAll('.rowChk[data-mk="'+cb.dataset.mk+'"]').forEach(c=>c.checked=cb.checked);
+}
+/* 議員ごとの折りたたみ：ヘッダー行のクリックで開閉（チェックボックス自体のクリックは伝播を止めて除外） */
+function onMemHeaderClick(e){
+  const head=e.currentTarget;
+  const mem=head.closest('.batch-mem');
+  if(!mem) return;
+  mem.classList.toggle('collapsed');
+  const caret=head.querySelector('.mem-caret');
+  if(caret) caret.textContent=mem.classList.contains('collapsed')?'▶':'▼';
 }
 function batchAll(v){ document.querySelectorAll('.rowChk,.memChk').forEach(c=>c.checked=v); }
 function batchFilled(){
