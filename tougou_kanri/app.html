@@ -1512,14 +1512,30 @@ function buildCsvRows(){
 }
 function exportCsv(){
   const csv=buildCsvRows();
-  const filename='touben_tougou_R'+state.meta.gengo+'_第'+state.meta.kai+'回_'+ts()+'.csv';
+  const filename=buildExportFilename();
   downloadBlob(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'}),filename);
+}
+/* 議員1人分のみの出力：「発言順位2桁_フルネーム議員_R令和年2桁_会議回定.csv」（例：01_○○議員_R08_3定.csv）
+   複数議員分をまとめた出力：「集約ファイル.csv」 */
+function buildExportFilename(){
+  const members=orderedMembersWithItems();
+  if(members.length===1){
+    const m=members[0];
+    const order=String(parseInt(m.order)||0).padStart(2,'0');
+    const gengo=String(parseInt(state.meta.gengo)||0).padStart(2,'0');
+    const kai=state.meta.kai||'';
+    const name=sanitizeFilenamePart(m.name||'未入力');
+    return `${order}_${name}議員_R${gengo}_${kai}定.csv`;
+  }
+  return '集約ファイル.csv';
+}
+function sanitizeFilenamePart(s){
+  return String(s).replace(/[\\/:*?"<>|]/g,'_').trim();
 }
 function downloadBlob(blob,filename){
   const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-function ts(){ const d=new Date(),p=n=>String(n).padStart(2,'0'); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes()); }
 
 function parseCSV(text){
   if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
