@@ -13,7 +13,7 @@
 }
 *{ box-sizing:border-box; }
 html,body{ height:100%; }
-body{ margin:0; font-family:"Segoe UI","Meiryo","Yu Gothic",sans-serif; background:var(--bg);
+body{ margin:0; font-family:"MS Gothic","ＭＳ ゴシック","MS PGothic","Meiryo",sans-serif; background:var(--bg);
   color:var(--ink); font-size:14px; line-height:1.5; }
 
 /* ===== 共通部品 ===== */
@@ -90,8 +90,8 @@ legend{ font-size:12px; color:var(--accent-d); padding:0 6px; font-weight:700; }
 .node-actions{ display:flex; flex-direction:column; gap:2px; }
 .badge{ display:inline-block; background:var(--accent-l); border:1px solid #aed6f1; border-radius:3px; padding:1px 5px; font-size:10.5px; margin-right:3px; }
 .badge.end{ background:#fdebd0; border-color:#f5cba7; color:#a04000; }
-.subclaim-box{ display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
-.subclaim-box input{ width:130px; }
+.subclaim-box{ display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+.subclaim-box textarea{ min-height:32px; line-height:1.5; }
 .rowid{ font-size:9.5px; color:#8a93a3; }
 
 /* ===== 再質問・回答カード ===== */
@@ -143,7 +143,7 @@ table.info td.lbl{ background:#f0f4f8; width:14%; white-space:nowrap; font-weigh
 
 /* ===== 通告内容表（tsuukoku_kanri 様式2 を参考） ===== */
 .soumu-sheet{ background:#fff; width:210mm; min-height:297mm; padding:15mm; box-shadow:var(--shadow);
-  font-family:"Yu Mincho","MS Mincho",serif; margin:0 auto 20px; position:relative; }
+  font-family:"MS Gothic","ＭＳ ゴシック","MS PGothic",sans-serif; margin:0 auto 20px; position:relative; }
 .soumu-top{ display:flex; justify-content:space-between; font-size:10pt; }
 .soumu-title{ text-align:center; font-size:14pt; margin:6mm 0; }
 .soumu-meta{ display:flex; justify-content:space-between; font-size:11pt; margin-bottom:1mm; }
@@ -157,7 +157,7 @@ table.info td.lbl{ background:#f0f4f8; width:14%; white-space:nowrap; font-weigh
 .s-lv-big{ font-weight:bold; }
 .s-lv-small{ padding-left:1.5em; }
 .s-lv-content{ padding-left:3em; }
-.s-lv-claim{ padding-left:1em; color:#333; font-size:10pt; }
+.s-lv-claim{ padding-left:1em; color:#333; font-size:10pt; font-family:"MS Mincho","ＭＳ 明朝","Yu Mincho",serif; }
 .s-lv-claim.from-big{ padding-left:1.5em; }
 .s-lv-claim.from-small{ padding-left:3em; }
 .s-lv-claim.from-content{ padding-left:4.5em; }
@@ -176,6 +176,46 @@ table.info td.lbl{ background:#f0f4f8; width:14%; white-space:nowrap; font-weigh
 .ichiran-rq-label{ font-weight:700; color:var(--accent-d); font-size:12px; margin-bottom:3px; }
 .ichiran-rq-text{ font-size:13px; white-space:pre-wrap; }
 
+/* ===== ⑤通告表（議事課様式・冊子）：tsuukoku_kanri を移植 =====
+   自己完結パディング(15mm)を印刷時も維持するため、名前付きページ(page: gikaipage)で
+   専用の @page 余白0を適用する（他タブの.sheet系はmargin:14mm 12mmの@pageを使用）。 */
+.gikai-page{
+  page: gikaipage;
+  width:210mm; height:297mm; margin:6mm auto; padding:15mm 15mm;
+  background:#fff; box-shadow:0 0 4px rgba(0,0,0,.2);
+  font-family:"MS Gothic","ＭＳ ゴシック","MS PGothic",sans-serif;
+  page-break-after:always; overflow:visible; position:relative;
+}
+.gikai-cover{ text-align:center; position:relative; }
+.gikai-cover .cover-frame{ position:absolute; top:5mm; left:5mm; right:5mm; bottom:5mm; border:2px solid #333; }
+.gikai-cover .cover-inner{ position:relative; z-index:1; padding-top:25mm; }
+.gikai-cover .c-title{ margin-top:20mm; font-size:16pt; }
+.gikai-cover .c-sub{ font-size:11pt; margin-top:4mm; }
+.gikai-cover .c-big{ font-size:24pt; margin-top:40mm; letter-spacing:8px; }
+.gikai-cover .c-foot{ font-size:14pt; margin-top:45mm; }
+.gikai-toc h3{ text-align:center; font-size:14pt; }
+.toc-table{ border-collapse:collapse; width:100%; font-size:11pt; font-family:"MS Gothic","ＭＳ ゴシック","MS PGothic",sans-serif; }
+.toc-table th, .toc-table td{ border:1px solid #333; padding:4px 6px; text-align:center; }
+.toc-table th.col-order{ width:9%; }
+.toc-table th.col-day{ width:14%; }
+.toc-table th.col-name{ width:auto; }
+.toc-table th.col-time{ width:10%; }
+.toc-table th.col-page{ width:7%; }
+.toc-table td.col-name{ text-align:left; white-space:nowrap; }
+.gikai-body{ font-family:"MS Gothic","ＭＳ ゴシック","MS PGothic",sans-serif; font-size:10.5pt; line-height:1.9; }
+.gikai-member{ margin:0; }
+.gikai-member-head{ font-weight:bold; margin:0; white-space:nowrap; }
+.gikai-member-head .name-expand{ display:inline-block; transform:scaleX(1.5); transform-origin:left; }
+.gikai-line{ text-indent:-1em; margin:0; }
+.gikai-line.lv-big{ padding-left:2em; }
+.gikai-line.lv-small{ padding-left:3em; }
+.gikai-line.lv-content{ padding-left:4em; }
+.gikai-gap{ margin:0; }
+.gikai-pagenum{
+  position:absolute; left:15mm; right:15mm; bottom:8mm; text-align:center;
+  font-size:10.5pt; font-family:"MS Gothic","ＭＳ ゴシック","MS PGothic",sans-serif;
+}
+
 /* ===== 印刷 ===== */
 #printRoot{ display:none; }
 @media print{
@@ -192,8 +232,11 @@ table.info td.lbl{ background:#f0f4f8; width:14%; white-space:nowrap; font-weigh
   #printRoot .ichiran-member-group + .ichiran-member-group{ break-before:page; page-break-before:always; }
   #printRoot .ichiran-item{ break-inside:avoid; page-break-inside:avoid; }
   #printRoot .soumu-table tr{ page-break-inside:avoid; }
+  #printRoot .gikai-page{ box-shadow:none !important; margin:0 auto !important; }
+  #printRoot .gikai-member{ page-break-inside:avoid; }
 }
 @page{ size:A4 portrait; margin:14mm 12mm; }
+@page gikaipage{ size:A4 portrait; margin:0; }
 </style>
 </head>
 <body>
@@ -212,6 +255,7 @@ table.info td.lbl{ background:#f0f4f8; width:14%; white-space:nowrap; font-weigh
       <div class="row">
         <label>令和 <input type="number" id="mtGengo" value="7" style="width:50px" onchange="saveLocal()"> 年</label>
         <label>第 <input type="number" id="mtKai" value="2" style="width:50px" onchange="saveLocal()"> 回定例会</label>
+        <label>会期：<input type="date" id="mtStart" onchange="saveLocal()"> 〜 <input type="date" id="mtEnd" onchange="saveLocal()"></label>
       </div>
     </div>
   </details>
@@ -233,6 +277,7 @@ table.info td.lbl{ background:#f0f4f8; width:14%; white-space:nowrap; font-weigh
   <button id="tabBtn2" onclick="setMainTab(2)">② 本答弁入力</button>
   <button id="tabBtn3" onclick="setMainTab(3)">③ 再質問項目入力</button>
   <button id="tabBtn4" onclick="setMainTab(4)">④ 再質問答弁入力</button>
+  <button id="tabBtn5" onclick="setMainTab(5)">⑤ 通告表（議事課様式・冊子）</button>
 </div>
 
 <div id="main">
@@ -368,6 +413,23 @@ table.info td.lbl{ background:#f0f4f8; width:14%; white-space:nowrap; font-weigh
     </div>
   </div>
 
+  <!-- ============ タブ5：通告表（議事課様式・冊子） ============ -->
+  <div class="tabpane" id="pane5">
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn small ghost" onclick="t5SelectAll(true)">全選択</button>
+      <button class="btn small ghost" onclick="t5SelectAll(false)">全解除</button>
+      <button class="btn" onclick="renderT5Preview()">プレビュー更新</button>
+      <button class="btn" onclick="printT5()">🖨 冊子を印刷/PDF</button>
+    </div>
+    <div class="card">
+      <h3>冊子に含める議員・質問日・質問予定時間</h3>
+      <p class="hint">質問日・質問予定時間は目次に表示されます（①〜④タブの入力には使用しません）。</p>
+      <div id="t5PrintSelect" class="picklist"></div>
+      <p class="hint">tsuukoku_kanri と同じ様式（表紙・目次・1ページ34行の通告表）です。表紙・目次は自治体名・令和年・第○回・会期の設定を使用します。</p>
+    </div>
+    <div id="t5PreviewArea"></div>
+  </div>
+
 </div>
 
 <div id="printRoot"></div>
@@ -389,7 +451,7 @@ const MASTER_MEMBERS = [{"order":1,"name":"〇〇 一郎","kaiha":"〇〇会"},{
    ============================================================ */
 const FIXED_CITY = '〇〇市'; // 自治体名は固定（可変にしない）
 let state = {
-  meta:{ gengo:7, kai:2, cityName:FIXED_CITY },
+  meta:{ gengo:7, kai:2, cityName:FIXED_CITY, start:'', end:'' },
   members:[], items:[]
 };
 let currentMemberId = null; // タブ1で編集中の対象議員（state.members の id）
@@ -579,6 +641,7 @@ function updNode(uid,key,val){
 function updClaim(uid,idx,val){
   const n=state.items.find(x=>x.uid===uid); if(!n) return;
   n.claims[idx]=val; saveLocal();
+  renderNodes(); // 入力確定（フォーカスが外れたタイミング）で次の主訴欄を表示する
 }
 function autoGrow(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
 
@@ -598,8 +661,13 @@ function renderNodes(){
     row.className='node-row lv-'+n.type; row.draggable=true; row.dataset.uid=n.uid;
     let claimsHtml='';
     if(leaf){
-      claimsHtml='<div class="subclaim-box"><span class="hint" style="width:100%">主訴（末端に付きます・最大5個）：</span>'+
-        n.claims.map((c,i)=>`<input type="text" placeholder="主訴${i+1}" value="${esc(c)}" onchange="updClaim('${n.uid}',${i},this.value)">`).join('')+'</div>';
+      let lastFilled=-1;
+      for(let ci=0;ci<5;ci++){ if(n.claims[ci] && n.claims[ci].trim()) lastFilled=ci; }
+      const visibleSlots=Math.min(5, lastFilled+2); // 入力済みの次の1個まで表示（最大5個）
+      claimsHtml='<div class="subclaim-box"><span class="hint" style="width:100%">主訴（末端に付きます・最大5個・1つ入力すると次の欄が表示されます）：</span>'+
+        Array.from({length:visibleSlots},(_,i)=>i).map(i=>
+          `<textarea rows="1" placeholder="主訴${i+1}" oninput="autoGrow(this)" onchange="updClaim('${n.uid}',${i},this.value)">${esc(n.claims[i])}</textarea>`
+        ).join('')+'</div>';
     }
     const badgeEnd=leaf?'<span class="badge end">末端</span>':'';
     row.innerHTML=`
@@ -1107,6 +1175,249 @@ function printT1(){
 }
 
 /* ============================================================
+   タブ5：通告表（議事課様式・冊子） tsuukoku_kanri/app_fixed.html を移植
+   ★ 1ページ34行。1人目=1行目〜、2人目=18行目〜。
+     ルール：
+       - 1人目が17行超（=18行以上）なら2人目は同ページに載せず次ページへ。
+       - 2人目は18行目から開始。ただし18行目開始で末尾がページ内(34行)に
+         収まらない場合は、18行目起点をやめ次ページ1行目から開始。
+       - 1人分の行数がページに収まらない場合は続きページへ繰り越す
+         （続きページは1行目から開始し、先頭に「（続き）」見出しを置く）。
+   ★ tougou_kanriには質問日程・質問予定時間の管理機能がないため、目次から
+     質問日・予定時間の列は省いている（tsuukoku_kanriとの差分）。
+   ============================================================ */
+function zenkakuNum(n){ const z='０１２３４５６７８９'; return String(n).split('').map(d=>z[d]).join(''); }
+const GIKAI_CIRC=['','①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮'];
+function maruNumGikai(n){ return GIKAI_CIRC[n]||('('+n+')'); }
+const LINES_PER_PAGE=34, SECOND_START=18, BOTTOM_MAX=LINES_PER_PAGE-(SECOND_START-1);
+
+function buildMemberLineItems(m){
+  const items=[];
+  const nameLen=(m.name||'').length;
+  const nameGap=(nameLen*0.5).toFixed(1);
+  const kenGap=(2*0.5).toFixed(1);
+  items.push(`<div class="gikai-member-head">○　<span class="name-expand" style="margin-right:${nameGap}em">${esc(m.name)}</span>　<span class="name-expand" style="margin-right:${kenGap}em">議員</span></div>`);
+  let bigNo=0,smallNo=0,contNo=0;
+  itemsOfMember(m.id).forEach(n=>{
+    if(n.type==='big'){ bigNo++; smallNo=0; contNo=0;
+      items.push(`<div class="gikai-line lv-big">${zenkakuNum(bigNo)}　${esc(n.text)}</div>`); }
+    else if(n.type==='small'){ smallNo++; contNo=0;
+      items.push(`<div class="gikai-line lv-small">(${smallNo}) ${esc(n.text)}</div>`); }
+    else{ contNo++;
+      items.push(`<div class="gikai-line lv-content">${maruNumGikai(contNo)}　${esc(n.text)}</div>`); }
+  });
+  return items;
+}
+function continuationHeadHtml(m){
+  const nameLen=(m.name||'').length;
+  const nameGap=(nameLen*0.5).toFixed(1);
+  const kenGap=(3*0.5).toFixed(1);
+  return `<div class="gikai-member-head">○　<span class="name-expand" style="margin-right:${nameGap}em">${esc(m.name)}</span>　<span class="name-expand" style="margin-right:${kenGap}em">議員（続き）</span></div>`;
+}
+function getGikaiLineUnitPx(){
+  const box=createMeasureBox();
+  const wrap=document.createElement('div'); wrap.className='gikai-body';
+  const probe=document.createElement('div'); probe.className='gikai-line lv-big'; probe.textContent='あ';
+  wrap.appendChild(probe); box.appendChild(wrap);
+  const unit=probe.getBoundingClientRect().height||1;
+  box.remove();
+  return unit;
+}
+function measureGikaiItemUnits(itemsHtml){
+  const unit=getGikaiLineUnitPx();
+  const box=createMeasureBox();
+  const wrap=document.createElement('div'); wrap.className='gikai-body';
+  wrap.innerHTML=itemsHtml.join('');
+  box.appendChild(wrap);
+  const counts=[];
+  wrap.childNodes.forEach(el=>{
+    if(el.getBoundingClientRect){ counts.push(Math.max(1, Math.round(el.getBoundingClientRect().height/unit))); }
+    else counts.push(1);
+  });
+  box.remove();
+  return counts;
+}
+function verifyGikaiIntegrity(memData, finalHtml){
+  memData.forEach(md=>{
+    if(md.consumed < md.units.length){
+      console.warn('[通告表] 行の欠落の可能性: 議員「'+(md.member.name||'(氏名未入力)')+'」で '+(md.units.length-md.consumed)+' 行が未出力です。');
+    }
+  });
+  const box=document.createElement('div'); box.innerHTML=finalHtml;
+  const renderedLineCount=box.querySelectorAll('.gikai-line').length;
+  const expectedLineCount=memData.reduce((a,md)=>a+(md.items.length-1),0);
+  if(renderedLineCount!==expectedLineCount){
+    console.warn('[通告表] 出力行数の不一致を検出しました。期待='+expectedLineCount+' 実際='+renderedLineCount+'。データ欠落の可能性があります。');
+  }
+}
+function monthDayGikai(iso){
+  if(!iso) return '●月●日';
+  const d=new Date(iso);
+  return (d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+function fmtDateJPGikai(iso){
+  if(!iso) return '';
+  const d=new Date(iso);
+  const wd=['日','月','火','水','木','金','土'][d.getDay()];
+  return (d.getMonth()+1)+'月'+d.getDate()+'日('+wd+')';
+}
+let t5PrintSel={};
+function t5RenderPrintSelect(){
+  const box=document.getElementById('t5PrintSelect'); box.innerHTML='';
+  const members=orderedMembersWithItems();
+  if(!members.length){ box.innerHTML='<p class="hint" style="padding:10px">①のCSVを読み込んでください。</p>'; return; }
+  members.forEach(m=>{
+    if(t5PrintSel[m.id]===undefined) t5PrintSel[m.id]=true;
+    const row=document.createElement('div'); row.className='pick-row';
+    row.innerHTML=`<input type="checkbox" ${t5PrintSel[m.id]?'checked':''} onchange="t5PrintSel['${m.id}']=this.checked">
+      <span class="txt" style="min-width:160px">${memberLabel(m)}</span>
+      <label style="font-size:12px">質問日：<input type="date" data-act="qday" value="${escAttr(m.qday||'')}"></label>
+      <label style="font-size:12px">質問予定時間：<input type="text" data-act="qtime" style="width:130px" placeholder="10:00〜10:20" value="${escAttr(m.qtime||'')}"></label>`;
+    row.querySelector('[data-act="qday"]').addEventListener('change',e=>{ m.qday=e.target.value; saveLocal(); });
+    row.querySelector('[data-act="qtime"]').addEventListener('change',e=>{ m.qtime=e.target.value; saveLocal(); });
+    box.appendChild(row);
+  });
+}
+function t5SelectAll(v){ orderedMembersWithItems().forEach(m=>t5PrintSel[m.id]=v); t5RenderPrintSelect(); }
+function t5SelectedMembers(){ return orderedMembersWithItems().filter(m=>t5PrintSel[m.id]); }
+
+function renderGikaiHtml(){
+  const oms=t5SelectedMembers();
+  if(!oms.length) return '<div class="gikai-page"><div class="noprint-msg">冊子に含める議員が選択されていません。</div></div>';
+  const meta=state.meta;
+  const city=esc(meta.cityName||FIXED_CITY);
+  const kaiki=`（会期：令和${esc(meta.gengo)}年${monthDayGikai(meta.start)}〜${monthDayGikai(meta.end)}）`;
+  let html='';
+  // 表紙
+  html+=`<div class="gikai-page gikai-cover">
+    <div class="cover-frame"></div>
+    <div class="cover-inner">
+      <div class="c-title">令和${esc(meta.gengo)}年${city}議会第${esc(meta.kai)}回定例会</div>
+      <div class="c-sub">${kaiki}</div>
+      <div class="c-big">一般質問通告表</div>
+      <div class="c-foot">${city}議会</div>
+    </div>
+  </div>`;
+
+  // 各議員の行アイテムと行数（単位）を用意。consumedは既に出力済みの件数ポインタ
+  const memData=oms.map(mm=>{
+    const items=buildMemberLineItems(mm);
+    const units=measureGikaiItemUnits(items);
+    return {member:mm, items, units, total:units.reduce((a,b)=>a+b,0), consumed:0};
+  });
+  const contHeadCache={};
+  function contHeadUnit(mm){
+    if(contHeadCache[mm.id]!=null) return contHeadCache[mm.id];
+    const u=measureGikaiItemUnits([continuationHeadHtml(mm)])[0];
+    contHeadCache[mm.id]=u;
+    return u;
+  }
+
+  // ---- ページ割り ----
+  const pages=[];
+  let i=0;
+  while(i<memData.length){
+    const cur=memData[i];
+    const isContinuation=cur.consumed>0;
+    let prefixHtml=[], prefixUnits=[];
+    if(isContinuation){
+      prefixHtml=[continuationHeadHtml(cur.member)];
+      prefixUnits=[contHeadUnit(cur.member)];
+    }
+    const remainingUnits=cur.units.slice(cur.consumed);
+    const budget=LINES_PER_PAGE - prefixUnits.reduce((a,b)=>a+b,0);
+    const take=packGreedy(remainingUnits, budget);
+    if(take===0 && remainingUnits.length>0){
+      console.warn('[通告表] 1項目の行数がページ高を超過しています（議員：'+(cur.member.name||'')+'）。ページからはみ出す可能性があります。');
+    }
+    const segHtml=prefixHtml.concat(cur.items.slice(cur.consumed, cur.consumed+take)).join('');
+    const segUnits=prefixUnits.concat(remainingUnits.slice(0,take));
+    const segCount=segUnits.reduce((a,b)=>a+b,0);
+    cur.consumed += take;
+    const fullyDone = cur.consumed>=cur.units.length;
+    const topSeg={member:cur.member, html:segHtml, count:segCount, isContinuation};
+    const page={top:topSeg, bottom:null};
+
+    if(fullyDone){
+      const isSinglePageMember=!isContinuation;
+      if(isSinglePageMember && topSeg.count<=16 && (i+1)<memData.length){
+        const nxt=memData[i+1];
+        if(nxt.consumed===0 && nxt.total<=BOTTOM_MAX){
+          page.bottom={member:nxt.member, html:nxt.items.join(''), count:nxt.total, isContinuation:false};
+          nxt.consumed=nxt.units.length;
+          i+=2;
+        }else{
+          i+=1;
+        }
+      }else{
+        i+=1;
+      }
+    }
+    pages.push(page);
+  }
+
+  // 頁番号：通告内容ページ（本体）の1ページ目を「1」とし、最後まで連番を振る
+  // （表紙・目次は頁番号に含めない）。各議員の「開始ページ」を目次用に記録する。
+  const pageOfMember={};
+  pages.forEach((p,idx)=>{
+    const pageNum=idx+1;
+    if(pageOfMember[p.top.member.id]===undefined) pageOfMember[p.top.member.id]=pageNum;
+    if(p.bottom && pageOfMember[p.bottom.member.id]===undefined) pageOfMember[p.bottom.member.id]=pageNum;
+  });
+
+  // 目次
+  let toc=`<div class="gikai-page gikai-toc"><h3>目次</h3>
+    <table class="toc-table">
+      <tr>
+        <th class="col-order">発言<br>順位</th>
+        <th class="col-day">質問日</th>
+        <th class="col-name">質問者（所属会派）</th>
+        <th class="col-time">質問<br>予定時間</th>
+        <th class="col-page">頁</th>
+      </tr>`;
+  oms.forEach(mm=>{
+    toc+='<tr>';
+    toc+=`<td>${esc(mm.order||'')}</td>`;
+    toc+=`<td>${mm.qday?esc(fmtDateJPGikai(mm.qday)):''}</td>`;
+    toc+=`<td class="col-name">${esc(mm.name)}（${esc(mm.kaiha)}）</td>`;
+    toc+=`<td>${esc(mm.qtime||'')}</td>`;
+    toc+=`<td>${pageOfMember[mm.id]||''}</td>`;
+    toc+='</tr>';
+  });
+  toc+='</table></div>';
+  html+=toc;
+
+  // 本体ページ描画（ページ下部中央に頁番号を表記）
+  pages.forEach((p,idx)=>{
+    const pageNum=idx+1;
+    let body=`<div class="gikai-page"><div class="gikai-body">`;
+    body+=`<div class="gikai-member">${p.top.html}</div>`;
+    if(p.bottom){
+      const topUsed = p.top.count;
+      const need    = (SECOND_START - 1) - topUsed;
+      const gap     = Math.max(0, need) * 1.9;
+      body+=`<div class="gikai-gap" style="height:${gap.toFixed(2)}em"></div>`;
+      body+=`<div class="gikai-member">${p.bottom.html}</div>`;
+    }
+    body+=`<div class="gikai-pagenum">－　${pageNum}　－</div>`;
+    body+=`</div></div>`;
+    html+=body;
+  });
+
+  verifyGikaiIntegrity(memData, html);
+  return html;
+}
+function renderT5Preview(){
+  t5RenderPrintSelect();
+  document.getElementById('t5PreviewArea').innerHTML = renderGikaiHtml();
+}
+function printT5(){
+  const sel=t5SelectedMembers();
+  if(!sel.length){ alert('冊子に含める議員を選択してください。'); return; }
+  doPrint([renderGikaiHtml()]);
+}
+
+/* ============================================================
    印刷共通（touben_kanri を移植：画面レイアウト外の#printRootへ構築）
    ============================================================ */
 function doPrint(htmlParts){
@@ -1127,13 +1438,14 @@ if(window.matchMedia){
    タブ切替
    ============================================================ */
 function setMainTab(n){
-  for(let i=1;i<=4;i++){
+  for(let i=1;i<=5;i++){
     document.getElementById('tabBtn'+i).classList.toggle('on',i===n);
     document.getElementById('pane'+i).classList.toggle('on',i===n);
   }
   if(n===2) t2Render();
   if(n===3) t3Render();
   if(n===4) t4Render();
+  if(n===5) renderT5Preview();
 }
 function setSubView(tab,view){
   document.getElementById('sub'+tab+'-input').classList.toggle('on',view==='input');
@@ -1164,14 +1476,15 @@ function nowStamp(){ const d=new Date(); return (d.getMonth()+1)+'/'+d.getDate()
 function buildCsvRows(){
   const stamp=nowStamp();
   const rows=[];
-  rows.push([csvCell('#META'),csvCell(state.meta.gengo),csvCell(state.meta.kai),csvCell('city'),csvCell(state.meta.cityName||'〇〇市')].join(','));
+  rows.push([csvCell('#META'),csvCell(state.meta.gengo),csvCell(state.meta.kai),csvCell('city'),csvCell(state.meta.cityName||'〇〇市'),
+    csvCell('start'),csvCell(state.meta.start||''),csvCell('end'),csvCell(state.meta.end||'')].join(','));
   rows.push(CSV_HEAD.map(csvCell).join(','));
   orderedMembersWithItems().forEach(m=>{
     const ids=computeBaseIds(m.id);
     const list=itemsOfMember(m.id);
     list.forEach((n,idx)=>{
       const base=ids[idx];
-      rows.push([ fullId(base,0,0), m.order, m.name, m.kaiha, '', '',
+      rows.push([ fullId(base,0,0), m.order, m.name, m.kaiha, m.qday||'', m.qtime||'',
         n.type==='big'?n.text:'', n.type==='small'?n.text:'', n.type==='content'?n.text:'',
         n.claims[0],n.claims[1],n.claims[2],n.claims[3],n.claims[4],
         n.shokan, '', n.sort, stamp,
@@ -1179,14 +1492,14 @@ function buildCsvRows(){
         '','','','','','' ].map(csvCell).join(','));
       n.reQuestions.forEach((rq,ri)=>{
         const reNo=ri+1;
-        rows.push([ fullId(base,reNo,0), m.order, m.name, m.kaiha, '', '',
+        rows.push([ fullId(base,reNo,0), m.order, m.name, m.kaiha, m.qday||'', m.qtime||'',
           '','','','','','','','','','','',stamp,
           '','','',
           reNo, rq.question||'', rq.dept||'',
           '','','' ].map(csvCell).join(','));
         rq.answers.forEach((ans,ai)=>{
           const ansNo=ai+1;
-          rows.push([ fullId(base,reNo,ansNo), m.order, m.name, m.kaiha, '', '',
+          rows.push([ fullId(base,reNo,ansNo), m.order, m.name, m.kaiha, m.qday||'', m.qtime||'',
             '','','','','','','','','','','',stamp,
             '','','',
             reNo, rq.question||'', rq.dept||'',
@@ -1241,6 +1554,10 @@ function mergeCsvText(text){
       if(rows[0][1]) state.meta.gengo=rows[0][1];
       if(rows[0][2]) state.meta.kai=rows[0][2];
       // 自治体名は固定のため、CSVの値があっても上書きしない
+      for(let k=3;k<rows[0].length;k+=2){
+        if(rows[0][k]==='start' && rows[0][k+1]) state.meta.start=rows[0][k+1];
+        if(rows[0][k]==='end' && rows[0][k+1]) state.meta.end=rows[0][k+1];
+      }
     }
     dataStart=1;
   }
@@ -1256,12 +1573,13 @@ function mergeCsvText(text){
     if(id.length===17 && id.slice(13,17)==='0000') baseRows.push(c);
     else if(id.length===17) reRows.push(c);
   }
-  function getMember(order,name,kaiha){
+  function getMember(order,name,kaiha,qday,qtime){
     const key=(name||'').trim(); if(!key) return null;
     if(memMap[key]) return memMap[key];
     let existing=state.members.find(m=>(m.name||'').trim()===key);
-    if(!existing){ existing={id:nextUid(),order:parseInt(order)||0,name:key,kaiha:kaiha||''}; state.members.push(existing); }
-    else{ if(order) existing.order=parseInt(order)||existing.order; if(kaiha) existing.kaiha=kaiha; }
+    if(!existing){ existing={id:nextUid(),order:parseInt(order)||0,name:key,kaiha:kaiha||'',qday:qday||'',qtime:qtime||''}; state.members.push(existing); }
+    else{ if(order) existing.order=parseInt(order)||existing.order; if(kaiha) existing.kaiha=kaiha;
+      if(qday) existing.qday=qday; if(qtime) existing.qtime=qtime; }
     memMap[key]=existing;
     return existing;
   }
@@ -1269,7 +1587,7 @@ function mergeCsvText(text){
   baseRows.forEach(c=>{
     const [rowId,order,name,kaiha,qday,qtime,big,small,content,c1,c2,c3,c4,c5,shokan,hearer,sort]=c;
     const dept=c[18]||'', staff=c[19]||'', answer=c[20]||'';
-    const mem=getMember(order,name,kaiha); if(!mem) return;
+    const mem=getMember(order,name,kaiha,qday,qtime); if(!mem) return;
     let type='content';
     if(big && !small && !content) type='big';
     else if(small && !content) type='small';
@@ -1296,10 +1614,10 @@ function mergeCsvText(text){
     return state.items.find(n=>itemBaseId(n)===base13 && (!mem||n.memberId===mem.id));
   }
   reRows.forEach(c=>{
-    const [rowId,order,name,kaiha]=c;
+    const [rowId,order,name,kaiha,qday,qtime]=c;
     const reNo=parseInt(c[21])||0, question=c[22]||'', dept=c[23]||'';
     const ansNo=parseInt(c[24])||0, answerer=c[25]||'', ansText=c[26]||'';
-    const mem=getMember(order,name,kaiha); if(!mem) return;
+    const mem=getMember(order,name,kaiha,qday,qtime); if(!mem) return;
     const base13=rowId.slice(0,13);
     const item=findItemByBase13(base13,mem.id);
     if(!item) return;
@@ -1366,6 +1684,8 @@ function saveLocal(){
   state.meta.cityName=FIXED_CITY;
   state.meta.gengo=document.getElementById('mtGengo').value;
   state.meta.kai=document.getElementById('mtKai').value;
+  state.meta.start=document.getElementById('mtStart').value;
+  state.meta.end=document.getElementById('mtEnd').value;
   try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
 }
 function loadLocal(){
@@ -1373,7 +1693,7 @@ function loadLocal(){
     const s=localStorage.getItem(LS_KEY);
     if(!s) return false;
     state=JSON.parse(s);
-    if(!state.meta) state.meta={gengo:7,kai:2,cityName:FIXED_CITY};
+    if(!state.meta) state.meta={gengo:7,kai:2,cityName:FIXED_CITY,start:'',end:''};
     state.meta.cityName=FIXED_CITY;
     if(!state.members) state.members=[];
     if(!state.items) state.items=[];
@@ -1393,6 +1713,8 @@ function clearAll(){
 function writeMetaToUI(){
   document.getElementById('mtGengo').value=state.meta.gengo||7;
   document.getElementById('mtKai').value=state.meta.kai||2;
+  document.getElementById('mtStart').value=state.meta.start||'';
+  document.getElementById('mtEnd').value=state.meta.end||'';
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
