@@ -220,12 +220,13 @@ details.inner > summary{cursor:pointer; color:#555; font-size:13px;}
     <div class="row" style="margin-top:8px">
       <button onclick="exportCSV()">CSV出力（ダウンロード）</button>
       <label class="sub" style="background:#7f8c8d;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;">
-        CSV読込 <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="importCSV(this)">
+        CSV読込（複数選択可） <input type="file" id="csvFile" accept=".csv" multiple style="display:none" onchange="importCSV(this)">
       </label>
       <button class="sub" onclick="saveLocal()">作業中データ手動保存</button>
       <button class="del" onclick="clearAll()">全データ削除</button>
       <span class="hint">※ 作業中データはブラウザに自動退避されます</span>
     </div>
+    <p class="hint">※ 各聞取り担当者が議員ごとに出力したCSVを複数選択して一括読込できます（既存データに統合、同じ氏名の議員は内容を上書き）。最初から読み込み直す場合は先に「全データ削除」を押してください。</p>
   </div>
 
   <!-- ========== 議員名マスタ（折りたたみ・初期は閉） ========== -->
@@ -324,14 +325,37 @@ details.inner > summary{cursor:pointer; color:#555; font-size:13px;}
    ============================================================ */
 let state = {
   meta:{gengo:7,kai:2,start:'',end:'',cityName:'〇〇市'},
-  members:[], nodes:[], dayExceptions:{}, dayDates:{}, printSelection:{}, rowSeq:0
+  members:[], nodes:[], dayExceptions:{}, dayDates:{}, printSelection:{}
 };
 let currentTab = 'gikai';
 
-function nextRowId(){
-  state.rowSeq++;
-  const g = state.meta.gengo || 7;
-  return 'R'+g+'-'+String(state.rowSeq).padStart(4,'0');
+/* ★ 各行の内部識別子（uid）。DOM/ドラッグ&ドロップ等での行特定にのみ使う内部IDで、
+   画面・CSVに表示される「行ID」（下のformatRowId参照）とは別物。
+   複数CSVを統合読込しても衝突しないよう、常にその場で新規発行する。 */
+function nextUid(){
+  return 'N'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+}
+
+/* ★ 表示・CSV用の「行ID」＝ 元号(R=令和) + 令和年2桁 + 会議回2桁 +
+   発言順位2桁 + 大項目2桁 + 小項目2桁 + 内容2桁（例：R080301010101）。
+   小項目・内容が無い階層は00になる。氏名や並び順ではなく「発言順位＋
+   階層上の位置」から毎回その場で算出するため、保存はせず常に再計算する。 */
+function formatRowId(order, big, small, content){
+  const p2 = v => String(parseInt(v)||0).padStart(2,'0');
+  return 'R'+p2(state.meta.gengo)+p2(state.meta.kai)+p2(order)+p2(big)+p2(small)+p2(content);
+}
+/* 指定議員の通告内容ノード配列（nodesOfMember順）に対応する「行ID」配列を返す */
+function computeNodeIds(mid){
+  const member = state.members.find(m=>m.id===mid);
+  const order = member ? member.order : 0;
+  let bigNo=0, smallNo=0, contNo=0;
+  return nodesOfMember(mid).map(n=>{
+    let big, small, content;
+    if(n.type==='big'){ bigNo++; smallNo=0; contNo=0; big=bigNo; small=0; content=0; }
+    else if(n.type==='small'){ smallNo++; contNo=0; big=bigNo; small=smallNo; content=0; }
+    else{ contNo++; big=bigNo; small=smallNo; content=contNo; }
+    return formatRowId(order, big, small, content);
+  });
 }
 
 /* ============================================================
@@ -523,37 +547,37 @@ function addNode(type){
   if(!chk.ok){ alert(chk.msg); return; }
   const maxSort=Math.max(0,...state.nodes.filter(n=>n.memberId===mid).map(n=>n.sort||0));
   state.nodes.push({
-    rowId: nextRowId(), memberId:mid, type:type, text:'',
+    uid: nextUid(), memberId:mid, type:type, text:'',
     claims:['','','','',''], shokan:'', sort:maxSort+1
   });
   renderNodes(); saveLocal();
 }
-function delNode(rowId){
-  state.nodes=state.nodes.filter(n=>n.rowId!==rowId);
+function delNode(uid){
+  state.nodes=state.nodes.filter(n=>n.uid!==uid);
   renderNodes(); saveLocal();
 }
-function moveNode(rowId,dir){
+function moveNode(uid,dir){
   const mid=document.getElementById('selMember').value;
   const list=state.nodes.filter(n=>n.memberId===mid).sort((a,b)=>a.sort-b.sort);
-  const i=list.findIndex(n=>n.rowId===rowId);
+  const i=list.findIndex(n=>n.uid===uid);
   const j=i+dir;
   if(j<0||j>=list.length) return;
   const s=list[i].sort; list[i].sort=list[j].sort; list[j].sort=s;
   renderNodes(); saveLocal();
 }
-function updNode(rowId,key,val){
-  const n=state.nodes.find(x=>x.rowId===rowId);
+function updNode(uid,key,val){
+  const n=state.nodes.find(x=>x.uid===uid);
   if(!n) return;
   n[key]=val; saveLocal();
 }
-function updClaim(rowId,idx,val){
-  const n=state.nodes.find(x=>x.rowId===rowId);
+function updClaim(uid,idx,val){
+  const n=state.nodes.find(x=>x.uid===uid);
   if(!n) return;
   n.claims[idx]=val; saveLocal();
 }
 
 const typeLabel={big:'大項目',small:'小項目',content:'内容'};
-let dragRowId=null;
+let dragUid=null;
 const depthOf={big:1, small:2, content:3};
 function isLeaf(list, idx){
   const cur=list[idx];
@@ -575,57 +599,59 @@ function renderNodes(){
   updateAddButtons();
   if(!mid){ box.innerHTML='<p class="hint">議員を選択してください。</p>'; return; }
   const list=state.nodes.filter(n=>n.memberId===mid).sort((a,b)=>a.sort-b.sort);
+  const ids=computeNodeIds(mid);
   if(list.length===0){ box.innerHTML='<p class="hint">まだ項目がありません。「＋大きな項目」から追加してください。</p>'; }
   list.forEach((n,idx)=>{
     const leaf=isLeaf(list, idx);
+    const dispId=ids[idx];
     const row=document.createElement('div');
     row.className='node-row lv-'+n.type; row.draggable=true;
-    row.dataset.rowId=n.rowId;
+    row.dataset.uid=n.uid;
     let claimsHtml='';
     if(leaf){
       claimsHtml='<div class="subclaim-box">'+
         '<span class="hint" style="width:100%">主訴（末端に付きます・最大5個）：</span>'+
         n.claims.map((c,i)=>`<input type="text" placeholder="主訴${i+1}" value="${esc(c)}"
-           onchange="updClaim('${n.rowId}',${i},this.value)">`).join('')+'</div>';
+           onchange="updClaim('${n.uid}',${i},this.value)">`).join('')+'</div>';
     }
     const badgeEnd = leaf ? '<span class="badge end">末端</span>' : '';
     row.innerHTML=`
       <div class="node-type">
         <span class="badge">${typeLabel[n.type]}</span>${badgeEnd}<br>
-        <span class="hint" style="font-size:10px">${n.rowId}</span>
+        <span class="hint" style="font-size:10px">${dispId}</span>
       </div>
       <div class="node-main">
         <textarea rows="1" placeholder="${typeLabel[n.type]}の本文"
           oninput="autoGrow(this)"
-          onchange="updNode('${n.rowId}','text',this.value)">${esc(n.text)}</textarea>
+          onchange="updNode('${n.uid}','text',this.value)">${esc(n.text)}</textarea>
         ${claimsHtml}
         <div class="row" style="margin-top:3px">
           <label>所管：<input type="text" value="${esc(n.shokan)}" style="width:200px"
-            onchange="updNode('${n.rowId}','shokan',this.value)"></label>
+            onchange="updNode('${n.uid}','shokan',this.value)"></label>
         </div>
       </div>
       <div class="node-actions">
-        <button class="small" onclick="moveNode('${n.rowId}',-1)">▲</button>
-        <button class="small" onclick="moveNode('${n.rowId}',1)">▼</button>
-        <button class="small del" onclick="delNode('${n.rowId}')">×</button>
+        <button class="small" onclick="moveNode('${n.uid}',-1)">▲</button>
+        <button class="small" onclick="moveNode('${n.uid}',1)">▼</button>
+        <button class="small del" onclick="delNode('${n.uid}')">×</button>
       </div>`;
-    row.addEventListener('dragstart',()=>{dragRowId=n.rowId;});
+    row.addEventListener('dragstart',()=>{dragUid=n.uid;});
     row.addEventListener('dragover',e=>{e.preventDefault(); row.classList.add('dragover');});
     row.addEventListener('dragleave',()=>row.classList.remove('dragover'));
     row.addEventListener('drop',e=>{
       e.preventDefault(); row.classList.remove('dragover');
-      if(dragRowId && dragRowId!==n.rowId) reorderByDrag(dragRowId,n.rowId);
+      if(dragUid && dragUid!==n.uid) reorderByDrag(dragUid,n.uid);
     });
     box.appendChild(row);
   });
   // ★ 既存テキストの高さを初期反映
   box.querySelectorAll('textarea').forEach(t=>autoGrow(t));
 }
-function reorderByDrag(fromId,toId){
+function reorderByDrag(fromUid,toUid){
   const mid=document.getElementById('selMember').value;
   const list=state.nodes.filter(n=>n.memberId===mid).sort((a,b)=>a.sort-b.sort);
-  const fi=list.findIndex(n=>n.rowId===fromId);
-  const ti=list.findIndex(n=>n.rowId===toId);
+  const fi=list.findIndex(n=>n.uid===fromUid);
+  const ti=list.findIndex(n=>n.uid===toUid);
   const [moved]=list.splice(fi,1);
   list.splice(ti,0,moved);
   list.forEach((n,i)=>n.sort=i+1);
@@ -720,9 +746,10 @@ function exportCSV(){
   rows.push(CSV_HEADER.map(csvCell).join(','));
   orderedMembers().forEach(m=>{
     const list=nodesOfMember(m.id);
+    const ids=computeNodeIds(m.id);
     const info=calcDayForOrder(m.order);
-    list.forEach(n=>{
-      const rec=[n.rowId, m.order, m.name, m.kaiha,
+    list.forEach((n,idx)=>{
+      const rec=[ids[idx], m.order, m.name, m.kaiha,
         info.date? fmtDateJP(info.date):'', m.minutes,
         n.type==='big'?n.text:'', n.type==='small'?n.text:'', n.type==='content'?n.text:'',
         n.claims[0],n.claims[1],n.claims[2],n.claims[3],n.claims[4],
@@ -760,81 +787,118 @@ function parseCSV(text){
   if(field!==''||row.length>0){ row.push(field); rows.push(row); }
   return rows;
 }
+/* ★ 複数CSVの統合読込：各聞取り担当者が議員ごとに出力したCSVを総務課が
+   まとめて選択すると、既存データを消さずに統合する。同じ氏名の議員が
+   複数ファイルに含まれる場合は、その議員の通告内容を新しい内容で
+   置き換える（上書き）。定例会メタ情報（元号・回・会期・質問日設定等）は、
+   アプリが空の状態で最初に読み込んだ1ファイル目のみ反映する。 */
 function importCSV(input){
-  const file=input.files[0];
-  if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{ loadFromCSVText(e.target.result); }
-    catch(err){ alert('CSV読込エラー: '+err.message); }
-  };
-  reader.readAsText(file,'UTF-8');
+  const files=Array.from(input.files||[]);
+  if(files.length===0) return;
+  const readAsText=file=>new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>resolve(e.target.result);
+    reader.onerror=()=>reject(new Error('読込に失敗しました'));
+    reader.readAsText(file,'UTF-8');
+  });
+  (async()=>{
+    const errors=[];
+    let okCount=0;
+    for(const file of files){
+      try{
+        const text=await readAsText(file);
+        mergeCSVText(text);
+        okCount++;
+      }catch(err){
+        errors.push(file.name+'：'+err.message);
+      }
+    }
+    writeMetaToUI();
+    renderAll();
+    renderPreview();
+    let msg=okCount+'件のCSVを読み込みました（統合後：議員 '+state.members.length+' 名 / 行 '+state.nodes.length+' 件）';
+    if(errors.length) msg+='\n\n以下のファイルは読み込めませんでした：\n'+errors.join('\n');
+    alert(msg);
+  })();
   input.value='';
 }
-function loadFromCSVText(text){
+function mergeCSVText(text){
   const rows=parseCSV(text);
-  if(rows.length===0){ alert('空のファイルです'); return; }
-  state.members=[]; state.nodes=[]; state.dayExceptions={}; state.dayDates={};
-  state.printSelection={}; state.rowSeq=0;
+  if(rows.length===0) throw new Error('空のファイルです');
+  const isFreshState = state.members.length===0 && state.nodes.length===0;
   let dataStart=0; let importedPrintSel=null;
   if(rows[0][0]==='#META'){
-    state.meta.gengo=rows[0][1]; state.meta.kai=rows[0][2];
-    state.meta.start=rows[0][3]; state.meta.end=rows[0][4];
-    state.meta.cityName='〇〇市';
+    if(isFreshState){
+      state.meta.gengo=rows[0][1]; state.meta.kai=rows[0][2];
+      state.meta.start=rows[0][3]; state.meta.end=rows[0][4];
+      state.meta.cityName='〇〇市';
+      for(let k=5;k<rows[0].length;k++){
+        if(rows[0][k]==='perDay') document.getElementById('perDay').value=rows[0][k+1];
+        if(rows[0][k]==='dayBase') document.getElementById('dayBase').value=rows[0][k+1];
+        if(rows[0][k]==='skipWeekend') document.getElementById('skipWeekend').checked=(rows[0][k+1]==='1');
+        if(rows[0][k]==='dayEx'){ try{state.dayExceptions=JSON.parse(rows[0][k+1]||'{}');}catch(_){}}
+        if(rows[0][k]==='dayDates'){ try{state.dayDates=JSON.parse(rows[0][k+1]||'{}');}catch(_){}}
+        if(rows[0][k]==='city' && rows[0][k+1]) state.meta.cityName=rows[0][k+1];
+      }
+    }
     for(let k=5;k<rows[0].length;k++){
-      if(rows[0][k]==='perDay') document.getElementById('perDay').value=rows[0][k+1];
-      if(rows[0][k]==='dayBase') document.getElementById('dayBase').value=rows[0][k+1];
-      if(rows[0][k]==='skipWeekend') document.getElementById('skipWeekend').checked=(rows[0][k+1]==='1');
-      if(rows[0][k]==='dayEx'){ try{state.dayExceptions=JSON.parse(rows[0][k+1]||'{}');}catch(_){}}
-      if(rows[0][k]==='dayDates'){ try{state.dayDates=JSON.parse(rows[0][k+1]||'{}');}catch(_){}}
       if(rows[0][k]==='printSel'){ try{importedPrintSel=JSON.parse(rows[0][k+1]||'{}');}catch(_){}}
-      if(rows[0][k]==='city' && rows[0][k+1]) state.meta.cityName=rows[0][k+1];
     }
     dataStart=1;
   }
   const bodyStart=dataStart+1;
-  const memMap={};
+  const memMap={}; // このファイル内で登場した氏名 → 議員オブジェクト（既存 or 新規）
+  const sortCounters={};
   for(let r=bodyStart; r<rows.length; r++){
     const c=rows[r];
     if(!c || c.length<3 || (!c[0] && !c[2])) continue;
     const [rowId,order,name,kaiha,qday,minutes,big,small,content,
-      c1,c2,c3,c4,c5,shokan,hearer,sort]=c;
-    const key=(order||'')+'|'+(name||'')+'|'+(kaiha||'');
-    if(!memMap[key]){
-      const mid='M'+r+'_'+Date.now();
-      memMap[key]={id:mid,order:parseInt(order)||0,name:name||'',
-        kaiha:kaiha||'',minutes:parseInt(minutes)||0, hearer:hearer||''};
-      state.members.push(memMap[key]);
-      state.printSelection[mid]=true;
-    }else{
-      if(!memMap[key].hearer && hearer) memMap[key].hearer=hearer;
+      c1,c2,c3,c4,c5,shokan,hearer]=c;
+    const nameKey=(name||'').trim();
+    if(!nameKey) continue;
+    if(!memMap[nameKey]){
+      let existing=state.members.find(m=>(m.name||'').trim()===nameKey);
+      if(existing){
+        if(order) existing.order=parseInt(order)||existing.order;
+        if(kaiha) existing.kaiha=kaiha;
+        if(minutes) existing.minutes=parseInt(minutes)||existing.minutes;
+        if(hearer) existing.hearer=hearer;
+        state.nodes=state.nodes.filter(n=>n.memberId!==existing.id); // 同一議員の既存行は新しい内容に置き換え
+        memMap[nameKey]=existing;
+      }else{
+        const mid='M'+Date.now().toString(36)+Math.floor(Math.random()*100000);
+        const mem={id:mid,order:parseInt(order)||0,name:nameKey,
+          kaiha:kaiha||'',minutes:parseInt(minutes)||0, hearer:hearer||''};
+        state.members.push(mem);
+        state.printSelection[mid]=true;
+        memMap[nameKey]=mem;
+      }
+      sortCounters[nameKey]=0;
     }
-    const mid=memMap[key].id;
+    const mem=memMap[nameKey];
     let type='content';
     if(big && !small && !content) type='big';
     else if(small && !content) type='small';
     else type='content';
     const textVal = type==='big'?big : type==='small'?small : content;
-    const mm=(rowId||'').match(/-(\d+)$/);
-    if(mm){ const nn=parseInt(mm[1]); if(nn>state.rowSeq) state.rowSeq=nn; }
+    sortCounters[nameKey]++;
     state.nodes.push({
-      rowId: rowId||nextRowId(), memberId:mid, type,
+      uid: nextUid(), memberId:mem.id, type,
       text:textVal||'', claims:[c1||'',c2||'',c3||'',c4||'',c5||''],
-      shokan:shokan||'', sort:parseInt(sort)||(state.nodes.length+1)
+      shokan:shokan||'', sort:sortCounters[nameKey]
     });
   }
   if(importedPrintSel){
-    /* 合成キー（順位｜氏名｜会派）で突き合わせて復元。旧形式CSV（内部IDキー）は
-       キーが一致しないため従来どおり全員ONのまま（安全側の動作、説明書のとおり） */
-    Object.keys(memMap).forEach(key=>{
+    /* 合成キー（順位｜氏名｜会派）で突き合わせて復元。一致しない場合は
+       従来どおり全員ONのまま（安全側の動作） */
+    Object.keys(memMap).forEach(nameKey=>{
+      const mem=memMap[nameKey];
+      const key=printSelKey(mem.order,mem.name,mem.kaiha);
       if(typeof importedPrintSel[key]!=='undefined'){
-        state.printSelection[memMap[key].id]=importedPrintSel[key];
+        state.printSelection[mem.id]=importedPrintSel[key];
       }
     });
   }
-  writeMetaToUI();
-  renderAll();
-  alert('CSVを読み込みました（議員 '+state.members.length+' 名 / 行 '+state.nodes.length+' 件）');
 }
 
 /* ============================================================
@@ -1313,6 +1377,9 @@ function loadLocal(){
       if(!state.printSelection) state.printSelection={};
       if(!state.meta) state.meta={};
       if(!state.meta.cityName) state.meta.cityName='〇〇市';
+      /* ★ 行IDの内部管理方式変更（v10以前はrowIdを内部識別子兼用していた）に伴う移行：
+         uidが無い行には新規発行して補う */
+      if(state.nodes) state.nodes.forEach(n=>{ if(!n.uid) n.uid=nextUid(); });
       if(migrated){
         /* 新キーへ書き戻す。旧キーはバックアップとして残す（削除しない） */
         try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
@@ -1362,7 +1429,7 @@ function loadSample(){
   const s=[]; let seq=0;
   function add(mid,type,text,claims,shokan){
     seq++;
-    s.push({rowId:'R7-'+String(seq).padStart(4,'0'),memberId:mid,type,text,
+    s.push({uid:nextUid(),memberId:mid,type,text,
       claims:claims||['','','','',''],shokan:shokan||'',sort:seq});
   }
   add('M1','big','災害に強いまちづくりと避難所運営の抜本的な見直しを含む防災対策の総合的推進について',null,'');
@@ -1372,7 +1439,7 @@ function loadSample(){
   add('M2','big','子育て支援について',null,'');
   add('M2','small','保育所の待機児童解消',['年度途中入所の弾力運用'],'〇〇課');
   add('M3','big','高齢者福祉の充実について',['認知症サポーター養成の拡充'],'〇〇課');
-  state.nodes=s; state.rowSeq=seq;
+  state.nodes=s;
 }
 
 /* ============================================================
