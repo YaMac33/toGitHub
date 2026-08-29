@@ -207,18 +207,9 @@ table.info td.lbl{ background:#f0f4f8; width:14%; white-space:nowrap; font-weigh
 
 <div id="ctrlWrap">
   <details class="foldcard" open>
-    <summary>対象・会議回</summary>
+    <summary>会議回</summary>
     <div class="fold-body">
       <div class="row">
-        <label>対象議員：
-          <select id="topMember" onchange="onTopMemberChange()"></select>
-        </label>
-        <span id="customMemberWrap" style="display:none">
-          <label>氏名：<input type="text" id="customMemberName" style="width:120px"></label>
-          <label>会派：<input type="text" id="customMemberKaiha" style="width:100px"></label>
-          <label>順位：<input type="number" id="customMemberOrder" style="width:50px"></label>
-          <button class="btn small" onclick="commitCustomMember()">追加</button>
-        </span>
         <label>令和 <input type="number" id="mtGengo" value="7" style="width:50px" onchange="saveLocal()"> 年</label>
         <label>第 <input type="number" id="mtKai" value="2" style="width:50px" onchange="saveLocal()"> 回定例会</label>
       </div>
@@ -253,6 +244,21 @@ table.info td.lbl{ background:#f0f4f8; width:14%; white-space:nowrap; font-weigh
       <button id="sub1-preview" onclick="setSubView(1,'preview')">👁 プレビュー（内容表）</button>
     </div>
     <div class="subview on" id="sub1-input-view">
+      <div class="card">
+        <h3>対象議員</h3>
+        <div class="row">
+          <label>対象議員：
+            <select id="topMember" onchange="onTopMemberChange()"></select>
+          </label>
+          <span id="customMemberWrap" style="display:none">
+            <label>氏名：<input type="text" id="customMemberName" style="width:120px"></label>
+            <label>会派：<input type="text" id="customMemberKaiha" style="width:100px"></label>
+            <button class="btn small" onclick="commitCustomMember()">追加</button>
+          </span>
+          <label>発言順位：<input type="number" id="topOrder" style="width:60px" onchange="onOrderChange()"></label>
+          <span class="hint">（発言順位は会議回ごとに変わるため、ここで選択・入力します）</span>
+        </div>
+      </div>
       <div class="card">
         <h3>通告内容入力（対象議員：<span id="t1MemberLabel">-</span>）</h3>
         <div class="hint" style="margin-bottom:8px">階層ルール：まず<b>大項目</b>から始めます。<b>小項目</b>は大項目・小項目・内容のどの後でも追加でき、直前の大項目にぶら下がります。<b>内容</b>は小項目・内容の後にのみ追加できます。主訴（最大5個）は末端の行に付きます。</div>
@@ -445,14 +451,14 @@ function populateTopMemberSelect(){
   const sel=document.getElementById('topMember');
   const cur=sel.value;
   sel.innerHTML='';
-  MASTER_MEMBERS.forEach(m=>{
+  MASTER_MEMBERS.forEach((m,i)=>{
     const op=document.createElement('option');
-    op.value='M'+m.order; op.textContent=m.order+'　'+m.name+'（'+m.kaiha+'）';
+    op.value='MI'+i; op.textContent=m.name+'（'+m.kaiha+'）';
     sel.appendChild(op);
   });
   state.members.filter(m=>!MASTER_MEMBERS.some(mm=>mm.name===m.name)).forEach(m=>{
     const op=document.createElement('option');
-    op.value=m.id; op.textContent=(m.order?m.order+'　':'')+m.name+(m.kaiha?'（'+m.kaiha+'）':'')+'［自由入力］';
+    op.value=m.id; op.textContent=m.name+(m.kaiha?'（'+m.kaiha+'）':'')+'［自由入力］';
     sel.appendChild(op);
   });
   const opCustom=document.createElement('option');
@@ -464,19 +470,31 @@ function populateTopMemberSelect(){
 function onTopMemberChange(){
   const sel=document.getElementById('topMember');
   const wrap=document.getElementById('customMemberWrap');
-  if(sel.value==='__custom__'){ wrap.style.display='inline-flex'; currentMemberId=null; }
-  else{
+  if(sel.value==='__custom__'){
+    wrap.style.display='inline-flex'; currentMemberId=null;
+    document.getElementById('topOrder').value='';
+  }else{
     wrap.style.display='none';
-    if(sel.value.match(/^M\d+$/)){
-      const mm=MASTER_MEMBERS.find(x=>'M'+x.order===sel.value);
-      const m=ensureMember(mm.order,mm.name,mm.kaiha);
+    if(sel.value.match(/^MI\d+$/)){
+      const mm=MASTER_MEMBERS[parseInt(sel.value.slice(2))];
+      const m=ensureMember(0,mm.name,mm.kaiha); // 発言順位は会議回ごとに変わるため、マスタの番号では上書きしない
       currentMemberId=m.id;
     }else{
       currentMemberId=sel.value;
     }
+    const m=state.members.find(x=>x.id===currentMemberId);
+    document.getElementById('topOrder').value = (m&&m.order) ? m.order : '';
   }
   document.getElementById('t1MemberLabel').textContent = currentMemberLabel();
   renderNodes();
+}
+function onOrderChange(){
+  const m=state.members.find(x=>x.id===currentMemberId);
+  if(!m) return;
+  m.order=parseInt(document.getElementById('topOrder').value)||0;
+  saveLocal();
+  document.getElementById('t1MemberLabel').textContent = currentMemberLabel();
+  renderNodes(); // 発言順位は行IDに使われるため、バッジを再計算して反映する
 }
 function currentMemberLabel(){
   const m=state.members.find(x=>x.id===currentMemberId);
@@ -485,13 +503,11 @@ function currentMemberLabel(){
 function commitCustomMember(){
   const name=document.getElementById('customMemberName').value.trim();
   if(!name){ alert('氏名を入力してください。'); return; }
-  const order=document.getElementById('customMemberOrder').value;
   const kaiha=document.getElementById('customMemberKaiha').value;
-  const m=ensureMember(order,name,kaiha);
+  const m=ensureMember(0,name,kaiha);
   currentMemberId=m.id;
   document.getElementById('customMemberName').value='';
   document.getElementById('customMemberKaiha').value='';
-  document.getElementById('customMemberOrder').value='';
   populateTopMemberSelect();
   const sel=document.getElementById('topMember'); sel.value=m.id; onTopMemberChange();
   saveLocal();
@@ -722,6 +738,7 @@ function honSheetHtml(item){
   const yoshi=yoshiHtml(item);
   return `
     <div class="topnum">通告順位　${esc(m?m.order:'')}</div>
+    <div class="verline">${nowStamp()}</div>
     <table class="info">
       <tr><td class="lbl">会派</td><td>${esc(m?m.kaiha:'')}</td><td class="lbl">回答部（担当所属名）</td><td>${esc(item.hDept||'')}</td></tr>
       <tr><td class="lbl">議員名</td><td>${esc(m?m.name:'')}</td><td class="lbl">担当者名</td><td>${esc(item.hStaff||'')}</td></tr>
@@ -847,7 +864,7 @@ function ichiranHtml(){
   if(!groups.length) return '<div class="sheet"><div class="noprint-msg">再質問が登録された項目がありません。</div></div>';
   const meta=state.meta;
   let html=`<div class="ichiran-title">再質問一覧表</div>
-    <div class="ichiran-meta"><div>令和${esc(meta.gengo)}年 第${esc(meta.kai)}回定例会（${esc(meta.cityName)}）</div><div>${new Date().toLocaleDateString('ja-JP')}作成</div></div>`;
+    <div class="ichiran-meta"><div>令和${esc(meta.gengo)}年 第${esc(meta.kai)}回定例会（${esc(meta.cityName)}）</div><div>${nowStamp()}作成</div></div>`;
   groups.forEach(g=>{
     html+=`<div class="ichiran-member-group"><div class="pick-mem-h" style="margin-bottom:6px">${memberLabel(g.m)}</div>
       <div class="ichiran-col-head"><div class="l">再質問の内容</div><div class="r">担当部署</div></div>`;
@@ -927,7 +944,7 @@ function reAnswerSheetHtml(item,rq,rqIdx,ans,ansIdx){
       <div class="re-center">No.　${esc(m?m.order:'')}　　${esc(m?m.name:'')}</div>
       <div class="re-right">令和${esc(meta.gengo)}年第${esc(meta.kai)}回定例会</div>
     </div>
-    <div class="re-right" style="margin-top:4px">${new Date().toLocaleDateString('ja-JP')}作成${ansIdx>0?'　（回答'+(ansIdx+1)+'件目）':''}</div>
+    <div class="re-right" style="margin-top:4px">${nowStamp()}作成${ansIdx>0?'　（回答'+(ansIdx+1)+'件目）':''}</div>
     <div class="re-right">答弁者　${esc(ans.answerer)}</div>
     <div class="re-box">
       <div class="yoshi">${yoshi}</div>
@@ -1005,7 +1022,7 @@ function packGreedy(sizes,budget){
 }
 function buildSoumuHeaderHtml(m,pageLabel){
   const meta=state.meta;
-  return `<div class="soumu-top"><div>${new Date().toLocaleDateString('ja-JP')}</div><div>通告順位　${esc(m.order||'')}</div></div>
+  return `<div class="soumu-top"><div>${nowStamp()}</div><div>通告順位　${esc(m.order||'')}</div></div>
     <div class="soumu-title">令和${esc(meta.gengo)}年${esc(meta.cityName)}議会第${esc(meta.kai)}回定例会一般質問内容表</div>
     <div class="soumu-meta"><div>会派：${esc(m.kaiha)}</div><div>議員名：${esc(m.name)}議員</div><div>${pageLabel}</div></div>
     <div class="soumu-sub"><div>◎【質問事項及び要旨】</div><div>所管</div></div>`;
