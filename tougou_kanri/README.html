@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>議員通告・答弁管理ツール（統合版）｜操作説明書</title>
+<style>
+  :root{
+    --bg:#eef1f6; --panel:#fff; --ink:#1f2937; --sub:#6b7280;
+    --accent:#3b6ea5; --accent-d:#2c5580; --accent-l:#e8f0f8;
+    --line:#d0d7e2; --ok:#2f9e6f; --warn:#c58b1b; --danger:#c0504d;
+    --radius:12px; --shadow:0 4px 16px rgba(30,50,80,.10);
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:"Segoe UI","Meiryo","Yu Gothic",sans-serif; background:var(--bg);
+    color:var(--ink); font-size:15px; line-height:1.85; }
+
+  header{ background:linear-gradient(135deg,var(--accent),var(--accent-d)); color:#fff;
+    padding:32px 24px; box-shadow:0 2px 12px rgba(0,0,0,.15); }
+  header .inner{ max-width:900px; margin:0 auto; }
+  header h1{ margin:0 0 6px; font-size:24px; font-weight:700; }
+  header p{ margin:0; opacity:.9; font-size:14px; }
+  header .badge{ display:inline-block; font-size:12px; background:rgba(255,255,255,.2);
+    padding:3px 12px; border-radius:20px; margin-top:10px; margin-right:6px; }
+
+  .wrap{ max-width:900px; margin:24px auto 60px; padding:0 20px; }
+
+  nav.toc{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 22px; box-shadow:var(--shadow); margin-bottom:28px; }
+  nav.toc h2{ margin:0 0 10px; font-size:15px; color:var(--accent-d); }
+  nav.toc ol{ margin:0; padding-left:22px; columns:2; column-gap:30px; }
+  nav.toc li{ margin-bottom:5px; }
+  nav.toc a{ color:var(--accent); text-decoration:none; }
+  nav.toc a:hover{ text-decoration:underline; }
+
+  section{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px 26px; box-shadow:var(--shadow); margin-bottom:24px; }
+  section h2{ font-size:19px; color:var(--accent-d); margin:0 0 16px; padding-bottom:10px;
+    border-bottom:2px solid var(--accent-l); display:flex; align-items:center; gap:10px; }
+  section h2 .no{ background:var(--accent); color:#fff; width:29px; height:29px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; font-size:14px; flex:0 0 auto; }
+  section h3{ font-size:16px; color:var(--accent); margin:22px 0 8px; }
+
+  p{ margin:8px 0; }
+  ul,ol{ margin:8px 0; padding-left:24px; }
+  li{ margin-bottom:6px; }
+  .step > li{ margin-bottom:14px; }
+
+  code,.kbd{ background:#eef2f7; border:1px solid #d5deea; border-radius:5px; padding:1px 7px;
+    font-family:"Consolas","Courier New",monospace; font-size:13px; color:var(--accent-d); }
+
+  .note{ border-left:4px solid var(--accent); background:var(--accent-l); padding:12px 16px;
+    border-radius:0 8px 8px 0; margin:14px 0; }
+  .tip{ border-left:4px solid var(--ok); background:#eaf7f1; padding:12px 16px; border-radius:0 8px 8px 0; margin:14px 0; }
+  .warn{ border-left:4px solid var(--warn); background:#fdf6e7; padding:12px 16px; border-radius:0 8px 8px 0; margin:14px 0; }
+  .danger{ border-left:4px solid var(--danger); background:#fbeeee; padding:12px 16px; border-radius:0 8px 8px 0; margin:14px 0; }
+  .note strong,.tip strong,.warn strong,.danger strong{ display:block; margin-bottom:3px; }
+
+  table{ border-collapse:collapse; width:100%; margin:14px 0; font-size:13.5px; }
+  th,td{ border:1px solid var(--line); padding:8px 12px; text-align:left; vertical-align:top; }
+  th{ background:var(--accent-l); color:var(--accent-d); font-weight:700; }
+  tr:nth-child(even) td{ background:#fafcfe; }
+  .tbl-scroll{ overflow-x:auto; }
+
+  .tag{ display:inline-block; font-size:12px; padding:2px 10px; border-radius:12px; color:#fff; font-weight:700; }
+  .tag.t1{ background:#3b6ea5; } .tag.t2{ background:#2f9e6f; } .tag.t3{ background:#c58b1b; } .tag.t4{ background:#8a5cb0; }
+
+  .flow{ background:#f7fafd; border:1px dashed #c3d3e5; border-radius:10px; padding:16px 20px; margin:14px 0;
+    font-size:14.5px; font-weight:600; color:var(--accent-d); }
+  .flow .arrow{ color:var(--accent); margin:0 6px; }
+  .flow-steps{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .flow-steps .box{ background:#fff; border:1px solid var(--accent); border-radius:8px; padding:8px 14px; }
+
+  .example{ background:#fbfdff; border:1px solid var(--line); border-radius:8px; padding:14px 18px; margin:12px 0;
+    font-family:"Meiryo",monospace; font-size:13px; line-height:1.9; white-space:pre-wrap; color:#333; word-break:break-all; }
+
+  .btnimg{ display:inline-block; background:var(--accent); color:#fff; border-radius:8px; padding:3px 12px;
+    font-size:13px; font-weight:600; }
+  .btnimg.ghost{ background:#fff; color:var(--accent); border:1px solid var(--accent); }
+
+  footer{ text-align:center; color:var(--sub); font-size:13px; padding:20px; }
+  .top-link{ text-align:right; margin-top:8px; }
+  .top-link a{ font-size:13px; color:var(--accent); text-decoration:none; }
+  @media print{
+    body{ background:#fff; }
+    section,nav.toc{ box-shadow:none; page-break-inside:avoid; }
+    header{ box-shadow:none; }
+  }
+</style>
+</head>
+<body id="top">
+
+<header>
+  <div class="inner">
+    <h1>📄 議員通告・答弁管理ツール（統合版）</h1>
+    <p>操作説明書 ── 通告項目入力から本答弁・再質問項目・再質問答弁までを1つのCSVでリレーする統合ツール</p>
+    <span class="badge">LGWAN／オフライン利用対応</span>
+    <span class="badge">単一HTML・外部通信なし</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="toc">
+    <h2>📑 目次</h2>
+    <ol>
+      <li><a href="#s1">このアプリでできること</a></li>
+      <li><a href="#s2">起動と準備</a></li>
+      <li><a href="#s3">画面の構成</a></li>
+      <li><a href="#s4">全体の運用フロー（4段階リレー）</a></li>
+      <li><a href="#s5">対象議員・会議回の設定</a></li>
+      <li><a href="#s6">CSVの読み込み（複数ファイルの統合）</a></li>
+      <li><a href="#s7">行ID（項目番号）の採番ルール</a></li>
+      <li><a href="#s8">①通告項目入力とプレビュー（内容表）</a></li>
+      <li><a href="#s9">②本答弁入力とプレビュー</a></li>
+      <li><a href="#s10">③再質問項目入力とプレビュー（再質問一覧表）</a></li>
+      <li><a href="#s11">④再質問答弁入力（複数回答対応）とプレビュー</a></li>
+      <li><a href="#s12">印刷・PDF化</a></li>
+      <li><a href="#s13">CSV出力について</a></li>
+      <li><a href="#s14">データの保存・初期化／サンプルデータ</a></li>
+      <li><a href="#s15">よくある質問・トラブル対応</a></li>
+      <li><a href="#s16">運用上の注意</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <section id="s1">
+    <h2><span class="no">1</span>このアプリでできること</h2>
+    <p>本アプリは、議員1人・1回の質問を単位に、複数の担当者・部署が<strong>リレー形式で情報を積み上げていく</strong>実際の業務フローに合わせた、タブ切り替え式の単一HTMLアプリです。これまで通告・答弁・再質問で別々に管理していたCSVを、<strong>1つのCSVファイルで一貫して管理</strong>できます。</p>
+    <div class="flow">
+      <div class="flow-steps">
+        <span class="box">① 通告項目入力<br><small>聞取り担当者</small></span>
+        <span class="arrow">→ CSV →</span>
+        <span class="box">② 本答弁入力<br><small>答弁担当部署</small></span>
+        <span class="arrow">→ CSV →</span>
+        <span class="box">③ 再質問項目入力<br><small>総務課等</small></span>
+        <span class="arrow">→ CSV →</span>
+        <span class="box">④ 再質問答弁入力<br><small>答弁担当部署</small></span>
+      </div>
+    </div>
+    <ul>
+      <li>4つのタブ（①〜④）を行き来しながら、通告内容・本答弁・再質問・再質問答弁を1つのデータとして積み上げ</li>
+      <li>各段階の担当者は、前段階までの入力済み情報を画面上で確認しながら自分の担当分を追記できる</li>
+      <li>各タブに「入力」「プレビュー」を用意し、内容表・本答弁書・再質問一覧表・再質問答弁書をその場で確認・印刷</li>
+      <li>複数のCSVファイルを一度に選択して読み込み、既存データに統合（同じ議員は上書き、新しい議員は追加）</li>
+      <li>対象議員は28名分のサンプルをあらかじめ収録（自由入力も可能）</li>
+      <li>②本答弁入力・④再質問答弁入力は、議員ごとに一覧を開閉しながら入力できるリスト形式</li>
+    </ul>
+    <div class="note">
+      <strong>💡 動作環境</strong>
+      1つのHTMLファイル（<code>app.html</code>）をブラウザで開くだけで動作します。外部CDN・ビルドツール・インターネット接続は一切不要で、LGWAN環境内・オフラインでご利用いただけます。データが外部に送信されることはありません。
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="s2">
+    <h2><span class="no">2</span>起動と準備</h2>
+    <ol class="step">
+      <li><code>app.html</code> をダブルクリックして、ブラウザ（Microsoft Edge 推奨）で開きます。</li>
+      <li>初めて試す場合は、同じフォルダにある <code>sample.csv</code> を読み込むと、12名分の通告・本答弁・再質問・再質問答弁のサンプルデータで全機能を確認できます（第14章参照）。</li>
+      <li>実運用では、聞取り担当者・答弁担当部署などが、それぞれ手元でこのHTMLファイルを開いてCSVをリレーしていく形で使用します。</li>
+    </ol>
+    <div class="tip">
+      <strong>✅ ヒント</strong>
+      配布用フォルダにHTMLファイルとサンプルCSVを一緒に置いておくと、各担当者が迷わず操作を確認できます。
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="s3">
+    <h2><span class="no">3</span>画面の構成</h2>
+    <table>
+      <tr><th>領域</th><th>内容</th></tr>
+      <tr><td><strong>ヘッダー</strong>（青帯）</td><td>アプリ名。</td></tr>
+      <tr><td><strong>操作パネル</strong></td><td>対象議員・会議回の設定、CSV読込（複数選択可）、CSV出力、全データ削除。「対象・会議回」「データ入出力」はそれぞれ見出しをクリックすると折りたたみ・展開できます（初期状態は展開）。</td></tr>
+      <tr><td><strong>タブ</strong></td><td><span class="btnimg">①通告項目入力</span> <span class="btnimg ghost">②本答弁入力</span> <span class="btnimg ghost">③再質問項目入力</span> <span class="btnimg ghost">④再質問答弁入力</span> の4つ。</td></tr>
+      <tr><td><strong>サブタブ</strong></td><td>各タブの中に <span class="btnimg">✏️ 入力</span> <span class="btnimg ghost">👁 プレビュー</span> があります。プレビュー側では、サブタブのすぐ下に「全選択」「全解除」「プレビュー更新」「印刷/PDF」ボタンをまとめて配置しています。</td></tr>
+    </table>
+    <div class="tip">
+      <strong>✅ データは1つの画面に統合表示</strong>
+      読み込んだCSVに含まれる議員・項目はすべて画面上のデータとして保持され、タブを切り替えても消えません。②・④タブでは議員ごとに開閉できる一覧から、③タブでは本答弁までの一覧から、対象項目を選んで作業します。
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="s4">
+    <h2><span class="no">4</span>全体の運用フロー（4段階リレー）</h2>
+    <p>基本的な運用は、以下の順でCSVファイルを次の担当者へ引き継いでいく形になります。</p>
+    <table>
+      <tr><th>段階</th><th>担当</th><th>タブ</th><th>作業内容</th><th>作成する帳票</th></tr>
+      <tr><td>1</td><td>聞取り担当者</td><td><span class="tag t1">①</span> 通告項目入力</td><td>議員から聞き取った大項目・小項目・内容・主訴を入力</td><td>内容表</td></tr>
+      <tr><td>2</td><td>答弁担当部署</td><td><span class="tag t2">②</span> 本答弁入力</td><td>①のCSVを読み込み、担当項目に本答弁を入力</td><td>本答弁書</td></tr>
+      <tr><td>3</td><td>総務課等</td><td><span class="tag t3">③</span> 再質問項目入力</td><td>②のCSVを読み込み、再質問が出た項目に質問内容・担当部署を登録</td><td>再質問一覧表</td></tr>
+      <tr><td>4</td><td>答弁担当部署</td><td><span class="tag t4">④</span> 再質問答弁入力</td><td>③のCSVを読み込み、各再質問に答弁を入力（複数回答も可）</td><td>再質問答弁書</td></tr>
+    </table>
+    <div class="warn">
+      <strong>⚠️ CSVは毎回読み込み直す運用です</strong>
+      同一議員・同一会議回のデータは、次の担当者が前段階のCSVを毎回読み込み直して作業する運用を前提としています。読み込んだCSVは既存の画面データに<strong>統合</strong>されるため（第6章参照）、複数の議員・複数の担当部署のファイルをまとめて総務課で取りまとめることもできます。
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="s5">
+    <h2><span class="no">5</span>対象議員・会議回の設定</h2>
+    <ul>
+      <li>操作パネルの<strong>対象議員</strong>プルダウンから議員を選びます。あらかじめ28名分のサンプル議員（すべて「〇〇」の仮名）が登録されています。</li>
+      <li>一覧にない議員は、プルダウン最下部の<strong>［＋ 新規に自由入力］</strong>を選ぶと、氏名・会派・発言順位を直接入力して追加できます。</li>
+      <li><strong>令和○年</strong>・<strong>第○回定例会</strong>は、行ID（第7章）や帳票の見出しに使われます。CSVを読み込んだ場合、最初の1ファイル目の値が自動的に反映されます（第6章参照）。</li>
+      <li>自治体名は「〇〇市」に固定されており、変更する項目はありません。</li>
+    </ul>
+    <div class="note">
+      <strong>💡 対象議員は「今から①タブで新規入力する議員」を選ぶ欄です</strong>
+      すでにCSVを読み込んで②〜④タブで作業する場合は、各タブ内の議員プルダウン・チェックリストから対象項目を選びます。操作パネルの対象議員は、①タブで新しい通告項目を追加するときの対象を切り替えるためのものです。
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="s6">
+    <h2><span class="no">6</span>CSVの読み込み（複数ファイルの統合）</h2>
+    <ol class="step">
+      <li>操作パネルの <span class="btnimg ghost">📁 CSV読込（複数選択可）</span> を押します。</li>
+      <li>ファイル選択画面で、<code>Ctrl</code>（Macは<code>⌘</code>）を押しながら複数のCSVファイルをまとめて選択できます。</li>
+      <li>読み込みが完了すると、件数を示すメッセージが表示されます。</li>
+    </ol>
+    <p>読み込まれたCSVは、<strong>既存の画面データを消さずに統合</strong>されます。</p>
+    <ul>
+      <li>氏名が一致する議員は、その議員のデータが読み込んだ内容で更新されます（本答弁・再質問・再質問答弁が含まれていれば、それらも反映されます）。</li>
+      <li>一覧にない新しい議員は、そのまま画面に追加されます。</li>
+      <li>令和年・会議回などの共通設定は、<strong>画面が空の状態で最初に読み込んだCSVの内容のみ</strong>が反映されます。2つ目以降のファイルの同設定は無視されます。</li>
+      <li>文字コードは自動判定されます（先頭にUTF-8のBOMがあればUTF-8、なければShift_JISとして読み込みます）。本アプリの出力は常にUTF-8ですが、他アプリ等で出力されたShift_JISのCSVも問題なく読み込めます。</li>
+    </ul>
+    <div class="warn">
+      <strong>⚠️ 最初からやり直したい場合</strong>
+      統合ではなく完全に読み込み直したい場合は、先に「🗑 全データ削除」を押してから読み込んでください。
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section id="s7">
+    <h2><span class="no">7</span>行ID（項目番号）の採番ルール</h2>
+    <p>各行の「行ID」は、次の17桁で自動採番されます。表示や保存はせず、項目の位置から<strong>毎回その場で計算</strong>するため、複数のCSVを統合してもID同士が衝突することはありません。</p>
+    <div class="tbl-scroll">
+    <table>
+      <tr><th>元号</th><th>令和年</th><th>会議回</th><th>発言順位</th><th>大項目</th><th>小項目</th><th>内容</th><th>再質問項目</th><th>再質問答弁</th></tr>
+      <tr><td>R</td><td>2桁</td><td>2桁</td><td>2桁</td><td>2桁</td><td>2桁</td><td>2桁</td><td>2桁</td><td>2桁</td></tr>
+    </table>
+    </div>
+    <div class="example">例：令和8年 第3回定例会 発言順位1番 大項目1 小項目1 内容1
+  → R080301010101
+
+例：同じ条件で大項目のみ（小項目・内容なし）
+  → R0803010100000000（末尾4桁＝再質問項目・再質問答弁が両方00）
+
+例：上記の内容1に対する1件目の再質問
+  → R08030101010101 00 → R0803010101010100
+
+例：その再質問に対する1件目・2件目の回答
+  → R0803010101010101 ／ R0803010101010102</div>
+    <p>小項目・内容・再質問項目・再質問答弁が存在しない階層は、すべて <code>00</code> になります。<strong>再質問答弁の桁は「同じ再質問に対する複数回答の連番」</strong>です。1つの再質問に対して、複数の部署から回答があった場合や、回答を追記した場合は、01、02…と連番で別の行として記録されます。</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="s8">
+    <h2><span class="no">8</span>①通告項目入力とプレビュー（内容表）</h2>
+    <p>聞取り担当者が、議員から聞き取った質問内容を階層構造で入力します。操作方法は <code>tsuukoku_kanri/app_fixed.html</code> の通告内容入力と同様です。</p>
+    <ol class="step">
+      <li>操作パネルで<strong>対象議員</strong>を選びます。</li>
+      <li><span class="btnimg">＋ 大きな項目</span> から始め、必要に応じて <span class="btnimg ghost">＋ 小さな項目</span> ・ <span class="btnimg ghost">＋ 内容</span> を追加します。</li>
+      <li>各行のテキストエリアに本文を入力します。末端の行には<strong>主訴（最大5個）</strong>と<strong>所管</strong>を入力できます。</li>
+      <li>▲▼ボタンで並べ替え、×ボタンで削除できます（ドラッグ＆ドロップでの並べ替えにも対応）。</li>
+    </ol>
+    <h3>階層ルール</h3>
+    <ul>
+      <li>まず<strong>大項目</strong>から始めます。</li>
+      <li><strong>小項目</strong>は、大項目・小項目・内容のどの後でも追加でき、直前の大項目にぶら下がります。</li>
+      <li><strong>内容</strong>は、小項目・内容の後にのみ追加できます（大項目の直後には追加できません）。</li>
+    </ul>
+    <p><span class="btnimg ghost">👁 プレビュー（内容表）</span> タブでは、<code>tsuukoku_kanri</code> と同じ様式の「一般質問内容表」が、議員ごとにページ計測されて表示されます。プレビュー上部のチェックリストで、印刷対象の議員を選べます。</p>
+  </section>
+
+  <!-- 9 -->
+  <section id="s9">
+    <h2><span class="no">9</span>②本答弁入力とプレビュー</h2>
+    <p>①のCSVを読み込んだ後、答弁担当部署がこのタブで作業します。項目は<strong>議員ごとに開閉できる一覧</strong>で表示され、それぞれの項目にその場で本答弁を入力していきます。</p>
+    <ol class="step">
+      <li>議員見出し（<span class="btnimg ghost">▼ 発言順位　氏名（会派）</span>）をクリックすると、その議員の項目一覧を折りたたむ・展開できます。</li>
+      <li>各項目（大項目・小項目・内容）の下に、回答部（担当所属名）・担当者名・本答弁原稿の入力欄があります。入力するとその場で自動保存され、「本答弁✓」の表示が更新されます。</li>
+      <li><span class="btnimg ghost">👁 プレビュー（本答弁）</span> タブで、印刷対象の項目にチェックを入れ、本答弁書のレイアウトを確認します。「入力済のみ選択」ボタンで、本答弁が入力済みの項目だけを一括選択できます。</li>
+    </ol>
+  </section>
+
+  <!-- 10 -->
+  <section id="s10">
+    <h2><span class="no">10</span>③再質問項目入力とプレビュー（再質問一覧表）</h2>
+    <p>②のCSVを読み込むと、本答弁までの一覧が議員ごとに表示されます。</p>
+    <ol class="step">
+      <li>再質問が発生した項目を見つけ、<span class="btnimg ghost">＋ 再質問を追加</span> を押します。</li>
+      <li><strong>再質問担当部署</strong>と<strong>再質問の文言</strong>を入力します（この段階では答弁は入力しません）。</li>
+      <li>1つの項目に対して、複数の再質問を追加できます。</li>
+    </ol>
+    <p><span class="btnimg ghost">👁 プレビュー（再質問一覧）</span> タブでは、<code>touben_kanri</code> と同じ様式の「再質問一覧表」が、議員ごとに改ページされて表示されます。</p>
+  </section>
+
+  <!-- 11 -->
+  <section id="s11">
+    <h2><span class="no">11</span>④再質問答弁入力（複数回答対応）とプレビュー</h2>
+    <p>③のCSVを読み込むと、登録済みの再質問が<strong>議員ごとに開閉できる一覧</strong>で表示されます。②タブと同様、議員見出しをクリックすると折りたたみ・展開できます。</p>
+    <ol class="step">
+      <li>各再質問に対して <span class="btnimg ghost">＋ 回答を追加</span> を押し、<strong>答弁者</strong>・<strong>再質問答弁 原稿</strong>を入力します。</li>
+      <li>1つの再質問に対して、<strong>複数の回答を追加</strong>できます（複数部署からの回答や、回答の追記に対応）。</li>
+    </ol>
+    <p><span class="btnimg ghost">👁 プレビュー（再質問答弁）</span> タブでは、<code>touben_kanri</code> と同じ様式の「再質問部長答弁書」が、回答1件につき1枚のシートとして表示されます。印刷対象は回答単位でチェックして選べます。</p>
+  </section>
+
+  <!-- 12 -->
+  <section id="s12">
+    <h2><span class="no">12</span>印刷・PDF化</h2>
+    <ol class="step">
+      <li>各タブの<span class="btnimg ghost">👁 プレビュー</span>で、印刷したい対象（議員・項目・回答）にチェックを入れます。</li>
+      <li><span class="btnimg">🖨 印刷/PDF</span> ボタンを押すと印刷ダイアログが開きます。</li>
+      <li>PDFとして保存する場合は、印刷ダイアログの「送信先」を「PDFに保存」に切り替えて保存します。</li>
+    </ol>
+    <div class="tip">
+      <strong>✅ 推奨設定</strong>
+      用紙サイズはA4・縦、倍率は100%でご利用ください。1件ごとに自動で改ページされます。
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section id="s13">
+    <h2><span class="no">13</span>CSV出力について</h2>
+    <ol class="step">
+      <li>操作パネルの <span class="btnimg ghost">📤 CSV出力（全データ）</span> を押すと、画面上のすべてのデータを1つのCSVとしてダウンロードします。</li>
+    </ol>
+    <p>出力されるCSVは、通告・本答弁・再質問項目・再質問答弁のすべての列を含む単一フォーマットです。次の担当者は、このファイルをそのまま読み込んで作業を続けられます。文字コードは<strong>UTF-8（BOM付き）</strong>で固定されており、<code>tsuukoku_kanri</code>・<code>touben_kanri</code>と同じ方式のため、Excelでも問題なく開けます。</p>
+  </section>
+
+  <!-- 14 -->
+  <section id="s14">
+    <h2><span class="no">14</span>データの保存・初期化／サンプルデータ</h2>
+    <ul>
+      <li>入力内容は操作のたびにブラウザ内（localStorage）へ自動保存されます。ページを閉じて再度開いても、続きから作業できます。</li>
+      <li><span class="btnimg" style="background:#fff;color:#c0504d;border:1px solid #c0504d">🗑 全データ削除</span> を押すと、ブラウザ内の作業データがすべて削除され、初期状態に戻ります。必要なデータは事前にCSV出力しておいてください。</li>
+    </ul>
+    <h3>サンプルデータで試す</h3>
+    <p>同じフォルダの <code>sample.csv</code> には、12名の議員（防災、子育て支援、高齢者福祉、DX推進、公共施設マネジメント、環境政策、学校教育、産業振興、都市計画、財政運営、観光振興、公共交通の各テーマ）分の、通告項目・本答弁・再質問項目・再質問答弁を含む計129行のデータが収録されています。「🗑 全データ削除」で初期化した状態で読み込むと、①〜④すべてのタブ・プレビューをそのまま確認できます。</p>
+  </section>
+
+  <!-- 15 -->
+  <section id="s15">
+    <h2><span class="no">15</span>よくある質問・トラブル対応</h2>
+    <h3>Q. 開いても真っ白／動かない</h3>
+    <p>A. Microsoft Edge や Google Chrome など、比較的新しいブラウザで開いてください。Internet Explorer 等の古いブラウザでは動作しません。</p>
+    <h3>Q. CSVを読み込んでも項目が表示されない</h3>
+    <p>A. CSVの先頭に <code>#META</code> 行、続いて<code>行ID,発言順位,議員名,…</code>のヘッダー行がある、本アプリが出力した形式のCSVであるか確認してください。列の並びが異なると正しく読み込めない場合があります。</p>
+    <h3>Q. 大項目・小項目・内容のボタンが押せない</h3>
+    <p>A. 対象議員が選択されているか確認してください。また、「内容」は小項目・内容の直後にのみ追加できる仕様です（第8章の階層ルール参照）。</p>
+    <h3>Q. 印刷すると空白のページが出る／レイアウトが崩れる</h3>
+    <p>A. 一度プレビューを閉じて「プレビュー更新」を押してから印刷し直してください。ブラウザの表示倍率は100%に戻してご利用ください。</p>
+    <h3>Q. 議員ごとの一覧が長すぎて見づらい</h3>
+    <p>A. ②本答弁入力・④再質問答弁入力では、議員見出しをクリックするとその議員の項目を折りたためます。作業が終わった議員から順に折りたたむと見やすくなります。</p>
+  </section>
+
+  <!-- 16 -->
+  <section id="s16">
+    <h2><span class="no">16</span>運用上の注意</h2>
+    <ul>
+      <li>複数CSVの統合は<strong>議員の氏名</strong>を手がかりに行われます。氏名の表記（全角・スペースの有無など）が担当者ごとに異なると、別人として扱われてしまうため、表記を揃えてご利用ください。</li>
+      <li>行IDは項目の追加・削除・並べ替えのたびに再計算されます。CSVに保存されたIDは、あくまで出力時点のスナップショットです。</li>
+      <li>本アプリはオフラインで完結するツールです。複数人で同時に同じデータを編集する機能はありません。必ずCSVファイルの受け渡しによってデータを引き継いでください。</li>
+      <li>「全データ削除」は元に戻せません。実行前に必ずCSV出力でバックアップを取ってください。</li>
+    </ul>
+  </section>
+
+  <div class="top-link"><a href="#top">▲ ページの先頭へ戻る</a></div>
+</div>
+
+<footer>議員通告・答弁管理ツール（統合版）｜操作説明書</footer>
+
+</body>
+</html>
