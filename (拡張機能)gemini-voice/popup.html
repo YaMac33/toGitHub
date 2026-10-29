@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Gemini ボイス</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #111827; --muted: #6b7280; --line: #e5e7eb; --card: #f8fafc;
+    --accent: #4f46e5; --accent-h: #4338ca; --accent-soft: #eef2ff; --accent-fg: #4338ca;
+    --danger: #dc2626; --warn-bg: #fffbeb; --warn-fg: #92400e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111827; --fg: #f3f4f6; --muted: #9ca3af; --line: #2b3445; --card: #1a2232;
+      --accent: #6366f1; --accent-h: #818cf8; --accent-soft: #1e1b4b; --accent-fg: #c7d2fe;
+      --warn-bg: #3a2a0a; --warn-fg: #fcd34d;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { width: 340px; margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.5 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif; }
+  svg { width: 18px; height: 18px; fill: currentColor; display: block; }
+  .ic { display: inline-flex; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 10px 14px; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
+  .logo { display: inline-flex; width: 26px; height: 26px; border-radius: 8px; align-items: center; justify-content: center; background: var(--accent); color: #fff; }
+  .logo svg { width: 16px; height: 16px; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); }
+  .iconbtn:hover { background: var(--card); color: var(--fg); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  main { padding: 0 12px 12px; display: grid; gap: 10px; }
+
+  #home { display: grid; gap: 8px; }
+  .big { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; text-align: left; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); transition: border-color .15s, background .15s; }
+  .big:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .big .bi { flex: none; display: inline-flex; width: 38px; height: 38px; border-radius: 10px; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent-fg); }
+  .big .bi svg { width: 20px; height: 20px; }
+  .big b { display: block; font-size: 14px; }
+  .big small { display: block; color: var(--muted); font-size: 11.5px; }
+  kbd { font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); }
+
+  /* 操作パネル（panel.js が描く） */
+  .box { border: 1px solid var(--line); border-radius: 12px; padding: 10px 10px 10px 12px; background: var(--card); }
+  .box.err { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+  .top { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+  .title { flex: 1; display: flex; align-items: center; gap: 8px; font-weight: 600; min-width: 0; }
+  .title > .ic { color: var(--accent-fg); }
+  .err .title, .err .title > .ic { color: var(--danger); }
+  .count { margin-left: 8px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .elapsed { font-variant-numeric: tabular-nums; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); flex: none; animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .spin { width: 14px; height: 14px; flex: none; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .preview { margin-top: 4px; color: var(--muted); font-size: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .bar, .level { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; margin: 8px 0; }
+  .bar > i, .level > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+  .level { height: 6px; }
+  .level > i { background: #22c55e; transition: width .1s; }
+  .row { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+  .spacer { flex: 1; }
+  .box button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); white-space: nowrap; }
+  .box button:hover { border-color: var(--accent); }
+  .box button.icon { width: 32px; padding: 0; }
+  .box .top button.icon { border-color: transparent; background: transparent; color: var(--muted); }
+  .box .top button.icon:hover { color: var(--fg); background: var(--bg); }
+  .box button.sm { width: 26px; border-color: transparent; background: transparent; }
+  .box button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .box button.primary:hover { background: var(--accent-h); }
+  .box button.grow { flex: 1; }
+  .speed { min-width: 36px; text-align: center; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .msg { margin-top: 4px; font-size: 12.5px; white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow: auto; }
+  .result { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+  .hint { margin-top: 6px; color: var(--muted); font-size: 11px; }
+
+  #historyBox h2 { margin: 4px 0 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
+  #history { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 220px; overflow: auto; }
+  #history li { display: flex; gap: 8px; align-items: flex-start; padding: 8px 8px 8px 10px; border: 1px solid var(--line); border-radius: 10px; }
+  #history .ht { flex: 1; min-width: 0; }
+  #history p { margin: 0; font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+  #history time { font-size: 11px; color: var(--muted); }
+  #history button { flex: none; border: 0; background: transparent; color: var(--muted); width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
+  #history button:hover { background: var(--card); color: var(--fg); }
+  #history button.ok { color: #16a34a; }
+  .empty { margin: 0; color: var(--muted); font-size: 12px; }
+
+  footer { border-top: 1px solid var(--line); padding: 8px 14px 10px; color: var(--muted); font-size: 11.5px; display: grid; gap: 6px; }
+  .warn { background: var(--warn-bg); color: var(--warn-fg); border-radius: 8px; padding: 6px 8px; }
+  .warn a { color: inherit; font-weight: 600; }
+  a { color: var(--accent-fg); cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="logo" id="logo"></span>Gemini ボイス</div>
+    <button id="settings" class="iconbtn" title="設定" aria-label="設定"></button>
+  </header>
+  <main>
+    <section id="home">
+      <button id="read" class="big">
+        <span class="bi" id="readIcon"></span>
+        <span><b>このページを読み上げ</b><small>選択中なら、その部分だけ読みます　<kbd id="readKey"></kbd></small></span>
+      </button>
+      <button id="dict" class="big">
+        <span class="bi" id="dictIcon"></span>
+        <span><b>音声入力</b><small>話した内容を、カーソル位置に入力します　<kbd id="dictKey"></kbd></small></span>
+      </button>
+    </section>
+
+    <section id="panel" class="box" hidden></section>
+
+    <section id="historyBox">
+      <h2>最近の音声入力</h2>
+      <ul id="history"></ul>
+      <p class="empty" id="historyEmpty">まだありません</p>
+    </section>
+  </main>
+  <footer id="foot"></footer>
+
+  <script src="lib.js"></script>
+  <script src="panel.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

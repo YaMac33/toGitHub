@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>マイクの許可 - Gemini ボイス</title>
+<style>
+  :root { --bg: #f6f7fb; --card: #fff; --fg: #111827; --muted: #6b7280; --line: #e5e7eb; --accent: #4f46e5; --ok: #047857; --ng: #b91c1c; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0b1020; --card: #151b2e; --fg: #f3f4f6; --muted: #9ca3af; --line: #273049; --accent: #6366f1; --ok: #34d399; --ng: #f87171; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.7 system-ui, "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif; }
+  main { max-width: 520px; margin: 56px auto; padding: 28px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  p { color: var(--muted); margin: 0 0 20px; }
+  button { padding: 10px 20px; font: inherit; font-weight: 600; border: 0; border-radius: 10px; background: var(--accent); color: #fff; cursor: pointer; }
+  #msg { margin-top: 16px; min-height: 1.7em; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>マイクの許可</h1>
+    <p>音声入力には、この拡張機能へのマイクの許可が必要です（最初の1回だけ）。ボタンを押して、ブラウザの確認で「許可」を選んでください。</p>
+    <button id="ask">マイクを許可する</button>
+    <div id="msg" role="status"></div>
+  </main>
+  <script src="mic.js"></script>
+</body>
+</html>
