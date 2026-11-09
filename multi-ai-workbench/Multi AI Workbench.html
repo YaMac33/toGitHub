@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="generator" content="md2html">
+<meta name="saved-at" content="2026/11/9 22:12:48">
+<title>Multi AI Workbench</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<style>
+[hidden]{display:none!important}
+body{margin:0;background:#fff}
+@media (prefers-color-scheme:dark){body{background:#0d1117}}
+.wrap{max-width:900px;margin:0 auto;padding:48px 24px 64px}
+#raw{white-space:pre-wrap;word-break:break-word;font:14px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}
+.bar{position:fixed;top:10px;right:10px;display:flex;gap:6px;z-index:10}
+.bar button{padding:5px 10px;border:1px solid #d0d7de;border-radius:6px;background:#f6f8fa;color:#1f2328;font-size:12px;cursor:pointer;opacity:.85}
+.bar button:hover{opacity:1}
+@media (prefers-color-scheme:dark){.bar button{background:#21262d;color:#e6edf3;border-color:#30363d}}
+#note{background:#fff8c5;color:#1f2328;padding:8px 12px;border-radius:6px;font-size:13px;margin-bottom:16px}
+@media print{.bar{display:none}.wrap{padding:0}}
+</style>
+</head>
+<body>
+<div class="bar"><button id="toggle">MD原文</button><button id="copy">MDをコピー</button></div>
+<div class="wrap">
+<div id="note" hidden>表示用ライブラリを読み込めなかったため、Markdown原文を表示しています。</div>
+<article id="out" class="markdown-body"></article>
+<pre id="raw" class="markdown-body" hidden></pre>
+</div>
+<textarea id="md-source" hidden>
+# Multi AI Workbench
+
+Anthropic（Claude）・OpenAI・Google（Gemini）のAIを**共通インターフェース**で扱い、
+役割を分担させてソフトウェア開発を進めるための個人用開発基盤です。
+
+- 任意のAIを選んで個別に質問できる（`multi-ai ask`）
+- 「Coding / Review / Research」などの**役割（エージェント）**と、実行する**AI（プロバイダー）**を設定で自由に組み合わせられる
+- 複数のAIを **順番に（Sequential）** または **同時に（Parallel）** 動かせる
+- トークン使用量と推定料金を記録・集計できる
+- **APIキーなしでも**開発・テスト・動作確認ができる（`mock` プロバイダー）
+
+&gt; 現在は初期構築段階です。AIによる自律的なファイル編集や、AI同士の自己反復は実装していません（[docs/roadmap.md](docs/roadmap.md)）。
+
+---
+
+## システム構成
+
+```
+            ┌──────────────────────── CLI (multi-ai) ────────────────────────┐
+            │  status / providers / models / usage / ask / agents / run       │
+            └──────────────────────────────┬──────────────────────────────────┘
+                                           │
+                                  Orchestrator（ファサード）
+                                           │
+          ┌────────────────────┬───────────┴───────────┬──────────────────────┐
+          │                    │                       │                      │
+     Workflows            Agents（役割）           TaskManager           UsageStore
+  Sequential/Parallel   Coding/Review/Research    タスク状態管理     利用記録(JSONL)・集計
+          │                    │
+          └──── LLMProvider（共通インターフェース）────┐
+                               │                    │
+          ┌──────────┬─────────┴──┬──────────┐      │  BaseProvider が共通処理を担当:
+     Anthropic    OpenAI       Gemini      Mock     │  APIキー確認 / リトライ上限 / タイムアウト /
+    (Messages)  (Responses)  (genai)   (オフライン)  │  トークン推定 / 料金計算 / 利用記録 / 予算確認
+                                                     │
+   ※ Claude Code / Codex CLI / Gemini CLI は「外部CLIエージェント」として別系統で扱う（検出のみ）
+```
+
+詳細は [docs/architecture.md](docs/architecture.md) を参照してください。
+
+## ディレクトリ構成
+
+```
+multi-ai-workbench/
+├── README.md
+├── pyproject.toml            依存関係・`multi-ai` コマンド定義
+├── .env.example              APIキー設定のひな形（.env は Git 管理外）
+├── .gitignore
+├── config/
+│   ├── settings.yaml         プロバイダー・エージェント・ワークフロー・予算
+│   └── models.yaml           モデルカタログ（ID・料金・コンテキスト長・機能・確認状況）
+├── src/multi_ai_workbench/
+│   ├── main.py               エントリーポイント
+│   ├── core/                 設定・データモデル・インターフェース・例外・利用料金
+│   ├── providers/            各社API実装（base / anthropic / openai / gemini / mock / registry）
+│   ├── agents/               役割（coding / review / research）と外部CLIエージェント
+│   ├── workflows/            Sequential / Parallel
+│   ├── orchestration/        Orchestrator・TaskManager
+│   ├── cli/                  CLI コマンド
+│   └── utils/                ログ設定・機密情報マスキング
+├── tests/                    pytest（APIキー不要・通信なし）
+├── docs/                     architecture / setup / api-configuration / roadmap
+└── logs/                     実行ログ・利用記録（Git 管理外）
+```
+
+指定の構成からの追加・変更点と理由:
+
+| 追加・変更 | 理由 |
+|---|---|
+| `providers/mock_provider.py` | APIキーなしで `ask` やワークフローを最後まで動かして確認するため |
+| `providers/registry.py` | プロバイダーを「クラスを1つ追加して登録するだけ」で増やせるようにするため |
+| `agents/external.py` | Claude Code などの外部CLIエージェントを、APIプロバイダーとは別の概念として扱うため |
+| `core/__init__.py` など | パッケージとして明示するため |
+| `tests/conftest.py`, `test_usage.py`, `test_cli.py` | 共通フィクスチャ、料金計算とCLIのテストを独立させるため |
+| CLI コマンド `agents` / `workflows` / `run` | ワークフローの動作確認をCLIから行えるようにするため |
+
+## セットアップ
+
+Python 3.11 以上が必要です。詳細は [docs/setup.md](docs/setup.md) を参照してください。
+
+```powershell
+cd multi-ai-workbench
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1          # macOS/Linux: source .venv/bin/activate
+pip install -e &quot;.[dev]&quot;
+multi-ai status
+pytest
+```
+
+## CLIの使い方
+
+| コマンド | 内容 | APIキー |
+|---|---|---|
+| `multi-ai status` | 設定、APIキーの有無、SDK、プロバイダーの利用可否、外部CLIエージェントの検出 | 不要 |
+| `multi-ai providers` | 登録済みプロバイダー（既定モデル・タイムアウト・リトライ上限） | 不要 |
+| `multi-ai models [--provider P]` | モデル一覧（料金・コンテキスト長・確認状況） | 不要 |
+| `multi-ai usage [--by month provider model] [--month YYYY-MM] [--recent N]` | 利用状況と推定料金 | 不要 |
+| `multi-ai agents` | エージェントと割り当てプロバイダー | 不要 |
+| `multi-ai workflows` | 定義済みワークフロー | 不要 |
+| `multi-ai ask &quot;質問&quot; --provider P [--model M] [--system S] [--max-tokens N]` | AIを指定して質問 | 必要（`mock` は不要） |
+| `multi-ai ask &quot;質問&quot; --agent coding` | エージェント（役割）経由で質問 | 必要 |
+| `multi-ai run &lt;workflow&gt; &quot;入力&quot; [--mock]` | ワークフロー実行（`--mock` で全エージェントを mock で実行） | 必要（`--mock` は不要） |
+
+例:
+
+```powershell
+multi-ai ask &quot;Pythonでリストを逆順にする方法は?&quot; --provider mock
+multi-ai ask &quot;このエラーの原因は?&quot; --provider anthropic --model claude-haiku-5-5
+Get-Content question.txt | multi-ai ask - --provider openai   # '-' で標準入力から読む
+multi-ai run multi_review &quot;def add(a, b): return a - b&quot; --mock
+multi-ai usage --by provider --recent 10
+```
+
+終了コード: `0` 成功 / `1` エラー（ワークフローの一部失敗を含む） / `2` 引数エラー / `3` APIキー未設定。
+
+## APIキーの設定
+
+```powershell
+Copy-Item .env.example .env   # 使うプロバイダーのキーだけ記入
+multi-ai status               # 「APIキー: 設定済み」「判定: 利用可」になることを確認
+```
+
+| プロバイダー | 環境変数 |
+|---|---|
+| Anthropic | `ANTHROPIC_API_KEY` |
+| OpenAI | `OPENAI_API_KEY` |
+| Google Gemini | `GEMINI_API_KEY` |
+
+- キーは環境変数または `.env` からのみ読み込みます。ソースコードや `config/*.yaml` には書かないでください
+- `.env` は `.gitignore` 済みです
+- キーはログ・エラーメッセージ・`status` 出力に表示されません（マスキング済み）
+
+各社のキーの取得方法や料金の設定は [docs/api-configuration.md](docs/api-configuration.md) を参照してください。
+
+## モデルと料金
+
+モデルはコードに直接書かず、[config/models.yaml](config/models.yaml) で管理します。
+
+- `status: verified` … 実在を確認済み（Claude の3モデル。Claude Code 実行環境の情報で確認）
+- `status: unverified` … **実在・提供状況が未確認**（OpenAI と Gemini の初期値）。利用前に公式情報で確認してください
+- 料金（USD／100万トークン）は**すべて未設定**です。未設定のモデルは「料金未設定」と表示され、0円としては扱われません
+
+## プロバイダーの追加方法
+
+1. `src/multi_ai_workbench/providers/xxx_provider.py` に `BaseProvider` を継承したクラスを作り、`@register_provider` を付ける
+   - 実装するのは `_create_client` / `_call` / `_translate_error` の3つだけです
+2. `providers/__init__.py` で新しいモジュールを import する
+3. `config/settings.yaml` の `providers:` と `config/models.yaml` にエントリを追加する
+4. `tests/test_providers.py` にモッククライアントを使ったテストを追加する
+
+APIキー確認・リトライ・料金計算・利用記録は `BaseProvider` が共通で行うため、エージェントやワークフローの修正は不要です。
+同じ実装を別名で使いたい場合は、`settings.yaml` で `type: openai` のように実装名を指定できます。
+
+## エージェントとプロバイダーの組み合わせ変更
+
+```yaml
+# config/settings.yaml
+agents:
+  coding:
+    role: coding
+    provider: openai        # anthropic → openai に変えるだけで、OpenAIがCoding Agentになる
+    model: gpt-5-mini       # 省略時はプロバイダーの default_model
+```
+
+## 今後の拡張方針
+
+[docs/roadmap.md](docs/roadmap.md) を参照してください。主な予定は次のとおりです。
+
+- 料金・コンテキスト長の登録と、予算上限の本格運用
+- ストリーミング出力、会話履歴、ツール呼び出し
+- ワークフローの条件分岐、レビュー結果の統合（合議）、人による承認ステップ
+- 外部CLIエージェント（Claude Code / Codex CLI / Gemini CLI）との連携
+- Web UI / GUI（Orchestrator をそのまま利用できる構造にしてあります）
+
+## セキュリティ方針
+
+- APIキーをGitにコミットしない（`.env` は Git 管理外、設定ファイルにも書かない）
+- ログにはプロンプト本文や応答本文を出さず、メタデータ（プロバイダー、モデル、トークン数、料金、所要時間）のみを記録する
+- 外部APIの呼び出しにはタイムアウトとリトライ上限を設ける（SDK 側のリトライは無効化し、上限の管理を一本化）
+- APIキーが未設定なら、通信の前に処理を止める
+- 外部への公開やGitHubへのpushは、利用者の承認なしに行わない
+</textarea>
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>
+(function(){
+  var md = document.getElementById('md-source').value;
+  var out = document.getElementById('out');
+  var raw = document.getElementById('raw');
+  var toggle = document.getElementById('toggle');
+  raw.textContent = md;
+  if (window.marked && window.DOMPurify) {
+    out.innerHTML = DOMPurify.sanitize(marked.parse(md));
+    if (window.hljs) {
+      var codes = out.querySelectorAll('pre code');
+      for (var i = 0; i < codes.length; i++) hljs.highlightElement(codes[i]);
+    }
+  } else {
+    out.hidden = true; raw.hidden = false; toggle.hidden = true;
+    document.getElementById('note').hidden = false;
+  }
+  toggle.onclick = function(){
+    var showRaw = raw.hidden;
+    raw.hidden = !showRaw; out.hidden = showRaw;
+    toggle.textContent = showRaw ? '整形表示' : 'MD原文';
+  };
+  document.getElementById('copy').onclick = function(){
+    var btn = this;
+    function done(){ btn.textContent = 'コピーしました'; setTimeout(function(){ btn.textContent = 'MDをコピー'; }, 1500); }
+    function fallback(){
+      var t = document.createElement('textarea'); t.value = md; document.body.appendChild(t);
+      t.select(); document.execCommand('copy'); t.remove(); done();
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(md).then(done, fallback);
+    else fallback();
+  };
+})();
+</script>
+</body>
+</html>
