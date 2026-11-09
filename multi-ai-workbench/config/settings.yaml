@@ -1,0 +1,128 @@
+# Multi AI Workbench 設定
+#
+# APIキーはここに書かず、環境変数（または .env）で設定してください。
+# api_key_env には「キーを格納する環境変数名」だけを書きます。
+
+app:
+  log_level: INFO
+  log_file: logs/multi-ai.log       # プロジェクトルートからの相対パス
+  usage_file: logs/usage.jsonl      # 利用記録 (JSON Lines)
+
+# 生成パラメータの既定値（プロバイダー・エージェント・CLI引数で上書き可能）
+defaults:
+  max_output_tokens: 2048
+  temperature: null                 # null = プロバイダー側の既定値を使う
+  top_p: null
+
+providers:
+  anthropic:
+    enabled: true
+    api_key_env: ANTHROPIC_API_KEY
+    default_model: claude-sonnet-5-5
+    timeout_seconds: 120
+    max_retries: 2                  # 再試行の上限（初回を除く）
+    retry_base_delay_seconds: 1.0   # 指数バックオフの基準秒数
+
+  openai:
+    enabled: true
+    api_key_env: OPENAI_API_KEY
+    default_model: gpt-5            # 要確認モデル (config/models.yaml 参照)
+    timeout_seconds: 120
+    max_retries: 2
+    retry_base_delay_seconds: 1.0
+
+  gemini:
+    enabled: true
+    api_key_env: GEMINI_API_KEY
+    default_model: gemini-2.5-pro   # 要確認モデル (config/models.yaml 参照)
+    timeout_seconds: 120
+    max_retries: 2
+    retry_base_delay_seconds: 1.0
+
+  mock:
+    enabled: true
+    api_key_env: null               # APIキー不要
+    default_model: mock-echo
+    timeout_seconds: 5
+    max_retries: 0
+
+# エージェント定義
+#   キー      : エージェント名（ワークフローから参照する）
+#   role      : coding / review / research / generic（省略時はエージェント名）
+#   provider  : 使うプロバイダー。役割とは独立に変更できる
+#   model     : 省略時はプロバイダーの default_model
+agents:
+  coding:
+    role: coding
+    provider: anthropic
+    description: コードの生成・修正
+
+  review:
+    role: review
+    provider: openai
+    description: バグ・設計・セキュリティ観点のコードレビュー
+
+  research:
+    role: research
+    provider: gemini
+    description: 技術調査・ライブラリ比較
+
+  # 並列レビュー用（同じ役割を3社に割り当て）
+  review_claude:
+    role: review
+    provider: anthropic
+  review_openai:
+    role: review
+    provider: openai
+  review_gemini:
+    role: review
+    provider: gemini
+
+# ワークフロー定義
+#   sequential: steps を順番に実行。各ステップは前ステップまでの出力を参照できる
+#   parallel  : agents に同じ instruction を独立に実行させる
+#   instruction 内の {input} はユーザー入力に置換されます
+workflows:
+  dev_pipeline:
+    type: sequential
+    description: 要件分析 → 設計レビュー → コード生成 → コードレビュー
+    stop_on_failure: true
+    steps:
+      - name: requirements
+        agent: research
+        instruction: "次の依頼の要件を分析し、機能要件・非機能要件・不明点を整理してください。\n\n依頼:\n{input}"
+      - name: design_review
+        agent: review
+        instruction: "前ステップの要件分析をもとに設計方針を提案し、リスクをレビューしてください。"
+      - name: implementation
+        agent: coding
+        instruction: "要件と設計レビューを踏まえて実装コードを作成してください。"
+      - name: code_review
+        agent: review
+        instruction: "生成されたコードをレビューしてください。"
+
+  multi_review:
+    type: parallel
+    description: 同じ対象を Claude / OpenAI / Gemini で独立にレビューし比較
+    max_workers: 3
+    agents: [review_claude, review_openai, review_gemini]
+    instruction: "次の内容をレビューしてください。\n\n{input}"
+
+# 外部CLIエージェント（APIプロバイダーとは別概念）
+# 初期段階では検出（インストール有無の確認）のみで、自動起動はしない。
+# Claude Code のサブスクリプション認証を Python から API の代わりに使うことはしない。
+external_agents:
+  claude-code:
+    command: claude
+    description: Anthropic Claude Code (VS Code 拡張 / CLI)
+  codex:
+    command: codex
+    description: OpenAI Codex CLI
+  gemini-cli:
+    command: gemini
+    description: Google Gemini CLI
+
+# 利用料金の上限管理（将来の本格運用向け）
+budget:
+  monthly_limit_usd: null           # null = 上限なし
+  enforce: false                    # true で上限超過時に API 呼び出しを拒否

@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multi-ai-workbench"
+version = "0.1.0"
+description = "Anthropic / OpenAI / Google のAIを共通インターフェースで扱う個人用マルチAI開発基盤"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6",
+    "python-dotenv>=1.0",
+    "PyYAML>=6.0",
+    # 各社公式SDK。実際のAPI呼び出し時にのみ import されるため、
+    # APIキーが無くても status / providers / models は動作する。
+    "anthropic>=0.40",
+    "openai>=1.60",
+    "google-genai>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+multi-ai = "multi_ai_workbench.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

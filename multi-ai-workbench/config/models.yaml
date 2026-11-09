@@ -1,0 +1,109 @@
+# モデルカタログ
+#
+# コードにモデル名を直接書かず、ここで管理します。
+#
+# status:
+#   verified    … 実在を確認済みのモデルID（確認元を notes に記載）
+#   unverified  … 過去に存在したが、現時点で利用可能か未確認。利用前に公式ドキュメントで確認すること
+#   placeholder … 仮の値。実在するモデルとして扱わないこと
+#   offline     … APIを呼ばないローカル用（mock プロバイダー）
+#
+# 料金: USD / 100万トークン (per million tokens)
+#   null = 料金未設定。利用記録では「料金未設定」と表示され、0円としては扱われません。
+#   料金は各社の公式料金ページで確認して記入してください（docs/api-configuration.md 参照）。
+#
+# context_window / max_output_tokens: トークン数。null = 未設定
+# capabilities: 利用可能な機能のタグ（text, vision, tools, reasoning など自由記述）
+
+models:
+  # ---------------- Anthropic ----------------
+  - id: claude-opus-5-5
+    provider: anthropic
+    display_name: Claude Opus 5.5
+    status: verified
+    input_price_per_mtok: null
+    output_price_per_mtok: null
+    context_window: null
+    max_output_tokens: null
+    capabilities: [text, vision, tools, reasoning]
+    notes: "モデルIDは Claude Code 実行環境の情報で確認 (2026-11)。料金・コンテキスト長は未設定"
+
+  - id: claude-sonnet-5-5
+    provider: anthropic
+    display_name: Claude Sonnet 5.5
+    status: verified
+    input_price_per_mtok: null
+    output_price_per_mtok: null
+    context_window: null
+    max_output_tokens: null
+    capabilities: [text, vision, tools, reasoning]
+    notes: "モデルIDは Claude Code 実行環境の情報で確認 (2026-11)。料金・コンテキスト長は未設定"
+
+  - id: claude-haiku-5-5
+    provider: anthropic
+    display_name: Claude Haiku 5.5
+    status: verified
+    input_price_per_mtok: null
+    output_price_per_mtok: null
+    context_window: null
+    max_output_tokens: null
+    capabilities: [text, vision, tools]
+    notes: "モデルIDは Claude Code 実行環境の情報で確認 (2026-11)。料金・コンテキスト長は未設定"
+
+  # ---------------- OpenAI ----------------
+  - id: gpt-5
+    provider: openai
+    display_name: GPT-5
+    status: unverified
+    input_price_per_mtok: null
+    output_price_per_mtok: null
+    context_window: null
+    max_output_tokens: null
+    capabilities: [text, vision, tools, reasoning]
+    notes: "要確認: 現在も提供中か、後継モデルがあるかを OpenAI 公式ドキュメントで確認すること"
+
+  - id: gpt-5-mini
+    provider: openai
+    display_name: GPT-5 mini
+    status: unverified
+    input_price_per_mtok: null
+    output_price_per_mtok: null
+    context_window: null
+    max_output_tokens: null
+    capabilities: [text, vision, tools, reasoning]
+    notes: "要確認: 現在も提供中か OpenAI 公式ドキュメントで確認すること"
+
+  # ---------------- Google ----------------
+  - id: gemini-2.5-pro
+    provider: gemini
+    display_name: Gemini 2.5 Pro
+    status: unverified
+    input_price_per_mtok: null
+    output_price_per_mtok: null
+    context_window: null
+    max_output_tokens: null
+    capabilities: [text, vision, tools, reasoning]
+    notes: "要確認: 現在も提供中か、後継モデルがあるかを Google AI 公式ドキュメントで確認すること"
+
+  - id: gemini-2.5-flash
+    provider: gemini
+    display_name: Gemini 2.5 Flash
+    status: unverified
+    input_price_per_mtok: null
+    output_price_per_mtok: null
+    context_window: null
+    max_output_tokens: null
+    capabilities: [text, vision, tools]
+    notes: "要確認: 現在も提供中か Google AI 公式ドキュメントで確認すること"
+
+  # ---------------- Mock (オフライン) ----------------
+  - id: mock-echo
+    provider: mock
+    display_name: Mock Echo (APIを呼ばない)
+    status: offline
+    input_price_per_mtok: 0.0
+    output_price_per_mtok: 0.0
+    context_window: null
+    max_output_tokens: null
+    capabilities: [text]
+    notes: "APIキー不要の動作確認用。料金は明示的に 0 を設定（未設定とは区別される）"

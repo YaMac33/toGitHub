@@ -1,0 +1,24 @@
+# 秘密情報
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# テスト・ツール
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# 実行時ログ・利用記録（プロンプトや利用状況を含むためコミットしない）
+logs/*
+!logs/.gitkeep
