@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>複数住所マップ表示</title>
+<!--
+==================================================
+ 複数住所 可視化Webアプリ
+==================================================
+【使用方法】
+ 1. Google Cloud Consoleで「Maps JavaScript API」と「Geocoding API」を有効化
+ 2. APIキーを取得
+ 3. このファイル末尾付近の <script src="...key=YOUR_API_KEY..."> の
+    YOUR_API_KEY を取得したAPIキーに置き換える
+ 4. ブラウザでこのHTMLを開く
+ 5. テキストボックスに住所を1行ずつ入力し「地図に表示」を押す
+
+【補足】
+ - ピンは入力順に 赤→青→緑→黄→紫→オレンジ... と循環して色分け、番号付き
+ - ピンをクリックすると住所とInfoWindowが開き、「削除」でそのピンを削除
+ - 空行は無視、見つからない住所はアラートで通知
+==================================================
+-->
+<style>
+  /* ---- 全体レイアウト：縦に「操作パネル」と「地図」を配置 ---- */
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; font-family: sans-serif; }
+  body { display: flex; flex-direction: column; }
+
+  #panel { padding: 10px; background: #f4f4f4; border-bottom: 1px solid #ccc; }
+  #panel h1 { font-size: 16px; margin: 0 0 6px; }
+  #addresses {
+    width: 100%; height: 100px; padding: 6px;
+    font-size: 16px; /* iOSでの自動ズーム防止 */
+    resize: vertical;
+  }
+  .buttons { margin-top: 6px; display: flex; gap: 8px; }
+  button { padding: 8px 16px; font-size: 15px; border: 0; border-radius: 4px; cursor: pointer; }
+  #showBtn { background: #1a73e8; color: #fff; }
+  #resetBtn { background: #888; color: #fff; }
+  button:disabled { opacity: .5; cursor: default; }
+
+  /* 地図は残り領域をすべて使用 */
+  #map { flex: 1; min-height: 0; }
+
+  /* ---- スマートフォン向け調整 ---- */
+  @media (max-width: 600px) {
+    #addresses { height: 80px; }
+    .buttons button { flex: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 操作パネル：住所入力とボタン -->
+<div id="panel">
+  <h1>複数住所マップ表示</h1>
+  <textarea id="addresses" placeholder="住所を1行ずつ入力&#10;例：東京都千代田区丸の内1-9-1&#10;大阪府大阪市北区梅田3-1-1"></textarea>
+  <div class="buttons">
+    <button id="showBtn">地図に表示</button>
+    <button id="resetBtn">リセット</button>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+  // ピンの色（入力順に循環使用）
+  const COLORS = ["#ea4335", "#4285f4", "#34a853", "#fbbc04", "#9c27b0", "#ff6d00"];
+
+  // 日本全体が見える初期表示
+  const JAPAN_CENTER = { lat: 37.5, lng: 137.5 };
+  const JAPAN_ZOOM = 5;
+
+  let map, geocoder, infoWindow;
+  let markers = []; // 現在表示中のマーカー
+
+  /** 地図の初期化（Google Maps API読み込み完了後に呼ばれる） */
+  function initMap() {
+    map = new google.maps.Map(document.getElementById("map"), {
+      center: JAPAN_CENTER,
+      zoom: JAPAN_ZOOM,
+      // ズーム・パンはデフォルトで有効
+    });
+    geocoder = new google.maps.Geocoder();
+    infoWindow = new google.maps.InfoWindow();
+
+    document.getElementById("showBtn").addEventListener("click", showAddresses);
+    document.getElementById("resetBtn").addEventListener("click", resetAll);
+  }
+
+  /** 番号入り・色付きのピンアイコン(SVG)を生成 */
+  function pinIcon(color) {
+    return {
+      path: "M12 0C5.4 0 0 5.4 0 12c0 9 12 22 12 22s12-13 12-22C24 5.4 18.6 0 12 0z",
+      fillColor: color,
+      fillOpacity: 1,
+      strokeColor: "#ffffff",
+      strokeWeight: 1.5,
+      scale: 1.1,
+      anchor: new google.maps.Point(12, 34),
+      labelOrigin: new google.maps.Point(12, 12), // 番号をピン頭部の中心に配置
+    };
+  }
+
+  /** 住所1件をジオコーディング（Promiseで結果を返す） */
+  function geocode(address) {
+    return new Promise((resolve) => {
+      geocoder.geocode({ address, region: "JP" }, (results, status) => {
+        if (status === "OK" && results[0]) resolve(results[0]);
+        else resolve(null);
+      });
+    });
+  }
+
+  /** 「地図に表示」：入力住所をすべて地図に反映 */
+  async function showAddresses() {
+    const btn = document.getElementById("showBtn");
+    // 空行は無視
+    const lines = document.getElementById("addresses").value
+      .split("\n").map(s => s.trim()).filter(s => s !== "");
+
+    if (lines.length === 0) {
+      alert("住所を入力してください。");
+      return;
+    }
+
+    btn.disabled = true;
+    clearMarkers();
+
+    const notFound = [];
+    const bounds = new google.maps.LatLngBounds();
+
+    // 入力順を保つため、1件ずつ順番に処理
+    for (let i = 0; i < lines.length; i++) {
+      const result = await geocode(lines[i]);
+      if (!result) {
+        notFound.push(lines[i]);
+        continue;
+      }
+      addMarker(i, lines[i], result);
+      bounds.extend(result.geometry.location);
+    }
+
+    // すべてのピンが収まるよう自動ズーム
+    if (markers.length === 1) {
+      map.setCenter(markers[0].getPosition());
+      map.setZoom(15);
+    } else if (markers.length > 1) {
+      map.fitBounds(bounds);
+    }
+
+    btn.disabled = false;
+
+    // 見つからなかった住所をまとめて通知
+    if (notFound.length > 0) {
+      alert("次の住所が見つかりませんでした:\n\n" + notFound.join("\n"));
+    }
+  }
+
+  /** マーカーを追加（index: 入力順0始まり。色・番号に使用） */
+  function addMarker(index, inputText, result) {
+    const marker = new google.maps.Marker({
+      map,
+      position: result.geometry.location,
+      icon: pinIcon(COLORS[index % COLORS.length]),
+      label: { text: String(index + 1), color: "#fff", fontWeight: "bold", fontSize: "13px" },
+      title: inputText,
+    });
+
+    // クリックでInfoWindowを表示
+    marker.addListener("click", () => {
+      infoWindow.setContent(buildInfoContent(index, inputText, result.formatted_address, marker));
+      infoWindow.open(map, marker);
+    });
+    markers.push(marker);
+  }
+
+  /** InfoWindowの内容（住所＋削除ボタン）を生成 */
+  function buildInfoContent(index, inputText, formatted, marker) {
+    const div = document.createElement("div");
+    div.style.cssText = "font-size:14px;max-width:220px;";
+
+    const title = document.createElement("strong");
+    title.textContent = `${index + 1}番目`;
+
+    const p1 = document.createElement("div");
+    p1.textContent = `入力: ${inputText}`;
+    const p2 = document.createElement("div");
+    p2.textContent = `住所: ${formatted}`;
+
+    const del = document.createElement("button");
+    del.textContent = "削除";
+    del.style.cssText = "margin-top:8px;padding:4px 12px;background:#d93025;color:#fff;font-size:13px;";
+    del.addEventListener("click", () => removeMarker(marker));
+
+    div.append(title, p1, p2, del);
+    return div; // textContentを使うことで住所内の特殊文字も安全に表示
+  }
+
+  /** 指定ピンを削除 */
+  function removeMarker(marker) {
+    infoWindow.close();
+    marker.setMap(null);
+    markers = markers.filter(m => m !== marker);
+  }
+
+  /** すべてのピンを消去 */
+  function clearMarkers() {
+    infoWindow.close();
+    markers.forEach(m => m.setMap(null));
+    markers = [];
+  }
+
+  /** 「リセット」：ピン・入力欄・地図位置を初期状態へ */
+  function resetAll() {
+    clearMarkers();
+    document.getElementById("addresses").value = "";
+    map.setCenter(JAPAN_CENTER);
+    map.setZoom(JAPAN_ZOOM);
+  }
+</script>
+
+<!-- Google Maps JavaScript API（Geocodingを含む）。YOUR_API_KEY を自分のAPIキーに置き換える -->
+<script async src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap&language=ja&region=JP"></script>
+
+</body>
+</html>
